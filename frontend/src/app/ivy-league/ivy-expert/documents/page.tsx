@@ -2,8 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import ivyApi, { BACKEND_URL } from '@/lib/ivyApi';
+import ivyApi from '@/lib/ivyApi';
 
 interface Evaluation {
     score: number;
@@ -33,8 +32,29 @@ const DOC_LABELS: Record<string, string> = {
 };
 
 function InlineDocViewer({ url, onClose }: { url: string, onClose: () => void }) {
-    const fullUrl = `${BACKEND_URL}${url}`;
+    const [blobUrl, setBlobUrl] = useState<string | null>(null);
+    const [loadError, setLoadError] = useState(false);
     const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+
+    useEffect(() => {
+        let cancelled = false;
+        const fetchDoc = async () => {
+            try {
+                const res = await ivyApi.get(url, { responseType: 'blob' });
+                if (!cancelled) {
+                    const objectUrl = URL.createObjectURL(res.data);
+                    setBlobUrl(objectUrl);
+                }
+            } catch {
+                if (!cancelled) setLoadError(true);
+            }
+        };
+        fetchDoc();
+        return () => {
+            cancelled = true;
+            if (blobUrl) URL.revokeObjectURL(blobUrl);
+        };
+    }, [url]);
 
     return (
         <div className="mt-4 relative bg-gray-900 rounded-3xl overflow-hidden shadow-2xl border-4 border-gray-800 animate-in fade-in zoom-in-95 duration-300">
@@ -49,17 +69,21 @@ function InlineDocViewer({ url, onClose }: { url: string, onClose: () => void })
                 </button>
             </div>
             <div className="min-h-[500px] flex items-center justify-center bg-gray-800">
-                {isImage ? (
-                    <img src={fullUrl} alt="Document" className="max-w-full max-h-[800px] object-contain" />
+                {loadError ? (
+                    <p className="text-red-400 font-bold">Failed to load document</p>
+                ) : !blobUrl ? (
+                    <p className="text-gray-400 font-bold animate-pulse">Loading document...</p>
+                ) : isImage ? (
+                    <img src={blobUrl} alt="Document" className="max-w-full max-h-[800px] object-contain" />
                 ) : (
-                    <iframe src={fullUrl} className="w-full h-[600px] border-none" title="Document Viewer" />
+                    <iframe src={blobUrl} className="w-full h-[600px] border-none" title="Document Viewer" />
                 )}
             </div>
         </div>
     );
 }
 
-function EvaluationForm({ doc, studentIvyServiceId, ivyExpertId, onSave, onClose }: { doc: AcademicDoc, studentIvyServiceId: string, ivyExpertId: string, onSave: () => void, onClose?: () => void }) {
+function EvaluationForm({ doc, studentIvyServiceId, onSave, onClose }: { doc: AcademicDoc, studentIvyServiceId: string, onSave: () => void, onClose?: () => void }) {
     const [score, setScore] = useState(doc.evaluation?.score.toString() || '');
     const [feedback, setFeedback] = useState(doc.evaluation?.feedback || '');
     const [submitting, setSubmitting] = useState(false);
@@ -77,7 +101,6 @@ function EvaluationForm({ doc, studentIvyServiceId, ivyExpertId, onSave, onClose
             await ivyApi.post(`/pointer1/evaluate`, {
                 studentIvyServiceId,
                 academicDocumentId: doc._id,
-                ivyExpertId,
                 score: s,
                 feedback
             });
@@ -144,7 +167,6 @@ function IvyExpertDocumentsContent() {
     const searchParams = useSearchParams();
     const studentId = searchParams.get('studentId');
     const studentIvyServiceId = searchParams.get('studentIvyServiceId');
-    const ivyExpertId = searchParams.get('ivyExpertId') || '';
 
     const [documents, setDocuments] = useState<AcademicDoc[]>([]);
     const [loading, setLoading] = useState(true);
@@ -210,7 +232,7 @@ function IvyExpertDocumentsContent() {
                     <InlineDocViewer url={d.fileUrl} onClose={() => setViewingDocId(null)} />
                 )}
 
-                {isMarksheet && studentIvyServiceId && ivyExpertId && (
+                {isMarksheet && studentIvyServiceId && (
                     <>
                         {d.evaluation && updatingDocId !== d._id ? (
                             <div className="mt-4 p-5 bg-green-50 border border-green-200 rounded-2xl">
@@ -242,7 +264,6 @@ function IvyExpertDocumentsContent() {
                                 key={d._id + (d.evaluation?.evaluatedAt || 'unevaluated')}
                                 doc={d}
                                 studentIvyServiceId={studentIvyServiceId}
-                                ivyExpertId={ivyExpertId}
                                 onSave={() => {
                                     setUpdatingDocId(null);
                                     fetchStatus();
