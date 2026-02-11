@@ -2,9 +2,8 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import axios from 'axios';
 import Link from 'next/link';
-import { IVY_API_URL, BACKEND_URL } from '@/lib/ivyApi';
+import ivyApi, { BACKEND_URL } from '@/lib/ivyApi';
 
 interface Evaluation {
     score: number;
@@ -75,7 +74,7 @@ function EvaluationForm({ doc, studentIvyServiceId, ivyExpertId, onSave, onClose
         setSubmitting(true);
         setMsg(null);
         try {
-            await axios.post(`${IVY_API_URL}/pointer1/evaluate`, {
+            await ivyApi.post(`/pointer1/evaluate`, {
                 studentIvyServiceId,
                 academicDocumentId: doc._id,
                 ivyExpertId,
@@ -155,7 +154,7 @@ function IvyExpertDocumentsContent() {
     const fetchStatus = async () => {
         if (!studentId) return;
         try {
-            const response = await axios.get(`${IVY_API_URL}/pointer1/status/${studentId}`, {
+            const response = await ivyApi.get(`/pointer1/status/${studentId}`, {
                 params: { studentIvyServiceId }
             });
             setDocuments(response.data.data.documents);
