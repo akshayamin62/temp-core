@@ -1,0 +1,13 @@
+export declare enum USER_ROLE {
+    STUDENT = "STUDENT",
+    PARENT = "PARENT",
+    OPS = "OPS",
+    COUNSELOR = "COUNSELOR",
+    EDUPLAN_COACH = "EDUPLAN_COACH",
+    IVY_EXPERT = "IVY_EXPERT",
+    ADMIN = "ADMIN",
+    ALUMNI = "ALUMNI",
+    SUPER_ADMIN = "SUPER_ADMIN",
+    SERVICE_PROVIDER = "SERVICE_PROVIDER"
+}
+//# sourceMappingURL=roles.d.ts.map

@@ -71,7 +71,7 @@ export const uploadDocument = async (req: AuthRequest, res: Response) => {
 
       if (existingDoc) {
         // Delete old file
-        const oldFilePath = path.join(__dirname, "../../", existingDoc.filePath);
+        const oldFilePath = path.join(process.cwd(), existingDoc.filePath);
         if (fs.existsSync(oldFilePath)) {
           fs.unlinkSync(oldFilePath);
         }
@@ -302,7 +302,7 @@ export const downloadDocument = async (req: AuthRequest, res: Response) => {
     }
 
     // Stream file
-    const filePath = path.join(__dirname, "../../", document.filePath);
+    const filePath = path.join(process.cwd(), document.filePath);
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({
         success: false,
@@ -384,7 +384,7 @@ export const viewDocument = async (req: AuthRequest, res: Response): Promise<voi
     }
 
     // Stream file for viewing
-    const filePath = path.join(__dirname, "../../", document.filePath);
+    const filePath = path.join(process.cwd(), document.filePath);
     if (!fs.existsSync(filePath)) {
       res.status(404).json({
         success: false,
@@ -560,7 +560,7 @@ export const rejectDocument = async (req: AuthRequest, res: Response) => {
     }
 
     // Delete file from storage
-    const filePath = path.join(__dirname, "../../", document.filePath);
+    const filePath = path.join(process.cwd(), document.filePath);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
@@ -712,7 +712,7 @@ export const deleteDocument = async (req: AuthRequest, res: Response) => {
     }
 
     // Delete file from storage
-    const filePath = path.join(__dirname, "../../", document.filePath);
+    const filePath = path.join(process.cwd(), document.filePath);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }

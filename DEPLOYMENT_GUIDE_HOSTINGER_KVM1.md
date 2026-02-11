@@ -212,7 +212,7 @@ nano .env
 
 ```env
 # Server Configuration
-PORT=5000
+PORT=5001
 NODE_ENV=production
 
 # MongoDB Atlas Connection
@@ -274,13 +274,13 @@ npm start
 
 # Expected output:
 # ✅ Connected to MongoDB successfully
-# 🚀 Server is running on port 5000
+# 🚀 Server is running on port 5001
 ```
 
 If you see errors:
 - Check MongoDB URI in .env
 - Verify MongoDB Atlas IP whitelist includes your VPS IP
-- Check if port 5000 is available: `netstat -tuln | grep 5000`
+- Check if port 5001 is available: `netstat -tuln | grep 5001`
 
 ### Step 3.6: Set Up PM2 for Backend
 
@@ -399,8 +399,8 @@ npm start
 ```bash
 cd /var/www/temp-core/frontend
 
-# Start frontend with PM2
-pm2 start npm --name "temp-core-frontend" -- start
+# Start frontend with PM2 (with PORT environment variable)
+pm2 start npm --name "temp-core-frontend" --env PORT=3001 -- start
 
 # Save PM2 configuration
 pm2 save
@@ -486,7 +486,7 @@ server {
 
     # Proxy API requests to backend
     location / {
-        proxy_pass http://localhost:5000;
+        proxy_pass http://localhost:5001;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -654,7 +654,7 @@ server {
     }
     
     location / {
-        proxy_pass http://localhost:5000;
+        proxy_pass http://localhost:5001;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
@@ -1068,8 +1068,8 @@ pm2 status
 pm2 start temp-core-backend
 pm2 start temp-core-frontend
 
-# 3. Check if ports 5000 and 3001 are listening
-netstat -tuln | grep -E '5000|3001'
+# 3. Check if ports 5001 and 3001 are listening
+netstat -tuln | grep -E '5001|3001'
 
 # 4. Check PM2 logs for errors
 pm2 logs --lines 100
@@ -1122,7 +1122,7 @@ nginx -t
 systemctl reload nginx
 
 # 5. Check backend serves files
-curl http://localhost:5000/uploads/test.jpg
+curl http://localhost:5001/uploads/test.jpg
 ```
 
 ### Issue: SSL Certificate Errors
@@ -1149,7 +1149,7 @@ curl -I https://temp-core.admitra.io
 
 ### Issue: Port Already in Use (EADDRINUSE)
 
-**Symptoms**: Error when starting frontend/backend: "listen EADDRINUSE: address already in use :::3001" or ":::5000"
+**Symptoms**: Error when starting frontend/backend: "listen EADDRINUSE: address already in use :::3001" or ":::5001"
 
 **Note**: This project uses port 3001 for frontend (not 3000) to avoid conflicts with other projects
 
@@ -1169,15 +1169,16 @@ pm2 restart temp-core-backend
 
 # 3. If you need to check what's using the port
 netstat -tuln | grep ':3001'
-netstat -tuln | grep ':5000'
+netstat -tuln | grep ':5001'
 
 # 4. If a rogue process is using the port (not PM2), kill it
 lsof -ti:3001 | xargs kill -9   # Kill process on port 3001
-lsof -ti:5000 | xargs kill -9   # Kill process on port 5000
+lsof -ti:5001 | xargs kill -9   # Kill process on port 5001
 
 # 5. Then start with PM2
 cd /var/www/temp-core/frontend
-pm2 start npm --name "temp-core-frontend" -- start
+pm2 delete temp-core-frontend  # Remove if exists
+pm2 start npm --name "temp-core-frontend" --env PORT=3001 -- start
 
 cd /var/www/temp-core/backend
 pm2 start dist/src/server.js --name "temp-core-backend"
@@ -1262,7 +1263,7 @@ certbot delete                # Remove certificate
 
 ### Backend .env (Production)
 ```env
-PORT=5000
+PORT=5001
 NODE_ENV=production
 MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority
 JWT_SECRET=generate-random-64-char-string-here
@@ -1384,7 +1385,7 @@ pm2 start dist/src/server.js --name "temp-core-backend"
 cd /var/www/temp-core/frontend
 # Clone code, create .env.local, then:
 npm install && npm run build
-pm2 start npm --name "temp-core-frontend" -- start
+pm2 start npm --name "temp-core-frontend" --env PORT=3001 -- start
 pm2 startup && pm2 save
 
 # 4. Configure Nginx
