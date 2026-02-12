@@ -4,16 +4,6 @@
 
 ---
 
-## 📸 Banner
-
-To add a banner image, place a `.png` file at `public/banner.png` (1920x400px recommended), and uncomment the line below:
-
-```markdown
-![Kareer Studio Banner](public/banner.png)
-```
-
----
-
 ## 📋 Table of Contents
 
 - [Features](#features)
@@ -21,13 +11,9 @@ To add a banner image, place a `.png` file at `public/banner.png` (1920x400px re
 - [Project Structure](#project-structure)
 - [User Roles](#user-roles)
 - [Services](#services)
-- [Core Features](#core-features)
-- [API Routes](#api-routes)
-- [Database Models](#database-models)
-- [File Upload Specifications](#file-upload-specifications)
-- [Environment Setup](#environment-setup)
 - [Getting Started](#getting-started)
-- [Build & Deployment](#build--deployment)
+- [Environment Setup](#environment-setup)
+- [API Routes](#api-routes)
 - [License](#license)
 
 ---
@@ -71,13 +57,6 @@ To add a banner image, place a `.png` file at `public/banner.png` (1920x400px re
 - OPS schedule calendar with task assignments
 - Lead-to-student conversion workflow
 
-### 🎯 Admin Dashboard
-- Comprehensive student management
-- OPS and Counselor assignment management
-- Service and form configuration
-- Activity logs and system overview
-- User role management and permissions
-
 ---
 
 ## 🛠️ Tech Stack
@@ -94,12 +73,12 @@ To add a banner image, place a `.png` file at `public/banner.png` (1920x400px re
 | | Mongoose | 8 |
 | **Database** | MongoDB | 6+ |
 | **Authentication** | JWT | - |
-| | bcryptjs | For password hashing |
-| **File Handling** | Multer | For file uploads |
+| | bcryptjs | Password hashing |
+| **File Handling** | Multer | File uploads |
 | | pdf-parse | PDF parsing |
-| | mammoth | Word document parsing |
-| | xlsx | Excel file parsing |
-| **Email** | Nodemailer | For notifications |
+| | mammoth | Word parsing |
+| | xlsx | Excel parsing |
+| **Email** | Nodemailer | Notifications |
 
 ---
 
@@ -133,7 +112,7 @@ To add a banner image, place a `.png` file at `public/banner.png` (1920x400px re
 │   │   ├── lib/                      # API client & utilities
 │   │   ├── types/                    # TypeScript interfaces
 │   │   └── utils/                    # Utility functions
-│   ├── public/                       # Static files & banner images
+│   ├── public/                       # Static files
 │   ├── package.json
 │   ├── tsconfig.json
 │   ├── next.config.ts
@@ -160,160 +139,58 @@ To add a banner image, place a `.png` file at `public/banner.png` (1920x400px re
 
 ## 🎯 Services
 
-### 1. **Study Abroad** 
-University applications with dynamic multi-part forms, program tracking, and collaborative chat
-
-### 2. **Ivy League Preparation**
-6-pointer evaluation system with activities, essays, academic data, course lists, and comprehensive scoring
-
-### 3. **Education Planning**
-Guided planning sessions with EduPlan coaches
-
-### 4. **IELTS Coaching**
-Test preparation and coaching services
+1. **Study Abroad** - University applications with dynamic multi-part forms, program tracking, and collaborative chat
+2. **Ivy League Preparation** - 6-pointer evaluation system with activities, essays, academic data, course lists, and comprehensive scoring
+3. **Education Planning** - Guided planning sessions with EduPlan coaches
+4. **IELTS Coaching** - Test preparation and coaching services
 
 ---
 
-## 🔧 Core Features
+## 🚀 Getting Started
 
-### Authentication & Authorization
-- ✅ JWT-based authentication with email verification
-- ✅ Secure password reset flow
-- ✅ Role-based access control (RBAC)
-- ✅ Protected API endpoints
-- ✅ Session management
+### Prerequisites
+- Node.js v18.0.0 or higher
+- npm v9.0.0 or higher
+- MongoDB v6.0 or higher
+- Git for version control
 
-### Dynamic Form System
-- ✅ Customizable form structures
-- ✅ Multiple field types with validation
-- ✅ Conditional field visibility
-- ✅ Real-time progress tracking
-- ✅ Form versioning support
+### Backend Setup
 
-### Document Management
-- ✅ PDF, Word, Excel, and image uploads
-- ✅ File validation and virus scanning ready
-- ✅ Organized file storage with user isolation
-- ✅ Download and preview capabilities
+```bash
+# Navigate to backend directory
+cd backend
 
-### Real-time Communication
-- ✅ Program-specific chat channels
-- ✅ Private and open chat modes
-- ✅ Message notifications
-- ✅ File sharing in conversations
-- ✅ Message history and search
+# Install dependencies
+npm install
 
-### Ivy League Workflow
-- ✅ Multi-pointer evaluation system
-- ✅ AI-powered activity suggestions
-- ✅ Grammar and plagiarism checking
-- ✅ Real-time task conversations
-- ✅ Performance scoring and leaderboards
-- ✅ Progress notifications
+# Seed initial data
+npm run seed:forms       # Seed form configurations
+npm run seed:documents   # Seed CORE document fields
 
----
+# Create database indexes
+npm run create:indexes
 
-## 🌐 API Routes
-
-### Core Routes
-
-| Prefix | Module | Purpose |
-|--------|--------|---------|
-| `/api/auth` | Authentication | Login, signup, verify email, password reset |
-| `/api/super-admin` | Super Admin | System-level operations and management |
-| `/api/admin` | Admin | User and service management |
-| `/api/student` | Student | Student profile and service registration |
-| `/api/services` | Services | Service CRUD operations |
-| `/api/forms` | Forms | Form submission and management |
-| `/api/programs` | Programs | Study abroad program management |
-| `/api/chat` | Chat | Program-based messaging (open + private) |
-| `/api/documents` | Documents | Student document uploads and management |
-| `/api/core-documents` | CORE Docs | CORE document field management |
-| `/api/follow-ups` | Follow-ups | Follow-up scheduling and tracking |
-| `/api/team-meets` | Team Meets | Team meeting organization |
-| `/api/ops-schedules` | OPS Schedule | OPS task calendar management |
-| `/api/lead-conversions` | Lead Conv | Lead to student conversion |
-| `/api/leads` | Leads | Lead management and CRM |
-
-### Ivy League Routes (all under `/api/ivy/`)
-
-| Prefix | Module | Purpose |
-|--------|--------|---------|
-| `/api/ivy/ivy-service` | Ivy Service | Student registration and profile |
-| `/api/ivy/pointer1` | Pointer 1 | Academic data and evaluation |
-| `/api/ivy/pointer234` | Pointers 2/3/4 | Activity management and evaluation |
-| `/api/ivy/pointer5` | Pointer 5 | Essay tasks and evaluation |
-| `/api/ivy/pointer6` | Pointer 6 | Course and certificate management |
-| `/api/ivy/pointer/activity` | General Activity | Common activity operations |
-| `/api/ivy/agent-suggestions` | AI Suggestions | Agent-powered activity recommendations |
-| `/api/ivy/grammar-check` | Grammar | Grammar and plagiarism checking |
-| `/api/ivy/ivy-score` | Scoring | Ivy score card and aggregation |
-| `/api/ivy/admin` | Ivy Admin | Ivy League administration |
-| `/api/ivy/excel-upload` | Excel Upload | Bulk data imports |
-| `/api/ivy/notifications` | Notifications | Pointer update notifications |
-| `/api/ivy/student-interest` | Interests | Student interest profiles |
-| `/api/ivy/task` | Task Conv | Task conversations and messaging |
-| `/api/ivy/users` | Users | Ivy user management |
-
----
-
-## 💾 Database Models
-
-### Core Models
-```
-User, Student, Admin, Ops, Counselor, IvyExpert, EduplanCoach
-Service, FormPart, ServiceFormPart, FormSection, FormSubSection, FormField
-StudentServiceRegistration, StudentFormAnswer
-Program, ProgramChat, ChatMessage
-StudentDocument, COREDocumentField
-Lead, LeadStudentConversion
-FollowUp, TeamMeet, OpsSchedule
+# Start development server
+npm run dev              # Runs on http://localhost:5000
 ```
 
-### Ivy League Models
+### Frontend Setup
+
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev              # Runs on http://localhost:3000
 ```
-AcademicData, AcademicDocument, AcademicEvaluation
-Activity, AgentSuggestion, IvyExpertSelectedSuggestion
-StudentSubmission, IvyExpertEvaluation, IvyExpertDocument
-IvyPointer, EssayGuideline, EssaySubmission, EssayEvaluation
-Pointer5Task, Pointer5Submission, Pointer5Evaluation
-Pointer6CourseList, Pointer6Course, Pointer6SelectedCourse
-Pointer6Certificate, Pointer6CertificateEvaluation, Pointer6Evaluation
-StudentIvyScoreCard, StudentPointerScore
-PointerNotification, TaskConversation
-```
 
----
-
-## 📸 File Upload Specifications
-
-### Banner Image Upload
-- **Format**: `.png` (PNG format only)
-- **Max Size**: 5 MB
-- **Recommended Dimensions**: 1920 x 400 pixels (or 16:4 aspect ratio)
-- **Location**: `frontend/public/banner.png`
-- **Use Case**: Homepage hero banner and promotional materials
-
-### Supported Document Uploads
-| File Type | Extensions | Max Size | Use Case |
-|-----------|-----------|----------|----------|
-| Images | `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp` | 10 MB | Certificates, IDs, proofs |
-| PDFs | `.pdf` | 20 MB | Documents, essays, reports |
-| Word Docs | `.doc`, `.docx` | 15 MB | Essays, assignments |
-| Spreadsheets | `.xls`, `.xlsx` | 10 MB | Course lists, academic data |
-| Videos | `.mp4`, `.webm`, `.mov` | 100 MB | Activity recordings, demos |
-
-### File Upload Directory Structure
-```
-backend/uploads/
-├── {userId}/                 # User-specific uploads
-├── activities/               # Activity proofs
-├── admin/                    # Admin uploads
-├── pointer1/                 # Pointer 1 documents
-├── pointer5/                 # Pointer 5 essays
-├── task-conversations/       # Chat attachments
-└── certificates/             # Course certificates
-```
+### Verify Installation
+- Backend API: http://localhost:5000/api
+- Frontend: http://localhost:3000
+- Database: Connected MongoDB instance
 
 ---
 
@@ -361,51 +238,77 @@ NEXT_PUBLIC_APP_VERSION=1.0.0
 
 ---
 
-## 🚀 Getting Started
+## 🌐 API Routes
 
-### Prerequisites
-- **Node.js** v18.0.0 or higher
-- **npm** v9.0.0 or higher
-- **MongoDB** v6.0 or higher
-- **Git** for version control
+### Core Routes
 
-### Backend Setup
+| Prefix | Module | Purpose |
+|--------|--------|---------|
+| `/api/auth` | Authentication | Login, signup, verify email, password reset |
+| `/api/super-admin` | Super Admin | System-level operations and management |
+| `/api/admin` | Admin | User and service management |
+| `/api/student` | Student | Student profile and service registration |
+| `/api/services` | Services | Service CRUD operations |
+| `/api/forms` | Forms | Form submission and management |
+| `/api/programs` | Programs | Study abroad program management |
+| `/api/chat` | Chat | Program-based messaging (open + private) |
+| `/api/documents` | Documents | Student document uploads and management |
+| `/api/core-documents` | CORE Docs | CORE document field management |
+| `/api/leads` | Leads | Lead management and CRM |
 
-```bash
-# Navigate to backend directory
-cd backend
+### Ivy League Routes (under `/api/ivy/`)
 
-# Install dependencies
-npm install
+| Prefix | Module | Purpose |
+|--------|--------|---------|
+| `/api/ivy/ivy-service` | Ivy Service | Student registration and profile |
+| `/api/ivy/pointer1` | Pointer 1 | Academic data and evaluation |
+| `/api/ivy/pointer234` | Pointers 2/3/4 | Activity management and evaluation |
+| `/api/ivy/pointer5` | Pointer 5 | Essay tasks and evaluation |
+| `/api/ivy/pointer6` | Pointer 6 | Course and certificate management |
+| `/api/ivy/agent-suggestions` | AI Suggestions | Activity recommendations |
+| `/api/ivy/grammar-check` | Grammar | Grammar and plagiarism checking |
+| `/api/ivy/ivy-score` | Scoring | Ivy score card and aggregation |
+| `/api/ivy/task` | Task Conv | Task conversations and messaging |
 
-# Seed initial data
-npm run seed:forms       # Seed form configurations
-npm run seed:documents   # Seed CORE document fields
+---
 
-# Create database indexes
-npm run create:indexes
+## 💾 Database Models
 
-# Start development server
-npm run dev              # Runs on http://localhost:5000
+### Core Models
+```
+User, Student, Admin, Ops, Counselor, IvyExpert, EduplanCoach
+Service, FormPart, ServiceFormPart, FormSection, FormSubSection, FormField
+StudentServiceRegistration, StudentFormAnswer
+Program, ProgramChat, ChatMessage
+StudentDocument, COREDocumentField
+Lead, LeadStudentConversion
+FollowUp, TeamMeet, OpsSchedule
 ```
 
-### Frontend Setup
-
-```bash
-# Navigate to frontend directory
-cd frontend
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev              # Runs on http://localhost:3000
+### Ivy League Models
+```
+AcademicData, AcademicDocument, AcademicEvaluation
+Activity, AgentSuggestion, StudentSubmission, IvyExpertEvaluation
+IvyPointer, EssayGuideline, EssaySubmission, EssayEvaluation
+Pointer5Task, Pointer5Submission, Pointer5Evaluation
+Pointer6CourseList, Pointer6Course, Pointer6Certificate
+StudentIvyScoreCard, StudentPointerScore
+TaskConversation, PointerNotification
 ```
 
-### Verify Installation
-- Backend API: http://localhost:5000/api (should return API info)
-- Frontend: http://localhost:3000 (should load the login page)
-- Database: Connected MongoDB instance
+---
+
+## 📸 Adding a Banner Image
+
+To add a banner to this README:
+
+1. Create a PNG image (recommended: 1920x400px)
+2. Save it as `banner.png` in the `frontend/public/` directory
+3. Add this line at the top of the README (after the title):
+
+```markdown
+![Kareer Studio Banner](frontend/public/banner.png)
+```
 
 ---
 
@@ -414,37 +317,15 @@ npm run dev              # Runs on http://localhost:3000
 ### Backend Build
 ```bash
 cd backend
-
-# Build TypeScript to JavaScript
-npm run build
-
-# Output: dist/ directory contains compiled code
-
-# Start production server
-npm start
+npm run build          # Compile TypeScript to dist/
+npm start              # Run production server
 ```
 
 ### Frontend Build
 ```bash
 cd frontend
-
-# Build Next.js for production
-npm run build
-
-# Start production server
-npm start
-```
-
-### Docker Deployment (Optional)
-```bash
-# Build images
-docker-compose build
-
-# Start containers
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
+npm run build          # Build Next.js for production
+npm start              # Start production server
 ```
 
 ---
@@ -459,8 +340,6 @@ npm start                   # Run production build
 npm run seed:forms          # Seed form data
 npm run seed:documents      # Seed CORE documents
 npm run create:indexes      # Create MongoDB indexes
-npm run lint                # Run ESLint (if configured)
-npm run type-check          # Run TypeScript compiler check
 ```
 
 ### Frontend Scripts
@@ -473,18 +352,9 @@ npm run lint                # Run ESLint
 
 ---
 
-## 🤝 Contributing
-
-1. Create a feature branch (`git checkout -b feature/amazing-feature`)
-2. Commit your changes (`git commit -m 'Add amazing feature'`)
-3. Push to the branch (`git push origin feature/amazing-feature`)
-4. Open a Pull Request
-
----
-
 ## 📄 License
 
-This project is licensed under the ISC License - see the LICENSE file for details.
+This project is licensed under the ISC License.
 
 ---
 
@@ -497,6 +367,3 @@ For support, email support@kareerstudio.com or open an issue in the repository.
 **Last Updated**: February 2026  
 **Version**: 1.0.0  
 **Status**: Production Ready
-#   t e m p - c o r e 
- 
- 
