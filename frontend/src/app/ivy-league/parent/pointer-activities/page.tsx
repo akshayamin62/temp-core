@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, Suspense } from 'react';
 import axios from 'axios';
 import { useSearchParams } from 'next/navigation';
 import { BACKEND_URL } from '@/lib/ivyApi';
+import { fileApi } from '@/lib/useBlobUrl';
 
 interface ActivityRecord {
   selectionId: string;
@@ -93,13 +94,8 @@ function ParentPointerActivitiesContent() {
 
   const downloadFile = async (url: string) => {
     try {
-      const response = await fetch(`${apiBase}${url}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
+      const response = await fileApi.get(url, { responseType: 'blob' });
+      const blobUrl = window.URL.createObjectURL(response.data);
       const link = document.createElement('a');
       link.href = blobUrl;
       const fileName = url.split('/').pop() || 'proof';
@@ -110,7 +106,6 @@ function ParentPointerActivitiesContent() {
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error('Download failed:', error);
-      window.open(`${apiBase}${url}`, '_blank');
     }
   };
 

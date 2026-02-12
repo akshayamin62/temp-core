@@ -3,7 +3,8 @@
 import { useState, useEffect, Suspense } from 'react';
 import axios from 'axios';
 import { useStudentService } from '../useStudentService';
-import { IVY_API_URL, BACKEND_URL } from '@/lib/ivyApi';
+import { IVY_API_URL } from '@/lib/ivyApi';
+import { fetchBlobUrl, useBlobUrl, fileApi } from '@/lib/useBlobUrl';
 
 interface Attachment {
     fileName: string;
@@ -135,25 +136,21 @@ function StudentPointer5Content() {
 
     const downloadFile = async (fileUrl: string, fileName: string) => {
         try {
-            const response = await fetch(`${BACKEND_URL}${fileUrl}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                },
-            });
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
+            const response = await fileApi.get(fileUrl, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(response.data);
             const link = document.createElement('a');
             link.href = url;
             link.setAttribute('download', fileName);
             document.body.appendChild(link);
             link.click();
             link.remove();
+            window.URL.revokeObjectURL(url);
         } catch (error) {
-            window.open(`${BACKEND_URL}${fileUrl}`, '_blank');
+            console.error('Download failed:', error);
         }
     };
 
-    const viewFile = (taskId: string, fileUrl: string, fileName: string) => {
+    const viewFile = async (taskId: string, fileUrl: string, fileName: string) => {
         const fileExtension = fileName.split('.').pop()?.toLowerCase();
         let fileType = 'other';
         
@@ -163,7 +160,12 @@ function StudentPointer5Content() {
             fileType = 'pdf';
         }
         
-        setViewingFile(prev => ({ ...prev, [taskId]: { url: `${BACKEND_URL}${fileUrl}`, name: fileName, type: fileType } }));
+        try {
+            const blobUrl = await fetchBlobUrl(fileUrl);
+            setViewingFile(prev => ({ ...prev, [taskId]: { url: blobUrl, name: fileName, type: fileType } }));
+        } catch {
+            console.error('Failed to load file for viewing');
+        }
     };
 
     const preventCopyPaste = (e: React.ClipboardEvent) => {
@@ -286,7 +288,7 @@ function StudentPointer5Content() {
                                                                     key={idx}
                                                                     onClick={() => viewFile(taskStatus.task._id, att.fileUrl, att.fileName)}
                                                                     className={`px-3 py-1 text-sm rounded-lg transition-all border ${
-                                                                        viewingFile[taskStatus.task._id]?.url === `${BACKEND_URL}${att.fileUrl}`
+                                                                        viewingFile[taskStatus.task._id]?.name === att.fileName
                                                                             ? 'bg-indigo-600 text-white border-indigo-600'
                                                                             : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-100'
                                                                     }`}

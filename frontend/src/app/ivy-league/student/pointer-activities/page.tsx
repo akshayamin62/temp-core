@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useSearchParams } from 'next/navigation';
 import ActivitySelector from '@/components/ActivitySelector';
 import { BACKEND_URL } from '@/lib/ivyApi';
+import { fileApi } from '@/lib/useBlobUrl';
 
 interface ActivityRecord {
   selectionId: string;
@@ -119,9 +120,8 @@ function StudentPointerActivitiesContent() {
 
   const downloadFile = async (url: string) => {
     try {
-      const response = await fetch(`${apiBase}${url}`);
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
+      const response = await fileApi.get(url, { responseType: 'blob' });
+      const blobUrl = window.URL.createObjectURL(response.data);
       const link = document.createElement('a');
       link.href = blobUrl;
       const fileName = url.split('/').pop() || 'proof';
@@ -132,7 +132,6 @@ function StudentPointerActivitiesContent() {
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error('Download failed:', error);
-      window.open(`${apiBase}${url}`, '_blank');
     }
   };
 

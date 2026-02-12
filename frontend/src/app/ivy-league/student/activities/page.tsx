@@ -8,10 +8,11 @@ import { useTaskNotifications } from '@/hooks/useTaskNotifications';
 import { NotificationBadge } from '@/components/NotificationBadge';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useStudentService } from '../useStudentService';
-import { IVY_API_URL, BACKEND_URL } from '@/lib/ivyApi';
+import { IVY_API_URL } from '@/lib/ivyApi';
+import { useBlobUrl, fetchBlobUrl, fileApi } from '@/lib/useBlobUrl';
 
 function InlineDocViewer({ url, onClose }: { url: string, onClose: () => void }) {
-  const fullUrl = `${BACKEND_URL}${url}`;
+  const { blobUrl, loading, error } = useBlobUrl(url);
   const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
 
   return (
@@ -27,10 +28,14 @@ function InlineDocViewer({ url, onClose }: { url: string, onClose: () => void })
         </button>
       </div>
       <div className="min-h-[500px] flex items-center justify-center bg-gray-800">
-        {isImage ? (
-          <img src={fullUrl} alt="Document" className="max-w-full max-h-[800px] object-contain" />
+        {error ? (
+          <p className="text-red-400 font-bold">Failed to load document</p>
+        ) : loading || !blobUrl ? (
+          <p className="text-gray-400 font-bold animate-pulse">Loading document...</p>
+        ) : isImage ? (
+          <img src={blobUrl} alt="Document" className="max-w-full max-h-[800px] object-contain" />
         ) : (
-          <iframe src={fullUrl} className="w-full h-[600px] border-none" title="Document Viewer" />
+          <iframe src={blobUrl} className="w-full h-[600px] border-none" title="Document Viewer" />
         )}
       </div>
     </div>
@@ -47,13 +52,8 @@ function WordDocViewer({ url }: { url: string }) {
     const loadDocument = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${BACKEND_URL}${url}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-        const arrayBuffer = await response.arrayBuffer();
-        const result = await mammoth.convertToHtml({ arrayBuffer });
+        const response = await fileApi.get(url, { responseType: 'arraybuffer' });
+        const result = await mammoth.convertToHtml({ arrayBuffer: response.data });
         setHtmlContent(result.value);
         setError(null);
       } catch (err) {
@@ -112,6 +112,14 @@ function WordDocViewer({ url }: { url: string }) {
   );
 }
 
+// Blob-based iframe/image viewer for cross-origin safe loading
+function BlobIframe({ url, className, title }: { url: string, className?: string, title?: string }) {
+  const { blobUrl, loading, error } = useBlobUrl(url);
+  if (error) return <div className="w-full h-64 flex items-center justify-center bg-gray-100 rounded"><p className="text-red-400 font-bold">Failed to load document</p></div>;
+  if (loading || !blobUrl) return <div className="w-full h-64 flex items-center justify-center bg-gray-100 rounded"><p className="text-gray-400 animate-pulse">Loading document...</p></div>;
+  return <iframe src={blobUrl} className={className} title={title} />;
+}
+
 // Conversation Window Component
 function ConversationWindow({ 
   activityTitle, 
@@ -155,11 +163,14 @@ function ConversationWindow({
     return 'document';
   };
 
-  const handleFileClick = (url: string, name: string) => {
+  const handleFileClick = async (url: string, name: string) => {
     const fileType = getFileType(name);
-    const fullUrl = `${BACKEND_URL}${url}`;
-    console.log('Opening file preview:', { url, fullUrl, name, type: fileType });
-    setPreviewFile({ url: fullUrl, name, type: fileType });
+    try {
+      const blobUrl = await fetchBlobUrl(url);
+      setPreviewFile({ url: blobUrl, name, type: fileType });
+    } catch {
+      console.error('Failed to load file preview');
+    }
   };
 
   // Fetch conversation messages from API with real-time polling
@@ -1264,24 +1275,10 @@ function ActivitiesContent() {
                             {isViewing && (
                               <div className="border-t border-indigo-100 p-3 bg-gray-50">
                                 {isPdf ? (
-                                  <iframe
-                                    src={`${BACKEND_URL}${doc.url}#toolbar=0&navpanes=0&scrollbar=0`}
+                                  <BlobIframe
+                                    url={doc.url}
                                     className="w-full h-96 border-none rounded"
                                     title={`Ivy Expert Document ${docIdx + 1}`}
-                                    onContextMenu={(e) => e.preventDefault()}
-                                    style={{ pointerEvents: 'none', userSelect: 'none' }}
-                                    onLoad={(e) => {
-                                      const iframe = e.target as HTMLIFrameElement;
-                                      try {
-                                        if (iframe.contentDocument) {
-                                          iframe.contentDocument.addEventListener('contextmenu', (e) => e.preventDefault());
-                                          iframe.contentDocument.body.style.userSelect = 'none';
-                                          iframe.contentDocument.body.style.webkitUserSelect = 'none';
-                                        }
-                                      } catch (err) {
-                                        // Cross-origin restriction
-                                      }
-                                    }}
                                   />
                                 ) : isWord ? (
                                   <WordDocViewer url={doc.url} />

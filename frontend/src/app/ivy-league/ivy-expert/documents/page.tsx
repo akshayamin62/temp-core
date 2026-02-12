@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ivyApi from '@/lib/ivyApi';
+import { fileApi } from '@/lib/useBlobUrl';
 
 interface Evaluation {
     score: number;
@@ -40,7 +41,7 @@ function InlineDocViewer({ url, onClose }: { url: string, onClose: () => void })
         let cancelled = false;
         const fetchDoc = async () => {
             try {
-                const res = await ivyApi.get(url, { responseType: 'blob' });
+                const res = await fileApi.get(url, { responseType: 'blob' });
                 if (!cancelled) {
                     const objectUrl = URL.createObjectURL(res.data);
                     setBlobUrl(objectUrl);

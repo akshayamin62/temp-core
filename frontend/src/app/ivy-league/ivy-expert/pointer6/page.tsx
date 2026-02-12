@@ -3,7 +3,8 @@
 import { useState, useEffect, Suspense } from 'react';
 import axios from 'axios';
 import { useSearchParams } from 'next/navigation';
-import { IVY_API_URL, BACKEND_URL } from '@/lib/ivyApi';
+import { IVY_API_URL } from '@/lib/ivyApi';
+import { fetchBlobUrl } from '@/lib/useBlobUrl';
 
 interface Course {
   _id: string;
@@ -572,7 +573,14 @@ function Pointer6Content() {
                                       </div>
                                     </div>
                                     <a
-                                      onClick={() => setCertificateModal({ isOpen: true, url: `${BACKEND_URL}${course.certificateFileUrl}` })}
+                                      onClick={async () => {
+                                        try {
+                                          const blobUrl = await fetchBlobUrl(course.certificateFileUrl);
+                                          setCertificateModal({ isOpen: true, url: blobUrl });
+                                        } catch {
+                                          console.error('Failed to load certificate');
+                                        }
+                                      }}
                                       className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
                                     >
                                       View Certificate

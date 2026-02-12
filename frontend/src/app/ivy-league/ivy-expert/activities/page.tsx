@@ -7,10 +7,11 @@ import mammoth from 'mammoth';
 import { useTaskNotifications } from '@/hooks/useTaskNotifications';
 import { NotificationBadge } from '@/components/NotificationBadge';
 import { useNotifications } from '@/contexts/NotificationContext';
-import { IVY_API_URL, BACKEND_URL } from '@/lib/ivyApi';
+import { IVY_API_URL } from '@/lib/ivyApi';
+import { useBlobUrl, fetchBlobUrl, fileApi } from '@/lib/useBlobUrl';
 
 function InlineDocViewer({ url, onClose }: { url: string, onClose: () => void }) {
-  const fullUrl = `${BACKEND_URL}${url}`;
+  const { blobUrl, loading: blobLoading, error: blobError } = useBlobUrl(url);
   const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
   const isWord = /\.(doc|docx)$/i.test(url);
   const [wordContent, setWordContent] = useState<string>('');
@@ -21,7 +22,7 @@ function InlineDocViewer({ url, onClose }: { url: string, onClose: () => void })
     if (isWord) {
       setIsLoading(true);
       setError('');
-      axios.get(fullUrl, { responseType: 'arraybuffer' })
+      fileApi.get(url, { responseType: 'arraybuffer' })
         .then(response => {
           return mammoth.convertToHtml({ arrayBuffer: response.data });
         })
@@ -35,7 +36,7 @@ function InlineDocViewer({ url, onClose }: { url: string, onClose: () => void })
           setIsLoading(false);
         });
     }
-  }, [fullUrl, isWord]);
+  }, [url, isWord]);
 
   useEffect(() => {
     // Prevent right-click context menu
@@ -90,7 +91,13 @@ function InlineDocViewer({ url, onClose }: { url: string, onClose: () => void })
       </div>
       <div className="min-h-[500px] flex items-center justify-center bg-gray-800">
         {isImage ? (
-          <img src={fullUrl} alt="Document" className="max-w-full max-h-[800px] object-contain" />
+          blobError ? (
+            <p className="text-red-400 font-bold">Failed to load document</p>
+          ) : blobLoading || !blobUrl ? (
+            <p className="text-gray-400 font-bold animate-pulse">Loading document...</p>
+          ) : (
+            <img src={blobUrl} alt="Document" className="max-w-full max-h-[800px] object-contain" />
+          )
         ) : isWord ? (
           <div className="w-full h-[600px] overflow-auto bg-white p-6">
             {isLoading ? (
@@ -124,7 +131,13 @@ function InlineDocViewer({ url, onClose }: { url: string, onClose: () => void })
             )}
           </div>
         ) : (
-          <iframe src={fullUrl} className="w-full h-[600px] border-none" title="Document Viewer" />
+          blobError ? (
+            <p className="text-red-400 font-bold">Failed to load document</p>
+          ) : blobLoading || !blobUrl ? (
+            <p className="text-gray-400 font-bold animate-pulse">Loading document...</p>
+          ) : (
+            <iframe src={blobUrl} className="w-full h-[600px] border-none" title="Document Viewer" />
+          )
         )}
       </div>
     </div>
@@ -181,11 +194,14 @@ function ConversationWindow({
     return 'document';
   };
 
-  const handleFileClick = (url: string, name: string) => {
+  const handleFileClick = async (url: string, name: string) => {
     const fileType = getFileType(name);
-    const fullUrl = `${BACKEND_URL}${url}`;
-    console.log('Opening file preview:', { url, fullUrl, name, type: fileType });
-    setPreviewFile({ url: fullUrl, name, type: fileType });
+    try {
+      const blobUrl = await fetchBlobUrl(url);
+      setPreviewFile({ url: blobUrl, name, type: fileType });
+    } catch {
+      console.error('Failed to load file preview');
+    }
   };
 
   const scrollToBottom = () => {

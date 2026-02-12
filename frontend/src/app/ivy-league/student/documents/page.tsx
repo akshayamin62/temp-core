@@ -2,9 +2,9 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import axios from 'axios';
-import Link from 'next/link';
 import { useStudentService } from '../useStudentService';
-import { IVY_API_URL, BACKEND_URL } from '@/lib/ivyApi';
+import { IVY_API_URL } from '@/lib/ivyApi';
+import { useBlobUrl } from '@/lib/useBlobUrl';
 
 interface AcademicDoc {
     _id: string;
@@ -26,7 +26,7 @@ const DOCUMENT_TYPES = [
 ];
 
 function InlineDocViewer({ url, onClose }: { url: string, onClose: () => void }) {
-    const fullUrl = `${BACKEND_URL}${url}`;
+    const { blobUrl, loading, error } = useBlobUrl(url);
     const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
 
     return (
@@ -42,10 +42,14 @@ function InlineDocViewer({ url, onClose }: { url: string, onClose: () => void })
                 </button>
             </div>
             <div className="min-h-[500px] flex items-center justify-center bg-gray-800">
-                {isImage ? (
-                    <img src={fullUrl} alt="Document" className="max-w-full max-h-[800px] object-contain" />
+                {error ? (
+                    <p className="text-red-400 font-bold">Failed to load document</p>
+                ) : loading || !blobUrl ? (
+                    <p className="text-gray-400 font-bold animate-pulse">Loading document...</p>
+                ) : isImage ? (
+                    <img src={blobUrl} alt="Document" className="max-w-full max-h-[800px] object-contain" />
                 ) : (
-                    <iframe src={fullUrl} className="w-full h-[600px] border-none" title="Document Viewer" />
+                    <iframe src={blobUrl} className="w-full h-[600px] border-none" title="Document Viewer" />
                 )}
             </div>
         </div>

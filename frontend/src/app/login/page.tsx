@@ -8,7 +8,7 @@ import toast, { Toaster } from 'react-hot-toast';
 
 // Generate random captcha
 const generateCaptcha = (length: number = 6): string => {
-  const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ2345689';
   let result = '';
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));

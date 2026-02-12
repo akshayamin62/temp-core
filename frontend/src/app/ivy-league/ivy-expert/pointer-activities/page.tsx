@@ -5,6 +5,15 @@ import axios from 'axios';
 import { useSearchParams } from 'next/navigation';
 import ActivitySelector from '@/components/ActivitySelector';
 import { BACKEND_URL } from '@/lib/ivyApi';
+import { fetchBlobUrl, useBlobUrl, fileApi } from '@/lib/useBlobUrl';
+
+function BlobDocPanel({ url, type }: { url: string; type: 'pdf' | 'image' }) {
+  const { blobUrl, loading, error } = useBlobUrl(url);
+  if (error) return <div className="flex items-center justify-center h-full min-h-[70vh]"><p className="text-red-400 font-bold">Failed to load document</p></div>;
+  if (loading || !blobUrl) return <div className="flex items-center justify-center h-full min-h-[70vh]"><p className="text-gray-400 animate-pulse">Loading document...</p></div>;
+  if (type === 'pdf') return <iframe src={blobUrl} className="w-full h-full min-h-[70vh] rounded-lg border-0 bg-white" title="Activity Document" style={{ pointerEvents: 'auto' }} />;
+  return <div className="flex items-center justify-center h-full"><img src={blobUrl} alt="Activity Document" className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg" onDragStart={(e) => e.preventDefault()} /></div>;
+}
 
 interface AgentSuggestion {
   _id: string;
@@ -323,9 +332,8 @@ function IvyExpertPointerActivitiesContent() {
 
   const downloadFile = async (url: string) => {
     try {
-      const response = await fetch(`${apiBase}${url}`);
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
+      const response = await fileApi.get(url, { responseType: 'blob' });
+      const blobUrl = window.URL.createObjectURL(response.data);
       const link = document.createElement('a');
       link.href = blobUrl;
       const fileName = url.split('/').pop() || 'proof';
@@ -336,7 +344,6 @@ function IvyExpertPointerActivitiesContent() {
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error('Download failed:', error);
-      window.open(`${apiBase}${url}`, '_blank');
     }
   };
 
@@ -795,21 +802,9 @@ function IvyExpertPointerActivitiesContent() {
               onContextMenu={(e) => e.preventDefault()}
             >
               {viewingDocument.url.toLowerCase().endsWith('.pdf') ? (
-                <iframe
-                  src={`${apiBase}${viewingDocument.url}#toolbar=0&navpanes=0&scrollbar=1`}
-                  className="w-full h-full min-h-[70vh] rounded-lg border-0 bg-white"
-                  title="Activity Document"
-                  style={{ pointerEvents: 'auto' }}
-                />
+                <BlobDocPanel url={viewingDocument.url} type="pdf" />
               ) : viewingDocument.url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                <div className="flex items-center justify-center h-full">
-                  <img
-                    src={`${apiBase}${viewingDocument.url}`}
-                    alt="Activity Document"
-                    className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
-                    onDragStart={(e) => e.preventDefault()}
-                  />
-                </div>
+                <BlobDocPanel url={viewingDocument.url} type="image" />
               ) : (
                 <div className="flex flex-col items-center justify-center h-full min-h-[70vh] text-gray-500">
                   <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

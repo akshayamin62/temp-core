@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { BACKEND_URL } from '@/lib/ivyApi';
+import { useBlobUrl } from '@/lib/useBlobUrl';
 
 interface DocumentViewerProps {
   documentUrl: string;
@@ -46,7 +46,7 @@ export default function DocumentViewer({
     };
   }, []);
 
-  const fullUrl = `${BACKEND_URL}${documentUrl}`;
+  const { blobUrl, loading, error } = useBlobUrl(documentUrl);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
@@ -74,18 +74,25 @@ export default function DocumentViewer({
             msUserSelect: "none",
           }}
         >
-          <iframe
-            src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(
-              fullUrl
-            )}`}
-            className="w-full h-full border-0"
-            style={{
-              pointerEvents: "auto",
-              userSelect: "none",
-            }}
-            sandbox="allow-scripts allow-same-origin"
-            title={documentName}
-          />
+          {error ? (
+            <div className="w-full h-full flex items-center justify-center">
+              <p className="text-red-500 font-bold">Failed to load document</p>
+            </div>
+          ) : loading || !blobUrl ? (
+            <div className="w-full h-full flex items-center justify-center">
+              <p className="text-gray-500 animate-pulse">Loading document...</p>
+            </div>
+          ) : (
+            <iframe
+              src={blobUrl}
+              className="w-full h-full border-0"
+              style={{
+                pointerEvents: "auto",
+                userSelect: "none",
+              }}
+              title={documentName}
+            />
+          )}
         </div>
 
         {/* Footer Warning */}

@@ -4,7 +4,8 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { ErrorHighlightedText } from '@/components/ErrorHighlightedText';
-import { IVY_API_URL, BACKEND_URL } from '@/lib/ivyApi';
+import { IVY_API_URL } from '@/lib/ivyApi';
+import { fileApi } from '@/lib/useBlobUrl';
 
 interface Attachment {
     fileName: string;
@@ -191,21 +192,17 @@ function IvyExpertPointer5Content() {
 
     const downloadFile = async (fileUrl: string, fileName: string) => {
         try {
-            const response = await fetch(`${BACKEND_URL}${fileUrl}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                },
-            });
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
+            const response = await fileApi.get(fileUrl, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(response.data);
             const link = document.createElement('a');
             link.href = url;
             link.setAttribute('download', fileName);
             document.body.appendChild(link);
             link.click();
             link.remove();
+            window.URL.revokeObjectURL(url);
         } catch (error) {
-            window.open(`${BACKEND_URL}${fileUrl}`, '_blank');
+            console.error('Download failed:', error);
         }
     };
 
