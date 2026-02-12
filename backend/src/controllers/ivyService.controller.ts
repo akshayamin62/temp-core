@@ -78,6 +78,36 @@ export const getStudentsForIvyExpertHandler = async (req: Request, res: Response
   }
 };
 
+/**
+ * Super Admin: Get students for an ivy expert by User._id.
+ * Resolves User._id → IvyExpert._id → students.
+ */
+export const getStudentsForIvyExpertByUserIdHandler = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      res.status(400).json({ success: false, message: 'userId is required' });
+      return;
+    }
+
+    // Resolve User._id to IvyExpert._id
+    const ivyExpertId = await resolveIvyExpertId(userId);
+    const students = await getStudentsForIvyExpert(ivyExpertId);
+
+    res.status(200).json({
+      success: true,
+      data: students,
+      ivyExpertId,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Failed to fetch students',
+    });
+  }
+};
+
 export const updateInterestHandler = async (req: Request, res: Response): Promise<void> => {
   try {
     const { serviceId } = req.params;

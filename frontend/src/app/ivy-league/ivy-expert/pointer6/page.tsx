@@ -218,6 +218,20 @@ function Pointer6Content() {
     const course = courses.find(c => c._id === courseId);
     if (!course) return;
 
+    // Check if there's another selected course without certificate
+    const selectedWithoutCertificate = courses.find(c => 
+      c.selected && c._id !== courseId && !c.certificateFileUrl
+    );
+
+    if (selectedWithoutCertificate && !course.selected) {
+      setMessage({ 
+        type: 'error', 
+        text: `Please complete the selected course "${selectedWithoutCertificate.courseName}" first by uploading a certificate.` 
+      });
+      setTimeout(() => setMessage(null), 5000);
+      return;
+    }
+
     if (course.selected) {
       // Unselect
       try {

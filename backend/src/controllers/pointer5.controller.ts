@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { resolveIvyExpertId } from '../utils/resolveRole';
+import { USER_ROLE } from '../types/roles';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -37,9 +38,14 @@ export const uploadAttachmentsMiddleware = multer({
 // Create Task
 export const createTaskHandler = async (req: Request, res: Response): Promise<any> => {
     try {
-        const { studentIvyServiceId, taskDescription, wordLimit } = req.body;
+        const { studentIvyServiceId, taskDescription, wordLimit, ivyExpertId: bodyIvyExpertId } = req.body;
         const authReq = req as AuthRequest;
-        const ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+        let ivyExpertId: string;
+        if (authReq.user!.role === USER_ROLE.SUPER_ADMIN) {
+            ivyExpertId = bodyIvyExpertId || authReq.user!.userId;
+        } else {
+            ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+        }
 
         if (!studentIvyServiceId || !taskDescription) {
             res.status(400).json({
@@ -212,9 +218,14 @@ export const submitResponseHandler = async (req: Request, res: Response): Promis
 // Evaluate Submission
 export const evaluateSubmissionHandler = async (req: Request, res: Response): Promise<any> => {
     try {
-        const { submissionId, taskId, studentIvyServiceId, score, feedback } = req.body;
+        const { submissionId, taskId, studentIvyServiceId, score, feedback, ivyExpertId: bodyIvyExpertId } = req.body;
         const authReq = req as AuthRequest;
-        const ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+        let ivyExpertId: string;
+        if (authReq.user!.role === USER_ROLE.SUPER_ADMIN) {
+            ivyExpertId = bodyIvyExpertId || authReq.user!.userId;
+        } else {
+            ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+        }
 
         if (!submissionId || !taskId || !studentIvyServiceId || score === undefined) {
             res.status(400).json({

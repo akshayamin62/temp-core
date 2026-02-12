@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { resolveIvyExpertId, resolveStudentId } from '../utils/resolveRole';
+import { USER_ROLE } from '../types/roles';
 import {
   selectActivities,
   getStudentActivities,
@@ -26,9 +27,14 @@ const upload = multer({
  */
 export const selectActivitiesHandler = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { studentIvyServiceId, agentSuggestionIds, pointerNo, weightages } = req.body;
+    const { studentIvyServiceId, agentSuggestionIds, pointerNo, weightages, ivyExpertId: bodyIvyExpertId } = req.body;
     const authReq = req as AuthRequest;
-    const ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    let ivyExpertId: string;
+    if (authReq.user!.role === USER_ROLE.SUPER_ADMIN) {
+      ivyExpertId = bodyIvyExpertId || authReq.user!.userId;
+    } else {
+      ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    }
 
     if (!studentIvyServiceId) {
       res.status(400).json({
@@ -176,9 +182,14 @@ export const uploadProofHandler = async (req: Request, res: Response): Promise<v
  */
 export const evaluateActivityHandler = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { studentSubmissionId, score, feedback } = req.body;
+    const { studentSubmissionId, score, feedback, ivyExpertId: bodyIvyExpertId } = req.body;
     const authReq = req as AuthRequest;
-    const ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    let ivyExpertId: string;
+    if (authReq.user!.role === USER_ROLE.SUPER_ADMIN) {
+      ivyExpertId = bodyIvyExpertId || authReq.user!.userId;
+    } else {
+      ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    }
 
     if (!studentSubmissionId) {
       res.status(400).json({
@@ -222,9 +233,14 @@ export const evaluateActivityHandler = async (req: Request, res: Response): Prom
  */
 export const updateWeightagesHandler = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { studentIvyServiceId, weightages, pointerNo } = req.body;
+    const { studentIvyServiceId, weightages, pointerNo, ivyExpertId: bodyIvyExpertId } = req.body;
     const authReq = req as AuthRequest;
-    const ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    let ivyExpertId: string;
+    if (authReq.user!.role === USER_ROLE.SUPER_ADMIN) {
+      ivyExpertId = bodyIvyExpertId || authReq.user!.userId;
+    } else {
+      ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    }
 
     if (!studentIvyServiceId) {
       res.status(400).json({

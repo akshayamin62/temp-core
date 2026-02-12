@@ -175,6 +175,7 @@ function ConversationWindow({
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState<{ url: string; name: string; type: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesLengthRef = useRef(0);
 
   const getFileType = (filename: string): string => {
@@ -196,7 +197,9 @@ function ConversationWindow({
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   };
 
   // Fetch conversation messages from API with real-time polling
@@ -331,7 +334,7 @@ function ConversationWindow({
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-gray-50">
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-gray-50">
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <p className="text-gray-500">Loading conversation...</p>
