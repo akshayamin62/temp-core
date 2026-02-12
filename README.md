@@ -1,8 +1,16 @@
 # 🎓 Kareer Studio - Integrated Platform
 
-![Banner](./public/banner.png)
-
 > A comprehensive student services management platform that handles Study Abroad applications, Ivy League preparation, Education Planning, and more - with role-based access for Students, Parents, OPS staff, Counselors, Admins, Super Admins, and Ivy Experts.
+
+---
+
+## 📸 Banner
+
+To add a banner image, place a `.png` file at `public/banner.png` (1920x400px recommended), and uncomment the line below:
+
+```markdown
+![Kareer Studio Banner](public/banner.png)
+```
 
 ---
 
