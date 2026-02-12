@@ -6,7 +6,7 @@ export const IVY_API_URL = `${API_URL}/ivy`;
 
 // Backend base URL for static file serving (uploads, documents)
 export const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL
-  ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '')
+  ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, '')
   : 'http://localhost:5000';
 
 const ivyApi = axios.create({
