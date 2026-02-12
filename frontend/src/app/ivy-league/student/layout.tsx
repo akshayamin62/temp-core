@@ -2,43 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect } from 'react';
-import { NotificationProvider, useNotifications } from '@/contexts/NotificationContext';
-import { NotificationBadge } from '@/components/NotificationBadge';
-import { useStudentService } from './useStudentService';
+import { Suspense } from 'react';
 
 function StudentSidebar() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const { unreadCounts, markPointerAsRead, setUserId } = useNotifications();
-    const { studentId } = useStudentService();
-
     // Check if conversation is open (when a task is selected)
     const isConversationOpen = searchParams.get('conversationOpen') === 'true';
-
-    // Set user ID for notifications on mount
-    useEffect(() => {
-        if (studentId) setUserId(studentId);
-    }, [studentId, setUserId]);
-
-    // Map pointer numbers to nav items
-    const getPointerNumber = (href: string): number | null => {
-        if (href.includes('/pointer1')) return 1;
-        if (href.includes('pointerNo=2')) return 2;
-        if (href.includes('pointerNo=3')) return 3;
-        if (href.includes('pointerNo=4')) return 4;
-        if (href.includes('/pointer5')) return 5;
-        if (href.includes('/pointer6')) return 6;
-        return null;
-    };
-
-    // Mark as read when navigating to a pointer
-    const handleNavClick = (href: string) => {
-        const pointerNumber = getPointerNumber(href);
-        if (pointerNumber && unreadCounts.byPointer[pointerNumber] > 0) {
-            markPointerAsRead(pointerNumber);
-        }
-    };
 
     const navItems = [
         {
@@ -129,14 +99,11 @@ function StudentSidebar() {
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
                 {navItems.map((item) => {
                     const active = isActive(item.href);
-                    const pointerNumber = getPointerNumber(item.href);
-                    const badgeCount = pointerNumber ? (unreadCounts.byPointer[pointerNumber] || 0) : 0;
                     
                     return (
                         <Link
                             key={item.href}
                             href={item.href}
-                            onClick={() => handleNavClick(item.href)}
                             title={isConversationOpen ? item.name : undefined}
                             className={`flex items-center gap-4 rounded-2xl transition-all font-bold text-sm tracking-tight group relative ${
                                 isConversationOpen ? 'px-3 py-3 justify-center' : 'px-5 py-4'
@@ -149,11 +116,6 @@ function StudentSidebar() {
                                 {item.icon}
                             </span>
                             {!isConversationOpen && <span className="uppercase tracking-wide">{item.name}</span>}
-                            {badgeCount > 0 && (
-                                <div className={`${isConversationOpen ? 'absolute -top-1 -right-1' : 'ml-auto'}`}>
-                                    <NotificationBadge count={badgeCount} size="sm" />
-                                </div>
-                            )}
                         </Link>
                     );
                 })}
@@ -177,15 +139,13 @@ function StudentSidebar() {
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
     return (
-        <NotificationProvider>
-            <div className="flex bg-[#FBFBFE] min-h-screen">
-                <Suspense fallback={<div className="w-72 bg-white border-r animate-pulse"></div>}>
-                    <StudentSidebar />
-                </Suspense>
-                <main className="flex-1 min-h-screen overflow-x-hidden">
-                    {children}
-                </main>
-            </div>
-        </NotificationProvider>
+        <div className="flex bg-[#FBFBFE] min-h-screen">
+            <Suspense fallback={<div className="w-72 bg-white border-r animate-pulse"></div>}>
+                <StudentSidebar />
+            </Suspense>
+            <main className="flex-1 min-h-screen overflow-x-hidden">
+                {children}
+            </main>
+        </div>
     );
 }

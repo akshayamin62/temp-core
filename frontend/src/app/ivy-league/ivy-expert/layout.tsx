@@ -2,17 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect } from 'react';
-import { NotificationProvider, useNotifications } from '@/contexts/NotificationContext';
-import { NotificationBadge } from '@/components/NotificationBadge';
+import { Suspense } from 'react';
 
 
 
 function IvyExpertSidebar() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const { unreadCounts, markPointerAsRead, setUserId } = useNotifications();
-
     // Check if conversation is open (when a task is selected)
     const isConversationOpen = searchParams.get('conversationOpen') === 'true';
 
@@ -23,30 +19,6 @@ function IvyExpertSidebar() {
     const queryString = studentId 
         ? `?studentId=${studentId}&studentIvyServiceId=${studentIvyServiceId}&ivyExpertId=${ivyExpertId}` 
         : ivyExpertId ? `?ivyExpertId=${ivyExpertId}` : '';
-
-    // Set user ID on mount
-    useEffect(() => {
-        if (ivyExpertId) setUserId(ivyExpertId);
-    }, [ivyExpertId, setUserId]);
-
-    // Map pointer numbers to nav items
-    const getPointerNumber = (href: string): number | null => {
-        if (href.includes('/pointer1')) return 1;
-        if (href.includes('pointerNo=2')) return 2;
-        if (href.includes('pointerNo=3')) return 3;
-        if (href.includes('pointerNo=4')) return 4;
-        if (href.includes('/pointer5')) return 5;
-        if (href.includes('/pointer6')) return 6;
-        return null;
-    };
-
-    // Mark as read when navigating to a pointer
-    const handleNavClick = (href: string) => {
-        const pointerNumber = getPointerNumber(href);
-        if (pointerNumber && unreadCounts.byPointer[pointerNumber] > 0) {
-            markPointerAsRead(pointerNumber);
-        }
-    };
 
     const navItems = [
         {
@@ -146,8 +118,6 @@ function IvyExpertSidebar() {
                 {visibleNavItems.map((item) => {
                     const active = isActive(item.href);
                     const isDisabled = item.requiresStudent && !studentId;
-                    const pointerNumber = getPointerNumber(item.href);
-                    const badgeCount = pointerNumber ? (unreadCounts.byPointer[pointerNumber] || 0) : 0;
                     
                     return (
                         <Link
@@ -156,8 +126,6 @@ function IvyExpertSidebar() {
                             onClick={(e) => {
                                 if (isDisabled) {
                                     e.preventDefault();
-                                } else {
-                                    handleNavClick(item.href);
                                 }
                             }}
                             title={isConversationOpen ? item.name : undefined}
@@ -175,11 +143,6 @@ function IvyExpertSidebar() {
                                 {item.icon}
                             </span>
                             {!isConversationOpen && <span className="uppercase tracking-wide">{item.name}</span>}
-                            {badgeCount > 0 && !isDisabled && (
-                                <div className={`${isConversationOpen ? 'absolute -top-1 -right-1' : 'ml-auto'}`}>
-                                    <NotificationBadge count={badgeCount} size="sm" />
-                                </div>
-                            )}
                         </Link>
                     );
                 })}
@@ -226,12 +189,10 @@ function IvyExpertLayoutContent({ children }: { children: React.ReactNode }) {
 
 export default function IvyExpertLayout({ children }: { children: React.ReactNode }) {
     return (
-        <NotificationProvider>
-            <Suspense fallback={<div className="min-h-screen bg-[#FBFBFE] flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-            </div>}>
-                <IvyExpertLayoutContent>{children}</IvyExpertLayoutContent>
-            </Suspense>
-        </NotificationProvider>
+        <Suspense fallback={<div className="min-h-screen bg-[#FBFBFE] flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        </div>}>
+            <IvyExpertLayoutContent>{children}</IvyExpertLayoutContent>
+        </Suspense>
     );
 }
