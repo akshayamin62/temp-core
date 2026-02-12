@@ -583,12 +583,12 @@ export default function AdminLeadsPage() {
                                 >
                                   {approving === lead._id ? 'Approving...' : 'Approve'}
                                 </button>
-                                <button
+                                {/* <button
                                   onClick={() => openRejectModal(lead._id)}
                                   className="px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
                                 >
                                   Reject
-                                </button>
+                                </button> */}
                               </>
                             )}
                           </div>
