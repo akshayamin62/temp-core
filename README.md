@@ -1,5 +1,7 @@
 # 🎓 Kareer Studio - Integrated Platform
 
+![Kareer Studio Banner](frontend/public/banner.png)
+
 > A comprehensive student services management platform that handles Study Abroad applications, Ivy League preparation, Education Planning, and more - with role-based access for Students, Parents, OPS staff, Counselors, Admins, Super Admins, and Ivy Experts.
 
 ---
