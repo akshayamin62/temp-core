@@ -12,6 +12,6 @@ router.get('/my-score', authorize(USER_ROLE.STUDENT), getMyIvyScore);
 router.get('/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), getStudentIvyScore);
 
 // POST /api/ivy/ivy-score/recalculate/:studentId - Manually recalculate score
-router.post('/recalculate/:studentId', authorize(USER_ROLE.IVY_EXPERT), recalculateIvyScore);
+router.post('/recalculate/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), recalculateIvyScore);
 
 export default router;

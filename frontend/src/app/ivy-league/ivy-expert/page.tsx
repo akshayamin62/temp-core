@@ -97,6 +97,13 @@ function IvyExpertDashboard() {
     // ivyExpertId is no longer needed — backend resolves it from JWT
 
     useEffect(() => {
+        // If studentId is already provided (e.g. super admin navigating from view details),
+        // skip fetching the student list since /my-students requires IVY_EXPERT role
+        if (selectedStudentId) {
+            setLoading(false);
+            return;
+        }
+
         const fetchStudents = async () => {
             try {
                 setLoading(true);
@@ -113,7 +120,7 @@ function IvyExpertDashboard() {
         };
 
         fetchStudents();
-    }, []);
+    }, [selectedStudentId]);
 
     useEffect(() => {
         if (selectedStudentId && studentIvyServiceId) {

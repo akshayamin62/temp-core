@@ -139,11 +139,14 @@ function ConversationWindow({
   const [loading, setLoading] = useState(true);
   const [messageType, setMessageType] = useState<'normal' | 'advice' | 'resource'>('normal');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [previewFile, setPreviewFile] = useState<{ url: string; name: string; type: string } | null>(null);
   const messagesLengthRef = useRef(0);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   };
 
   const getFileType = (filename: string): string => {
@@ -299,7 +302,7 @@ function ConversationWindow({
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-gray-50">
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-gray-50">
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <p className="text-gray-500">Loading conversation...</p>

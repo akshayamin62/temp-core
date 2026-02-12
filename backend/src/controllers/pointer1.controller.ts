@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { resolveIvyExpertId } from '../utils/resolveRole';
+import { USER_ROLE } from '../types/roles';
 import multer from 'multer';
 import {
     uploadAcademicDocument,
@@ -71,8 +72,14 @@ export const uploadAcademicDocumentHandler = async (req: Request, res: Response)
 
 export const evaluateAcademicHandler = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { studentIvyServiceId, academicDocumentId, score, feedback } = req.body;
-        const ivyExpertId = await resolveIvyExpertId((req as AuthRequest).user!.userId);
+        const { studentIvyServiceId, academicDocumentId, score, feedback, ivyExpertId: bodyIvyExpertId } = req.body;
+        const authUser = (req as AuthRequest).user!;
+        let ivyExpertId: string;
+        if (authUser.role === USER_ROLE.SUPER_ADMIN) {
+            ivyExpertId = bodyIvyExpertId || authUser.userId;
+        } else {
+            ivyExpertId = await resolveIvyExpertId(authUser.userId);
+        }
 
         if (!studentIvyServiceId || !academicDocumentId || score === undefined) {
             res.status(400).json({ success: false, message: 'Required fields missing' });

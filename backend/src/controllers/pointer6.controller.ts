@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { resolveIvyExpertId, resolveStudentId } from '../utils/resolveRole';
+import { USER_ROLE } from '../types/roles';
 import multer from 'multer';
 import {
   uploadCourseList,
@@ -40,15 +41,25 @@ export const uploadCourseListHandler = async (req: Request, res: Response): Prom
       return;
     }
 
-    const { studentIvyServiceId } = req.body;
-    const ivyExpertId = await resolveIvyExpertId((req as AuthRequest).user!.userId);
+    const { studentIvyServiceId, ivyExpertId: bodyIvyExpertId } = req.body;
+    const authUser = (req as AuthRequest).user!;
+    let ivyExpertId: string;
+    if (authUser.role === USER_ROLE.SUPER_ADMIN) {
+      if (!bodyIvyExpertId) {
+        res.status(400).json({ success: false, message: 'ivyExpertId is required for super admin' });
+        return;
+      }
+      ivyExpertId = bodyIvyExpertId;
+    } else {
+      ivyExpertId = await resolveIvyExpertId(authUser.userId) as string;
+    }
 
     if (!studentIvyServiceId) {
       res.status(400).json({ success: false, message: 'studentIvyServiceId is required' });
       return;
     }
 
-    const courseList = await uploadCourseList(studentIvyServiceId, ivyExpertId as string, req.file);
+    const courseList = await uploadCourseList(studentIvyServiceId, ivyExpertId, req.file);
 
     res.status(200).json({
       success: true,
@@ -114,8 +125,14 @@ export const uploadCertificatesHandler = async (req: Request, res: Response): Pr
 /** POST /pointer6/evaluate (Ivy Expert only) */
 export const evaluatePointer6Handler = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { studentIvyServiceId, score, feedback } = req.body;
-    const ivyExpertId = await resolveIvyExpertId((req as AuthRequest).user!.userId);
+    const { studentIvyServiceId, score, feedback, ivyExpertId: bodyIvyExpertId } = req.body;
+    const authUser = (req as AuthRequest).user!;
+    let ivyExpertId: string;
+    if (authUser.role === USER_ROLE.SUPER_ADMIN) {
+      ivyExpertId = bodyIvyExpertId || authUser.userId;
+    } else {
+      ivyExpertId = await resolveIvyExpertId(authUser.userId) as string;
+    }
 
     if (!studentIvyServiceId) {
       res.status(400).json({ success: false, message: 'studentIvyServiceId is required' });
@@ -256,8 +273,14 @@ export const deleteCertificateHandler = async (req: Request, res: Response): Pro
 export const evaluateCertificateHandler = async (req: Request, res: Response): Promise<void> => {
   try {
     const { certificateId } = req.params;
-    const { score, feedback } = req.body;
-    const ivyExpertId = await resolveIvyExpertId((req as AuthRequest).user!.userId);
+    const { score, feedback, ivyExpertId: bodyIvyExpertId } = req.body;
+    const authUser = (req as AuthRequest).user!;
+    let ivyExpertId: string;
+    if (authUser.role === USER_ROLE.SUPER_ADMIN) {
+      ivyExpertId = bodyIvyExpertId || authUser.userId;
+    } else {
+      ivyExpertId = await resolveIvyExpertId(authUser.userId) as string;
+    }
 
     if (!certificateId) {
       res.status(400).json({ success: false, message: 'certificateId is required' });
@@ -339,7 +362,14 @@ export const getPointer6ScoreHandler = async (req: Request, res: Response): Prom
 export const selectCourseHandler = async (req: Request, res: Response): Promise<void> => {
   try {
     const { studentIvyServiceId, courseId, startDate, endDate } = req.body;
-    const studentId = await resolveStudentId((req as AuthRequest).user!.userId);
+    const authUser = (req as AuthRequest).user!;
+    let userId: string;
+    if (authUser.role === USER_ROLE.STUDENT) {
+      userId = await resolveStudentId(authUser.userId);
+    } else {
+      // IVY_EXPERT or SUPER_ADMIN — pass their userId directly
+      userId = authUser.userId;
+    }
 
     if (!studentIvyServiceId || !courseId || !startDate || !endDate) {
       res.status(400).json({ 
@@ -354,7 +384,7 @@ export const selectCourseHandler = async (req: Request, res: Response): Promise<
       courseId,
       new Date(startDate),
       new Date(endDate),
-      studentId
+      userId
     );
 
     res.status(200).json({
@@ -444,8 +474,14 @@ export const uploadCourseCertificateHandler = async (req: Request, res: Response
 /** POST /pointer6/score-course-certificate - Score a course certificate (Ivy Expert) */
 export const scoreCourseCertificateHandler = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { studentIvyServiceId, courseId, score } = req.body;
-    const ivyExpertId = await resolveIvyExpertId((req as AuthRequest).user!.userId);
+    const { studentIvyServiceId, courseId, score, ivyExpertId: bodyIvyExpertId } = req.body;
+    const authUser = (req as AuthRequest).user!;
+    let ivyExpertId: string;
+    if (authUser.role === USER_ROLE.SUPER_ADMIN) {
+      ivyExpertId = bodyIvyExpertId || authUser.userId;
+    } else {
+      ivyExpertId = await resolveIvyExpertId(authUser.userId) as string;
+    }
 
     if (!studentIvyServiceId || !courseId || score === undefined) {
       res.status(400).json({ 

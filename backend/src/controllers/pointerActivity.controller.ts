@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { resolveIvyExpertId, resolveStudentId } from '../utils/resolveRole';
+import { USER_ROLE } from '../types/roles';
 import multer from 'multer';
 import {
   selectActivities,
@@ -27,10 +28,15 @@ export const ivyExpertDocsMiddleware = upload.array('ivyExpertDocs', 5);
 
 export const selectActivitiesHandler = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { studentIvyServiceId, pointerNo, agentSuggestionIds, isVisibleToStudent, weightages, deadlines } =
+    const { studentIvyServiceId, pointerNo, agentSuggestionIds, isVisibleToStudent, weightages, deadlines, ivyExpertId: bodyIvyExpertId } =
       req.body;
     const authReq = req as AuthRequest;
-    const ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    let ivyExpertId: string;
+    if (authReq.user!.role === USER_ROLE.SUPER_ADMIN) {
+      ivyExpertId = bodyIvyExpertId || authReq.user!.userId;
+    } else {
+      ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    }
 
     if (!studentIvyServiceId) {
       res.status(400).json({ success: false, message: 'studentIvyServiceId is required' });
@@ -155,9 +161,14 @@ export const uploadProofHandler = async (req: Request, res: Response): Promise<v
 
 export const evaluateActivityHandler = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { studentSubmissionId, score, feedback } = req.body;
+    const { studentSubmissionId, score, feedback, ivyExpertId: bodyIvyExpertId } = req.body;
     const authReq = req as AuthRequest;
-    const ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    let ivyExpertId: string;
+    if (authReq.user!.role === USER_ROLE.SUPER_ADMIN) {
+      ivyExpertId = bodyIvyExpertId || authReq.user!.userId;
+    } else {
+      ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    }
 
     if (!studentSubmissionId) {
       res.status(400).json({ success: false, message: 'studentSubmissionId is required' });
@@ -200,9 +211,14 @@ export const uploadIvyExpertDocumentsHandler = async (req: Request, res: Respons
       return;
     }
 
-    const { selectionId } = req.body;
+    const { selectionId, ivyExpertId: bodyIvyExpertId } = req.body;
     const authReq = req as AuthRequest;
-    const ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    let ivyExpertId: string;
+    if (authReq.user!.role === USER_ROLE.SUPER_ADMIN) {
+      ivyExpertId = bodyIvyExpertId || authReq.user!.userId;
+    } else {
+      ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    }
 
     if (!selectionId) {
       res.status(400).json({ success: false, message: 'selectionId is required' });
@@ -229,9 +245,14 @@ export const uploadIvyExpertDocumentsHandler = async (req: Request, res: Respons
 
 export const updateDocumentTaskStatusHandler = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { selectionId, documentUrl, taskIndex, status } = req.body;
+    const { selectionId, documentUrl, taskIndex, status, ivyExpertId: bodyIvyExpertId } = req.body;
     const authReq = req as AuthRequest;
-    const ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    let ivyExpertId: string;
+    if (authReq.user!.role === USER_ROLE.SUPER_ADMIN) {
+      ivyExpertId = bodyIvyExpertId || authReq.user!.userId;
+    } else {
+      ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    }
 
     if (!selectionId) {
       res.status(400).json({ success: false, message: 'selectionId is required' });
@@ -276,9 +297,14 @@ export const updateDocumentTaskStatusHandler = async (req: Request, res: Respons
 
 export const updateWeightagesHandler = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { studentIvyServiceId, weightages, pointerNo } = req.body;
+    const { studentIvyServiceId, weightages, pointerNo, ivyExpertId: bodyIvyExpertId } = req.body;
     const authReq = req as AuthRequest;
-    const ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    let ivyExpertId: string;
+    if (authReq.user!.role === USER_ROLE.SUPER_ADMIN) {
+      ivyExpertId = bodyIvyExpertId || authReq.user!.userId;
+    } else {
+      ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    }
 
     if (!studentIvyServiceId) {
       res.status(400).json({
@@ -359,9 +385,14 @@ export const getPointerActivityScoreHandler = async (req: Request, res: Response
 
 export const setDeadlineHandler = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { selectionId, deadline } = req.body;
+    const { selectionId, deadline, ivyExpertId: bodyIvyExpertId } = req.body;
     const authReq = req as AuthRequest;
-    const ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    let ivyExpertId: string;
+    if (authReq.user!.role === USER_ROLE.SUPER_ADMIN) {
+      ivyExpertId = bodyIvyExpertId || authReq.user!.userId;
+    } else {
+      ivyExpertId = await resolveIvyExpertId(authReq.user!.userId);
+    }
 
     if (!selectionId) {
       res.status(400).json({ success: false, message: 'selectionId is required' });

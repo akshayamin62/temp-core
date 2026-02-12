@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createIvyService, getMyStudentsHandler, getMyServiceHandler, getStudentsForIvyExpertHandler, getServiceDetailsHandler, getServiceByStudentIdHandler, updateInterestHandler } from '../controllers/ivyService.controller';
+import { createIvyService, getMyStudentsHandler, getMyServiceHandler, getStudentsForIvyExpertHandler, getServiceDetailsHandler, getServiceByStudentIdHandler, updateInterestHandler, getStudentsForIvyExpertByUserIdHandler } from '../controllers/ivyService.controller';
 import { authorize } from '../middleware/authorize';
 import { USER_ROLE } from '../types/roles';
 
@@ -13,6 +13,9 @@ router.get('/my-students', authorize(USER_ROLE.IVY_EXPERT), getMyStudentsHandler
 
 // GET /api/ivy/ivy-service/my-service - Auth-based: get logged-in student's ivy service
 router.get('/my-service', authorize(USER_ROLE.STUDENT), getMyServiceHandler);
+
+// GET /api/ivy/ivy-service/user/:userId/students - Super Admin: get students by ivy expert's User._id
+router.get('/user/:userId/students', authorize(USER_ROLE.SUPER_ADMIN), getStudentsForIvyExpertByUserIdHandler);
 
 // GET /api/ivy/ivy-service/ivy-expert/:ivyExpertId/students (legacy, param-based)
 router.get('/ivy-expert/:ivyExpertId/students', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), getStudentsForIvyExpertHandler);
