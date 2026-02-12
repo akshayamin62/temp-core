@@ -124,7 +124,8 @@ function ConversationWindow({
   activityId,
   studentIvyServiceId,
   onClose,
-  studentId
+  studentId,
+  readOnly = false
 }: { 
   activityTitle: string; 
   task: DocumentTask; 
@@ -132,6 +133,7 @@ function ConversationWindow({
   studentIvyServiceId: string;
   onClose: () => void;
   studentId: string;
+  readOnly?: boolean;
 }) {
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -487,6 +489,7 @@ function ConversationWindow({
         </div>
 
         {/* Input Area */}
+        {!readOnly && (
         <div className="px-6 py-4 border-t border-gray-200 flex-shrink-0 bg-white">
           {/* Message Type Tabs */}
           <div className="flex items-center gap-2 mb-3">
@@ -617,6 +620,7 @@ function ConversationWindow({
             </button>
           </div>
         </div>
+        )}
       </div>
 
       {/* File Preview Modal */}
@@ -715,7 +719,7 @@ interface StudentActivity {
 function ActivitiesContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { studentId, studentIvyServiceId, loading: serviceLoading, error: serviceError } = useStudentService();
+  const { studentId, studentIvyServiceId, loading: serviceLoading, error: serviceError, readOnly } = useStudentService();
 
   const [activities, setActivities] = useState<StudentActivity[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -980,6 +984,18 @@ function ActivitiesContent() {
       {/* Tasks List Section */}
       <div className={`transition-all duration-300 ${selectedTask ? 'w-[35%]' : 'w-full'} overflow-y-auto`}>
         <div className="py-12 px-4 sm:px-6 lg:px-8">
+      {/* Read-Only Banner */}
+      {readOnly && (
+        <div className="max-w-5xl mx-auto mb-4">
+          <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 flex items-center gap-3">
+            <svg className="w-6 h-6 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            <span className="text-sm font-bold text-amber-800 uppercase tracking-wide">Read-Only View — Super Admin</span>
+          </div>
+        </div>
+      )}
       <div className="max-w-5xl mx-auto bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.02)] border border-gray-100 p-10 mt-6">
         <div className="mb-10 pb-6 border-b border-gray-100 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
@@ -1308,6 +1324,7 @@ function ActivitiesContent() {
                     </div>
                     
                     {/* Add More Files Button */}
+                    {!readOnly && (
                     <button
                       onClick={() => {
                         const input = document.createElement('input');
@@ -1327,8 +1344,9 @@ function ActivitiesContent() {
                       </svg>
                       {uploadingProof === activity.selectionId ? 'Uploading...' : 'Add More Files'}
                     </button>
+                    )}
                   </div>
-                ) : areAllTasksCompleted(activity) ? (
+                ) : !readOnly && areAllTasksCompleted(activity) ? (
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Upload Proof (PDF, Images, Word Documents)
@@ -1345,7 +1363,7 @@ function ActivitiesContent() {
                       <p className="text-xs text-gray-500 mt-2">Uploading...</p>
                     )}
                   </div>
-                ) : (
+                ) : !readOnly ? (
                   <div className="mb-4 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
                     <div className="flex items-start gap-3">
                       <svg className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1359,7 +1377,7 @@ function ActivitiesContent() {
                       </div>
                     </div>
                   </div>
-                )}
+                ) : null}
 
                 {/* Evaluation Score */}
                 {activity.evaluated && (
@@ -1396,6 +1414,7 @@ function ActivitiesContent() {
             studentIvyServiceId={studentIvyServiceId!}
             onClose={handleCloseConversation}
             studentId={studentId!}
+            readOnly={readOnly}
           />
         </div>
       )}

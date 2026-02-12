@@ -300,7 +300,12 @@ export default function StudentDetailPage() {
     }
   };
 
-  const handleViewFormData = (registrationId: string) => {
+  const handleViewFormData = (registrationId: string, serviceName?: string) => {
+    // For Ivy League, open the student ivy-league view in read-only mode
+    if (serviceName === 'Ivy League Preparation' && student?.userId?._id) {
+      router.push(`/ivy-league/student?studentId=${student.userId._id}&readOnly=true`);
+      return;
+    }
     router.push(`/super-admin/roles/student/${studentId}/registration/${registrationId}`);
   };
 
@@ -839,7 +844,7 @@ export default function StudentDetailPage() {
                         )}
                       </div>
                       <button
-                        onClick={() => handleViewFormData(registration._id)}
+                        onClick={() => handleViewFormData(registration._id, registration.serviceId.name)}
                         className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                       >
                         View/Edit Form

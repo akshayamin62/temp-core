@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { IVY_API_URL } from '@/lib/ivyApi';
 
 interface PointerScore {
@@ -59,35 +59,54 @@ const pointerWeightages: { [key: number]: number } = {
 
 function IvyScoreContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const urlStudentId = searchParams.get('studentId');
+    const readOnly = searchParams.get('readOnly') === 'true';
+
     const [scoreData, setScoreData] = useState<IvyScoreData | null>(null);
     const [academicScore, setAcademicScore] = useState<AcademicExcellenceScore | null>(null);
     const [pointer5Score, setPointer5Score] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Resolved from auth — no URL params needed
+    // Resolved from auth or URL params
     const [studentId, setStudentId] = useState<string>('');
     const [studentIvyServiceId, setStudentIvyServiceId] = useState<string>('');
 
     useEffect(() => {
         initData();
-    }, []);
+    }, [urlStudentId]);
 
     const initData = async () => {
         try {
             setLoading(true);
-            // Step 1: Get student's ivy service registration (auth-based)
-            const serviceRes = await axios.get(`${IVY_API_URL}/ivy-service/my-service`);
-            if (serviceRes.data.success && serviceRes.data.data) {
-                const svc = serviceRes.data.data;
+            let svc: any = null;
+
+            if (urlStudentId) {
+                // Super-admin flow: fetch by student's User._id
+                const serviceRes = await axios.get(`${IVY_API_URL}/ivy-service/student/${urlStudentId}`);
+                if (serviceRes.data.success && serviceRes.data.data) {
+                    svc = serviceRes.data.data;
+                }
+            } else {
+                // Normal student flow: auth-based
+                const serviceRes = await axios.get(`${IVY_API_URL}/ivy-service/my-service`);
+                if (serviceRes.data.success && serviceRes.data.data) {
+                    svc = serviceRes.data.data;
+                }
+            }
+
+            if (svc) {
                 const resolvedStudentId = svc.studentId?._id || '';
                 const resolvedServiceId = svc._id || '';
                 setStudentId(resolvedStudentId);
                 setStudentIvyServiceId(resolvedServiceId);
 
-                // Step 2: Fetch scores in parallel
+                // Fetch scores in parallel
                 await Promise.all([
-                    fetchIvyScore(),
+                    urlStudentId
+                        ? fetchIvyScoreByStudent(urlStudentId, resolvedServiceId)
+                        : fetchIvyScore(),
                     resolvedStudentId && resolvedServiceId ? fetchAcademicScore(resolvedStudentId, resolvedServiceId) : Promise.resolve(),
                     resolvedServiceId ? fetchPointer5Score(resolvedServiceId) : Promise.resolve(),
                 ]);
@@ -135,6 +154,21 @@ function IvyScoreContent() {
         try {
             const response = await axios.get(
                 `${IVY_API_URL}/ivy-score/my-score`
+            );
+
+            if (response.data.success) {
+                setScoreData(response.data.data);
+            }
+        } catch (err: any) {
+            console.error('Error fetching Ivy score:', err);
+        }
+    };
+
+    const fetchIvyScoreByStudent = async (userId: string, serviceId: string) => {
+        try {
+            const response = await axios.get(
+                `${IVY_API_URL}/ivy-score/${userId}`,
+                { params: { studentIvyServiceId: serviceId } }
             );
 
             if (response.data.success) {
@@ -213,19 +247,32 @@ function IvyScoreContent() {
     const overallPercentage = (overallScore / totalMaxScore) * 100;
 
     const handlePointerClick = (pointerNo: number) => {
+        const qs = urlStudentId ? `?studentId=${urlStudentId}&readOnly=true` : '';
+        const qsAmp = urlStudentId ? `&studentId=${urlStudentId}&readOnly=true` : '';
         if (pointerNo === 1) {
-            router.push('/ivy-league/student/pointer1');
+            router.push(`/ivy-league/student/pointer1${qs}`);
         } else if (pointerNo === 5) {
-            router.push('/ivy-league/student/pointer5');
+            router.push(`/ivy-league/student/pointer5${qs}`);
         } else if (pointerNo === 6) {
-            router.push('/ivy-league/student/pointer6');
+            router.push(`/ivy-league/student/pointer6${qs}`);
         } else if ([2, 3, 4].includes(pointerNo)) {
-            router.push(`/ivy-league/student/activities?pointerNo=${pointerNo}`);
+            router.push(`/ivy-league/student/activities?pointerNo=${pointerNo}${qsAmp}`);
         }
     };
 
     return (
         <div className="p-8 md:p-12 max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            {/* Read-Only Banner for Super Admin */}
+            {readOnly && (
+                <div className="mb-8 bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 flex items-center gap-3">
+                    <svg className="w-6 h-6 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span className="text-sm font-bold text-amber-800 uppercase tracking-wide">Read-Only View — Super Admin</span>
+                </div>
+            )}
+
             {/* Header */}
             <header className="mb-16">
                 <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4 leading-tight">Your Ivy League<br /><span className="text-indigo-600">Readiness Score</span></h1>

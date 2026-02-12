@@ -43,7 +43,7 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 const YEARS = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
 
 function Pointer1Content() {
-    const { studentId, studentIvyServiceId, loading: serviceLoading, error: serviceError } = useStudentService();
+    const { studentId, studentIvyServiceId, loading: serviceLoading, error: serviceError, readOnly } = useStudentService();
 
     const [activeTab, setActiveTab] = useState<'formal' | 'informal'>('formal');
     const [sections, setSections] = useState<Section[]>([]);
@@ -296,6 +296,16 @@ function Pointer1Content() {
 
     return (
         <div className="max-w-6xl mx-auto py-12 px-6">
+            {/* Read-Only Banner */}
+            {readOnly && (
+                <div className="mb-8 bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 flex items-center gap-3">
+                    <svg className="w-6 h-6 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span className="text-sm font-bold text-amber-800 uppercase tracking-wide">Read-Only View — Super Admin</span>
+                </div>
+            )}
             <header className="mb-12 flex justify-between items-start">
                 <div>
                     <h1 className="text-5xl font-black text-gray-900 mb-4 tracking-tight">
@@ -347,7 +357,7 @@ function Pointer1Content() {
             {/* Tab Content */}
             <div className="space-y-6">
                 {/* Add Section Button - Moved to Right */}
-                {!showAddSection ? (
+                {!readOnly && !showAddSection ? (
                     <div className="flex justify-end">
                         <button
                             onClick={() => setShowAddSection(true)}
@@ -399,12 +409,14 @@ function Pointer1Content() {
                                 )}
                             </div>
                             <div className="flex gap-3">
+                                    {!readOnly && (
                                     <button
                                         onClick={() => addSubSection(sectionIndex)}
                                         className="px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700"
                                     >
                                         + Add Sub-Section
                                     </button>
+                                    )}
                                     <button
                                         onClick={() => toggleSection(sectionIndex)}
                                         className="p-2 bg-white rounded-lg hover:bg-gray-100"
@@ -413,6 +425,7 @@ function Pointer1Content() {
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                         </svg>
                                     </button>
+                                    {!readOnly && (
                                     <button
                                         onClick={() => deleteSectionHandler(section._id!)}
                                         className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
@@ -422,6 +435,7 @@ function Pointer1Content() {
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
                                     </button>
+                                    )}
                                 </div>
                             </div>
 
@@ -437,7 +451,8 @@ function Pointer1Content() {
                                                         <select
                                                             value={subSection.testType}
                                                             onChange={(e) => updateSubSection(section._id!, subSection._id!, 'testType', e.target.value)}
-                                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-black"
+                                                            disabled={readOnly}
+                                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-black disabled:opacity-60 disabled:cursor-not-allowed"
                                                         >
                                                             {activeTab === 'informal' ? (
                                                                 <>
@@ -459,7 +474,8 @@ function Pointer1Content() {
                                                         <select
                                                             value={subSection.month}
                                                             onChange={(e) => updateSubSection(section._id!, subSection._id!, 'month', e.target.value)}
-                                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-black"
+                                                            disabled={readOnly}
+                                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-black disabled:opacity-60 disabled:cursor-not-allowed"
                                                         >
                                                             {MONTHS.map(month => (
                                                                 <option key={month} value={month}>{month}</option>
@@ -471,7 +487,8 @@ function Pointer1Content() {
                                                         <select
                                                             value={subSection.year}
                                                             onChange={(e) => updateSubSection(section._id!, subSection._id!, 'year', parseInt(e.target.value))}
-                                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-black"
+                                                            disabled={readOnly}
+                                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-black disabled:opacity-60 disabled:cursor-not-allowed"
                                                         >
                                                             {YEARS.map(year => (
                                                                 <option key={year} value={year}>{year}</option>
@@ -479,6 +496,7 @@ function Pointer1Content() {
                                                         </select>
                                                     </div>
                                                 </div>
+                                                {!readOnly && (
                                                 <button
                                                     onClick={() => deleteSubSectionHandler(section._id!, subSection._id!)}
                                                     className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 mt-6"
@@ -488,6 +506,7 @@ function Pointer1Content() {
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                     </svg>
                                                 </button>
+                                                )}
                                             </div>
 
                                             {/* Subjects */}
@@ -500,8 +519,9 @@ function Pointer1Content() {
                                                                 type="text"
                                                                 value={subject.name}
                                                                 onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'name', e.target.value)}
+                                                                readOnly={readOnly}
                                                                 placeholder="Subject name"
-                                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400"
+                                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400 read-only:opacity-60 read-only:cursor-not-allowed"
                                                             />
                                                         </div>
                                                         <div>
@@ -510,7 +530,8 @@ function Pointer1Content() {
                                                                 type="number"
                                                                 value={subject.marksObtained}
                                                                 onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'marksObtained', parseFloat(e.target.value))}
-                                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black"
+                                                                readOnly={readOnly}
+                                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black read-only:opacity-60 read-only:cursor-not-allowed"
                                                             />
                                                         </div>
                                                         <div>
@@ -519,7 +540,8 @@ function Pointer1Content() {
                                                                 type="number"
                                                                 value={subject.totalMarks}
                                                                 onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'totalMarks', parseFloat(e.target.value))}
-                                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black"
+                                                                readOnly={readOnly}
+                                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black read-only:opacity-60 read-only:cursor-not-allowed"
                                                             />
                                                         </div>
                                                         <div>
@@ -535,6 +557,7 @@ function Pointer1Content() {
                                                             </div>
                                                         </div>
                                                         <div className="flex items-end justify-center h-full pb-1">
+                                                            {!readOnly && (
                                                             <button
                                                                 onClick={() => deleteSubjectHandler(section._id!, subSection._id!, subject._id!)}
                                                                 className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
@@ -544,15 +567,18 @@ function Pointer1Content() {
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                                 </svg>
                                                             </button>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 ))}
+                                                {!readOnly && (
                                                 <button
                                                     onClick={() => addSubject(section._id!, subSection._id!)}
                                                     className="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-300 w-full"
                                                 >
                                                     + Add Subject
                                                 </button>
+                                                )}
                                             </div>
                                             
                                             {/* Overall Feedback - Read Only for Student */}
