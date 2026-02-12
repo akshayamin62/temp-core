@@ -574,6 +574,10 @@ function Pointer6Content() {
                                     </div>
                                     <a
                                       onClick={async () => {
+                                        if (!course.certificateFileUrl) {
+                                          console.error('Certificate file URL is missing');
+                                          return;
+                                        }
                                         try {
                                           const blobUrl = await fetchBlobUrl(course.certificateFileUrl);
                                           setCertificateModal({ isOpen: true, url: blobUrl });
