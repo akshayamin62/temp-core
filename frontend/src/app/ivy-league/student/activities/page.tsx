@@ -1,12 +1,9 @@
 'use client';
 
-import { useState, useEffect, Suspense, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, Suspense, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { useSearchParams, useRouter } from 'next/navigation';
 import mammoth from 'mammoth';
-import { useTaskNotifications } from '@/hooks/useTaskNotifications';
-import { NotificationBadge } from '@/components/NotificationBadge';
-import { useNotifications } from '@/contexts/NotificationContext';
 import { useStudentService } from '../useStudentService';
 import { IVY_API_URL } from '@/lib/ivyApi';
 import { useBlobUrl, fetchBlobUrl, fileApi } from '@/lib/useBlobUrl';
@@ -127,10 +124,7 @@ function ConversationWindow({
   activityId,
   studentIvyServiceId,
   onClose,
-  studentId,
-  markTaskAsRead,
-  refreshNotifications,
-  refreshTaskCounts
+  studentId
 }: { 
   activityTitle: string; 
   task: DocumentTask; 
@@ -138,9 +132,6 @@ function ConversationWindow({
   studentIvyServiceId: string;
   onClose: () => void;
   studentId: string;
-  markTaskAsRead: (userId: string, referenceId: string, taskTitle: string, taskPage: string) => Promise<void>;
-  refreshNotifications: () => Promise<void>;
-  refreshTaskCounts: () => Promise<void>;
 }) {
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -194,10 +185,6 @@ function ConversationWindow({
           const msgs = response.data.data.messages || [];
           setMessages(msgs);
           messagesLengthRef.current = msgs.length;
-          // Mark as read on open
-          await markTaskAsRead(studentId, activityId, task.title, String(task.page));
-          await refreshNotifications();
-          await refreshTaskCounts();
           // Scroll to bottom after messages are set
           setTimeout(() => scrollToBottom(), 100);
         }
@@ -227,11 +214,6 @@ function ConversationWindow({
           if (newMessages.length !== messagesLengthRef.current) {
             setMessages(newMessages);
             messagesLengthRef.current = newMessages.length;
-            // Mark task notifications as read since user is viewing the conversation
-            await markTaskAsRead(studentId, activityId, task.title, String(task.page));
-            // Refresh both navbar and task badges
-            await refreshNotifications();
-            await refreshTaskCounts();
           }
         }
       })
@@ -278,9 +260,6 @@ function ConversationWindow({
         setNewMessage('');
         setAttachedFile(null);
         setMessageType('normal');
-        // Refresh notification counts after sending (recipient gets notified)
-        await refreshNotifications();
-        await refreshTaskCounts();
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -748,26 +727,6 @@ function ActivitiesContent() {
   const [selectedTask, setSelectedTask] = useState<{ activityTitle: string; task: DocumentTask; activityId: string } | null>(null);
   const [pointerScore, setPointerScore] = useState<number | null>(null);
 
-  // Memoize task list to prevent unnecessary re-renders and API calls
-  const taskList = useMemo(() => {
-    if (!studentId || !activities || activities.length === 0) return [];
-    
-    return activities.flatMap(activity => 
-      (activity.ivyExpertDocuments || []).flatMap(doc =>
-        (doc.tasks || []).map(task => ({
-          userId: studentId,
-          referenceId: activity.selectionId,
-          taskTitle: task.title,
-          taskPage: String(task.page),
-        }))
-      )
-    );
-  }, [studentId, activities]);
-
-  // Initialize task notifications
-  const { getTaskCount, markTaskAsRead, refreshCounts } = useTaskNotifications(taskList);
-  const { refreshNotifications } = useNotifications();
-
   // Real-time countdown timer
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   useEffect(() => {
@@ -789,14 +748,6 @@ function ActivitiesContent() {
   // Update URL when conversation opens/closes
   const handleTaskClick = async (activityTitle: string, task: DocumentTask, activityId: string) => {
     setSelectedTask({ activityTitle, task, activityId });
-    
-    // Mark task notifications as read when opening conversation
-    if (studentId) {
-      await markTaskAsRead(studentId, activityId, task.title, String(task.page));
-      // Refresh both navbar and task badge counts
-      await refreshNotifications();
-      await refreshCounts();
-    }
     
     const params = new URLSearchParams(window.location.search);
     params.set('conversationOpen', 'true');
@@ -1242,13 +1193,6 @@ function ActivitiesContent() {
                                           <p className={`text-sm ${task.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-700 font-medium'}`}>
                                             {task.title}
                                           </p>
-                                          {/* Task-level notification badge */}
-                                          {getTaskCount(activity.selectionId, task.title, String(task.page)) > 0 && (
-                                            <NotificationBadge 
-                                              count={getTaskCount(activity.selectionId, task.title, String(task.page))} 
-                                              size="sm" 
-                                            />
-                                          )}
                                         </div>
                                         {task.page && (
                                           <p className="text-xs text-gray-500 mt-0.5">Page {task.page}</p>
@@ -1449,9 +1393,6 @@ function ActivitiesContent() {
             studentIvyServiceId={studentIvyServiceId!}
             onClose={handleCloseConversation}
             studentId={studentId!}
-            markTaskAsRead={markTaskAsRead}
-            refreshNotifications={refreshNotifications}
-            refreshTaskCounts={refreshCounts}
           />
         </div>
       )}
