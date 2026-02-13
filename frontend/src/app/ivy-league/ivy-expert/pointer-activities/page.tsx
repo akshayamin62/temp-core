@@ -360,7 +360,7 @@ function IvyExpertPointerActivitiesContent() {
               value={studentIvyServiceId}
               onChange={(e) => setStudentIvyServiceId(e.target.value)}
               placeholder="studentIvyServiceId"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
             />
           </div>
           <div>
@@ -369,7 +369,7 @@ function IvyExpertPointerActivitiesContent() {
               value={ivyExpertId}
               onChange={(e) => setIvyExpertId(e.target.value)}
               placeholder="ivyExpertId"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
             />
           </div>
         </div>
@@ -384,7 +384,7 @@ function IvyExpertPointerActivitiesContent() {
                 value={careerRole}
                 onChange={(e) => setCareerRole(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                 placeholder="Enter the student's career role (e.g., Doctor, Engineer, Finance, Lawyer)..."
               />
             </div>
@@ -393,7 +393,7 @@ function IvyExpertPointerActivitiesContent() {
               <select
                 value={selectedPointer}
                 onChange={(e) => setSelectedPointer(e.target.value ? Number(e.target.value) : '')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white"
               >
                 <option value="">-- Select pointer --</option>
                 <option value="2">Pointer 2: Spike in One Area</option>
@@ -405,7 +405,7 @@ function IvyExpertPointerActivitiesContent() {
               <button
                 onClick={handleFetchSuggestions}
                 disabled={loadingSuggestions || !careerRole.trim() || !selectedPointer}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+                className="w-full bg-brand-600 text-white py-2 px-4 rounded-md hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50"
               >
                 {loadingSuggestions ? 'Fetching...' : 'Get Suggestions'}
               </button>
@@ -466,13 +466,13 @@ function IvyExpertPointerActivitiesContent() {
                 {suggestions.map((sug) => (
                   <div
                     key={sug._id}
-                    className={`border rounded-lg p-4 transition ${selectedActivities.has(sug._id) ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                    className={`border rounded-lg p-4 transition ${selectedActivities.has(sug._id) ? 'border-brand-500 bg-brand-50' : 'border-gray-200'
                       }`}
                   >
                     <div className="flex items-start gap-3">
                       <input
                         type="checkbox"
-                        className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        className="mt-1 h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300 rounded"
                         checked={selectedActivities.has(sug._id)}
                         onChange={() => toggleActivity(sug._id)}
                       />
@@ -492,7 +492,7 @@ function IvyExpertPointerActivitiesContent() {
                                 alert('No document URL available for this activity');
                               }
                             }}
-                            className="flex-shrink-0 inline-flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition text-sm font-medium border border-indigo-200"
+                            className="flex-shrink-0 inline-flex items-center gap-2 px-3 py-2 bg-brand-50 text-brand-700 rounded-lg hover:bg-brand-100 transition text-sm font-medium border border-brand-200"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -596,9 +596,9 @@ function IvyExpertPointerActivitiesContent() {
                     <h2 className="text-lg font-semibold text-gray-900">{pointerLabel(pointerNo)}</h2>
                     {/* Score Card */}
                     {pointerScores[pointerNo] !== null && pointerScores[pointerNo] !== undefined && (
-                      <div className="bg-white p-6 rounded-2xl shadow-md border-2 border-indigo-100 flex flex-col items-center justify-center text-center">
+                      <div className="bg-white p-6 rounded-2xl shadow-md border-2 border-brand-100 flex flex-col items-center justify-center text-center">
                         <span className="text-xs font-black tracking-widest text-gray-400 uppercase mb-2">Current Score</span>
-                        <div className="text-5xl font-black text-indigo-600 leading-none">
+                        <div className="text-5xl font-black text-brand-600 leading-none">
                           {typeof pointerScores[pointerNo] === 'number' ? pointerScores[pointerNo].toFixed(2) : '0.00'}
                         </div>
                       </div>
@@ -629,7 +629,7 @@ function IvyExpertPointerActivitiesContent() {
                     <p className="text-xs text-gray-500 mt-2">
                       Visible to student: {act.isVisibleToStudent ? 'Yes' : 'No'}
                       {act.pointerNo === 2 && act.weightage !== undefined && (
-                        <span className="ml-3 font-semibold text-blue-600">
+                        <span className="ml-3 font-semibold text-brand-600">
                           • Weightage: {act.weightage}%
                         </span>
                       )}
@@ -648,24 +648,24 @@ function IvyExpertPointerActivitiesContent() {
 
                 {/* Submission */}
                 {act.submission && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3 space-y-2">
-                    <p className="text-sm font-medium text-blue-900">Student Submission</p>
+                  <div className="bg-brand-50 border border-brand-200 rounded-md p-3 space-y-2">
+                    <p className="text-sm font-medium text-brand-900">Student Submission</p>
                     {act.submission.remarks && (
-                      <p className="text-sm text-blue-800 whitespace-pre-wrap">{act.submission.remarks}</p>
+                      <p className="text-sm text-brand-800 whitespace-pre-wrap">{act.submission.remarks}</p>
                     )}
-                    <ul className="text-sm text-blue-800 space-y-1">
+                    <ul className="text-sm text-brand-800 space-y-1">
                       {act.submission.files.map((file, idx) => (
                         <li key={idx}>
                           <button
                             onClick={() => downloadFile(file)}
-                            className="underline hover:text-blue-900"
+                            className="underline hover:text-brand-900"
                           >
                             Proof {idx + 1}
                           </button>
                         </li>
                       ))}
                     </ul>
-                    <p className="text-xs text-blue-700">
+                    <p className="text-xs text-brand-700">
                       Submitted at: {new Date(act.submission.submittedAt).toLocaleString()}
                     </p>
                   </div>
@@ -722,7 +722,7 @@ function IvyExpertPointerActivitiesContent() {
                           onChange={(e) =>
                             setScoreDrafts((prev) => ({ ...prev, [act.selectionId]: e.target.value }))
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-gray-900"
                           disabled={submittingEval === act.selectionId}
                         />
                       </div>
@@ -734,7 +734,7 @@ function IvyExpertPointerActivitiesContent() {
                           onChange={(e) =>
                             setFeedbackDrafts((prev) => ({ ...prev, [act.selectionId]: e.target.value }))
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y text-gray-900"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 resize-y text-gray-900"
                           disabled={submittingEval === act.selectionId}
                         />
                       </div>
@@ -742,7 +742,7 @@ function IvyExpertPointerActivitiesContent() {
                     <button
                       onClick={() => handleEvaluate(act.selectionId, act.submission?._id)}
                       disabled={submittingEval === act.selectionId || !act.submission}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+                      className="bg-brand-600 text-white px-4 py-2 rounded-md hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50"
                     >
                       {submittingEval === act.selectionId ? 'Saving...' : (act.evaluation ? 'Update Evaluation' : 'Save Evaluation')}
                     </button>
@@ -776,8 +776,8 @@ function IvyExpertPointerActivitiesContent() {
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b bg-gray-50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 rounded-lg bg-brand-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>

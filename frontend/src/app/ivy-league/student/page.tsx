@@ -182,7 +182,7 @@ function IvyScoreContent() {
     const getScoreColor = (score: number, maxScore: number): string => {
         const percentage = (score / maxScore) * 100;
         if (percentage >= 80) return 'bg-green-500';
-        if (percentage >= 60) return 'bg-blue-500';
+        if (percentage >= 60) return 'bg-brand-500';
         if (percentage >= 40) return 'bg-yellow-500';
         return 'bg-red-500';
     };
@@ -199,7 +199,7 @@ function IvyScoreContent() {
     if (loading) {
         return (
             <div className="p-20 text-center">
-                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent"></div>
+                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-brand-600 border-r-transparent"></div>
                 <p className="mt-4 text-gray-500 font-bold uppercase tracking-widest text-xs">Syncing Performance Data...</p>
             </div>
         );
@@ -275,23 +275,23 @@ function IvyScoreContent() {
 
             {/* Header */}
             <header className="mb-16">
-                <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4 leading-tight">Your Ivy League<br /><span className="text-indigo-600">Readiness Score</span></h1>
+                <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4 leading-tight">Your Ivy League<br /><span className="text-brand-600">Readiness Score</span></h1>
                 <p className="text-xl text-gray-400 font-medium max-w-2xl leading-relaxed">Track your competitive trajectory across all core admission pillars. Your score is real-time and reflects current Ivy Expert evaluations.</p>
             </header>
 
             {/* Overall Score Card */}
             <div className="relative mb-16 group">
-                <div className="absolute inset-0 bg-indigo-600 rounded-[3rem] blur-3xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
-                <div className="relative bg-white rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(79,70,229,0.1)] border border-gray-100 p-12 overflow-hidden">
+                <div className="absolute inset-0 bg-brand-600 rounded-[3rem] blur-3xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
+                <div className="relative bg-white rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(41,89,186,0.1)] border border-gray-100 p-12 overflow-hidden">
                     <div className="flex flex-col md:flex-row items-center gap-12">
                         <div className="flex-1 text-center md:text-left">
                             <span className="text-[10px] font-black tracking-[0.4em] text-gray-400 uppercase mb-4 block">Calculated Potential</span>
                             <div className="flex items-baseline justify-center md:justify-start gap-4 mb-6">
-                                <span className="text-9xl font-black text-indigo-600 leading-none tracking-tighter">{overallScore.toFixed(1)}</span>
+                                <span className="text-9xl font-black text-brand-600 leading-none tracking-tighter">{overallScore.toFixed(1)}</span>
                                 <span className="text-3xl font-black text-gray-300">/ {totalMaxScore}</span>
                             </div>
-                            <div className="inline-flex items-center gap-3 bg-indigo-50 text-indigo-600 px-6 py-3 rounded-full text-base font-black uppercase tracking-widest">
-                                <span className="h-2 w-2 bg-indigo-600 rounded-full animate-pulse"></span>
+                            <div className="inline-flex items-center gap-3 bg-brand-50 text-brand-600 px-6 py-3 rounded-full text-base font-black uppercase tracking-widest">
+                                <span className="h-2 w-2 bg-brand-600 rounded-full animate-pulse"></span>
                                 {getScoreGrade(overallScore, totalMaxScore)}
                             </div>
                         </div>
@@ -299,11 +299,11 @@ function IvyScoreContent() {
                         <div className="w-full md:w-[400px] space-y-6">
                             <div className="flex items-end justify-between mb-2">
                                 <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Aggregate Readiness</span>
-                                <span className="text-2xl font-black text-indigo-600">{overallPercentage.toFixed(0)}%</span>
+                                <span className="text-2xl font-black text-brand-600">{overallPercentage.toFixed(0)}%</span>
                             </div>
                             <div className="h-8 bg-gray-50 rounded-2xl overflow-hidden p-1.5 border border-gray-100 flex items-center">
                                 <div
-                                    className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 rounded-xl transition-all duration-1500 ease-out shadow-[0_0_20px_rgba(79,70,229,0.3)]"
+                                    className="h-full bg-brand-600 rounded-xl transition-all duration-1500 ease-out shadow-[0_0_20px_rgba(41,89,186,0.3)]"
                                     style={{ width: `${overallPercentage}%` }}
                                 ></div>
                             </div>
@@ -330,11 +330,11 @@ function IvyScoreContent() {
                         <div
                             key={pointer.pointerNo}
                             onClick={() => handlePointerClick(pointer.pointerNo)}
-                            className="bg-white rounded-[2.5rem] shadow-sm hover:shadow-2xl hover:translate-y-[-8px] transition-all duration-500 p-8 border border-gray-100 hover:border-indigo-100 group flex flex-col cursor-pointer"
+                            className="bg-white rounded-[2.5rem] shadow-sm hover:shadow-2xl hover:translate-y-[-8px] transition-all duration-500 p-8 border border-gray-100 hover:border-brand-100 group flex flex-col cursor-pointer"
                         >
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-4">
-                                    <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 font-black text-xl border border-indigo-100 shadow-inner group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                    <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 font-black text-xl border border-brand-100 shadow-inner group-hover:bg-brand-600 group-hover:text-white transition-colors">
                                         {pointer.pointerNo}
                                     </div>
                                     <h3 className="font-black text-gray-900 text-lg leading-tight uppercase tracking-tight">
@@ -385,16 +385,16 @@ function IvyScoreContent() {
 
             {/* Premium Info Panel */}
             <div className="mt-20 bg-gray-900 rounded-[3rem] p-12 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600 rounded-full blur-[120px] opacity-20 translate-x-1/2 -translate-y-1/2"></div>
+                <div className="absolute top-0 right-0 w-96 h-96 bg-brand-600 rounded-full blur-[120px] opacity-20 translate-x-1/2 -translate-y-1/2"></div>
                 <div className="relative z-10 flex flex-col md:flex-row items-center gap-12 text-center md:text-left">
                     <div className="flex-shrink-0 w-20 h-20 bg-white/10 rounded-[2rem] flex items-center justify-center backdrop-blur-xl border border-white/20">
-                        <svg className="h-10 w-10 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="h-10 w-10 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
                     <div>
                         <h4 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Understanding Your Profile</h4>
-                        <p className="text-indigo-200/60 font-medium leading-relaxed max-w-3xl">
+                        <p className="text-brand-200/60 font-medium leading-relaxed max-w-3xl">
                             Each pointer follows the Ivy League evaluation matrix scaled from 0-10. Your ivyExperts manually verify your evidences to ensure accuracy. 
                         </p>
                     </div>
@@ -408,7 +408,7 @@ export default function StudentDashboard() {
     return (
         <Suspense fallback={
             <div className="p-20 text-center">
-                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent"></div>
+                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-brand-600 border-r-transparent"></div>
                 <p className="mt-4 text-gray-500 font-bold uppercase tracking-widest text-xs">Booting Command Center...</p>
             </div>
         }>

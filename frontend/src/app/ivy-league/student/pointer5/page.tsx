@@ -205,7 +205,7 @@ function StudentPointer5Content() {
                 <header className="mb-12 flex justify-between items-start">
                     <div>
                         <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4">
-                            AUTHENTIC &<br /><span className="text-indigo-600">REFLECTIVE STORYTELLING</span>
+                            AUTHENTIC &<br /><span className="text-brand-600">REFLECTIVE STORYTELLING</span>
                         </h1>
                         <p className="text-xl text-gray-400 font-medium max-w-xl">
                             Complete assigned writing tasks and share your learnings
@@ -214,9 +214,9 @@ function StudentPointer5Content() {
 
                     {/* Pointer 5 Score Card */}
                     {pointer5Score !== null && pointer5Score !== undefined && (
-                        <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-indigo-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
+                        <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-brand-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
                             <span className="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase mb-2">Current Mean Score</span>
-                            <div className="text-7xl font-black text-indigo-600 leading-none">{typeof pointer5Score === 'number' ? pointer5Score.toFixed(2) : '0.00'}</div>
+                            <div className="text-7xl font-black text-brand-600 leading-none">{typeof pointer5Score === 'number' ? pointer5Score.toFixed(2) : '0.00'}</div>
                         </div>
                     )}
                 </header>
@@ -253,7 +253,7 @@ function StudentPointer5Content() {
                                     >
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-4">
-                                                <span className="text-2xl font-black text-indigo-600">#{tasks.length - index}</span>
+                                                <span className="text-2xl font-black text-brand-600">#{tasks.length - index}</span>
                                                 <div>
                                                     <p className="font-bold text-gray-900 line-clamp-1">{taskStatus.task.taskDescription}</p>
                                                     <p className="text-sm text-gray-500">Word Limit: {taskStatus.task.wordLimit}</p>
@@ -265,7 +265,7 @@ function StudentPointer5Content() {
                                                         Score: {taskStatus.evaluation.score}/10
                                                     </span>
                                                 ) : taskStatus.submission ? (
-                                                    <span className="px-4 py-2 bg-blue-100 text-blue-700 font-bold rounded-xl">
+                                                    <span className="px-4 py-2 bg-brand-100 text-brand-700 font-bold rounded-xl">
                                                         Submitted
                                                     </span>
                                                 ) : (
@@ -287,8 +287,8 @@ function StudentPointer5Content() {
                                     {expandedTasks.has(taskStatus.task._id) && (
                                         <div className="border-t border-gray-100 p-6 space-y-6">
                                             {/* Task Details */}
-                                            <div className="bg-indigo-50 rounded-2xl p-6">
-                                                <h3 className="text-sm font-black text-indigo-600 uppercase tracking-wider mb-3">Task Description</h3>
+                                            <div className="bg-brand-50 rounded-2xl p-6">
+                                                <h3 className="text-sm font-black text-brand-600 uppercase tracking-wider mb-3">Task Description</h3>
                                                 <p className="text-gray-900 whitespace-pre-wrap">{taskStatus.task.taskDescription}</p>
                                                 {taskStatus.task.attachments.length > 0 && (
                                                     <div className="mt-4">
@@ -300,8 +300,8 @@ function StudentPointer5Content() {
                                                                     onClick={() => viewFile(taskStatus.task._id, att.fileUrl, att.fileName)}
                                                                     className={`px-3 py-1 text-sm rounded-lg transition-all border ${
                                                                         viewingFile[taskStatus.task._id]?.name === att.fileName
-                                                                            ? 'bg-indigo-600 text-white border-indigo-600'
-                                                                            : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+                                                                            ? 'bg-brand-600 text-white border-brand-600'
+                                                                            : 'bg-white text-brand-700 border-brand-200 hover:bg-brand-100'
                                                                     }`}
                                                                 >
                                                                     📎 {att.fileName}
@@ -369,7 +369,7 @@ function StudentPointer5Content() {
                                                             rows={10}
                                                             disabled={readOnly || !!taskStatus.evaluation}
                                                             spellCheck="false"
-                                                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 bg-white resize-none disabled:bg-gray-50"
+                                                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-gray-900 bg-white resize-none disabled:bg-gray-50"
                                                         />
                                                         <div className="flex justify-end mt-2">
                                                             <span className={`text-sm font-bold ${isOverLimit ? 'text-red-600' : 'text-gray-500'}`}>
@@ -379,8 +379,8 @@ function StudentPointer5Content() {
                                                     </div>
                                                 </div>
                                                 <div className="col-span-3">
-                                                    <div className="bg-purple-50 border-2 border-purple-200 rounded-2xl p-6 h-full">
-                                                        <h3 className="text-sm font-black text-purple-700 uppercase tracking-wider mb-3">Words Learned</h3>
+                                                    <div className="bg-brand-50 border-2 border-brand-200 rounded-2xl p-6 h-full">
+                                                        <h3 className="text-sm font-black text-brand-700 uppercase tracking-wider mb-3">Words Learned</h3>
                                                         <textarea
                                                             value={responses[taskStatus.task._id]?.wordsLearned || ''}
                                                             onChange={(e) => setResponses(prev => ({
@@ -391,7 +391,7 @@ function StudentPointer5Content() {
                                                             rows={10}
                                                             disabled={readOnly || !!taskStatus.evaluation}
                                                             spellCheck="false"
-                                                            className="w-full px-4 py-3 border border-purple-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white resize-none disabled:bg-gray-50"
+                                                            className="w-full px-4 py-3 border border-brand-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-gray-900 bg-white resize-none disabled:bg-gray-50"
                                                         />
                                                     </div>
                                                 </div>
@@ -403,7 +403,7 @@ function StudentPointer5Content() {
                                                     <button
                                                         onClick={() => handleSubmit(taskStatus.task._id)}
                                                         disabled={submitting === taskStatus.task._id || isOverLimit}
-                                                        className="px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        className="px-8 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         {submitting === taskStatus.task._id ? 'Submitting...' : taskStatus.submission ? 'Update Response' : 'Submit Response'}
                                                     </button>

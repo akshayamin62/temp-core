@@ -38,7 +38,7 @@ const pointerDescriptions: { [key: number]: string } = {
 
 export default function ParentIvyScoreDashboardPage() {
     return (
-        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div></div>}>
             <ParentIvyScoreDashboard />
         </Suspense>
     );
@@ -79,7 +79,7 @@ function ParentIvyScoreDashboard() {
     const getScoreColor = (score: number, maxScore: number): string => {
         const percentage = (score / maxScore) * 100;
         if (percentage >= 80) return 'bg-green-500';
-        if (percentage >= 60) return 'bg-blue-500';
+        if (percentage >= 60) return 'bg-brand-500';
         if (percentage >= 40) return 'bg-yellow-500';
         return 'bg-red-500';
     };
@@ -95,9 +95,9 @@ function ParentIvyScoreDashboard() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
+            <div className="min-h-screen bg-brand-50 flex items-center justify-center">
                 <div className="text-center">
-                    <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent"></div>
+                    <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-brand-600 border-r-transparent"></div>
                     <p className="mt-4 text-gray-600 font-medium">Loading score data...</p>
                 </div>
             </div>
@@ -106,7 +106,7 @@ function ParentIvyScoreDashboard() {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
+            <div className="min-h-screen bg-brand-50 flex items-center justify-center p-4">
                 <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
                     <div className="text-center">
                         <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
@@ -118,7 +118,7 @@ function ParentIvyScoreDashboard() {
                         <p className="text-gray-600 mb-6">{error}</p>
                         <button
                             onClick={fetchIvyScore}
-                            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                            className="px-6 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
                         >
                             Try Again
                         </button>
@@ -136,7 +136,7 @@ function ParentIvyScoreDashboard() {
     const overallPercentage = (scoreData.overallScore / totalMaxScore) * 100;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-brand-50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="text-center mb-12">
@@ -149,19 +149,19 @@ function ParentIvyScoreDashboard() {
                 </div>
 
                 {/* Overall Score Card */}
-                <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-3xl shadow-2xl p-8 mb-8 text-white">
+                <div className="bg-brand-600 rounded-3xl shadow-2xl p-8 mb-8 text-white">
                     <div className="text-center">
-                        <p className="text-indigo-200 text-sm font-medium uppercase tracking-wide mb-2">
+                        <p className="text-brand-200 text-sm font-medium uppercase tracking-wide mb-2">
                             Overall Ivy Score
                         </p>
                         <div className="flex items-center justify-center gap-2 mb-4">
                             <span className="text-7xl font-bold">{scoreData.overallScore.toFixed(1)}</span>
-                            <span className="text-3xl text-indigo-200">/ {totalMaxScore}</span>
+                            <span className="text-3xl text-brand-200">/ {totalMaxScore}</span>
                         </div>
 
                         {/* Progress Bar */}
                         <div className="max-w-2xl mx-auto mb-4">
-                            <div className="h-4 bg-indigo-800/30 rounded-full overflow-hidden">
+                            <div className="h-4 bg-brand-800/30 rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-gradient-to-r from-yellow-400 to-green-400 rounded-full transition-all duration-1000 ease-out"
                                     style={{ width: `${overallPercentage}%` }}
@@ -169,10 +169,10 @@ function ParentIvyScoreDashboard() {
                             </div>
                         </div>
 
-                        <p className="text-xl font-semibold text-indigo-100">
+                        <p className="text-xl font-semibold text-brand-100">
                             {getScoreGrade(scoreData.overallScore, totalMaxScore)}
                         </p>
-                        <p className="text-sm text-indigo-200 mt-2">
+                        <p className="text-sm text-brand-200 mt-2">
                             Last updated: {new Date(scoreData.generatedAt).toLocaleDateString()}
                         </p>
                     </div>
@@ -187,11 +187,11 @@ function ParentIvyScoreDashboard() {
                         return (
                             <div
                                 key={pointer.pointerNo}
-                                className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 hover:border-indigo-200"
+                                className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 hover:border-brand-200"
                             >
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 font-bold">
+                                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-brand-100 text-brand-600 font-bold">
                                             {pointer.pointerNo}
                                         </div>
                                         <div>
@@ -228,7 +228,7 @@ function ParentIvyScoreDashboard() {
                                     <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                                         {getScoreGrade(pointer.score, pointer.maxScore)}
                                     </span>
-                                    <span className="text-sm font-medium text-indigo-600">
+                                    <span className="text-sm font-medium text-brand-600">
                                         {percentage.toFixed(0)}%
                                     </span>
                                 </div>
@@ -238,16 +238,16 @@ function ParentIvyScoreDashboard() {
                 </div>
 
                 {/* Info Footer */}
-                <div className="mt-12 bg-blue-50 border border-blue-200 rounded-2xl p-6">
+                <div className="mt-12 bg-brand-50 border border-brand-200 rounded-2xl p-6">
                     <div className="flex items-start gap-4">
                         <div className="flex-shrink-0">
-                            <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="h-6 w-6 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
                         <div>
-                            <h4 className="font-semibold text-blue-900 mb-1">About This Score</h4>
-                            <p className="text-sm text-blue-800">
+                            <h4 className="font-semibold text-brand-900 mb-1">About This Score</h4>
+                            <p className="text-sm text-brand-800">
                                 Each pointer is scored on a scale of 0-10. The overall score is the sum of all 6 pointers (maximum 60 points).
                                 Scores are automatically updated when the Ivy Expert evaluates your child&apos;s submissions. This dashboard provides
                                 real-time visibility into your child&apos;s Ivy League preparation progress.

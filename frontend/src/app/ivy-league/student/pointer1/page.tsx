@@ -428,9 +428,9 @@ function Pointer1Content() {
 
                 {/* Academic Excellence Score Card */}
                 {academicScore && (
-                    <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-blue-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
+                    <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-brand-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
                         <span className="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase mb-2">Academic Excellence Score</span>
-                        <div className="text-7xl font-black text-blue-600 leading-none">{academicScore.finalScore.toFixed(2)}</div>
+                        <div className="text-7xl font-black text-brand-600 leading-none">{academicScore.finalScore.toFixed(2)}</div>
                     </div>
                 )}
             </header>
@@ -441,7 +441,7 @@ function Pointer1Content() {
                     onClick={() => setActiveTab('formal')}
                     className={`px-8 py-4 font-bold text-sm transition-all ${
                         activeTab === 'formal'
-                            ? 'text-indigo-600 border-b-2 border-indigo-600'
+                            ? 'text-brand-600 border-b-2 border-brand-600'
                             : 'text-gray-400 hover:text-gray-600'
                     }`}
                 >
@@ -451,7 +451,7 @@ function Pointer1Content() {
                     onClick={() => setActiveTab('informal')}
                     className={`px-8 py-4 font-bold text-sm transition-all ${
                         activeTab === 'informal'
-                            ? 'text-indigo-600 border-b-2 border-indigo-600'
+                            ? 'text-brand-600 border-b-2 border-brand-600'
                             : 'text-gray-400 hover:text-gray-600'
                     }`}
                 >
@@ -466,13 +466,13 @@ function Pointer1Content() {
                     <div className="flex justify-end">
                         <button
                             onClick={() => setShowAddSection(true)}
-                            className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 transition-all shadow-lg"
+                            className="px-6 py-3 bg-brand-600 text-white font-bold rounded-2xl hover:bg-brand-700 transition-all shadow-lg"
                         >
                             + Add Section
                         </button>
                     </div>
                 ) : (
-                    <div className="bg-white p-6 rounded-2xl border-2 border-indigo-200 shadow-sm">
+                    <div className="bg-white p-6 rounded-2xl border-2 border-brand-200 shadow-sm">
                         <h3 className="text-lg font-bold text-gray-900 mb-4">New Section</h3>
                         <div className="flex gap-4">
                             <input
@@ -480,11 +480,11 @@ function Pointer1Content() {
                                 placeholder="Exam Name (e.g., Mid-Term, Final Exam)"
                                 value={newSectionName}
                                 onChange={(e) => setNewSectionName(e.target.value)}
-                                className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:border-indigo-500 outline-none text-black placeholder:text-gray-400"
+                                className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:border-brand-500 outline-none text-black placeholder:text-gray-400"
                             />
                             <button
                                 onClick={addSection}
-                                className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700"
+                                className="px-6 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700"
                             >
                                 Save
                             </button>
@@ -503,12 +503,12 @@ function Pointer1Content() {
 
                 {/* Sections */}
                 {sections.map((section, sectionIndex) => (
-                    <div key={section._id || sectionIndex} className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-3xl border-2 border-indigo-200 shadow-lg">
+                    <div key={section._id || sectionIndex} className="bg-brand-50 p-6 rounded-3xl border-2 border-brand-200 shadow-lg">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-4">
                                 <h2 className="text-2xl font-black text-gray-900 uppercase">{section.examName}</h2>
                                 {activeTab === 'informal' && section.weightage !== undefined && (
-                                    <span className="px-3 py-1 bg-indigo-100 text-indigo-700 font-bold rounded-full text-sm">
+                                    <span className="px-3 py-1 bg-brand-100 text-brand-700 font-bold rounded-full text-sm">
                                         Weightage: {section.weightage}%
                                     </span>
                                 )}
@@ -517,7 +517,7 @@ function Pointer1Content() {
                                     {!readOnly && (
                                     <button
                                         onClick={() => addSubSection(sectionIndex)}
-                                        className="px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700"
+                                        className="px-4 py-2 bg-brand-600 text-white text-sm font-bold rounded-xl hover:bg-brand-700"
                                     >
                                         + Add Sub-Section
                                     </button>
@@ -557,7 +557,7 @@ function Pointer1Content() {
                                                             value={subSection.testType}
                                                             onChange={(e) => updateSubSection(section._id!, subSection._id!, 'testType', e.target.value)}
                                                             disabled={readOnly}
-                                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-black disabled:opacity-60 disabled:cursor-not-allowed"
+                                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-black disabled:opacity-60 disabled:cursor-not-allowed"
                                                         >
                                                             {activeTab === 'informal' ? (
                                                                 <>
@@ -581,7 +581,7 @@ function Pointer1Content() {
                                                             value={subSection.month}
                                                             onChange={(e) => updateSubSection(section._id!, subSection._id!, 'month', e.target.value)}
                                                             disabled={readOnly}
-                                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-black disabled:opacity-60 disabled:cursor-not-allowed"
+                                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-black disabled:opacity-60 disabled:cursor-not-allowed"
                                                         >
                                                             {MONTHS.map(month => (
                                                                 <option key={month} value={month}>{month}</option>
@@ -594,7 +594,7 @@ function Pointer1Content() {
                                                             value={subSection.year}
                                                             onChange={(e) => updateSubSection(section._id!, subSection._id!, 'year', parseInt(e.target.value))}
                                                             disabled={readOnly}
-                                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-black disabled:opacity-60 disabled:cursor-not-allowed"
+                                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-black disabled:opacity-60 disabled:cursor-not-allowed"
                                                         >
                                                             {YEARS.map(year => (
                                                                 <option key={year} value={year}>{year}</option>
@@ -627,7 +627,7 @@ function Pointer1Content() {
                                                                     onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'title', e.target.value)}
                                                                     readOnly={readOnly}
                                                                     placeholder="Project title"
-                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400 read-only:opacity-60 read-only:cursor-not-allowed"
+                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400 read-only:opacity-60 read-only:cursor-not-allowed"
                                                                 />
                                                             </div>
                                                             <div>
@@ -638,7 +638,7 @@ function Pointer1Content() {
                                                                     onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'organizationName', e.target.value)}
                                                                     readOnly={readOnly}
                                                                     placeholder="Organization name"
-                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400 read-only:opacity-60 read-only:cursor-not-allowed"
+                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400 read-only:opacity-60 read-only:cursor-not-allowed"
                                                                 />
                                                             </div>
                                                             <div className="col-span-2">
@@ -649,7 +649,7 @@ function Pointer1Content() {
                                                                     onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'description', e.target.value)}
                                                                     readOnly={readOnly}
                                                                     placeholder="Describe the project"
-                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400 resize-none read-only:opacity-60 read-only:cursor-not-allowed"
+                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400 resize-none read-only:opacity-60 read-only:cursor-not-allowed"
                                                                 />
                                                             </div>
                                                             <div>
@@ -660,7 +660,7 @@ function Pointer1Content() {
                                                                     onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'projectUrl', e.target.value)}
                                                                     readOnly={readOnly}
                                                                     placeholder="https://..."
-                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400 read-only:opacity-60 read-only:cursor-not-allowed"
+                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400 read-only:opacity-60 read-only:cursor-not-allowed"
                                                                 />
                                                             </div>
                                                             <div>
@@ -705,7 +705,7 @@ function Pointer1Content() {
                                                                     onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'name', e.target.value)}
                                                                     readOnly={readOnly}
                                                                     placeholder="Subject name"
-                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400 read-only:opacity-60 read-only:cursor-not-allowed"
+                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400 read-only:opacity-60 read-only:cursor-not-allowed"
                                                                 />
                                                             </div>
                                                             <div>
@@ -715,7 +715,7 @@ function Pointer1Content() {
                                                                     value={subject.marksObtained}
                                                                     onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'marksObtained', parseFloat(e.target.value))}
                                                                     readOnly={readOnly}
-                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black read-only:opacity-60 read-only:cursor-not-allowed"
+                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black read-only:opacity-60 read-only:cursor-not-allowed"
                                                                 />
                                                             </div>
                                                             <div>
@@ -725,12 +725,12 @@ function Pointer1Content() {
                                                                     value={subject.totalMarks}
                                                                     onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'totalMarks', parseFloat(e.target.value))}
                                                                     readOnly={readOnly}
-                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black read-only:opacity-60 read-only:cursor-not-allowed"
+                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black read-only:opacity-60 read-only:cursor-not-allowed"
                                                                 />
                                                             </div>
                                                             <div>
                                                                 <label className="block text-xs font-bold text-gray-600 mb-1">Percentage</label>
-                                                                <div className="px-3 py-2 bg-indigo-50 text-indigo-700 font-bold rounded-lg text-sm text-center">
+                                                                <div className="px-3 py-2 bg-brand-50 text-brand-700 font-bold rounded-lg text-sm text-center">
                                                                     {subject.totalMarks > 0 ? ((subject.marksObtained / subject.totalMarks) * 100).toFixed(2) : '0.00'}%
                                                                 </div>
                                                             </div>
@@ -771,7 +771,7 @@ function Pointer1Content() {
                                                 <div className="flex items-center gap-4 mb-2">
                                                     <label className="block text-sm font-bold text-gray-700">Overall Feedback</label>
                                                     {subSection.score !== undefined && (
-                                                        <span className="px-3 py-1 bg-indigo-100 text-indigo-700 font-bold rounded-full text-sm">
+                                                        <span className="px-3 py-1 bg-brand-100 text-brand-700 font-bold rounded-full text-sm">
                                                             Score: {subSection.score}/10
                                                         </span>
                                                     )}
@@ -804,7 +804,7 @@ export default function Pointer1Page() {
     return (
         <div className="font-sans">
             <Suspense fallback={
-                <div className="p-12 text-center text-indigo-400 font-black animate-pulse tracking-widest uppercase">
+                <div className="p-12 text-center text-brand-400 font-black animate-pulse tracking-widest uppercase">
                     Loading...
                 </div>
             }>

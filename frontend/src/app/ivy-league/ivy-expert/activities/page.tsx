@@ -99,7 +99,7 @@ function InlineDocViewer({ url, onClose }: { url: string, onClose: () => void })
           <div className="w-full h-[600px] overflow-auto bg-white p-6">
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand-500 border-t-transparent"></div>
               </div>
             ) : error ? (
               <div className="flex items-center justify-center h-full text-red-500">{error}</div>
@@ -349,7 +349,7 @@ function ConversationWindow({
                 <div className={`max-w-[75%] ${msg.sender === 'ivyExpert' ? 'order-2' : 'order-1'}`}>
                   {msg.messageType === 'feedback' && msg.sender === 'ivyExpert' ? (
                     // Feedback message from Ivy Expert
-                    <div className="bg-blue-500 text-white rounded-2xl px-4 py-3 mb-1">
+                    <div className="bg-brand-500 text-white rounded-2xl px-4 py-3 mb-1">
                       <div className="flex items-center gap-2 mb-2">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
@@ -360,16 +360,16 @@ function ConversationWindow({
                       {msg.attachment && (
                         <div 
                           onClick={() => handleFileClick(msg.attachment!.url, msg.attachment!.name)}
-                          className={`${msg.text.trim() ? 'mt-3' : ''} p-3 bg-blue-400/30 rounded-lg flex items-center gap-3 cursor-pointer hover:bg-blue-400/40 transition-colors`}
+                          className={`${msg.text.trim() ? 'mt-3' : ''} p-3 bg-brand-400/30 rounded-lg flex items-center gap-3 cursor-pointer hover:bg-brand-400/40 transition-colors`}
                         >
-                          <div className="p-2 bg-blue-400 rounded">
+                          <div className="p-2 bg-brand-400 rounded">
                             <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                             </svg>
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-white truncate">{msg.attachment.name}</p>
-                            <p className="text-xs text-blue-100">{msg.attachment.size}</p>
+                            <p className="text-xs text-brand-100">{msg.attachment.size}</p>
                           </div>
                         </div>
                       )}
@@ -403,21 +403,21 @@ function ConversationWindow({
                     </div>
                   ) : msg.messageType === 'action' && msg.sender === 'ivyExpert' ? (
                     // Action Suggested message from Ivy Expert
-                    <div className="bg-white border-2 border-purple-200 rounded-2xl px-4 py-3 mb-1">
+                    <div className="bg-white border-2 border-brand-200 rounded-2xl px-4 py-3 mb-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-4 h-4 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
                         </svg>
-                        <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Action Suggested</span>
+                        <span className="text-xs font-semibold text-brand-600 uppercase tracking-wide">Action Suggested</span>
                       </div>
                       {msg.text.trim() && <p className="text-sm text-gray-800 leading-relaxed">{msg.text}</p>}
                       {msg.attachment && (
                         <div 
                           onClick={() => handleFileClick(msg.attachment!.url, msg.attachment!.name)}
-                          className={`${msg.text.trim() ? 'mt-3' : ''} p-3 bg-purple-50 rounded-lg flex items-center gap-3 cursor-pointer hover:bg-purple-100 transition-colors`}
+                          className={`${msg.text.trim() ? 'mt-3' : ''} p-3 bg-brand-50 rounded-lg flex items-center gap-3 cursor-pointer hover:bg-brand-100 transition-colors`}
                         >
-                          <div className="p-2 bg-purple-100 rounded">
-                            <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                          <div className="p-2 bg-brand-100 rounded">
+                            <svg className="w-5 h-5 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                             </svg>
                           </div>
@@ -430,21 +430,21 @@ function ConversationWindow({
                     </div>
                   ) : msg.messageType === 'resource' && msg.sender === 'ivyExpert' ? (
                     // Resource message from Ivy Expert
-                    <div className="bg-white border-2 border-indigo-200 rounded-2xl px-4 py-3 mb-1">
+                    <div className="bg-white border-2 border-brand-200 rounded-2xl px-4 py-3 mb-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <svg className="w-4 h-4 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-4 h-4 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                         </svg>
-                        <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Resource</span>
+                        <span className="text-xs font-semibold text-brand-600 uppercase tracking-wide">Resource</span>
                       </div>
                       {msg.text.trim() && <p className="text-sm text-gray-800 leading-relaxed">{msg.text}</p>}
                       {msg.attachment && (
                         <div 
                           onClick={() => handleFileClick(msg.attachment!.url, msg.attachment!.name)}
-                          className={`${msg.text.trim() ? 'mt-3' : ''} p-3 bg-indigo-50 rounded-lg flex items-center gap-3 cursor-pointer hover:bg-indigo-100 transition-colors`}
+                          className={`${msg.text.trim() ? 'mt-3' : ''} p-3 bg-brand-50 rounded-lg flex items-center gap-3 cursor-pointer hover:bg-brand-100 transition-colors`}
                         >
-                          <div className="p-2 bg-indigo-100 rounded">
-                            <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                          <div className="p-2 bg-brand-100 rounded">
+                            <svg className="w-5 h-5 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                             </svg>
                           </div>
@@ -457,21 +457,21 @@ function ConversationWindow({
                     </div>
                   ) : msg.messageType === 'resource' && msg.sender === 'student' ? (
                     // Resource message from student
-                    <div className="bg-white border-2 border-indigo-200 rounded-2xl px-4 py-3 mb-1">
+                    <div className="bg-white border-2 border-brand-200 rounded-2xl px-4 py-3 mb-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <svg className="w-4 h-4 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-4 h-4 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                         </svg>
-                        <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Resource</span>
+                        <span className="text-xs font-semibold text-brand-600 uppercase tracking-wide">Resource</span>
                       </div>
                       {msg.text.trim() && <p className="text-sm text-gray-800 leading-relaxed">{msg.text}</p>}
                       {msg.attachment && (
                         <div 
                           onClick={() => handleFileClick(msg.attachment!.url, msg.attachment!.name)}
-                          className={`${msg.text.trim() ? 'mt-3' : ''} p-3 bg-indigo-50 rounded-lg flex items-center gap-3 cursor-pointer hover:bg-indigo-100 transition-colors`}
+                          className={`${msg.text.trim() ? 'mt-3' : ''} p-3 bg-brand-50 rounded-lg flex items-center gap-3 cursor-pointer hover:bg-brand-100 transition-colors`}
                         >
-                          <div className="p-2 bg-indigo-100 rounded">
-                            <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                          <div className="p-2 bg-brand-100 rounded">
+                            <svg className="w-5 h-5 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                             </svg>
                           </div>
@@ -484,14 +484,14 @@ function ConversationWindow({
                     </div>
                   ) : (
                     // Regular message
-                    <div className={`rounded-2xl px-4 py-3 ${msg.sender === 'ivyExpert' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-900'}`}>
+                    <div className={`rounded-2xl px-4 py-3 ${msg.sender === 'ivyExpert' ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-900'}`}>
                       {msg.text.trim() && <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>}
                       {msg.attachment && (
                         <div 
                           onClick={() => handleFileClick(msg.attachment!.url, msg.attachment!.name)}
-                          className={`${msg.text.trim() ? 'mt-3' : ''} p-3 rounded-lg flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity ${msg.sender === 'ivyExpert' ? 'bg-blue-400/30' : 'bg-white'}`}
+                          className={`${msg.text.trim() ? 'mt-3' : ''} p-3 rounded-lg flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity ${msg.sender === 'ivyExpert' ? 'bg-brand-400/30' : 'bg-white'}`}
                         >
-                          <div className={`p-2 rounded ${msg.sender === 'ivyExpert' ? 'bg-blue-400' : 'bg-red-100'}`}>
+                          <div className={`p-2 rounded ${msg.sender === 'ivyExpert' ? 'bg-brand-400' : 'bg-red-100'}`}>
                             <svg className={`w-5 h-5 ${msg.sender === 'ivyExpert' ? 'text-white' : 'text-red-600'}`} fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                             </svg>
@@ -500,7 +500,7 @@ function ConversationWindow({
                             <p className={`text-sm font-medium truncate ${msg.sender === 'ivyExpert' ? 'text-white' : 'text-gray-900'}`}>
                               {msg.attachment.name}
                             </p>
-                            <p className={`text-xs ${msg.sender === 'ivyExpert' ? 'text-blue-100' : 'text-gray-500'}`}>
+                            <p className={`text-xs ${msg.sender === 'ivyExpert' ? 'text-brand-100' : 'text-gray-500'}`}>
                               {msg.attachment.size}
                             </p>
                           </div>
@@ -526,7 +526,7 @@ function ConversationWindow({
               onClick={() => setMessageType('normal')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 messageType === 'normal'
-                  ? 'bg-blue-500 text-white shadow-md'
+                  ? 'bg-brand-500 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -536,7 +536,7 @@ function ConversationWindow({
               onClick={() => setMessageType('feedback')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 messageType === 'feedback'
-                  ? 'bg-blue-500 text-white shadow-md'
+                  ? 'bg-brand-500 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -546,7 +546,7 @@ function ConversationWindow({
               onClick={() => setMessageType('action')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 messageType === 'action'
-                  ? 'bg-blue-500 text-white shadow-md'
+                  ? 'bg-brand-500 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -556,7 +556,7 @@ function ConversationWindow({
               onClick={() => setMessageType('resource')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 messageType === 'resource'
-                  ? 'bg-blue-500 text-white shadow-md'
+                  ? 'bg-brand-500 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -565,8 +565,8 @@ function ConversationWindow({
           </div>
           {attachedFile && (
             <div className="mb-3 p-3 bg-gray-50 rounded-lg flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded">
-                <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+              <div className="p-2 bg-brand-100 rounded">
+                <svg className="w-5 h-5 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                 </svg>
               </div>
@@ -645,13 +645,13 @@ function ConversationWindow({
               }}
               placeholder="Write structured feedback..."
               rows={1}
-              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white resize-none overflow-y-auto"
+              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent text-gray-900 bg-white resize-none overflow-y-auto"
               style={{ minHeight: '42px', maxHeight: '120px' }}
             />
             <button
               onClick={handleSendMessage}
               disabled={!newMessage.trim() && !attachedFile}
-              className="p-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-full transition-colors"
+              className="p-2.5 bg-brand-500 hover:bg-brand-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-full transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -699,7 +699,7 @@ function ConversationWindow({
                     <a
                       href={previewFile.url}
                       download={previewFile.name}
-                      className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                      className="inline-flex items-center px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
                     >
                       <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -1285,7 +1285,7 @@ function ActivitiesContent() {
           <button
             onClick={() => setActiveTab('suggestions')}
             className={`px-4 py-2 font-medium ${activeTab === 'suggestions'
-              ? 'text-blue-600 border-b-2 border-blue-600'
+              ? 'text-brand-600 border-b-2 border-brand-600'
               : 'text-gray-600 hover:text-gray-900'
               }`}
           >
@@ -1294,7 +1294,7 @@ function ActivitiesContent() {
           <button
             onClick={() => setActiveTab('evaluate')}
             className={`px-4 py-2 font-medium ${activeTab === 'evaluate'
-              ? 'text-blue-600 border-b-2 border-blue-600'
+              ? 'text-brand-600 border-b-2 border-brand-600'
               : 'text-gray-600 hover:text-gray-900'
               }`}
           >
@@ -1319,7 +1319,7 @@ function ActivitiesContent() {
           <div className="space-y-6">
             <div className="mb-8 pb-6 border-b border-gray-100">
               <h2 className="text-3xl font-black text-gray-900 tracking-tight uppercase flex items-center gap-3">
-                <span className={`w-3 h-10 rounded-full ${selectedPointer === 2 ? 'bg-blue-500' : selectedPointer === 3 ? 'bg-indigo-500' : 'bg-purple-500'}`}></span>
+                <span className={`w-3 h-10 rounded-full ${selectedPointer === 2 ? 'bg-brand-500' : selectedPointer === 3 ? 'bg-brand-500' : 'bg-brand-500'}`}></span>
                 {getPointerLabel(selectedPointer as number)}
               </h2>
             </div>
@@ -1338,13 +1338,13 @@ function ActivitiesContent() {
                   value={careerRole}
                   onChange={(e) => setCareerRole(e.target.value)}
                   rows={3}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white resize-y"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-gray-900 bg-white resize-y"
                   placeholder="Enter career role for this pointer (e.g., 'Doctor', 'Engineer', 'Finance')..."
                 />
                 <button
                   onClick={handleFetchSuggestions}
                   disabled={loading || !careerRole.trim()}
-                  className="self-start px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed h-[86px]"
+                  className="self-start px-6 py-2 bg-brand-600 text-white rounded-md hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed h-[86px]"
                 >
                   {loading ? '...' : 'Save & Get Suggestions'}
                 </button>
@@ -1414,7 +1414,7 @@ function ActivitiesContent() {
                         <div
                           key={suggestion._id}
                           className={`border rounded-lg p-4 transition-all ${selectedActivities.has(suggestion._id)
-                            ? 'border-blue-500 bg-blue-50'
+                            ? 'border-brand-500 bg-brand-50'
                             : 'border-gray-200 bg-white hover:shadow-md'
                             }`}
                         >
@@ -1424,7 +1424,7 @@ function ActivitiesContent() {
                               id={`activity-${suggestion._id}`}
                               checked={selectedActivities.has(suggestion._id)}
                               onChange={() => handleToggleActivity(suggestion._id)}
-                              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                              className="mt-1 h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300 rounded"
                             />
                             <div className="flex-1">
                               <div className="flex items-start justify-between gap-4 mb-2">
@@ -1441,10 +1441,10 @@ function ActivitiesContent() {
                                     onClick={() => setViewingDocumentForActivity(
                                       viewingDocumentForActivity === suggestion._id ? null : suggestion._id
                                     )}
-                                    className={`flex-shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-indigo-100 transition text-sm font-medium border ${
+                                    className={`flex-shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-brand-100 transition text-sm font-medium border ${
                                       viewingDocumentForActivity === suggestion._id
-                                        ? 'bg-indigo-600 text-white border-indigo-600'
-                                        : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                                        ? 'bg-brand-600 text-white border-brand-600'
+                                        : 'bg-brand-50 text-brand-700 border-brand-200'
                                     }`}
                                   >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1510,14 +1510,14 @@ function ActivitiesContent() {
 
                               {/* Deadline Picker - shown when activity is selected */}
                               {selectedActivities.has(suggestion._id) && (
-                                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="mt-3 p-3 bg-brand-50 border border-brand-200 rounded-lg">
                                   <div className="flex items-center gap-3">
-                                    <span className="text-sm font-bold text-blue-900">⏰ Deadline:</span>
+                                    <span className="text-sm font-bold text-brand-900">⏰ Deadline:</span>
                                     <input
                                       type="datetime-local"
                                       value={activityDeadlines[suggestion._id] || ''}
                                       onChange={(e) => setActivityDeadlines(prev => ({ ...prev, [suggestion._id]: e.target.value }))}
-                                      className="flex-1 px-3 py-2 border border-blue-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      className="flex-1 px-3 py-2 border border-brand-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                     />
                                   </div>
                                 </div>
@@ -1525,8 +1525,8 @@ function ActivitiesContent() {
 
                               {/* Inline Document Viewer */}
                               {viewingDocumentForActivity === suggestion._id && suggestion.documentUrl && (
-                                <div className="mt-4 border-2 border-indigo-200 rounded-lg overflow-hidden bg-gray-50">
-                                  <div className="bg-indigo-600 text-white px-4 py-2 flex items-center justify-between">
+                                <div className="mt-4 border-2 border-brand-200 rounded-lg overflow-hidden bg-gray-50">
+                                  <div className="bg-brand-600 text-white px-4 py-2 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1621,7 +1621,7 @@ function ActivitiesContent() {
           <div className="space-y-6">
             <div className="mb-8 pb-6 border-b border-gray-100">
               <h2 className="text-3xl font-black text-gray-900 tracking-tight uppercase flex items-center gap-3">
-                <span className={`w-3 h-10 rounded-full ${selectedPointer === 2 ? 'bg-blue-500' : selectedPointer === 3 ? 'bg-indigo-500' : 'bg-purple-500'}`}></span>
+                <span className={`w-3 h-10 rounded-full ${selectedPointer === 2 ? 'bg-brand-500' : selectedPointer === 3 ? 'bg-brand-500' : 'bg-brand-500'}`}></span>
                 {getPointerLabel(selectedPointer as number)} - EVALUATION
               </h2>
             </div>
@@ -1630,7 +1630,7 @@ function ActivitiesContent() {
               <button
                 onClick={fetchStudentActivities}
                 disabled={loadingActivities}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 bg-brand-600 text-white rounded-md hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loadingActivities ? 'Refreshing...' : 'Refresh Activities'}
               </button>
@@ -1674,7 +1674,7 @@ function ActivitiesContent() {
                                     getActivityCompletionPercentage(activity) === 100 
                                       ? 'bg-green-500' 
                                       : getActivityCompletionPercentage(activity) >= 50 
-                                        ? 'bg-blue-500' 
+                                        ? 'bg-brand-500' 
                                         : 'bg-orange-500'
                                   }`}
                                   style={{ width: `${getActivityCompletionPercentage(activity)}%` }}
@@ -1684,7 +1684,7 @@ function ActivitiesContent() {
                                 getActivityCompletionPercentage(activity) === 100 
                                   ? 'text-green-600' 
                                   : getActivityCompletionPercentage(activity) >= 50 
-                                    ? 'text-blue-600' 
+                                    ? 'text-brand-600' 
                                     : 'text-orange-600'
                               }`}>
                                 {getActivityCompletionPercentage(activity)}%
@@ -1695,7 +1695,7 @@ function ActivitiesContent() {
                         <p className="text-sm text-gray-500 mb-2">
                           {getPointerLabel(activity.pointerNo)}
                           {[2, 3, 4].includes(activity.pointerNo) && activity.weightage !== undefined && (
-                            <span className="ml-3 font-semibold text-blue-600">
+                            <span className="ml-3 font-semibold text-brand-600">
                               • Weightage: {activity.weightage}%
                             </span>
                           )}
@@ -1709,9 +1709,9 @@ function ActivitiesContent() {
                       {!activity.proofUploaded && activity.deadline && (() => {
                         const cd = getCountdown(activity.deadline);
                         return (
-                          <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="mb-4 p-4 bg-brand-50 border border-brand-200 rounded-lg">
                             <div className="flex items-center justify-between mb-2">
-                              <p className="text-sm font-bold text-blue-900">⏰ Activity Deadline</p>
+                              <p className="text-sm font-bold text-brand-900">⏰ Activity Deadline</p>
                             </div>
                             {cd.expired ? (
                               <div className="flex items-center gap-2 px-3 py-2 bg-red-100 border border-red-300 rounded-lg">
@@ -1719,32 +1719,32 @@ function ActivitiesContent() {
                               </div>
                             ) : (
                               <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold text-blue-700 uppercase tracking-wide mr-2">Time Left:</span>
+                                <span className="text-xs font-semibold text-brand-700 uppercase tracking-wide mr-2">Time Left:</span>
                                 {[
                                   { value: cd.days, unit: 'Days' },
                                   { value: cd.hours, unit: 'Hrs' },
                                   { value: cd.minutes, unit: 'Min' },
                                   { value: cd.seconds, unit: 'Sec' },
                                 ].map((item) => (
-                                  <div key={item.unit} className="flex flex-col items-center bg-blue-100 border border-blue-300 rounded-lg px-3 py-1.5 min-w-[48px]">
-                                    <span className="text-lg font-black text-blue-700 leading-none">{String(item.value).padStart(2, '0')}</span>
-                                    <span className="text-[10px] font-bold text-blue-500 uppercase">{item.unit}</span>
+                                  <div key={item.unit} className="flex flex-col items-center bg-brand-100 border border-brand-300 rounded-lg px-3 py-1.5 min-w-[48px]">
+                                    <span className="text-lg font-black text-brand-700 leading-none">{String(item.value).padStart(2, '0')}</span>
+                                    <span className="text-[10px] font-bold text-brand-500 uppercase">{item.unit}</span>
                                   </div>
                                 ))}
                               </div>
                             )}
                             {/* Update deadline */}
-                            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-blue-200">
+                            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-brand-200">
                               <input
                                 type="datetime-local"
                                 value={deadlineInputs[activity.selectionId] || new Date(activity.deadline).toISOString().slice(0, 16)}
                                 onChange={(e) => setDeadlineInputs(prev => ({ ...prev, [activity.selectionId]: e.target.value }))}
-                                className="flex-1 px-3 py-1.5 border border-blue-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="flex-1 px-3 py-1.5 border border-brand-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                               />
                               <button
                                 onClick={() => handleSetDeadline(activity.selectionId)}
                                 disabled={savingDeadline === activity.selectionId || !deadlineInputs[activity.selectionId]}
-                                className="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="px-3 py-1.5 bg-brand-600 text-white text-xs font-semibold rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                               >
                                 {savingDeadline === activity.selectionId ? 'Saving...' : 'Update Deadline'}
                               </button>
@@ -1754,20 +1754,20 @@ function ActivitiesContent() {
                       })()}
 
                       {/* Ivy Expert Documents Section */}
-                      <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-md">
+                      <div className="mb-4 p-4 bg-brand-50 border border-brand-200 rounded-md">
                         <div className="flex items-center justify-between mb-3">
-                          <p className="text-sm font-medium text-purple-900">Activity guides for Student</p>
+                          <p className="text-sm font-medium text-brand-900">Activity guides for Student</p>
                         </div>
                         {activity.ivyExpertDocuments && activity.ivyExpertDocuments.length > 0 ? (
                           <div className="space-y-3">
                             {activity.ivyExpertDocuments.map((doc, docIdx) => (
-                              <div key={docIdx} className="bg-white rounded-lg border border-purple-200 overflow-hidden">
+                              <div key={docIdx} className="bg-white rounded-lg border border-brand-200 overflow-hidden">
                                 {/* Document Header */}
-                                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-white border-b border-purple-100">
+                                <div className="flex items-center justify-between p-3 bg-brand-50 border-b border-brand-100">
                                   <span className="text-sm text-gray-800 font-semibold">📎 Guide {docIdx + 1}</span>
                                   <button
                                     onClick={() => setViewingIvyExpertDocUrl(viewingIvyExpertDocUrl === doc.url ? null : doc.url)}
-                                    className={`text-xs font-medium px-3 py-1.5 rounded-md ${viewingIvyExpertDocUrl === doc.url ? 'bg-purple-600 text-white' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}`}
+                                    className={`text-xs font-medium px-3 py-1.5 rounded-md ${viewingIvyExpertDocUrl === doc.url ? 'bg-brand-600 text-white' : 'bg-brand-100 text-brand-700 hover:bg-brand-200'}`}
                                   >
                                     {viewingIvyExpertDocUrl === doc.url ? 'Hide' : 'View'}
                                   </button>
@@ -1848,11 +1848,11 @@ function ActivitiesContent() {
                                                 setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to update task' });
                                               }
                                             }}
-                                            className={`text-xs font-medium px-3 py-1.5 rounded-md border-2 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                                            className={`text-xs font-medium px-3 py-1.5 rounded-md border-2 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                                               task.status === 'completed' 
                                                 ? 'bg-green-100 text-green-800 border-green-300' 
                                                 : task.status === 'in-progress'
-                                                ? 'bg-blue-100 text-blue-800 border-blue-300'
+                                                ? 'bg-brand-100 text-brand-800 border-brand-300'
                                                 : 'bg-gray-100 text-gray-600 border-gray-300'
                                             }`}
                                           >
@@ -1866,7 +1866,7 @@ function ActivitiesContent() {
                                   </div>
                                   <div className="mt-3 pt-2 border-t border-gray-200">
                                     <p className="text-xs text-gray-600">
-                                      <span className="font-medium text-purple-700">
+                                      <span className="font-medium text-brand-700">
                                         {doc.tasks.filter(t => t.status === 'completed').length} of {doc.tasks.length}
                                       </span> tasks completed
                                     </p>
@@ -1875,7 +1875,7 @@ function ActivitiesContent() {
 
                                 {/* Document Viewer */}
                                 {viewingIvyExpertDocUrl === doc.url && (
-                                  <div className="border-t border-purple-100">
+                                  <div className="border-t border-brand-100">
                                     <InlineDocViewer url={doc.url} onClose={() => setViewingIvyExpertDocUrl(null)} />
                                   </div>
                                 )}
@@ -1883,14 +1883,14 @@ function ActivitiesContent() {
                             ))}
                           </div>
                         ) : (
-                          <p className="text-xs text-purple-700">No activity guides uploaded yet. Upload Word guides for students to view.</p>
+                          <p className="text-xs text-brand-700">No activity guides uploaded yet. Upload Word guides for students to view.</p>
                         )}
                       </div>
 
                       {activity.proofUploaded ? (
-                        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-                          <p className="text-sm font-medium text-blue-900 mb-2">Proof Submitted</p>
-                          <p className="text-xs text-blue-700 mb-3">
+                        <div className="mb-4 p-4 bg-brand-50 border border-brand-200 rounded-md">
+                          <p className="text-sm font-medium text-brand-900 mb-2">Proof Submitted</p>
+                          <p className="text-xs text-brand-700 mb-3">
                             Submitted: {new Date(activity.submission!.submittedAt).toLocaleString()}
                           </p>
                           <div className="space-y-4">
@@ -1898,7 +1898,7 @@ function ActivitiesContent() {
                               <div key={index} className="flex flex-col gap-2">
                                 <button
                                   onClick={() => setViewingFileUrl(viewingFileUrl === fileUrl ? null : fileUrl)}
-                                  className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all w-fit ${viewingFileUrl === fileUrl ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-indigo-600 border border-indigo-100 hover:bg-indigo-50'}`}
+                                  className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all w-fit ${viewingFileUrl === fileUrl ? 'bg-brand-600 text-white shadow-lg' : 'bg-white text-brand-600 border border-brand-100 hover:bg-brand-50'}`}
                                 >
                                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1991,7 +1991,7 @@ function ActivityEvaluationForm({
             step="0.1"
             value={score}
             onChange={(e) => setScore(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 text-gray-900 bg-white"
           />
         </div>
         <div>
@@ -2000,12 +2000,12 @@ function ActivityEvaluationForm({
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 text-gray-900 bg-white"
           />
         </div>
         <button
           onClick={() => onEvaluate(submissionId, score, feedback)}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full bg-brand-600 text-white py-2 px-4 rounded-md hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
         >
           Submit Evaluation
         </button>

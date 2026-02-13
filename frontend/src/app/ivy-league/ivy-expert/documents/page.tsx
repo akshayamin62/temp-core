@@ -135,7 +135,7 @@ function EvaluationForm({ doc, studentIvyServiceId, onSave, onClose }: { doc: Ac
                         min="0" max="10" step="0.5"
                         value={score}
                         onChange={(e) => setScore(e.target.value)}
-                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 outline-none font-bold text-gray-900 transition-all text-lg"
+                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-brand-500 outline-none font-bold text-gray-900 transition-all text-lg"
                         placeholder="0-10"
                     />
                 </div>
@@ -145,7 +145,7 @@ function EvaluationForm({ doc, studentIvyServiceId, onSave, onClose }: { doc: Ac
                         type="text"
                         value={feedback}
                         onChange={(e) => setFeedback(e.target.value)}
-                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 outline-none font-medium text-gray-700 transition-all text-sm"
+                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-brand-500 outline-none font-medium text-gray-700 transition-all text-sm"
                         placeholder="Observations..."
                     />
                 </div>
@@ -153,7 +153,7 @@ function EvaluationForm({ doc, studentIvyServiceId, onSave, onClose }: { doc: Ac
                     <button
                         onClick={handleSave}
                         disabled={submitting}
-                        className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all text-sm h-[52px]"
+                        className="px-6 py-3 bg-brand-600 text-white font-bold rounded-xl shadow-lg shadow-brand-100 hover:bg-brand-700 active:scale-95 transition-all text-sm h-[52px]"
                     >
                         {submitting ? '...' : (doc.evaluation ? 'UPDATE' : 'SAVE')}
                     </button>
@@ -198,12 +198,12 @@ function IvyExpertDocumentsContent() {
     const sumScores = documents.reduce((acc, d) => acc + (d.evaluation?.score || 0), 0);
     const meanScore = totalEvaluated > 0 ? (sumScores / totalEvaluated).toFixed(2) : '0.00';
 
-    if (loading) return <div className="p-12 text-center text-blue-400 font-black animate-pulse tracking-widest uppercase">Fetching Documents...</div>;
+    if (loading) return <div className="p-12 text-center text-brand-400 font-black animate-pulse tracking-widest uppercase">Fetching Documents...</div>;
 
     const renderDocCard = (d: AcademicDoc, isMarksheet: boolean = false) => {
         const isViewing = viewingDocId === d._id;
         return (
-            <div key={d._id} className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 hover:shadow-xl hover:border-blue-100 transition-all mb-6">
+            <div key={d._id} className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 hover:shadow-xl hover:border-brand-100 transition-all mb-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
                         <h3 className="text-2xl font-black text-gray-900 tracking-tight uppercase">
@@ -219,7 +219,7 @@ function IvyExpertDocumentsContent() {
                     </div>
                     <button
                         onClick={() => setViewingDocId(isViewing ? null : d._id)}
-                        className={`flex items-center gap-2 px-6 py-3 font-bold rounded-2xl transition-all border shadow-inner ${isViewing ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-50 text-gray-600 hover:bg-blue-50 hover:text-blue-600 border-transparent hover:border-blue-100'}`}
+                        className={`flex items-center gap-2 px-6 py-3 font-bold rounded-2xl transition-all border shadow-inner ${isViewing ? 'bg-brand-600 text-white border-brand-600' : 'bg-gray-50 text-gray-600 hover:bg-brand-50 hover:text-brand-600 border-transparent hover:border-brand-100'}`}
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -283,7 +283,7 @@ function IvyExpertDocumentsContent() {
             <div className="max-w-6xl mx-auto">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
                     <div>
-                        <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4">DOCUMENT<br /><span className="text-blue-600">REPOSITORY</span></h1>
+                        <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4">DOCUMENT<br /><span className="text-brand-600">REPOSITORY</span></h1>
                         <p className="text-xl text-gray-400 font-medium max-w-xl">Individual document verification and marksheet evaluation.</p>
                     </div>
                 </div>
@@ -291,7 +291,7 @@ function IvyExpertDocumentsContent() {
                 <div className="grid grid-cols-1 gap-16">
                     <section>
                         <h2 className="text-3xl font-black text-gray-900 mb-8 flex items-center gap-4">
-                            <span className="h-10 w-2 bg-blue-500 rounded-full"></span>
+                            <span className="h-10 w-2 bg-brand-500 rounded-full"></span>
                             IDENTITY VERIFICATION
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -302,7 +302,7 @@ function IvyExpertDocumentsContent() {
 
                     <section>
                         <h2 className="text-3xl font-black text-gray-900 mb-8 flex items-center gap-4">
-                            <span className="h-10 w-2 bg-indigo-500 rounded-full"></span>
+                            <span className="h-10 w-2 bg-brand-500 rounded-full"></span>
                             SCHOOL MARKSHEETS
                         </h2>
                         {schoolMarksheets.map(d => renderDocCard(d, true))}
@@ -311,7 +311,7 @@ function IvyExpertDocumentsContent() {
 
                     <section>
                         <h2 className="text-3xl font-black text-gray-900 mb-8 flex items-center gap-4">
-                            <span className="h-10 w-2 bg-purple-500 rounded-full"></span>
+                            <span className="h-10 w-2 bg-brand-500 rounded-full"></span>
                             UNIVERSITY RECORDS
                         </h2>
                         {uniMarksheets.map(d => renderDocCard(d, true))}

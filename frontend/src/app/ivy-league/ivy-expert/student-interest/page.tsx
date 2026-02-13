@@ -118,7 +118,7 @@ function StudentInterestContent() {
               onChange={(e) => setStudentInterest(e.target.value)}
               disabled={loading || saving}
               rows={8}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white disabled:opacity-50 disabled:cursor-not-allowed resize-y"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-gray-900 bg-white disabled:opacity-50 disabled:cursor-not-allowed resize-y"
               placeholder="Enter student primary interest here..."
             />
           </div>
@@ -136,7 +136,7 @@ function StudentInterestContent() {
               type="button"
               onClick={handleSave}
               disabled={loading || saving}
-              className="bg-blue-600 text-white py-2 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="bg-brand-600 text-white py-2 px-6 rounded-md hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {saving ? 'Saving...' : 'Save'}
             </button>

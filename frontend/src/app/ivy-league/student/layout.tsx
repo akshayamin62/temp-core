@@ -94,7 +94,7 @@ function StudentSidebar() {
         <aside className={`bg-white border-r border-gray-100 flex flex-col h-screen sticky top-0 shadow-sm z-20 transition-all duration-300 ${isConversationOpen ? 'w-20' : 'w-72'}`}>
             <div className={`p-8 border-b border-gray-50 ${isConversationOpen ? 'px-4' : ''}`}>
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-100 flex-shrink-0">
+                    <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg shadow-brand-100 flex-shrink-0">
                         <span className="text-white font-black text-xl italic leading-none">I</span>
                     </div>
                     {!isConversationOpen && (
@@ -118,11 +118,11 @@ function StudentSidebar() {
                             className={`flex items-center gap-4 rounded-2xl transition-all font-bold text-sm tracking-tight group relative ${
                                 isConversationOpen ? 'px-3 py-3 justify-center' : 'px-5 py-4'
                             } ${active
-                                ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100 ring-4 ring-indigo-50 scale-[1.02]'
-                                : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600'
+                                ? 'bg-brand-600 text-white shadow-xl shadow-brand-100 ring-4 ring-brand-50 scale-[1.02]'
+                                : 'text-gray-500 hover:bg-gray-50 hover:text-brand-600'
                                 }`}
                         >
-                            <span className={`${active ? 'text-white' : 'text-gray-400 group-hover:text-indigo-600 transition-colors'}`}>
+                            <span className={`${active ? 'text-white' : 'text-gray-400 group-hover:text-brand-600 transition-colors'}`}>
                                 {item.icon}
                             </span>
                             {!isConversationOpen && <span className="uppercase tracking-wide">{item.name}</span>}

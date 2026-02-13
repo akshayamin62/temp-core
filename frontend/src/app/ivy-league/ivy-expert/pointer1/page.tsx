@@ -437,7 +437,7 @@ function IvyExpertPointer1Content() {
         return sections.reduce((sum, s) => sum + (s.weightage || 0), 0);
     };
 
-    if (loading) return <div className="p-12 text-center text-indigo-400 font-black animate-pulse">Loading...</div>;
+    if (loading) return <div className="p-12 text-center text-brand-400 font-black animate-pulse">Loading...</div>;
 
     return (
         <div className="min-h-screen bg-gray-50 p-6 md:p-12 font-sans tracking-tight">
@@ -445,7 +445,7 @@ function IvyExpertPointer1Content() {
                 <div className="mb-12 flex justify-between items-start">
                     <div>
                         <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4">
-                            ACADEMIC<br /><span className="text-indigo-600">EXCELLENCE</span>
+                            ACADEMIC<br /><span className="text-brand-600">EXCELLENCE</span>
                         </h1>
                         <p className="text-xl text-gray-400 font-medium max-w-xl">
                             Manage student academic performance and provide evaluations.
@@ -454,9 +454,9 @@ function IvyExpertPointer1Content() {
 
                     {/* Academic Excellence Score Card */}
                     {academicScore && (
-                        <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-blue-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
+                        <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-brand-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
                             <span className="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase mb-2">Academic Excellence Score</span>
-                            <div className="text-7xl font-black text-blue-600 leading-none">{academicScore.finalScore.toFixed(2)}</div>
+                            <div className="text-7xl font-black text-brand-600 leading-none">{academicScore.finalScore.toFixed(2)}</div>
                         </div>
                     )}
                 </div>
@@ -467,7 +467,7 @@ function IvyExpertPointer1Content() {
                         onClick={() => setActiveTab('formal')}
                         className={`px-8 py-4 font-bold text-sm transition-all ${
                             activeTab === 'formal'
-                                ? 'text-indigo-600 border-b-2 border-indigo-600'
+                                ? 'text-brand-600 border-b-2 border-brand-600'
                                 : 'text-gray-400 hover:text-gray-600'
                         }`}
                     >
@@ -477,7 +477,7 @@ function IvyExpertPointer1Content() {
                         onClick={() => setActiveTab('informal')}
                         className={`px-8 py-4 font-bold text-sm transition-all ${
                             activeTab === 'informal'
-                                ? 'text-indigo-600 border-b-2 border-indigo-600'
+                                ? 'text-brand-600 border-b-2 border-brand-600'
                                 : 'text-gray-400 hover:text-gray-600'
                         }`}
                     >
@@ -517,13 +517,13 @@ function IvyExpertPointer1Content() {
                         <div className="flex justify-end">
                             <button
                                 onClick={() => setShowAddSection(true)}
-                                className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 transition-all shadow-lg"
+                                className="px-6 py-3 bg-brand-600 text-white font-bold rounded-2xl hover:bg-brand-700 transition-all shadow-lg"
                             >
                                 + Add Section
                             </button>
                         </div>
                     ) : (
-                        <div className="bg-white p-6 rounded-2xl border-2 border-indigo-200 shadow-sm">
+                        <div className="bg-white p-6 rounded-2xl border-2 border-brand-200 shadow-sm">
                             <h3 className="text-lg font-bold text-gray-900 mb-4">New Section</h3>
                             <div className="flex gap-4">
                                 <input
@@ -531,11 +531,11 @@ function IvyExpertPointer1Content() {
                                     placeholder="Exam Name (e.g., Mid-Term, Final Exam)"
                                     value={newSectionName}
                                     onChange={(e) => setNewSectionName(e.target.value)}
-                                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:border-indigo-500 outline-none text-black placeholder:text-gray-400"
+                                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:border-brand-500 outline-none text-black placeholder:text-gray-400"
                                 />
                                 <button
                                     onClick={addSection}
-                                    className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700"
+                                    className="px-6 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700"
                                 >
                                     Save
                                 </button>
@@ -554,7 +554,7 @@ function IvyExpertPointer1Content() {
 
                     {/* Sections */}
                     {sections.map((section, sectionIndex) => (
-                        <div key={section._id || sectionIndex} className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-3xl border-2 border-indigo-200 shadow-lg">
+                        <div key={section._id || sectionIndex} className="bg-brand-50 p-6 rounded-3xl border-2 border-brand-200 shadow-lg">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-4">
                                     <h2 className="text-2xl font-black text-gray-900 uppercase">{section.examName}</h2>
@@ -569,7 +569,7 @@ function IvyExpertPointer1Content() {
                                                 value={section.weightage || 0}
                                                 onChange={(e) => updateWeightage(section._id!, parseFloat(e.target.value) || 0)}
                                                 onBlur={saveWeightages}
-                                                className="w-16 px-2 py-1 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black text-center font-bold"
+                                                className="w-16 px-2 py-1 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black text-center font-bold"
                                             />
                                             <span className="text-sm font-bold text-gray-600">%</span>
                                         </div>
@@ -578,7 +578,7 @@ function IvyExpertPointer1Content() {
                                 <div className="flex gap-3">
                                         <button
                                             onClick={() => addSubSection(sectionIndex)}
-                                            className="px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700"
+                                            className="px-4 py-2 bg-brand-600 text-white text-sm font-bold rounded-xl hover:bg-brand-700"
                                         >
                                             + Add Sub-Section
                                         </button>
@@ -614,7 +614,7 @@ function IvyExpertPointer1Content() {
                                                             <select
                                                                 value={subSection.testType}
                                                                 onChange={(e) => updateSubSection(section._id!, subSection._id!, 'testType', e.target.value)}
-                                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-black"
+                                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-black"
                                                             >
                                                                 {activeTab === 'informal' ? (
                                                                     <>
@@ -637,7 +637,7 @@ function IvyExpertPointer1Content() {
                                                             <select
                                                                 value={subSection.month}
                                                                 onChange={(e) => updateSubSection(section._id!, subSection._id!, 'month', e.target.value)}
-                                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-black"
+                                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-black"
                                                             >
                                                                 {MONTHS.map(month => (
                                                                     <option key={month} value={month}>{month}</option>
@@ -649,7 +649,7 @@ function IvyExpertPointer1Content() {
                                                             <select
                                                                 value={subSection.year}
                                                                 onChange={(e) => updateSubSection(section._id!, subSection._id!, 'year', parseInt(e.target.value))}
-                                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-black"
+                                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-black"
                                                             >
                                                                 {YEARS.map(year => (
                                                                     <option key={year} value={year}>{year}</option>
@@ -679,7 +679,7 @@ function IvyExpertPointer1Content() {
                                                                         value={project.title}
                                                                         onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'title', e.target.value)}
                                                                         placeholder="Project title"
-                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400"
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400"
                                                                     />
                                                                 </div>
                                                                 <div>
@@ -689,7 +689,7 @@ function IvyExpertPointer1Content() {
                                                                         value={project.organizationName || ''}
                                                                         onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'organizationName', e.target.value)}
                                                                         placeholder="Organization name"
-                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400"
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400"
                                                                     />
                                                                 </div>
                                                                 <div className="col-span-2">
@@ -699,7 +699,7 @@ function IvyExpertPointer1Content() {
                                                                         value={project.description}
                                                                         onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'description', e.target.value)}
                                                                         placeholder="Describe the project"
-                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400 resize-none"
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400 resize-none"
                                                                     />
                                                                 </div>
                                                                 <div>
@@ -709,7 +709,7 @@ function IvyExpertPointer1Content() {
                                                                         value={project.projectUrl || ''}
                                                                         onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'projectUrl', e.target.value)}
                                                                         placeholder="https://..."
-                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400"
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400"
                                                                     />
                                                                 </div>
                                                                 <div>
@@ -719,7 +719,7 @@ function IvyExpertPointer1Content() {
                                                                         value={project.feedback || ''}
                                                                         onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'feedback', e.target.value)}
                                                                         placeholder="Enter feedback"
-                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400"
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400"
                                                                     />
                                                                 </div>
                                                                 <div className="flex items-end justify-center h-full pb-1">
@@ -753,7 +753,7 @@ function IvyExpertPointer1Content() {
                                                                         value={subject.name}
                                                                         onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'name', e.target.value)}
                                                                         placeholder="Subject name"
-                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400"
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400"
                                                                     />
                                                                 </div>
                                                                 <div>
@@ -762,7 +762,7 @@ function IvyExpertPointer1Content() {
                                                                         type="number"
                                                                         value={subject.marksObtained}
                                                                         onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'marksObtained', parseFloat(e.target.value))}
-                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black"
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black"
                                                                     />
                                                                 </div>
                                                                 <div>
@@ -771,12 +771,12 @@ function IvyExpertPointer1Content() {
                                                                         type="number"
                                                                         value={subject.totalMarks}
                                                                         onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'totalMarks', parseFloat(e.target.value))}
-                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black"
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black"
                                                                     />
                                                                 </div>
                                                                 <div>
                                                                     <label className="block text-xs font-bold text-gray-600 mb-1">Percentage</label>
-                                                                    <div className="px-3 py-2 bg-indigo-50 text-indigo-700 font-bold rounded-lg text-sm text-center">
+                                                                    <div className="px-3 py-2 bg-brand-50 text-brand-700 font-bold rounded-lg text-sm text-center">
                                                                         {subject.totalMarks > 0 ? ((subject.marksObtained / subject.totalMarks) * 100).toFixed(2) : '0.00'}%
                                                                     </div>
                                                                 </div>
@@ -787,7 +787,7 @@ function IvyExpertPointer1Content() {
                                                                         value={subject.feedback || ''}
                                                                         onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'feedback', e.target.value)}
                                                                         placeholder="Enter feedback"
-                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400"
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400"
                                                                     />
                                                                 </div>
                                                                 <div className="flex items-end justify-center h-full pb-1">
@@ -828,7 +828,7 @@ function IvyExpertPointer1Content() {
                                                                     const value = Math.max(0, Math.min(10, parseFloat(e.target.value) || 0));
                                                                     updateSubSection(section._id!, subSection._id!, 'score', value);
                                                                 }}
-                                                                className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black text-center font-bold"
+                                                                className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black text-center font-bold"
                                                             />
                                                         </div>
                                                     </div>
@@ -855,7 +855,7 @@ function IvyExpertPointer1Content() {
                                                         onBlur={(e) => updateSubSection(section._id!, subSection._id!, 'overallFeedback', e.target.value)}
                                                         placeholder="Enter overall feedback for this sub-section..."
                                                         rows={3}
-                                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400 resize-none"
+                                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400 resize-none"
                                                     />
                                                 </div>
                                             </div>

@@ -253,7 +253,7 @@ function Pointer6Content() {
 
   if (!studentIvyServiceId && !serviceLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-50 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-brand-50 flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
           <div className="bg-white rounded-2xl shadow-xl p-12">
             <div className="bg-red-50 text-red-800 border border-red-200 p-6 rounded-2xl font-bold uppercase tracking-tight text-center">
@@ -270,7 +270,7 @@ function Pointer6Content() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-50 py-12 px-4">
+    <div className="min-h-screen bg-brand-50 py-12 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Read-Only Banner */}
         {readOnly && (
@@ -293,9 +293,9 @@ function Pointer6Content() {
               <p className="text-gray-600">Select courses you want to pursue</p>
             </div>
             {pointer6Score != null && (
-              <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-indigo-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
+              <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-brand-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
                 <span className="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase mb-2">Current Mean Score</span>
-                <div className="text-7xl font-black text-indigo-600 leading-none">{typeof pointer6Score === 'number' ? pointer6Score.toFixed(1) : '0.00'}</div>
+                <div className="text-7xl font-black text-brand-600 leading-none">{typeof pointer6Score === 'number' ? pointer6Score.toFixed(1) : '0.00'}</div>
               </div>
             )}
           </div>
@@ -311,14 +311,14 @@ function Pointer6Content() {
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mb-4"></div>
                 <p className="text-gray-600">Loading courses...</p>
               </div>
             </div>
           ) : courses.length === 0 ? (
             <div className="text-center py-12">
               <svg
-                className="w-20 h-20 mx-auto text-indigo-600 animate-pulse mb-6"
+                className="w-20 h-20 mx-auto text-brand-600 animate-pulse mb-6"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -361,7 +361,7 @@ function Pointer6Content() {
                           checked={course.selected}
                           onChange={() => handleSelectCourse(course._id)}
                           disabled={readOnly || !!(course.selected && course.startDate && course.endDate)}
-                          className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer disabled:cursor-not-allowed"
+                          className="w-5 h-5 text-brand-600 border-gray-300 rounded focus:ring-brand-500 cursor-pointer disabled:cursor-not-allowed"
                           title={course.selected && course.startDate && course.endDate ? "Cannot unselect - course has saved dates" : ""}
                         />
                       </div>
@@ -399,7 +399,7 @@ function Pointer6Content() {
                               href={course.link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-indigo-600 hover:text-indigo-900 underline font-medium text-sm"
+                              className="text-brand-600 hover:text-brand-900 underline font-medium text-sm"
                             >
                               View
                             </a>
@@ -414,8 +414,8 @@ function Pointer6Content() {
                       if (!countdown) return null;
 
                       const colorMap: Record<string, { bg: string; border: string; text: string; badge: string; unit: string }> = {
-                        upcoming: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', badge: 'bg-blue-600', unit: 'text-blue-500' },
-                        ongoing:  { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', badge: 'bg-blue-600', unit: 'text-blue-500' },
+                        upcoming: { bg: 'bg-brand-50', border: 'border-brand-200', text: 'text-brand-700', badge: 'bg-brand-600', unit: 'text-brand-500' },
+                        ongoing:  { bg: 'bg-brand-50', border: 'border-brand-200', text: 'text-brand-700', badge: 'bg-brand-600', unit: 'text-brand-500' },
                         overdue:  { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', badge: 'bg-red-600', unit: 'text-red-500' },
                       };
                       const c = colorMap[countdown.status] || colorMap.ongoing;
@@ -465,7 +465,7 @@ function Pointer6Content() {
                               value={dateInputs[course._id]?.startDate || ''}
                               onChange={(e) => handleDateChange(course._id, 'startDate', e.target.value)}
                               disabled={readOnly || course.selected}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900 disabled:text-gray-900"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900 disabled:text-gray-900"
                             />
                           </div>
                           <div className="flex-1">
@@ -477,13 +477,13 @@ function Pointer6Content() {
                               value={dateInputs[course._id]?.endDate || ''}
                               onChange={(e) => handleDateChange(course._id, 'endDate', e.target.value)}
                               disabled={readOnly || course.selected}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900 disabled:text-gray-900"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900 disabled:text-gray-900"
                             />
                           </div>
                           {!readOnly && !course.selected && (
                             <button
                               onClick={() => handleSaveDates(course._id)}
-                              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                              className="px-6 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors font-medium"
                             >
                               Save
                             </button>
@@ -512,7 +512,7 @@ function Pointer6Content() {
                                 className={`px-4 py-2 rounded-lg font-medium cursor-pointer inline-block transition-colors ${
                                   uploading === course._id
                                     ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                    : 'bg-brand-600 text-white hover:bg-brand-700'
                                 }`}
                               >
                                 {uploading === course._id ? 'Uploading...' : 'Upload Certificate'}
@@ -539,11 +539,11 @@ function Pointer6Content() {
                                 </div>
                               </div>
                               {course.score !== undefined && course.score !== null && (
-                                <div className="ml-auto flex items-center gap-2 bg-indigo-100 px-3 py-1 rounded-full">
-                                  <svg className="w-4 h-4 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                                <div className="ml-auto flex items-center gap-2 bg-brand-100 px-3 py-1 rounded-full">
+                                  <svg className="w-4 h-4 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                                   </svg>
-                                  <span className="text-sm font-bold text-indigo-900">{course.score}/10</span>
+                                  <span className="text-sm font-bold text-brand-900">{course.score}/10</span>
                                 </div>
                               )}
                             </div>

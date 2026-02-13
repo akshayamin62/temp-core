@@ -121,7 +121,7 @@ function ParentPointerActivitiesContent() {
               value={studentId}
               onChange={(e) => setStudentId(e.target.value)}
               placeholder="studentId"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
             />
           </div>
         </div>
@@ -129,7 +129,7 @@ function ParentPointerActivitiesContent() {
         <button
           onClick={fetchActivities}
           disabled={!studentId || loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+          className="bg-brand-600 text-white px-4 py-2 rounded-md hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Refresh'}
         </button>
@@ -178,21 +178,21 @@ function ParentPointerActivitiesContent() {
               </div>
 
               {act.submission && (
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-3 space-y-2">
-                  <p className="text-sm font-medium text-blue-900">Submission</p>
+                <div className="bg-brand-50 border border-brand-200 rounded-md p-3 space-y-2">
+                  <p className="text-sm font-medium text-brand-900">Submission</p>
                   {act.submission.remarks && (
-                    <p className="text-sm text-blue-800 whitespace-pre-wrap">{act.submission.remarks}</p>
+                    <p className="text-sm text-brand-800 whitespace-pre-wrap">{act.submission.remarks}</p>
                   )}
-                  <ul className="text-sm text-blue-800 space-y-1">
+                  <ul className="text-sm text-brand-800 space-y-1">
                     {act.submission.files.map((file, idx) => (
                       <li key={idx}>
-                        <button onClick={() => downloadFile(file)} className="underline hover:text-blue-900">
+                        <button onClick={() => downloadFile(file)} className="underline hover:text-brand-900">
                           Proof {idx + 1}
                         </button>
                       </li>
                     ))}
                   </ul>
-                  <p className="text-xs text-blue-700">
+                  <p className="text-xs text-brand-700">
                     Submitted at: {new Date(act.submission.submittedAt).toLocaleString()}
                   </p>
                 </div>

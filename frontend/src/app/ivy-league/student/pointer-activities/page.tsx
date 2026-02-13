@@ -184,7 +184,7 @@ function StudentPointerActivitiesContent() {
               value={studentIvyServiceId}
               onChange={(e) => setStudentIvyServiceId(e.target.value)}
               placeholder="studentIvyServiceId"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
             />
           </div>
           <div>
@@ -193,7 +193,7 @@ function StudentPointerActivitiesContent() {
               value={studentId}
               onChange={(e) => setStudentId(e.target.value)}
               placeholder="studentId"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
             />
           </div>
         </div>
@@ -201,7 +201,7 @@ function StudentPointerActivitiesContent() {
         <button
           onClick={fetchActivities}
           disabled={!studentIvyServiceId || loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+          className="bg-brand-600 text-white px-4 py-2 rounded-md hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Refresh Activities'}
         </button>
@@ -240,9 +240,9 @@ function StudentPointerActivitiesContent() {
                     </div>
                     {/* Score Card */}
                     {pointerScores[pointerNo] !== null && pointerScores[pointerNo] !== undefined && (
-                      <div className="bg-white p-6 rounded-2xl shadow-md border-2 border-indigo-100 flex flex-col items-center justify-center text-center">
+                      <div className="bg-white p-6 rounded-2xl shadow-md border-2 border-brand-100 flex flex-col items-center justify-center text-center">
                         <span className="text-xs font-black tracking-widest text-gray-400 uppercase mb-2">Current Score</span>
-                        <div className="text-5xl font-black text-indigo-600 leading-none">
+                        <div className="text-5xl font-black text-brand-600 leading-none">
                           {typeof pointerScores[pointerNo] === 'number' ? pointerScores[pointerNo].toFixed(2) : '0.00'}
                         </div>
                       </div>
@@ -283,21 +283,21 @@ function StudentPointerActivitiesContent() {
               </div>
 
               {act.submission && (
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-3 space-y-2">
-                  <p className="text-sm font-medium text-blue-900">Your submission</p>
+                <div className="bg-brand-50 border border-brand-200 rounded-md p-3 space-y-2">
+                  <p className="text-sm font-medium text-brand-900">Your submission</p>
                   {act.submission.remarks && (
-                    <p className="text-sm text-blue-800 whitespace-pre-wrap">{act.submission.remarks}</p>
+                    <p className="text-sm text-brand-800 whitespace-pre-wrap">{act.submission.remarks}</p>
                   )}
-                  <ul className="text-sm text-blue-800 space-y-1">
+                  <ul className="text-sm text-brand-800 space-y-1">
                     {act.submission.files.map((file, idx) => (
                       <li key={idx}>
-                        <button onClick={() => downloadFile(file)} className="underline hover:text-blue-900">
+                        <button onClick={() => downloadFile(file)} className="underline hover:text-brand-900">
                           Proof {idx + 1}
                         </button>
                       </li>
                     ))}
                   </ul>
-                  <p className="text-xs text-blue-700">
+                  <p className="text-xs text-brand-700">
                     Submitted at: {new Date(act.submission.submittedAt).toLocaleString()}
                   </p>
                 </div>
@@ -310,7 +310,7 @@ function StudentPointerActivitiesContent() {
                     rows={2}
                     value={remarksDraft[act.selectionId] ?? ''}
                     onChange={(e) => setRemarksDraft((prev) => ({ ...prev, [act.selectionId]: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 resize-y"
                     placeholder="Add remarks (optional)"
                     disabled={uploadingFor === act.selectionId}
                   />
@@ -319,7 +319,7 @@ function StudentPointerActivitiesContent() {
                     multiple
                     onChange={(e) => handleUpload(act.selectionId, e.target.files)}
                     disabled={uploadingFor === act.selectionId}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 disabled:opacity-50"
                   />
                   <p className="text-xs text-gray-500">Upload PDFs or images.</p>
                 </div>

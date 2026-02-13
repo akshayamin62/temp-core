@@ -373,12 +373,12 @@ function ConversationWindow({
                     </div>
                   ) : msg.messageType === 'resource' && msg.sender === 'student' ? (
                     // Resource message from student
-                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-1">
+                    <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 mb-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <svg className="w-4 h-4 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-4 h-4 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                         </svg>
-                        <span className="text-xs font-semibold text-indigo-800 uppercase tracking-wide">Resource</span>
+                        <span className="text-xs font-semibold text-brand-800 uppercase tracking-wide">Resource</span>
                       </div>
                       {msg.text.trim() && <p className="text-sm text-gray-800 leading-relaxed">{msg.text}</p>}
                       {msg.attachment && (
@@ -386,8 +386,8 @@ function ConversationWindow({
                           onClick={() => handleFileClick(msg.attachment!.url, msg.attachment!.name)}
                           className={`${msg.text.trim() ? 'mt-3' : ''} p-3 bg-white rounded-lg flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors`}
                         >
-                          <div className="p-2 bg-indigo-100 rounded">
-                            <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                          <div className="p-2 bg-brand-100 rounded">
+                            <svg className="w-5 h-5 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                             </svg>
                           </div>
@@ -400,21 +400,21 @@ function ConversationWindow({
                     </div>
                   ) : msg.messageType === 'action' && msg.sender === 'ivyExpert' ? (
                     // Action message from Ivy Expert
-                    <div className="bg-white border-2 border-purple-200 rounded-lg p-4 mb-1">
+                    <div className="bg-white border-2 border-brand-200 rounded-lg p-4 mb-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-4 h-4 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
                         </svg>
-                        <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Action Suggested</span>
+                        <span className="text-xs font-semibold text-brand-600 uppercase tracking-wide">Action Suggested</span>
                       </div>
                       {msg.text.trim() && <p className="text-sm text-gray-800 leading-relaxed">{msg.text}</p>}
                       {msg.attachment && (
                         <div 
                           onClick={() => handleFileClick(msg.attachment!.url, msg.attachment!.name)}
-                          className={`${msg.text.trim() ? 'mt-3' : ''} p-3 bg-purple-50 rounded-lg flex items-center gap-3 cursor-pointer hover:bg-purple-100 transition-colors`}
+                          className={`${msg.text.trim() ? 'mt-3' : ''} p-3 bg-brand-50 rounded-lg flex items-center gap-3 cursor-pointer hover:bg-brand-100 transition-colors`}
                         >
-                          <div className="p-2 bg-purple-100 rounded">
-                            <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                          <div className="p-2 bg-brand-100 rounded">
+                            <svg className="w-5 h-5 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                             </svg>
                           </div>
@@ -427,21 +427,21 @@ function ConversationWindow({
                     </div>
                   ) : msg.messageType === 'resource' && msg.sender === 'ivyExpert' ? (
                     // Resource message from Ivy Expert
-                    <div className="bg-white border-2 border-indigo-200 rounded-lg p-4 mb-1">
+                    <div className="bg-white border-2 border-brand-200 rounded-lg p-4 mb-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <svg className="w-4 h-4 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-4 h-4 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                         </svg>
-                        <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Resource</span>
+                        <span className="text-xs font-semibold text-brand-600 uppercase tracking-wide">Resource</span>
                       </div>
                       {msg.text.trim() && <p className="text-sm text-gray-800 leading-relaxed">{msg.text}</p>}
                       {msg.attachment && (
                         <div 
                           onClick={() => handleFileClick(msg.attachment!.url, msg.attachment!.name)}
-                          className={`${msg.text.trim() ? 'mt-3' : ''} p-3 bg-indigo-50 rounded-lg flex items-center gap-3 cursor-pointer hover:bg-indigo-100 transition-colors`}
+                          className={`${msg.text.trim() ? 'mt-3' : ''} p-3 bg-brand-50 rounded-lg flex items-center gap-3 cursor-pointer hover:bg-brand-100 transition-colors`}
                         >
-                          <div className="p-2 bg-indigo-100 rounded">
-                            <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                          <div className="p-2 bg-brand-100 rounded">
+                            <svg className="w-5 h-5 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                             </svg>
                           </div>
@@ -454,14 +454,14 @@ function ConversationWindow({
                     </div>
                   ) : (
                     // Regular message
-                    <div className={`rounded-2xl px-4 py-3 ${msg.sender === 'student' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-900'}`}>
+                    <div className={`rounded-2xl px-4 py-3 ${msg.sender === 'student' ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-900'}`}>
                       {msg.text.trim() && <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>}
                       {msg.attachment && (
                         <div 
                           onClick={() => handleFileClick(msg.attachment!.url, msg.attachment!.name)}
-                          className={`${msg.text.trim() ? 'mt-3' : ''} p-3 rounded-lg flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity ${msg.sender === 'student' ? 'bg-blue-400/30' : 'bg-white'}`}
+                          className={`${msg.text.trim() ? 'mt-3' : ''} p-3 rounded-lg flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity ${msg.sender === 'student' ? 'bg-brand-400/30' : 'bg-white'}`}
                         >
-                          <div className={`p-2 rounded ${msg.sender === 'student' ? 'bg-blue-400' : 'bg-red-100'}`}>
+                          <div className={`p-2 rounded ${msg.sender === 'student' ? 'bg-brand-400' : 'bg-red-100'}`}>
                             <svg className={`w-5 h-5 ${msg.sender === 'student' ? 'text-white' : 'text-red-600'}`} fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                             </svg>
@@ -470,7 +470,7 @@ function ConversationWindow({
                             <p className={`text-sm font-medium truncate ${msg.sender === 'student' ? 'text-white' : 'text-gray-900'}`}>
                               {msg.attachment.name}
                             </p>
-                            <p className={`text-xs ${msg.sender === 'student' ? 'text-blue-100' : 'text-gray-500'}`}>
+                            <p className={`text-xs ${msg.sender === 'student' ? 'text-brand-100' : 'text-gray-500'}`}>
                               {msg.attachment.size}
                             </p>
                           </div>
@@ -497,7 +497,7 @@ function ConversationWindow({
               onClick={() => setMessageType('normal')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 messageType === 'normal'
-                  ? 'bg-blue-500 text-white shadow-md'
+                  ? 'bg-brand-500 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -507,7 +507,7 @@ function ConversationWindow({
               onClick={() => setMessageType('advice')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 messageType === 'advice'
-                  ? 'bg-blue-500 text-white shadow-md'
+                  ? 'bg-brand-500 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -517,7 +517,7 @@ function ConversationWindow({
               onClick={() => setMessageType('resource')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 messageType === 'resource'
-                  ? 'bg-blue-500 text-white shadow-md'
+                  ? 'bg-brand-500 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -526,8 +526,8 @@ function ConversationWindow({
           </div>
           {attachedFile && (
             <div className="mb-3 p-3 bg-gray-50 rounded-lg flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded">
-                <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+              <div className="p-2 bg-brand-100 rounded">
+                <svg className="w-5 h-5 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                 </svg>
               </div>
@@ -606,13 +606,13 @@ function ConversationWindow({
               }}
               placeholder="Type your message..."
               rows={1}
-              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white resize-none overflow-y-auto"
+              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent text-gray-900 bg-white resize-none overflow-y-auto"
               style={{ minHeight: '42px', maxHeight: '120px' }}
             />
             <button
               onClick={handleSendMessage}
               disabled={!newMessage.trim() && !attachedFile}
-              className="p-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-full transition-colors"
+              className="p-2.5 bg-brand-500 hover:bg-brand-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-full transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -660,7 +660,7 @@ function ConversationWindow({
                     <a
                       href={previewFile.url}
                       download={previewFile.name}
-                      className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                      className="inline-flex items-center px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
                     >
                       <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -1003,15 +1003,15 @@ function ActivitiesContent() {
             <p className="text-gray-500 font-medium mt-1">Proof submission and tracking.</p>
           </div>
           <div className="flex items-center gap-4">
-            {/* <div className={`px-6 py-3 rounded-2xl border-2 flex items-center gap-3 ${activePointer === 2 ? 'border-blue-100 bg-blue-50 text-blue-700' : activePointer === 3 ? 'border-indigo-100 bg-indigo-50 text-indigo-700' : 'border-purple-100 bg-purple-50 text-purple-700'}`}>
-              <span className={`w-2 h-2 rounded-full animate-pulse ${activePointer === 2 ? 'bg-blue-500' : activePointer === 3 ? 'bg-indigo-500' : 'bg-purple-500'}`}></span>
+            {/* <div className={`px-6 py-3 rounded-2xl border-2 flex items-center gap-3 ${activePointer === 2 ? 'border-brand-100 bg-brand-50 text-brand-700' : activePointer === 3 ? 'border-brand-100 bg-brand-50 text-brand-700' : 'border-brand-100 bg-brand-50 text-brand-700'}`}>
+              <span className={`w-2 h-2 rounded-full animate-pulse ${activePointer === 2 ? 'bg-brand-500' : activePointer === 3 ? 'bg-brand-500' : 'bg-brand-500'}`}></span>
               <span className="font-bold uppercase tracking-wider">{getPointerLabel(activePointer)}</span>
             </div> */}
             {/* Score Card - Always show when studentIvyServiceId is present */}
             {studentIvyServiceId && (
-              <div className="bg-white p-6 rounded-2xl shadow-md border-2 border-indigo-100 flex flex-col items-center justify-center text-center">
+              <div className="bg-white p-6 rounded-2xl shadow-md border-2 border-brand-100 flex flex-col items-center justify-center text-center">
                 <span className="text-xs font-black tracking-widest text-gray-400 uppercase mb-2">Current Score</span>
-                <div className="text-5xl font-black text-indigo-600 leading-none">
+                <div className="text-5xl font-black text-brand-600 leading-none">
                   {pointerScore !== null && pointerScore !== undefined ? pointerScore.toFixed(2) : '0.00'}
                 </div>
               </div>
@@ -1076,7 +1076,7 @@ function ActivitiesContent() {
                               getActivityCompletionPercentage(activity) === 100 
                                 ? 'bg-green-500' 
                                 : getActivityCompletionPercentage(activity) >= 50 
-                                  ? 'bg-blue-500' 
+                                  ? 'bg-brand-500' 
                                   : 'bg-orange-500'
                             }`}
                             style={{ width: `${getActivityCompletionPercentage(activity)}%` }}
@@ -1086,7 +1086,7 @@ function ActivitiesContent() {
                           getActivityCompletionPercentage(activity) === 100 
                             ? 'text-green-600' 
                             : getActivityCompletionPercentage(activity) >= 50 
-                              ? 'text-blue-600' 
+                              ? 'text-brand-600' 
                               : 'text-orange-600'
                         }`}>
                           {getActivityCompletionPercentage(activity)}%
@@ -1118,9 +1118,9 @@ function ActivitiesContent() {
                 {activity.deadline && !activity.proofUploaded && (() => {
                   const cd = getCountdown(activity.deadline);
                   return (
-                    <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="mb-4 p-4 bg-brand-50 border border-brand-200 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <span className="text-sm font-bold text-blue-900">⏰ Deadline:</span>
+                        <span className="text-sm font-bold text-brand-900">⏰ Deadline:</span>
                         {cd.expired ? (
                           <div className="flex items-center gap-2 px-3 py-1.5 bg-red-100 border border-red-300 rounded-lg">
                             <span className="text-red-700 font-bold text-sm">⚠ Deadline Expired!</span>
@@ -1133,9 +1133,9 @@ function ActivitiesContent() {
                               { value: cd.minutes, unit: 'Min' },
                               { value: cd.seconds, unit: 'Sec' },
                             ].map((item) => (
-                              <div key={item.unit} className="flex flex-col items-center bg-blue-100 border border-blue-300 rounded-lg px-3 py-1.5 min-w-[48px]">
-                                <span className="text-lg font-black text-blue-700 leading-none">{String(item.value).padStart(2, '0')}</span>
-                                <span className="text-[10px] font-bold text-blue-500 uppercase">{item.unit}</span>
+                              <div key={item.unit} className="flex flex-col items-center bg-brand-100 border border-brand-300 rounded-lg px-3 py-1.5 min-w-[48px]">
+                                <span className="text-lg font-black text-brand-700 leading-none">{String(item.value).padStart(2, '0')}</span>
+                                <span className="text-[10px] font-bold text-brand-500 uppercase">{item.unit}</span>
                               </div>
                             ))}
                           </div>
@@ -1147,8 +1147,8 @@ function ActivitiesContent() {
 
                 {/* Ivy Expert Documents with Tasks - View Only */}
                 {activity.ivyExpertDocuments && activity.ivyExpertDocuments.length > 0 && (
-                  <div className="mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-md">
-                    <p className="text-sm font-medium text-indigo-900 mb-3"> Guides & Tasks from Ivy Expert (Click on task to chat with Ivy Expert)</p>
+                  <div className="mb-4 p-4 bg-brand-50 border border-brand-200 rounded-md">
+                    <p className="text-sm font-medium text-brand-900 mb-3"> Guides & Tasks from Ivy Expert (Click on task to chat with Ivy Expert)</p>
                     <div className="space-y-4">
                       {activity.ivyExpertDocuments.map((doc, docIdx) => {
                         const isPdf = doc.url.toLowerCase().endsWith('.pdf');
@@ -1156,13 +1156,13 @@ function ActivitiesContent() {
                         const isViewing = viewingIvyExpertDocUrl === doc.url;
                         
                         return (
-                          <div key={docIdx} className="bg-white rounded-lg border border-indigo-200 overflow-hidden">
+                          <div key={docIdx} className="bg-white rounded-lg border border-brand-200 overflow-hidden">
                             {/* Document Header */}
-                            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-indigo-50 to-white border-b border-indigo-100">
+                            <div className="flex items-center justify-between p-3 bg-brand-50 border-b border-brand-100">
                               <span className="text-sm text-gray-800 font-semibold">📎 Activity Guide {docIdx + 1}</span>
                               <button
                                 onClick={() => setViewingIvyExpertDocUrl(isViewing ? null : doc.url)}
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${isViewing ? 'bg-indigo-600 text-white' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${isViewing ? 'bg-brand-600 text-white' : 'bg-brand-100 text-brand-700 hover:bg-brand-200'}`}
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1187,7 +1187,7 @@ function ActivitiesContent() {
                                       case 'completed':
                                         return { bg: 'bg-green-100', text: 'text-green-800', label: 'Completed', icon: '✓' };
                                       case 'in-progress':
-                                        return { bg: 'bg-blue-100', text: 'text-blue-800', label: 'In Progress', icon: '⟳' };
+                                        return { bg: 'bg-brand-100', text: 'text-brand-800', label: 'In Progress', icon: '⟳' };
                                       default:
                                         return { bg: 'bg-gray-100', text: 'text-gray-600', label: 'Not Started', icon: '○' };
                                     }
@@ -1227,7 +1227,7 @@ function ActivitiesContent() {
                               </div>
                               <div className="mt-3 pt-2 border-t border-gray-200">
                                 <p className="text-xs text-gray-600">
-                                  <span className="font-medium text-indigo-700">
+                                  <span className="font-medium text-brand-700">
                                     {doc.tasks.filter(t => t.status === 'completed').length} of {doc.tasks.length}
                                   </span> tasks completed by Ivy Expert
                                 </p>
@@ -1236,7 +1236,7 @@ function ActivitiesContent() {
 
                             {/* Document Viewer */}
                             {isViewing && (
-                              <div className="border-t border-indigo-100 p-3 bg-gray-50">
+                              <div className="border-t border-brand-100 p-3 bg-gray-50">
                                 {isPdf ? (
                                   <BlobIframe
                                     url={doc.url}
@@ -1261,9 +1261,9 @@ function ActivitiesContent() {
 
                 {/* Proof Upload Section */}
                 {activity.proofUploaded ? (
-                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-sm font-medium text-blue-900 mb-2">Proof Files ({activity.submission!.files.length})</p>
-                    <p className="text-xs text-blue-700 mb-3">
+                  <div className="mb-4 p-4 bg-brand-50 border border-brand-200 rounded-md">
+                    <p className="text-sm font-medium text-brand-900 mb-2">Proof Files ({activity.submission!.files.length})</p>
+                    <p className="text-xs text-brand-700 mb-3">
                       Submitted: {new Date(activity.submission!.submittedAt).toLocaleString()}
                     </p>
                     <div className="grid grid-cols-1 gap-3 mb-3">
@@ -1275,7 +1275,7 @@ function ActivitiesContent() {
                         const isWord = ['doc', 'docx'].includes(fileExt || '');
                         
                         return (
-                          <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border border-blue-200 hover:border-blue-400 transition-all">
+                          <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border border-brand-200 hover:border-brand-400 transition-all">
                             <div className="flex items-center gap-3 flex-1 min-w-0">
                               <div className="flex-shrink-0">
                                 {isPdf && (
@@ -1284,12 +1284,12 @@ function ActivitiesContent() {
                                   </svg>
                                 )}
                                 {isImage && (
-                                  <svg className="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                  <svg className="w-8 h-8 text-brand-500" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
                                   </svg>
                                 )}
                                 {isWord && (
-                                  <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                  <svg className="w-8 h-8 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
                                   </svg>
                                 )}
@@ -1305,8 +1305,8 @@ function ActivitiesContent() {
                               onClick={() => setViewingFileUrl(viewingFileUrl === fileUrl ? null : fileUrl)}
                               className={`flex-shrink-0 ml-3 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                                 viewingFileUrl === fileUrl 
-                                  ? 'bg-indigo-600 text-white' 
-                                  : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                                  ? 'bg-brand-600 text-white' 
+                                  : 'bg-brand-100 text-brand-700 hover:bg-brand-200'
                               }`}
                             >
                               {viewingFileUrl === fileUrl ? 'Hide' : 'View'}
@@ -1337,7 +1337,7 @@ function ActivitiesContent() {
                         input.click();
                       }}
                       disabled={uploadingProof === activity.selectionId}
-                      className="w-full px-4 py-2.5 bg-white border-2 border-dashed border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 hover:border-blue-400 transition-all font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      className="w-full px-4 py-2.5 bg-white border-2 border-dashed border-brand-300 text-brand-700 rounded-lg hover:bg-brand-50 hover:border-brand-400 transition-all font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1357,7 +1357,7 @@ function ActivitiesContent() {
                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                       onChange={(e) => handleProofUpload(activity.selectionId, e)}
                       disabled={uploadingProof === activity.selectionId}
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 disabled:opacity-50"
                     />
                     {uploadingProof === activity.selectionId && (
                       <p className="text-xs text-gray-500 mt-2">Uploading...</p>

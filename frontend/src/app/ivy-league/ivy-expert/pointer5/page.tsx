@@ -223,7 +223,7 @@ function IvyExpertPointer5Content() {
                 <header className="mb-8 flex justify-between items-start">
                     <div>
                         <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4">
-                            AUTHENTIC &<br /><span className="text-indigo-600">REFLECTIVE STORYTELLING</span>
+                            AUTHENTIC &<br /><span className="text-brand-600">REFLECTIVE STORYTELLING</span>
                         </h1>
                         <p className="text-xl text-gray-400 font-medium max-w-xl">
                             Assign writing tasks and evaluate student responses
@@ -232,9 +232,9 @@ function IvyExpertPointer5Content() {
 
                     {/* Pointer 5 Score Card */}
                     {pointer5Score !== null && pointer5Score !== undefined && (
-                        <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-indigo-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
+                        <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-brand-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
                             <span className="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase mb-2">Current Mean Score</span>
-                            <div className="text-7xl font-black text-indigo-600 leading-none">{typeof pointer5Score === 'number' ? pointer5Score.toFixed(2) : '0.00'}</div>
+                            <div className="text-7xl font-black text-brand-600 leading-none">{typeof pointer5Score === 'number' ? pointer5Score.toFixed(2) : '0.00'}</div>
                         </div>
                     )}
                 </header>
@@ -244,7 +244,7 @@ function IvyExpertPointer5Content() {
                     <div className="mb-8 flex justify-end">
                         <button
                             onClick={() => setShowAddTask(true)}
-                            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl"
+                            className="flex items-center gap-2 px-6 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-all shadow-lg hover:shadow-xl"
                         >
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -256,7 +256,7 @@ function IvyExpertPointer5Content() {
 
                 {/* Add Task Modal */}
                 {showAddTask && (
-                    <div className="mb-8 bg-white rounded-3xl p-8 shadow-sm border-2 border-indigo-200">
+                    <div className="mb-8 bg-white rounded-3xl p-8 shadow-sm border-2 border-brand-200">
                         <h2 className="text-xl font-bold text-gray-900 mb-6">New Task</h2>
                         <div className="space-y-4">
                             <div>
@@ -266,7 +266,7 @@ function IvyExpertPointer5Content() {
                                     onChange={(e) => setNewTaskDescription(e.target.value)}
                                     placeholder="Enter task description..."
                                     rows={4}
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 bg-white resize-none"
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-gray-900 bg-white resize-none"
                                 />
                             </div>
                             <div className="flex items-center gap-6">
@@ -278,7 +278,7 @@ function IvyExpertPointer5Content() {
                                         onChange={(e) => setNewWordLimit(e.target.value)}
                                         min="50"
                                         max="5000"
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 bg-white"
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-gray-900 bg-white"
                                     />
                                 </div>
                                 <div className="flex-1">
@@ -288,14 +288,14 @@ function IvyExpertPointer5Content() {
                                         multiple
                                         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                                         onChange={(e) => setNewAttachments(Array.from(e.target.files || []))}
-                                        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
                                     />
                                 </div>
                             </div>
                             {newAttachments.length > 0 && (
                                 <div className="flex flex-wrap gap-2">
                                     {newAttachments.map((file, idx) => (
-                                        <span key={idx} className="px-3 py-1 bg-indigo-50 text-indigo-700 text-sm rounded-lg">
+                                        <span key={idx} className="px-3 py-1 bg-brand-50 text-brand-700 text-sm rounded-lg">
                                             {file.name}
                                         </span>
                                     ))}
@@ -316,7 +316,7 @@ function IvyExpertPointer5Content() {
                                 <button
                                     onClick={handleAddTask}
                                     disabled={submitting}
-                                    className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50"
+                                    className="px-6 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-all disabled:opacity-50"
                                 >
                                     {submitting ? 'Saving...' : 'Save'}
                                 </button>
@@ -352,7 +352,7 @@ function IvyExpertPointer5Content() {
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-4">
-                                            <span className="text-2xl font-black text-indigo-600">#{tasks.length - index}</span>
+                                            <span className="text-2xl font-black text-brand-600">#{tasks.length - index}</span>
                                             <div>
                                                 <p className="font-bold text-gray-900 line-clamp-1">{taskStatus.task.taskDescription}</p>
                                                 <p className="text-sm text-gray-500">Word Limit: {taskStatus.task.wordLimit}</p>
@@ -397,7 +397,7 @@ function IvyExpertPointer5Content() {
                                                             <button
                                                                 key={idx}
                                                                 onClick={() => downloadFile(att.fileUrl, att.fileName)}
-                                                                className="px-3 py-1 bg-indigo-50 text-indigo-700 text-sm rounded-lg hover:bg-indigo-100 transition-all"
+                                                                className="px-3 py-1 bg-brand-50 text-brand-700 text-sm rounded-lg hover:bg-brand-100 transition-all"
                                                             >
                                                                 📎 {att.fileName}
                                                             </button>
@@ -419,13 +419,13 @@ function IvyExpertPointer5Content() {
                                         {taskStatus.submission ? (
                                             <div className="space-y-4">
                                                 <div className="grid grid-cols-10 gap-4">
-                                                    <div className="col-span-7 bg-blue-50 rounded-2xl p-6">
-                                                        <h3 className="text-sm font-black text-blue-600 uppercase tracking-wider mb-3">Student Response</h3>
+                                                    <div className="col-span-7 bg-brand-50 rounded-2xl p-6">
+                                                        <h3 className="text-sm font-black text-brand-600 uppercase tracking-wider mb-3">Student Response</h3>
                                                         <ErrorHighlightedText text={taskStatus.submission.studentResponse} />
-                                                        <p className="text-sm text-blue-600 mt-4">Word Count: {taskStatus.submission.wordCount}/{taskStatus.task.wordLimit}</p>
+                                                        <p className="text-sm text-brand-600 mt-4">Word Count: {taskStatus.submission.wordCount}/{taskStatus.task.wordLimit}</p>
                                                     </div>
-                                                    <div className="col-span-3 bg-purple-50 rounded-2xl p-6">
-                                                        <h3 className="text-sm font-black text-purple-600 uppercase tracking-wider mb-3">Words Learned</h3>
+                                                    <div className="col-span-3 bg-brand-50 rounded-2xl p-6">
+                                                        <h3 className="text-sm font-black text-brand-600 uppercase tracking-wider mb-3">Words Learned</h3>
                                                         <p className="text-gray-900 whitespace-pre-wrap">{taskStatus.submission.wordsLearned || 'None provided'}</p>
                                                     </div>
                                                 </div>

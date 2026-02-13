@@ -102,7 +102,7 @@ function IvyExpertSidebar() {
         <aside className={`bg-white border-r border-gray-100 flex flex-col h-screen sticky top-0 shadow-sm z-20 transition-all duration-300 ${isConversationOpen ? 'w-20' : 'w-72'}`}>
             <div className={`p-8 border-b border-gray-50 ${isConversationOpen ? 'px-4' : ''}`}>
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-100 flex-shrink-0">
+                    <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg shadow-brand-100 flex-shrink-0">
                         <span className="text-white font-black text-xl italic leading-none">I</span>
                     </div>
                     {!isConversationOpen && (
@@ -135,11 +135,11 @@ function IvyExpertSidebar() {
                                 isDisabled 
                                     ? 'opacity-40 cursor-not-allowed text-gray-400'
                                     : active
-                                        ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100 ring-4 ring-indigo-50 scale-[1.02]'
-                                        : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600'
+                                        ? 'bg-brand-600 text-white shadow-xl shadow-brand-100 ring-4 ring-brand-50 scale-[1.02]'
+                                        : 'text-gray-500 hover:bg-gray-50 hover:text-brand-600'
                             }`}
                         >
-                            <span className={`${active && !isDisabled ? 'text-white' : 'text-gray-400 group-hover:text-indigo-600 transition-colors'}`}>
+                            <span className={`${active && !isDisabled ? 'text-white' : 'text-gray-400 group-hover:text-brand-600 transition-colors'}`}>
                                 {item.icon}
                             </span>
                             {!isConversationOpen && <span className="uppercase tracking-wide">{item.name}</span>}
@@ -190,7 +190,7 @@ function IvyExpertLayoutContent({ children }: { children: React.ReactNode }) {
 export default function IvyExpertLayout({ children }: { children: React.ReactNode }) {
     return (
         <Suspense fallback={<div className="min-h-screen bg-[#FBFBFE] flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
         </div>}>
             <IvyExpertLayoutContent>{children}</IvyExpertLayoutContent>
         </Suspense>

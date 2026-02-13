@@ -106,7 +106,7 @@ export default function AgentSuggestionsPage() {
               value={studentInterest}
               onChange={(e) => setStudentInterest(e.target.value)}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white resize-y"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-gray-900 bg-white resize-y"
               placeholder="Enter student's primary interest here..."
             />
           </div>
@@ -123,7 +123,7 @@ export default function AgentSuggestionsPage() {
               id="pointer"
               value={selectedPointer}
               onChange={(e) => setSelectedPointer(e.target.value ? parseInt(e.target.value, 10) : '')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-gray-900 bg-white"
             >
               <option value="">-- Select Pointer --</option>
               <option value="2">Pointer 2: Spike in One Area</option>
@@ -138,7 +138,7 @@ export default function AgentSuggestionsPage() {
               type="button"
               onClick={handleFetchSuggestions}
               disabled={loading || !studentInterest.trim() || !selectedPointer}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full bg-brand-600 text-white py-2 px-4 rounded-md hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? 'Fetching Suggestions...' : 'Get Suggestions'}
             </button>
@@ -183,7 +183,7 @@ export default function AgentSuggestionsPage() {
                     key={suggestion._id}
                     className={`border rounded-lg p-4 transition-all ${
                       selectedActivities.has(suggestion._id)
-                        ? 'border-blue-500 bg-blue-50'
+                        ? 'border-brand-500 bg-brand-50'
                         : 'border-gray-200 bg-white hover:shadow-md'
                     }`}
                   >
@@ -193,7 +193,7 @@ export default function AgentSuggestionsPage() {
                         id={`activity-${suggestion._id}`}
                         checked={selectedActivities.has(suggestion._id)}
                         onChange={() => handleToggleActivity(suggestion._id)}
-                        className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        className="mt-1 h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300 rounded"
                       />
                       <div className="flex-1">
                         <label

@@ -159,7 +159,7 @@ function DocumentsContent() {
             <div className="space-y-6">
                 {/* Standard Documents */}
                 <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6 flex items-center gap-2">
-                    <span className="h-2 w-2 bg-blue-600 rounded-full"></span>
+                    <span className="h-2 w-2 bg-brand-600 rounded-full"></span>
                     Identity & School Records
                 </h2>
                 <div className="grid gap-6">
@@ -169,13 +169,13 @@ function DocumentsContent() {
                         const isViewing = viewingDocId === doc.key;
 
                         return (
-                            <div key={doc.key} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col gap-6 hover:shadow-xl hover:border-blue-100 transition-all group">
+                            <div key={doc.key} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col gap-6 hover:shadow-xl hover:border-brand-100 transition-all group">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                     <div className="flex-1">
-                                        <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{doc.label}</h3>
+                                        <h3 className="text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors uppercase tracking-tight">{doc.label}</h3>
                                         <p className="text-gray-500 mt-1 font-medium">{doc.description}</p>
                                         {existing && (
-                                            <div className="mt-3 flex items-center gap-2 text-blue-500 text-sm font-bold bg-blue-50 w-fit px-3 py-1 rounded-full">
+                                            <div className="mt-3 flex items-center gap-2 text-brand-500 text-sm font-bold bg-brand-50 w-fit px-3 py-1 rounded-full">
                                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
                                                 </svg>
@@ -188,7 +188,7 @@ function DocumentsContent() {
                                         {existing && (
                                             <button
                                                 onClick={() => setViewingDocId(isViewing ? null : doc.key)}
-                                                className={`p-4 rounded-2xl transition-all shadow-inner ${isViewing ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-400 hover:text-blue-600 hover:bg-blue-50'}`}
+                                                className={`p-4 rounded-2xl transition-all shadow-inner ${isViewing ? 'bg-brand-600 text-white' : 'bg-gray-50 text-gray-400 hover:text-brand-600 hover:bg-brand-50'}`}
                                             >
                                                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -197,7 +197,7 @@ function DocumentsContent() {
                                             </button>
                                         )}
 
-                                        <label className={`flex items-center justify-center px-8 py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all cursor-pointer whitespace-nowrap active:scale-95 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''} ${readOnly ? 'hidden' : ''}`}>
+                                        <label className={`flex items-center justify-center px-8 py-4 bg-brand-600 text-white font-bold rounded-2xl shadow-lg shadow-brand-100 hover:bg-brand-700 transition-all cursor-pointer whitespace-nowrap active:scale-95 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''} ${readOnly ? 'hidden' : ''}`}>
                                             {isUploading ? 'Uploading...' : (existing ? 'Replace File' : 'Upload File')}
                                             <input type="file" className="hidden" accept=".pdf,image/*" disabled={isUploading} onChange={(e) => {
                                                 const file = e.target.files?.[0];
@@ -216,23 +216,23 @@ function DocumentsContent() {
 
                 {/* University Marksheets Section */}
                 <h2 className="text-2xl font-bold text-gray-900 mt-16 mb-6 flex items-center gap-2">
-                    <span className="h-2 w-2 bg-purple-600 rounded-full"></span>
+                    <span className="h-2 w-2 bg-brand-600 rounded-full"></span>
                     University Marksheets (Semester Wise)
                 </h2>
 
                 {!readOnly && (
-                <div className="bg-purple-50 p-8 rounded-3xl border border-purple-100 flex flex-col md:flex-row items-end gap-4 mb-8">
+                <div className="bg-brand-50 p-8 rounded-3xl border border-brand-100 flex flex-col md:flex-row items-end gap-4 mb-8">
                     <div className="flex-1 w-full text-left">
-                        <label className="block text-sm font-bold text-purple-700 mb-2 uppercase tracking-widest ml-1">Semester Name</label>
+                        <label className="block text-sm font-bold text-brand-700 mb-2 uppercase tracking-widest ml-1">Semester Name</label>
                         <input
                             type="text"
                             placeholder="e.g. Sem 1, Sem 2..."
-                            className="w-full px-6 py-4 bg-white border-2 border-purple-100 rounded-2xl focus:border-purple-500 outline-none transition-all font-bold text-purple-900 placeholder-purple-200 shadow-inner"
+                            className="w-full px-6 py-4 bg-white border-2 border-brand-100 rounded-2xl focus:border-brand-500 outline-none transition-all font-bold text-brand-900 placeholder-brand-200 shadow-inner"
                             value={universityLabel}
                             onChange={(e) => setUniversityLabel(e.target.value)}
                         />
                     </div>
-                    <label className={`w-full md:w-auto flex items-center justify-center px-8 py-4 bg-purple-600 text-white font-extrabold rounded-2xl shadow-lg shadow-purple-100 hover:bg-purple-700 transition-all cursor-pointer active:scale-95 ${!universityLabel || uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <label className={`w-full md:w-auto flex items-center justify-center px-8 py-4 bg-brand-600 text-white font-extrabold rounded-2xl shadow-lg shadow-brand-100 hover:bg-brand-700 transition-all cursor-pointer active:scale-95 ${!universityLabel || uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                         {uploading?.startsWith('UNIVERSITY') ? 'Uploading...' : 'Add Marksheet'}
                         <input
                             type="file"
@@ -251,16 +251,16 @@ function DocumentsContent() {
                     {getUniversityDocs().map((doc) => {
                         const isViewing = viewingDocId === doc._id;
                         return (
-                            <div key={doc._id} className="bg-white p-5 rounded-3xl border border-gray-100 flex flex-col gap-4 group hover:border-purple-200 transition-all shadow-sm">
+                            <div key={doc._id} className="bg-white p-5 rounded-3xl border border-gray-100 flex flex-col gap-4 group hover:border-brand-200 transition-all shadow-sm">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <h4 className="font-extrabold text-gray-900 group-hover:text-purple-600 transition-colors uppercase">{doc.customLabel}</h4>
+                                        <h4 className="font-extrabold text-gray-900 group-hover:text-brand-600 transition-colors uppercase">{doc.customLabel}</h4>
                                         <p className="text-xs text-gray-400 font-mono mt-1">{doc.fileName}</p>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <button
                                             onClick={() => setViewingDocId(isViewing ? null : doc._id)}
-                                            className={`p-3 rounded-xl transition-all ${isViewing ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-purple-600 hover:bg-purple-50'}`}
+                                            className={`p-3 rounded-xl transition-all ${isViewing ? 'bg-brand-600 text-white' : 'text-gray-400 hover:text-brand-600 hover:bg-brand-50'}`}
                                         >
                                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -268,7 +268,7 @@ function DocumentsContent() {
                                             </svg>
                                         </button>
                                         {!readOnly && (
-                                        <label className="text-xs font-bold text-purple-600 cursor-pointer hover:underline bg-purple-50 px-3 py-1.5 rounded-lg">
+                                        <label className="text-xs font-bold text-brand-600 cursor-pointer hover:underline bg-brand-50 px-3 py-1.5 rounded-lg">
                                             Update
                                             <input type="file" className="hidden" onChange={(e) => {
                                                 const file = e.target.files?.[0];
@@ -298,7 +298,7 @@ function DocumentsContent() {
 export default function DocumentsPage() {
     return (
         <div className="font-sans">
-            <Suspense fallback={<div className="p-12 text-center text-blue-400 font-black animate-pulse tracking-widest uppercase">Loading documents...</div>}>
+            <Suspense fallback={<div className="p-12 text-center text-brand-400 font-black animate-pulse tracking-widest uppercase">Loading documents...</div>}>
                 <DocumentsContent />
             </Suspense>
         </div>
