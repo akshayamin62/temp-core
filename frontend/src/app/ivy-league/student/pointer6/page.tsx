@@ -287,15 +287,20 @@ function Pointer6Content() {
           {/* Header with Score */}
           <div className="mb-8 flex justify-between items-start">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Pointer 6: Engagement with Learning & Intellectual Curiosity
+              <h1 className="text-5xl font-black text-gray-900 mb-2">
+                POINTER 6: ENGAGEMENT WITH LEARNING & INTELLECTUAL CURIOSITY
               </h1>
               <p className="text-gray-600">Select courses you want to pursue</p>
             </div>
             {pointer6Score != null && (
-              <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-brand-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
-                <span className="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase mb-2">Current Mean Score</span>
-                <div className="text-7xl font-black text-brand-600 leading-none">{typeof pointer6Score === 'number' ? pointer6Score.toFixed(1) : '0.00'}</div>
+              // <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-brand-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
+              //   <span className="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase mb-2">Current Mean Score</span>
+              //   <div className="text-7xl font-black text-brand-600 leading-none">{typeof pointer6Score === 'number' ? pointer6Score.toFixed(1) : '0.00'}</div>
+              // </div>
+
+              <div className="bg-white p-6 rounded-2xl shadow-md border-2 border-brand-100 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
+                <span className="text-xs font-black tracking-widest text-gray-400 uppercase mb-2">Current Mean Score</span>
+                <div className="text-5xl font-black text-brand-600 leading-none">{typeof pointer6Score === 'number' ? pointer6Score.toFixed(2) : '0.00'}</div>
               </div>
             )}
           </div>

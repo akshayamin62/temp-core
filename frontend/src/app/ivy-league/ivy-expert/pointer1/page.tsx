@@ -444,8 +444,8 @@ function IvyExpertPointer1Content() {
             <div className="max-w-6xl mx-auto">
                 <div className="mb-12 flex justify-between items-start">
                     <div>
-                        <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4">
-                            ACADEMIC<br /><span className="text-brand-600">EXCELLENCE</span>
+                        <h1 className="text-5xl font-black text-gray-900 tracking-tighter mb-4">
+                            POINTER 1: ACADEMIC EXCELLENCE
                         </h1>
                         <p className="text-xl text-gray-400 font-medium max-w-xl">
                             Manage student academic performance and provide evaluations.
@@ -453,12 +453,12 @@ function IvyExpertPointer1Content() {
                     </div>
 
                     {/* Academic Excellence Score Card */}
-                    {academicScore && (
+                    {/* {academicScore && (
                         <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-brand-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
                             <span className="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase mb-2">Academic Excellence Score</span>
                             <div className="text-7xl font-black text-brand-600 leading-none">{academicScore.finalScore.toFixed(2)}</div>
                         </div>
-                    )}
+                    )} */}
                 </div>
 
                 {/* Tabs */}

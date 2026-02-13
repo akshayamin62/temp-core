@@ -276,8 +276,7 @@ function IvyExpertDashboard() {
                 {/* Header */}
                 <header className="mb-16">
                     <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4 leading-tight">
-                        {selectedStudent?.studentId.firstName ? `${selectedStudent.studentId.firstName} ${selectedStudent.studentId.lastName}` : 'Student'}'s<br />
-                        <span className="text-brand-600">Ivy League Readiness</span>
+                        {selectedStudent?.studentId.firstName ? `${selectedStudent.studentId.firstName} ${selectedStudent.studentId.lastName}` : 'Student'}'s Ivy League Readiness
                     </h1>
                     <p className="text-xl text-gray-400 font-medium max-w-2xl leading-relaxed">
                         Track competitive trajectory across all core admission pillars. Scores are real-time and reflect current evaluations.

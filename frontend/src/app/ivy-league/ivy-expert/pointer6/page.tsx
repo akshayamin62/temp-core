@@ -331,8 +331,8 @@ function Pointer6Content() {
           {/* Header with Score */}
           <div className="mb-8 flex justify-between items-start">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Pointer 6: Engagement with Learning & Intellectual Curiosity
+              <h1 className="text-5xl font-black text-gray-900 tracking-tighter mb-4">
+                POINTER 6: ENGAGEMENT WITH LEARNING & INTELLECTUAL CURIOSITY
               </h1>
               <p className="text-gray-600">Manage and recommend courses for the student</p>
             </div>

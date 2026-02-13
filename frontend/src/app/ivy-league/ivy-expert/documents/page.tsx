@@ -283,7 +283,7 @@ function IvyExpertDocumentsContent() {
             <div className="max-w-6xl mx-auto">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
                     <div>
-                        <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4">DOCUMENT<br /><span className="text-brand-600">REPOSITORY</span></h1>
+                        <h1 className="text-5xl font-black text-gray-900 tracking-tighter mb-4">DOCUMENT REPOSITORY</h1>
                         <p className="text-xl text-gray-400 font-medium max-w-xl">Individual document verification and marksheet evaluation.</p>
                     </div>
                 </div>

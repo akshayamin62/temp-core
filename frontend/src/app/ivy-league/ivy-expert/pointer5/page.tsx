@@ -222,8 +222,8 @@ function IvyExpertPointer5Content() {
                 {/* Header */}
                 <header className="mb-8 flex justify-between items-start">
                     <div>
-                        <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4">
-                            AUTHENTIC &<br /><span className="text-brand-600">REFLECTIVE STORYTELLING</span>
+                        <h1 className="text-5xl font-black text-gray-900 tracking-tighter mb-4">
+                            POINTER 5: AUTHENTIC & REFLECTIVE STORYTELLING
                         </h1>
                         <p className="text-xl text-gray-400 font-medium max-w-xl">
                             Assign writing tasks and evaluate student responses
@@ -231,12 +231,12 @@ function IvyExpertPointer5Content() {
                     </div>
 
                     {/* Pointer 5 Score Card */}
-                    {pointer5Score !== null && pointer5Score !== undefined && (
+                    {/* {pointer5Score !== null && pointer5Score !== undefined && (
                         <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-brand-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
                             <span className="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase mb-2">Current Mean Score</span>
                             <div className="text-7xl font-black text-brand-600 leading-none">{typeof pointer5Score === 'number' ? pointer5Score.toFixed(2) : '0.00'}</div>
                         </div>
-                    )}
+                    )} */}
                 </header>
 
                 {/* Add Task Button */}

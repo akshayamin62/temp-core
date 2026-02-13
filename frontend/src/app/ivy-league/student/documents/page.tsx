@@ -128,7 +128,7 @@ function DocumentsContent() {
     const getUniversityDocs = () => documents.filter(d => d.documentType === 'UNIVERSITY_MARKSHEET');
 
     return (
-        <div className="max-w-4xl mx-auto py-12 px-6">
+        <div className="max-w-6xl mx-auto py-12 px-6">
 
             {/* Read-Only Banner */}
             {readOnly && (
@@ -142,7 +142,7 @@ function DocumentsContent() {
             )}
 
             <header className="mb-12">
-                <h1 className="text-5xl font-black text-gray-900 mb-4 tracking-tight">Document Repository</h1>
+                <h1 className="text-5xl font-black text-gray-900 mb-4 tracking-tight">DOCUMENT REPOSITORY</h1>
                 <p className="text-xl text-gray-500 max-w-2xl leading-relaxed">Upload and manage all your identity proofs and academic marksheets.</p>
             </header>
 

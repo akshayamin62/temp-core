@@ -980,13 +980,13 @@ function ActivitiesContent() {
   const filteredActivities = activities.filter(a => a.pointerNo === activePointer);
 
   return (
-    <div className="h-screen flex overflow-hidden">
+    <div className="max-w-6xl mx-auto">
       {/* Tasks List Section */}
       <div className={`transition-all duration-300 ${selectedTask ? 'w-[35%]' : 'w-full'} overflow-y-auto`}>
         <div className="py-12 px-4 sm:px-6 lg:px-8">
       {/* Read-Only Banner */}
       {readOnly && (
-        <div className="max-w-5xl mx-auto mb-4">
+        <div className="max-w-6xl mx-auto mb-4">
           <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 flex items-center gap-3">
             <svg className="w-6 h-6 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -996,10 +996,10 @@ function ActivitiesContent() {
           </div>
         </div>
       )}
-      <div className="max-w-5xl mx-auto bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.02)] border border-gray-100 p-10 mt-6">
+      {/* <div className="max-w-5xl mx-auto bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.02)] border border-gray-100 p-10 mt-6"> */}
         <div className="mb-10 pb-6 border-b border-gray-100 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-black text-gray-900 tracking-tight uppercase">{getPointerLabel(activePointer)}</h1>
+            <h1 className="text-5xl font-black text-gray-900 tracking-tight uppercase">{getPointerLabel(activePointer)}</h1>
             <p className="text-gray-500 font-medium mt-1">Proof submission and tracking.</p>
           </div>
           <div className="flex items-center gap-4">
@@ -1010,7 +1010,7 @@ function ActivitiesContent() {
             {/* Score Card - Always show when studentIvyServiceId is present */}
             {studentIvyServiceId && (
               <div className="bg-white p-6 rounded-2xl shadow-md border-2 border-brand-100 flex flex-col items-center justify-center text-center">
-                <span className="text-xs font-black tracking-widest text-gray-400 uppercase mb-2">Current Score</span>
+                <span className="text-xs font-black tracking-widest text-gray-400 uppercase mb-2">Current Mean <br /> Score</span>
                 <div className="text-5xl font-black text-brand-600 leading-none">
                   {pointerScore !== null && pointerScore !== undefined ? pointerScore.toFixed(2) : '0.00'}
                 </div>
@@ -1400,7 +1400,7 @@ function ActivitiesContent() {
             })}
           </div>
         )}
-      </div>
+      {/* </div> */}
       </div>
     </div>
 

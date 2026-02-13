@@ -275,7 +275,7 @@ function IvyScoreContent() {
 
             {/* Header */}
             <header className="mb-16">
-                <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4 leading-tight">Your Ivy League<br /><span className="text-brand-600">Readiness Score</span></h1>
+                <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4 leading-tight">Your Ivy League Readiness Score</h1>
                 <p className="text-xl text-gray-400 font-medium max-w-2xl leading-relaxed">Track your competitive trajectory across all core admission pillars. Your score is real-time and reflects current Ivy Expert evaluations.</p>
             </header>
 

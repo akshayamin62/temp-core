@@ -1278,7 +1278,13 @@ function ActivitiesContent() {
       >
         <div className="py-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Activity Management</h1>
+        {/* <h1 className="text-2xl font-bold text-gray-900 mb-6">Activity Management</h1> */}
+
+        <div className="mb-8 pb-6 border-gray-100">
+          <h2 className="text-5xl font-black text-gray-900 tracking-tight uppercase flex items-center gap-3">
+          {getPointerLabel(selectedPointer as number)}
+          </h2>
+        </div>
 
         {/* Tabs */}
         <div className="flex space-x-4 mb-6 border-b border-gray-200">
@@ -1317,12 +1323,12 @@ function ActivitiesContent() {
         {/* Select Activities Tab */}
         {activeTab === 'suggestions' && (
           <div className="space-y-6">
-            <div className="mb-8 pb-6 border-b border-gray-100">
+            {/* <div className="mb-8 pb-6 border-b border-gray-100">
               <h2 className="text-3xl font-black text-gray-900 tracking-tight uppercase flex items-center gap-3">
                 <span className={`w-3 h-10 rounded-full ${selectedPointer === 2 ? 'bg-brand-500' : selectedPointer === 3 ? 'bg-brand-500' : 'bg-brand-500'}`}></span>
                 {getPointerLabel(selectedPointer as number)}
               </h2>
-            </div>
+            </div> */}
 
             {/* Career Role Input */}
             <div className="mb-6">
@@ -1619,12 +1625,12 @@ function ActivitiesContent() {
         {/* Evaluate Proofs Tab */}
         {activeTab === 'evaluate' && (
           <div className="space-y-6">
-            <div className="mb-8 pb-6 border-b border-gray-100">
+            {/* <div className="mb-8 pb-6 border-b border-gray-100">
               <h2 className="text-3xl font-black text-gray-900 tracking-tight uppercase flex items-center gap-3">
                 <span className={`w-3 h-10 rounded-full ${selectedPointer === 2 ? 'bg-brand-500' : selectedPointer === 3 ? 'bg-brand-500' : 'bg-brand-500'}`}></span>
                 {getPointerLabel(selectedPointer as number)} - EVALUATION
               </h2>
-            </div>
+            </div> */}
 
             <div className="flex justify-end">
               <button

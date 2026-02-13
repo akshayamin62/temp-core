@@ -416,10 +416,10 @@ function Pointer1Content() {
                     <span className="text-sm font-bold text-amber-800 uppercase tracking-wide">Read-Only View — Super Admin</span>
                 </div>
             )}
-            <header className="mb-12 flex justify-between items-start">
+            <div className="mb-8 flex justify-between items-start">
                 <div>
                     <h1 className="text-5xl font-black text-gray-900 mb-4 tracking-tight">
-                        Academic Excellence
+                        POINTER 1: ACADEMIC EXCELLENCE
                     </h1>
                     <p className="text-xl text-gray-500 max-w-2xl leading-relaxed">
                         Manage your academic performance records and evaluations.
@@ -428,12 +428,17 @@ function Pointer1Content() {
 
                 {/* Academic Excellence Score Card */}
                 {academicScore && (
-                    <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-brand-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
-                        <span className="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase mb-2">Academic Excellence Score</span>
-                        <div className="text-7xl font-black text-brand-600 leading-none">{academicScore.finalScore.toFixed(2)}</div>
+                    // <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-brand-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
+                    //     <span className="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase mb-2">Academic Excellence Score</span>
+                    //     <div className="text-7xl font-black text-brand-600 leading-none">{academicScore.finalScore.toFixed(2)}</div>
+                    // </div>
+
+                    <div className="bg-white p-6 rounded-2xl shadow-md border-2 border-brand-100 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
+                        <span className="text-xs font-black tracking-widest text-gray-400 uppercase mb-2">Current Mean <br /> Score</span>
+                        <div className="text-5xl font-black text-brand-600 leading-none">{typeof academicScore.finalScore === 'number' ? academicScore.finalScore.toFixed(2) : '0.00'}</div>
                     </div>
                 )}
-            </header>
+            </div>
 
             {/* Tabs */}
             <div className="flex gap-2 mb-8 border-b border-gray-200">
