@@ -1,59 +1,48 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { authAPI } from '@/lib/api';
+import { useRouter, useParams } from 'next/navigation';
+import { authAPI, superAdminOpsAPI } from '@/lib/api';
 import { User, USER_ROLE, SERVICE_TYPE } from '@/types';
-import OpsLayout from '@/components/OpsLayout';
+import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
-import axios from 'axios';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 interface StudentData {
   _id: string;
-  user: {
+  userId: {
     _id: string;
     firstName?: string;
     middleName?: string;
     lastName?: string;
     email: string;
-    isVerified: boolean;
     isActive: boolean;
+    isVerified: boolean;
     createdAt: string;
   };
   mobileNumber?: string;
   adminId?: {
-    _id: string;
-    userId: {
+    companyName?: string;
+    userId?: {
       _id: string;
       firstName?: string;
       middleName?: string;
       lastName?: string;
-      name: string;
       email: string;
     };
   };
-  counselorId?: {
-    _id: string;
-    userId: {
-      _id: string;
-      firstName?: string;
-      middleName?: string;
-      lastName?: string;
-      name: string;
-      email: string;
-    };
-  };
-  registrationCount: number;
+  registrationCount?: number;
   serviceNames?: string[];
-  createdAt: string;
+  createdAt?: string;
 }
 
-export default function OpsStudentsPage() {
+export default function SuperAdminOpsStudentsPage() {
   const router = useRouter();
+  const params = useParams();
+  const opsUserId = params.userId as string;
+
   const [user, setUser] = useState<User | null>(null);
+  const [opsUser, setOpsUser] = useState<any>(null);
   const [students, setStudents] = useState<StudentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,13 +71,14 @@ export default function OpsStudentsPage() {
       const response = await authAPI.getProfile();
       const userData = response.data.data.user;
 
-      if (userData.role !== USER_ROLE.OPS) {
-        toast.error('Access denied.');
+      if (userData.role !== USER_ROLE.SUPER_ADMIN) {
+        toast.error('Access denied. Super Admin only.');
         router.push('/');
         return;
       }
 
       setUser(userData);
+      fetchOpsDetail();
       fetchStudents();
     } catch (error) {
       toast.error('Please login to continue');
@@ -96,19 +86,21 @@ export default function OpsStudentsPage() {
     }
   };
 
+  const fetchOpsDetail = async () => {
+    try {
+      const response = await superAdminOpsAPI.getOpsDetail(opsUserId);
+      setOpsUser(response.data.data.user);
+    } catch (error) {
+      console.error('Error fetching ops detail:', error);
+    }
+  };
+
   const fetchStudents = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/super-admin/students`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setStudents(response.data.data.students);
+      const response = await superAdminOpsAPI.getOpsStudents(opsUserId);
+      setStudents(response.data.data.students || []);
     } catch (error: any) {
-      if (error.response?.status === 403) {
-        toast.error('Access denied. You need to be assigned as an active OPS.');
-      } else {
-        toast.error('Failed to fetch students');
-      }
+      toast.error('Failed to fetch students');
       console.error('Fetch students error:', error);
     } finally {
       setLoading(false);
@@ -117,16 +109,16 @@ export default function OpsStudentsPage() {
 
   const filteredStudents = students.filter((student) => {
     const query = searchQuery.toLowerCase();
-    const studentName = getFullName(student.user).toLowerCase();
+    const studentName = student.userId ? getFullName(student.userId).toLowerCase() : '';
     return (
       studentName.includes(query) ||
-      student.user.email.toLowerCase().includes(query) ||
-      student.mobileNumber?.includes(query)
+      (student.userId?.email || '').toLowerCase().includes(query) ||
+      (student.mobileNumber || '').includes(query)
     );
   });
 
   const handleViewStudent = (studentId: string) => {
-    router.push(`/ops/students/${studentId}`);
+    router.push(`/super-admin/roles/student/${studentId}`);
   };
 
   if (loading || !user) {
@@ -140,16 +132,27 @@ export default function OpsStudentsPage() {
     );
   }
 
+  const opsDisplayName = opsUser ? getFullName(opsUser) : 'OPS User';
+
   return (
     <>
       <Toaster position="top-right" />
-      <OpsLayout user={user}>
+      <SuperAdminLayout user={user}>
         <div className="p-8">
-          {/* Header */}
+          {/* Back Button + Header */}
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">All Students</h1>
+            <button
+              onClick={() => router.push(`/super-admin/roles/ops/${opsUserId}`)}
+              className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+            >
+              <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to {opsDisplayName}&apos;s Dashboard
+            </button>
+            <h1 className="text-3xl font-bold text-gray-900">Assigned Students</h1>
             <p className="text-gray-600 mt-2">
-              View and manage student data and their service registrations
+              Students assigned to {opsDisplayName} (Read-Only)
             </p>
           </div>
 
@@ -213,21 +216,23 @@ export default function OpsStudentsPage() {
                           <div className="flex items-center">
                             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                               <span className="text-blue-600 font-semibold text-sm">
-                                {getInitials(student.user)}
+                                {student.userId ? getInitials(student.userId) : '?'}
                               </span>
                             </div>
                             <div>
                               <div className="font-medium text-gray-900">
-                                {getFullName(student.user) || 'N/A'}
+                                {student.userId ? getFullName(student.userId) : 'N/A'}
                               </div>
-                              <div className="text-sm text-gray-500">
-                                Joined {new Date(student.createdAt).toLocaleDateString()}
-                              </div>
+                              {student.createdAt && (
+                                <div className="text-sm text-gray-500">
+                                  Joined {new Date(student.createdAt).toLocaleDateString()}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {student.user.email}
+                          {student.userId?.email || 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {student.adminId?.companyName || 'N/A'}
@@ -248,12 +253,12 @@ export default function OpsStudentsPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
                             className={`px-3 py-1 text-xs font-medium rounded-full ${
-                              student.user.isActive
+                              student.userId?.isActive
                                 ? 'bg-green-100 text-green-800'
                                 : 'bg-red-100 text-red-800'
                             }`}
                           >
-                            {student.user.isActive ? 'Active' : 'Inactive'}
+                            {student.userId?.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -289,7 +294,7 @@ export default function OpsStudentsPage() {
                           <p className="text-sm text-gray-500">
                             {searchQuery
                               ? 'Try adjusting your search'
-                              : 'Students will appear here once they register'}
+                              : 'No students are assigned to this ops user'}
                           </p>
                         </div>
                       </td>
@@ -307,9 +312,7 @@ export default function OpsStudentsPage() {
             </div>
           )}
         </div>
-      </OpsLayout>
+      </SuperAdminLayout>
     </>
   );
 }
-
-

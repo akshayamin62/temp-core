@@ -8,17 +8,24 @@ import { getFullName } from '@/utils/nameHelpers';
 interface OpsScheduleSidebarProps {
   summary: OpsScheduleSummary;
   onScheduleClick: (schedule: OpsSchedule) => void;
+  studentLinkPrefix?: string; // e.g. '/super-admin/roles/student' to override default '/ops/students'
 }
 
 interface ScheduleItemProps {
   schedule: OpsSchedule;
   onClick: () => void;
   showDate?: boolean;
+  studentLinkPrefix?: string;
 }
 
-const ScheduleItem = ({ schedule, onClick, showDate = false }: ScheduleItemProps) => {
+const ScheduleItem = ({ schedule, onClick, showDate = false, studentLinkPrefix }: ScheduleItemProps) => {
   const student = schedule.studentId as OpsScheduleStudent;
   const displayName = getFullName(student?.userId) || 'Me';
+
+  // Determine the link based on context
+  const studentLink = studentLinkPrefix
+    ? `${studentLinkPrefix}/${student?._id}`
+    : `/ops/students/${student?._id}`;
 
   const getStatusStyles = () => {
     switch (schedule.status) {
@@ -71,7 +78,7 @@ const ScheduleItem = ({ schedule, onClick, showDate = false }: ScheduleItemProps
             </p>
           ) : (
             <Link
-              href={`/ops/students/${student?._id}`}
+              href={studentLink}
               onClick={(e) => e.stopPropagation()}
               className="font-medium text-gray-900 hover:text-indigo-600 text-sm truncate block hover:underline"
             >
@@ -112,9 +119,10 @@ interface SectionProps {
   onScheduleClick: (schedule: OpsSchedule) => void;
   showDate?: boolean;
   emptyMessage: string;
+  studentLinkPrefix?: string;
 }
 
-const Section = ({ title, icon, iconBg, schedules, onScheduleClick, showDate = false, emptyMessage }: SectionProps) => {
+const Section = ({ title, icon, iconBg, schedules, onScheduleClick, showDate = false, emptyMessage, studentLinkPrefix }: SectionProps) => {
   return (
     <div className="pb-6 border-b border-gray-300 last:pb-0 last:border-b-0 mt-5">
       <div className="flex items-center gap-2 mb-3">
@@ -135,6 +143,7 @@ const Section = ({ title, icon, iconBg, schedules, onScheduleClick, showDate = f
               schedule={schedule}
               onClick={() => onScheduleClick(schedule)}
               showDate={showDate}
+              studentLinkPrefix={studentLinkPrefix}
             />
           ))}
         </div>
@@ -150,6 +159,7 @@ const Section = ({ title, icon, iconBg, schedules, onScheduleClick, showDate = f
 export default function OpsScheduleSidebar({
   summary,
   onScheduleClick,
+  studentLinkPrefix,
 }: OpsScheduleSidebarProps) {
   const { today, missed, tomorrow } = summary;
 
@@ -204,6 +214,7 @@ export default function OpsScheduleSidebar({
           schedules={today}
           onScheduleClick={onScheduleClick}
           emptyMessage="No schedules for today"
+          studentLinkPrefix={studentLinkPrefix}
         />
 
         {/* Missed Schedules */}
@@ -219,6 +230,7 @@ export default function OpsScheduleSidebar({
           onScheduleClick={onScheduleClick}
           showDate={true}
           emptyMessage="No missed schedules"
+          studentLinkPrefix={studentLinkPrefix}
         />
 
         {/* Tomorrow's Schedules */}
@@ -233,6 +245,7 @@ export default function OpsScheduleSidebar({
           schedules={tomorrow}
           onScheduleClick={onScheduleClick}
           emptyMessage="No schedules for tomorrow"
+          studentLinkPrefix={studentLinkPrefix}
         />
       </div>
     </div>

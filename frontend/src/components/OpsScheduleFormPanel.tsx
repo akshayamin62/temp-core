@@ -20,6 +20,7 @@ interface OpsScheduleFormPanelProps {
   }) => Promise<void>;
   onDelete?: () => Promise<void>;
   isLoading?: boolean;
+  readOnly?: boolean;
 }
 
 export default function OpsScheduleFormPanel({
@@ -31,6 +32,7 @@ export default function OpsScheduleFormPanel({
   onSubmit,
   onDelete,
   isLoading = false,
+  readOnly = false,
 }: OpsScheduleFormPanelProps) {
   const [assignTo, setAssignTo] = useState<string>('me'); // 'me' or studentId
   const [scheduledDate, setScheduledDate] = useState('');
@@ -109,7 +111,7 @@ export default function OpsScheduleFormPanel({
         {/* Compact Header */}
         <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-4 py-3 rounded-t-xl flex items-center justify-between">
           <span className="text-white font-medium text-sm">
-            {isEditing ? '✏️ Edit Schedule' : '➕ New Schedule'}
+            {readOnly ? '📋 View Schedule' : isEditing ? '✏️ Edit Schedule' : '➕ New Schedule'}
           </span>
           <button
             onClick={onClose}
@@ -132,8 +134,9 @@ export default function OpsScheduleFormPanel({
               <select
                 value={assignTo}
                 onChange={(e) => setAssignTo(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                 required
+                disabled={readOnly}
               >
                 <option value="me">Me (Personal Task)</option>
                 <optgroup label="Students">
@@ -158,8 +161,9 @@ export default function OpsScheduleFormPanel({
                 type="date"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
                 required
+                disabled={readOnly}
               />
             </div>
 
@@ -172,8 +176,9 @@ export default function OpsScheduleFormPanel({
                 type="time"
                 value={scheduledTime}
                 onChange={(e) => setScheduledTime(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
                 required
+                disabled={readOnly}
               />
             </div>
 
@@ -187,12 +192,13 @@ export default function OpsScheduleFormPanel({
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
                 placeholder="Enter task description or agenda..."
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                disabled={readOnly}
               />
             </div>
 
-            {/* Status (only show when editing) */}
-            {isEditing && (
+            {/* Status (show when editing or readOnly) */}
+            {(isEditing || readOnly) && (
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                   Status
@@ -200,7 +206,8 @@ export default function OpsScheduleFormPanel({
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as OPS_SCHEDULE_STATUS)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  disabled={readOnly}
                 >
                   <option value={OPS_SCHEDULE_STATUS.SCHEDULED}>Scheduled</option>
                   <option value={OPS_SCHEDULE_STATUS.COMPLETED}>Completed</option>
@@ -211,7 +218,8 @@ export default function OpsScheduleFormPanel({
           </form>
         </div>
 
-        {/* Footer - Action Buttons */}
+        {/* Footer - Action Buttons (hidden in readOnly mode) */}
+        {!readOnly && (
         <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl">
           <div className="flex gap-2">
             <button
@@ -246,6 +254,7 @@ export default function OpsScheduleFormPanel({
             )}
           </div>
         </div>
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}

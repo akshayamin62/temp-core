@@ -538,6 +538,21 @@ export const opsScheduleAPI = {
   deleteSchedule: (scheduleId: string) => api.delete(`/ops-schedules/${scheduleId}`),
 };
 
+// Super Admin - OPS Dashboard API (read-only)
+export const superAdminOpsAPI = {
+  // Get ops user details
+  getOpsDetail: (opsUserId: string) => api.get(`/super-admin/ops/${opsUserId}/detail`),
+
+  // Get all schedules for an ops user
+  getOpsSchedules: (opsUserId: string) => api.get(`/super-admin/ops/${opsUserId}/schedules`),
+
+  // Get schedule summary for an ops user
+  getOpsSummary: (opsUserId: string) => api.get(`/super-admin/ops/${opsUserId}/schedule-summary`),
+
+  // Get students assigned to an ops user
+  getOpsStudents: (opsUserId: string) => api.get(`/super-admin/ops/${opsUserId}/students`),
+};
+
 // Lead Student Conversion API
 export const leadConversionAPI = {
   // Request conversion (Counselor)

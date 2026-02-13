@@ -81,12 +81,16 @@ export const getAllStudents = async (req: AuthRequest, res: Response): Promise<R
       })
       .sort({ createdAt: -1 });
 
-    // Get registration count for each student
+    // Get registration count and service names for each student
     const studentsWithStats = await Promise.all(
       students.map(async (student) => {
-        const registrationCount = await StudentServiceRegistration.countDocuments({
+        const registrations = await StudentServiceRegistration.find({
           studentId: student._id,
-        });
+        }).populate('serviceId', 'name');
+
+        const serviceNames = registrations
+          .map((r: any) => r.serviceId?.name)
+          .filter(Boolean);
 
         return {
           _id: student._id,
@@ -94,7 +98,8 @@ export const getAllStudents = async (req: AuthRequest, res: Response): Promise<R
           mobileNumber: student.mobileNumber,
           adminId: student.adminId,
           counselorId: student.counselorId,
-          registrationCount,
+          registrationCount: registrations.length,
+          serviceNames,
           createdAt: student.createdAt,
         };
       })

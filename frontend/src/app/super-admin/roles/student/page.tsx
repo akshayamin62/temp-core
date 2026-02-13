@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authAPI } from '@/lib/api';
-import { User, USER_ROLE } from '@/types';
+import { User, USER_ROLE, SERVICE_TYPE } from '@/types';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
@@ -46,6 +46,7 @@ interface StudentData {
     };
   };
   registrationCount: number;
+  serviceNames?: string[];
   createdAt: string;
   hasPendingAssignment?: boolean;
 }
@@ -93,6 +94,21 @@ export default function StudentUsersPage() {
   const [pendingFilter, setPendingFilter] = useState(false);
   const [stats, setStats] = useState<UserStats>({ total: 0, active: 0, pendingOpsAssignments: 0 });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const getServiceColor = (service: string) => {
+    switch (service) {
+      case SERVICE_TYPE.CARRER_FOCUS_STUDY_ABROAD:
+        return 'bg-indigo-100 text-indigo-800';
+      case SERVICE_TYPE.IVY_LEAGUE_ADMISSION:
+        return 'bg-amber-100 text-amber-800';
+      case SERVICE_TYPE.EDUCATION_PLANNING:
+        return 'bg-teal-100 text-teal-800';
+      case SERVICE_TYPE.IELTS_GRE_LANGUAGE_COACHING:
+        return 'bg-rose-100 text-rose-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   useEffect(() => {
     checkAuth();
@@ -343,10 +359,18 @@ export default function StudentUsersPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {student.adminId?.companyName || 'N/A'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-full">
-                            {student.registrationCount} service(s)
-                          </span>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1">
+                            {student.serviceNames && student.serviceNames.length > 0 ? (
+                              student.serviceNames.map((service, idx) => (
+                                <span key={idx} className={`px-2 py-1 rounded-full text-xs font-medium ${getServiceColor(service)}`}>
+                                  {service}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-sm text-gray-400">No services</span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span

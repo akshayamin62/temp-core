@@ -25,6 +25,10 @@ import {
   getCounselorFollowUpSummaryForSuperAdmin,
   getCounselorTeamMeetsForSuperAdmin,
   getAllLeadsForSuperAdmin,
+  getOpsDetailForSuperAdmin,
+  getOpsSchedulesForSuperAdmin,
+  getOpsScheduleSummaryForSuperAdmin,
+  getOpsStudentsForSuperAdmin,
 } from "../controllers/superAdminController";
 import { authenticate } from "../middleware/auth";
 import { authorize } from "../middleware/authorize";
@@ -220,6 +224,36 @@ router.get("/counselors/:counselorId/team-meets", getCounselorTeamMeetsForSuperA
  * @body    name, email, phoneNumber (optional), role, adminId (for COUNSELOR), companyName, address, companyLogo (file)
  */
 router.post("/user", uploadAdminLogo.single('companyLogo'), createUserByRole);
+
+// ============= OPS DASHBOARD ROUTES (Read-Only) =============
+
+/**
+ * @route   GET /api/super-admin/ops/:opsUserId/detail
+ * @desc    Get ops user details
+ * @access  Super Admin only
+ */
+router.get("/ops/:opsUserId/detail", getOpsDetailForSuperAdmin);
+
+/**
+ * @route   GET /api/super-admin/ops/:opsUserId/schedules
+ * @desc    Get all schedules for a specific ops user
+ * @access  Super Admin only
+ */
+router.get("/ops/:opsUserId/schedules", getOpsSchedulesForSuperAdmin);
+
+/**
+ * @route   GET /api/super-admin/ops/:opsUserId/schedule-summary
+ * @desc    Get schedule summary for a specific ops user
+ * @access  Super Admin only
+ */
+router.get("/ops/:opsUserId/schedule-summary", getOpsScheduleSummaryForSuperAdmin);
+
+/**
+ * @route   GET /api/super-admin/ops/:opsUserId/students
+ * @desc    Get students assigned to a specific ops user
+ * @access  Super Admin only
+ */
+router.get("/ops/:opsUserId/students", getOpsStudentsForSuperAdmin);
 
 export default router;
 

@@ -421,7 +421,7 @@ export default function RoleUserListPage({
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Role</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Joined</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -488,8 +488,8 @@ export default function RoleUserListPage({
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
+                          <div className="flex items-center justify-start gap-2">
                             {isAdminRole && (
                               <button
                                 onClick={() => router.push(`/super-admin/roles/admin/${user._id || user.id}`)}
@@ -517,6 +517,14 @@ export default function RoleUserListPage({
                             {roleEnum === USER_ROLE.IVY_EXPERT && (
                               <button
                                 onClick={() => router.push(`/super-admin/roles/ivy-expert/${user._id || user.id}`)}
+                                className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white hover:bg-blue-700"
+                              >
+                                View Details
+                              </button>
+                            )}
+                            {roleEnum === USER_ROLE.OPS && (
+                              <button
+                                onClick={() => router.push(`/super-admin/roles/ops/${user._id || user.id}`)}
                                 className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white hover:bg-blue-700"
                               >
                                 View Details

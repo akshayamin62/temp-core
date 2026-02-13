@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { authAPI, superAdminAPI } from '@/lib/api';
-import { User, USER_ROLE } from '@/types';
+import { User, USER_ROLE, SERVICE_TYPE } from '@/types';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
@@ -23,6 +23,7 @@ interface StudentData {
   mobileNumber?: string;
   adminId?: {
     _id: string;
+    companyName?: string;
     userId: {
       _id: string;
       firstName: string;
@@ -42,6 +43,7 @@ interface StudentData {
     };
   };
   registrationCount: number;
+  serviceNames?: string[];
   createdAt: string;
   convertedFromLead?: {
     _id: string;
@@ -103,6 +105,21 @@ export default function SuperAdminAdminStudentsPage() {
       console.error('Fetch students error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getServiceColor = (service: string) => {
+    switch (service) {
+      case SERVICE_TYPE.CARRER_FOCUS_STUDY_ABROAD:
+        return 'bg-indigo-100 text-indigo-800';
+      case SERVICE_TYPE.IVY_LEAGUE_ADMISSION:
+        return 'bg-amber-100 text-amber-800';
+      case SERVICE_TYPE.EDUCATION_PLANNING:
+        return 'bg-teal-100 text-teal-800';
+      case SERVICE_TYPE.IELTS_GRE_LANGUAGE_COACHING:
+        return 'bg-rose-100 text-rose-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -240,6 +257,7 @@ export default function SuperAdminAdminStudentsPage() {
                     <tr>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Student</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Email</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Admin</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Registrations</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
@@ -270,10 +288,21 @@ export default function SuperAdminAdminStudentsPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {student.user?.email || 'N/A'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
-                            {student.registrationCount} service(s)
-                          </span>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {student.adminId?.companyName || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1">
+                            {student.serviceNames && student.serviceNames.length > 0 ? (
+                              student.serviceNames.map((service, idx) => (
+                                <span key={idx} className={`px-2 py-1 rounded-full text-xs font-medium ${getServiceColor(service)}`}>
+                                  {service}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-sm text-gray-400">No services</span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${

@@ -1188,9 +1188,13 @@ export const getAdminStudentsForSuperAdmin = async (req: Request, res: Response)
     // Get registration count and conversion info for each student
     const studentsWithStats = await Promise.all(
       students.map(async (student: any) => {
-        const registrationCount = await StudentServiceRegistration.countDocuments({
+        const registrations = await StudentServiceRegistration.find({
           studentId: student._id,
-        });
+        }).populate('serviceId', 'name');
+
+        const serviceNames = registrations
+          .map((r: any) => r.serviceId?.name)
+          .filter(Boolean);
 
         // Check for conversion info
         const conversion = await LeadStudentConversion.findOne({
@@ -1203,7 +1207,8 @@ export const getAdminStudentsForSuperAdmin = async (req: Request, res: Response)
           mobileNumber: student.mobileNumber,
           adminId: student.adminId,
           counselorId: student.counselorId,
-          registrationCount,
+          registrationCount: registrations.length,
+          serviceNames,
           createdAt: student.createdAt,
           convertedFromLead: conversion?.leadId || null,
         };
@@ -1521,5 +1526,207 @@ export const getCounselorTeamMeetsForSuperAdmin = async (req: Request, res: Resp
   }
 };
 
+// ============= OPS DASHBOARD ROUTES (Read-Only for Super Admin) =============
 
+/**
+ * Get ops user details by userId
+ */
+export const getOpsDetailForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { opsUserId } = req.params;
 
+    const opsUser = await User.findById(opsUserId).select('-password');
+    if (!opsUser || opsUser.role !== USER_ROLE.OPS) {
+      return res.status(404).json({ success: false, message: 'OPS user not found' });
+    }
+
+    const opsRecord = await Ops.findOne({ userId: opsUserId });
+    if (!opsRecord) {
+      return res.status(404).json({ success: false, message: 'OPS record not found' });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        user: opsUser,
+        ops: opsRecord,
+      },
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch ops details', error: error.message });
+  }
+};
+
+/**
+ * Get schedules for a specific ops user (Super Admin read-only)
+ */
+export const getOpsSchedulesForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { opsUserId } = req.params;
+
+    const opsRecord = await Ops.findOne({ userId: opsUserId });
+    if (!opsRecord) {
+      return res.status(404).json({ success: false, message: 'OPS record not found' });
+    }
+
+    const OpsSchedule = (await import('../models/OpsSchedule')).default;
+
+    const schedules = await OpsSchedule.find({ opsId: opsRecord._id })
+      .populate({
+        path: 'studentId',
+        populate: {
+          path: 'userId',
+          select: 'firstName middleName lastName email',
+        },
+      })
+      .sort({ scheduledDate: 1, scheduledTime: 1 });
+
+    return res.json({
+      success: true,
+      data: { schedules },
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch ops schedules', error: error.message });
+  }
+};
+
+/**
+ * Get schedule summary for a specific ops user (Super Admin read-only)
+ */
+export const getOpsScheduleSummaryForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { opsUserId } = req.params;
+
+    const opsRecord = await Ops.findOne({ userId: opsUserId });
+    if (!opsRecord) {
+      return res.status(404).json({ success: false, message: 'OPS record not found' });
+    }
+
+    const OpsSchedule = (await import('../models/OpsSchedule')).default;
+    const { OPS_SCHEDULE_STATUS } = await import('../models/OpsSchedule');
+
+    const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(now);
+    todayEnd.setHours(23, 59, 59, 999);
+    const tomorrowStart = new Date(now);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+    tomorrowStart.setHours(0, 0, 0, 0);
+    const tomorrowEnd = new Date(now);
+    tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
+    tomorrowEnd.setHours(23, 59, 59, 999);
+
+    const populateOpts = {
+      path: 'studentId',
+      populate: {
+        path: 'userId',
+        select: 'firstName middleName lastName email',
+      },
+    };
+
+    const today = await OpsSchedule.find({
+      opsId: opsRecord._id,
+      scheduledDate: { $gte: todayStart, $lte: todayEnd },
+      status: OPS_SCHEDULE_STATUS.SCHEDULED,
+    }).populate(populateOpts).sort({ scheduledTime: 1 });
+
+    const missed = await OpsSchedule.find({
+      opsId: opsRecord._id,
+      scheduledDate: { $lt: todayStart },
+      status: OPS_SCHEDULE_STATUS.SCHEDULED,
+    }).populate(populateOpts).sort({ scheduledDate: -1, scheduledTime: -1 }).limit(10);
+
+    const tomorrow = await OpsSchedule.find({
+      opsId: opsRecord._id,
+      scheduledDate: { $gte: tomorrowStart, $lte: tomorrowEnd },
+      status: OPS_SCHEDULE_STATUS.SCHEDULED,
+    }).populate(populateOpts).sort({ scheduledTime: 1 });
+
+    const counts = {
+      today: today.length,
+      missed: missed.length,
+      tomorrow: tomorrow.length,
+      total: await OpsSchedule.countDocuments({
+        opsId: opsRecord._id,
+        status: OPS_SCHEDULE_STATUS.SCHEDULED,
+      }),
+    };
+
+    return res.json({
+      success: true,
+      data: { today, missed, tomorrow, counts },
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch ops schedule summary', error: error.message });
+  }
+};
+
+/**
+ * Get students assigned to a specific ops user (Super Admin read-only)
+ */
+export const getOpsStudentsForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { opsUserId } = req.params;
+
+    const opsRecord = await Ops.findOne({ userId: opsUserId });
+    if (!opsRecord) {
+      return res.status(404).json({ success: false, message: 'OPS record not found' });
+    }
+
+    const StudentServiceRegistration = (await import('../models/StudentServiceRegistration')).default;
+    const Student = (await import('../models/Student')).default;
+
+    const registrationDocs = await StudentServiceRegistration.find({
+      activeOpsId: opsRecord._id,
+    });
+
+    const studentIds = [...new Set(registrationDocs.map(r => r.studentId.toString()))];
+
+    const students = await Student.find({
+      _id: { $in: studentIds },
+    })
+      .populate({
+        path: 'userId',
+        select: 'firstName middleName lastName email isActive isVerified createdAt',
+      })
+      .populate({
+        path: 'adminId',
+        select: 'companyName',
+        populate: {
+          path: 'userId',
+          select: 'firstName middleName lastName email',
+        },
+      });
+
+    // Enrich with service names
+    const studentsWithServices = await Promise.all(
+      students.map(async (student: any) => {
+        const regs = await StudentServiceRegistration.find({
+          studentId: student._id,
+        }).populate('serviceId', 'name');
+
+        const serviceNames = regs
+          .map((r: any) => r.serviceId?.name)
+          .filter(Boolean);
+
+        return {
+          _id: student._id,
+          userId: student.userId,
+          mobileNumber: student.mobileNumber,
+          adminId: student.adminId,
+          registrationCount: regs.length,
+          serviceNames,
+          createdAt: student.createdAt,
+        };
+      })
+    );
+
+    return res.json({
+      success: true,
+      data: { students: studentsWithServices },
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch ops students', error: error.message });
+  }
+};
