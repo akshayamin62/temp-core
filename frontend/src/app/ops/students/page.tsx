@@ -26,6 +26,7 @@ interface StudentData {
   mobileNumber?: string;
   adminId?: {
     _id: string;
+    companyName?: string;
     userId: {
       _id: string;
       firstName?: string;
