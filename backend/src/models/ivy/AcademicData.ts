@@ -8,6 +8,15 @@ interface ISubject {
     feedback?: string;
 }
 
+interface IProject {
+    _id?: mongoose.Types.ObjectId;
+    title: string;
+    description: string;
+    organizationName?: string;
+    projectUrl?: string;
+    feedback?: string;
+}
+
 interface IFormalSubSection {
     _id?: mongoose.Types.ObjectId;
     testType: 'weekly' | 'month-wise' | 'term-wise' | 'final-term';
@@ -20,10 +29,11 @@ interface IFormalSubSection {
 
 interface IInformalSubSection {
     _id?: mongoose.Types.ObjectId;
-    testType: 'olympiad' | 'test';
+    testType: 'olympiad' | 'test' | 'project';
     month: string;
     year: number;
     subjects: ISubject[];
+    projects: IProject[];
     overallFeedback?: string;
     score?: number;
 }
@@ -61,6 +71,14 @@ const SubjectSchema = new Schema({
     feedback: { type: String, default: '' }
 });
 
+const ProjectSchema = new Schema({
+    title: { type: String, default: '' },
+    description: { type: String, default: '' },
+    organizationName: { type: String, default: '' },
+    projectUrl: { type: String, default: '' },
+    feedback: { type: String, default: '' }
+});
+
 const FormalSubSectionSchema = new Schema({
     testType: { 
         type: String, 
@@ -77,12 +95,13 @@ const FormalSubSectionSchema = new Schema({
 const InformalSubSectionSchema = new Schema({
     testType: { 
         type: String, 
-        enum: ['olympiad', 'test'], 
+        enum: ['olympiad', 'test', 'project'], 
         default: 'olympiad' 
     },
     month: { type: String, default: 'January' },
     year: { type: Number, default: new Date().getFullYear() },
     subjects: [SubjectSchema],
+    projects: [ProjectSchema],
     overallFeedback: { type: String, default: '' },
     score: { type: Number, min: 0, max: 10, default: 0 }
 });

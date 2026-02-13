@@ -13,9 +13,12 @@ import {
     updateSubSection,
     addSubject,
     updateSubject,
+    addProject,
+    updateProject,
     deleteSection,
     deleteSubSection,
     deleteSubject,
+    deleteProject,
     updateWeightages,
     getAcademicExcellenceScore,
 } from '../services/pointer1.service';
@@ -270,6 +273,64 @@ export const updateSubjectHandler = async (req: Request, res: Response): Promise
     }
 };
 
+export const addProjectHandler = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { studentId, studentIvyServiceId, sectionId, subSectionId, title, description, organizationName, projectUrl, tab } = req.body;
+
+        if (!studentId || !studentIvyServiceId || !sectionId || !subSectionId) {
+            res.status(400).json({ success: false, message: 'Required fields missing' });
+            return;
+        }
+
+        const data = await addProject(
+            studentId,
+            studentIvyServiceId,
+            sectionId,
+            subSectionId,
+            title || '',
+            description || '',
+            organizationName || '',
+            projectUrl || '',
+            tab || 'formal'
+        );
+
+        res.status(200).json({
+            success: true,
+            data,
+        });
+    } catch (error: any) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const updateProjectHandler = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { studentId, studentIvyServiceId, sectionId, subSectionId, projectId, tab, ...updates } = req.body;
+
+        if (!studentId || !studentIvyServiceId || !sectionId || !subSectionId || !projectId) {
+            res.status(400).json({ success: false, message: 'Required fields missing' });
+            return;
+        }
+
+        const data = await updateProject(
+            studentId,
+            studentIvyServiceId,
+            sectionId,
+            subSectionId,
+            projectId,
+            updates,
+            tab || 'formal'
+        );
+
+        res.status(200).json({
+            success: true,
+            data,
+        });
+    } catch (error: any) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
 export const deleteSectionHandler = async (req: Request, res: Response): Promise<void> => {
     try {
         const { studentId, studentIvyServiceId, sectionId, tab } = req.body;
@@ -320,6 +381,26 @@ export const deleteSubjectHandler = async (req: Request, res: Response): Promise
         }
 
         const data = await deleteSubject(studentId, studentIvyServiceId, sectionId, subSectionId, subjectId, tab || 'formal');
+
+        res.status(200).json({
+            success: true,
+            data,
+        });
+    } catch (error: any) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const deleteProjectHandler = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { studentId, studentIvyServiceId, sectionId, subSectionId, projectId, tab } = req.body;
+
+        if (!studentId || !studentIvyServiceId || !sectionId || !subSectionId || !projectId) {
+            res.status(400).json({ success: false, message: 'Required fields missing' });
+            return;
+        }
+
+        const data = await deleteProject(studentId, studentIvyServiceId, sectionId, subSectionId, projectId, tab || 'formal');
 
         res.status(200).json({
             success: true,

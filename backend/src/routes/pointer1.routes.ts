@@ -10,9 +10,12 @@ import {
     updateSubSectionHandler,
     addSubjectHandler,
     updateSubjectHandler,
+    addProjectHandler,
+    updateProjectHandler,
     deleteSectionHandler,
     deleteSubSectionHandler,
     deleteSubjectHandler,
+    deleteProjectHandler,
     updateWeightagesHandler,
     getAcademicExcellenceScoreHandler,
 } from '../controllers/pointer1.controller';
@@ -52,6 +55,12 @@ router.post('/academic/subject', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUD
 // PUT /api/pointer1/academic/subject - Update a subject
 router.put('/academic/subject', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), updateSubjectHandler);
 
+// POST /api/pointer1/academic/project - Add a project
+router.post('/academic/project', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), addProjectHandler);
+
+// PUT /api/pointer1/academic/project - Update a project
+router.put('/academic/project', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), updateProjectHandler);
+
 // DELETE /api/pointer1/academic/section - Delete a section
 router.delete('/academic/section', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), deleteSectionHandler);
 
@@ -60,6 +69,9 @@ router.delete('/academic/subsection', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE
 
 // DELETE /api/pointer1/academic/subject - Delete a subject
 router.delete('/academic/subject', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), deleteSubjectHandler);
+
+// DELETE /api/pointer1/academic/project - Delete a project
+router.delete('/academic/project', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), deleteProjectHandler);
 
 // PUT /api/pointer1/academic/weightages - Update weightages for informal sections
 router.put('/academic/weightages', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), updateWeightagesHandler);

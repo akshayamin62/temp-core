@@ -397,17 +397,26 @@ export const addSubSection = async (
         throw new Error('Section not found');
     }
 
-    // Automatically add one default subject when creating a sub-section
+    const isProject = testType === 'project';
+
+    // Automatically add one default subject or project when creating a sub-section
     section.subSections.push({
         testType,
         month,
         year,
-        subjects: [{
+        subjects: isProject ? [] : [{
             name: 'Subject 1',
             marksObtained: 0,
             totalMarks: 100,
             feedback: ''
         }],
+        projects: isProject ? [{
+            title: 'Project 1',
+            description: '',
+            organizationName: '',
+            projectUrl: '',
+            feedback: ''
+        }] : [],
         score: 0
     } as any);
     
@@ -443,7 +452,26 @@ export const updateSubSection = async (
     }
 
     // Update allowed fields
-    if (updates.testType) subSection.testType = updates.testType;
+    if (updates.testType) {
+        subSection.testType = updates.testType;
+        if (updates.testType === 'project' && (!(subSection as any).projects || (subSection as any).projects.length === 0)) {
+            (subSection as any).projects = [{
+                title: 'Project 1',
+                description: '',
+                organizationName: '',
+                projectUrl: '',
+                feedback: ''
+            }];
+        }
+        if (updates.testType !== 'project' && (!subSection.subjects || subSection.subjects.length === 0)) {
+            subSection.subjects = [{
+                name: 'Subject 1',
+                marksObtained: 0,
+                totalMarks: 100,
+                feedback: ''
+            }] as any;
+        }
+    }
     if (updates.month) subSection.month = updates.month;
     if (updates.year) subSection.year = updates.year;
     if (updates.overallFeedback !== undefined) subSection.overallFeedback = updates.overallFeedback;
@@ -456,6 +484,50 @@ export const updateSubSection = async (
         await refreshPointer1MeanScore(studentIvyServiceId);
     }
     
+    return data;
+};
+
+/** Add a project to a sub-section */
+export const addProject = async (
+    studentId: string,
+    studentIvyServiceId: string,
+    sectionId: string,
+    subSectionId: string,
+    title: string,
+    description: string,
+    organizationName: string,
+    projectUrl: string,
+    tab: 'formal' | 'informal' = 'formal'
+) => {
+    const data = await getAcademicData(studentId, studentIvyServiceId);
+
+    const section = data[tab].sections.find(
+        (s: any) => s._id.toString() === sectionId
+    );
+
+    if (!section) {
+        throw new Error('Section not found');
+    }
+
+    const subSection = section.subSections.find(
+        (ss: any) => ss._id.toString() === subSectionId
+    );
+
+    if (!subSection) {
+        throw new Error('Sub-section not found');
+    }
+
+    if (!(subSection as any).projects) (subSection as any).projects = [];
+
+    (subSection as any).projects.push({
+        title,
+        description,
+        organizationName,
+        projectUrl,
+        feedback: ''
+    });
+
+    await data.save();
     return data;
 };
 
@@ -541,6 +613,52 @@ export const updateSubject = async (
     if (updates.totalMarks !== undefined) subject.totalMarks = updates.totalMarks;
     if (updates.feedback !== undefined) subject.feedback = updates.feedback;
     
+    await data.save();
+    return data;
+};
+
+/** Update a project */
+export const updateProject = async (
+    studentId: string,
+    studentIvyServiceId: string,
+    sectionId: string,
+    subSectionId: string,
+    projectId: string,
+    updates: any,
+    tab: 'formal' | 'informal' = 'formal'
+) => {
+    const data = await getAcademicData(studentId, studentIvyServiceId);
+
+    const section = data[tab].sections.find(
+        (s: any) => s._id.toString() === sectionId
+    );
+
+    if (!section) {
+        throw new Error('Section not found');
+    }
+
+    const subSection = section.subSections.find(
+        (ss: any) => ss._id.toString() === subSectionId
+    );
+
+    if (!subSection) {
+        throw new Error('Sub-section not found');
+    }
+
+    const project = (subSection as any).projects?.find(
+        (proj: any) => proj._id.toString() === projectId
+    );
+
+    if (!project) {
+        throw new Error('Project not found');
+    }
+
+    if (updates.title !== undefined) project.title = updates.title;
+    if (updates.description !== undefined) project.description = updates.description;
+    if (updates.organizationName !== undefined) project.organizationName = updates.organizationName;
+    if (updates.projectUrl !== undefined) project.projectUrl = updates.projectUrl;
+    if (updates.feedback !== undefined) project.feedback = updates.feedback;
+
     await data.save();
     return data;
 };
@@ -640,6 +758,46 @@ export const deleteSubject = async (
     }
 
     subSection.subjects.splice(subjectIndex, 1);
+    await data.save();
+    return data;
+};
+
+/** Delete a project */
+export const deleteProject = async (
+    studentId: string,
+    studentIvyServiceId: string,
+    sectionId: string,
+    subSectionId: string,
+    projectId: string,
+    tab: 'formal' | 'informal' = 'formal'
+) => {
+    const data = await getAcademicData(studentId, studentIvyServiceId);
+
+    const section = data[tab].sections.find(
+        (s: any) => s._id.toString() === sectionId
+    );
+
+    if (!section) {
+        throw new Error('Section not found');
+    }
+
+    const subSection = section.subSections.find(
+        (ss: any) => ss._id.toString() === subSectionId
+    );
+
+    if (!subSection) {
+        throw new Error('Sub-section not found');
+    }
+
+    const projectIndex = (subSection as any).projects?.findIndex(
+        (proj: any) => proj._id.toString() === projectId
+    );
+
+    if (projectIndex === undefined || projectIndex === -1) {
+        throw new Error('Project not found');
+    }
+
+    (subSection as any).projects.splice(projectIndex, 1);
     await data.save();
     return data;
 };

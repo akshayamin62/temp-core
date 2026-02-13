@@ -40,11 +40,11 @@ const pointerNames: { [key: number]: string } = {
 };
 
 const pointerDescriptions: { [key: number]: string } = {
-    1: 'GPA, test scores, and course rigor',
-    2: 'Deep expertise in a specific field',
+    1: 'GPA, test scores, olympiad and projects',
+    2: 'Deep expertise in a chosen field',
     3: 'Leadership roles and demonstrated impact',
     4: 'Community service and social contributions',
-    5: 'Essay writing and personal narrative',
+    5: 'Essay/Profile writing and personal narrative',
     6: 'Research and learning beyond curriculum',
 };
 
@@ -395,7 +395,7 @@ function IvyScoreContent() {
                     <div>
                         <h4 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Understanding Your Profile</h4>
                         <p className="text-indigo-200/60 font-medium leading-relaxed max-w-3xl">
-                            Each pointer follows the Ivy League evaluation matrix scaled from 0-10. Your ivyExperts manually verify your proofs to ensure accuracy. 
+                            Each pointer follows the Ivy League evaluation matrix scaled from 0-10. Your ivyExperts manually verify your evidences to ensure accuracy. 
                         </p>
                     </div>
                 </div>

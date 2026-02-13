@@ -14,12 +14,22 @@ interface Subject {
     feedback?: string;
 }
 
+interface Project {
+    _id?: string;
+    title: string;
+    description: string;
+    organizationName?: string;
+    projectUrl?: string;
+    feedback?: string;
+}
+
 interface SubSection {
     _id?: string;
-    testType: 'weekly' | 'month-wise' | 'term-wise' | 'final-term' | 'olympiad' | 'test';
+    testType: 'weekly' | 'month-wise' | 'term-wise' | 'final-term' | 'olympiad' | 'test' | 'project';
     month: string;
     year: number;
     subjects: Subject[];
+    projects?: Project[];
     overallFeedback?: string;
     score?: number;
 }
@@ -46,6 +56,8 @@ function IvyExpertPointer1Content() {
     const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set());
     const [loading, setLoading] = useState(true);
     const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
+    const activeTabRef = useRef(activeTab);
+    activeTabRef.current = activeTab;
     const [academicScore, setAcademicScore] = useState<{
         finalScore: number;
         documentAvg: number;
@@ -159,9 +171,6 @@ function IvyExpertPointer1Content() {
                 [field]: value,
                 tab
             });
-            if (field !== 'overallFeedback') {
-                fetchAcademicData();
-            }
             if (tab === 'informal' && field === 'score') {
                 fetchAcademicScore();
             }
@@ -174,14 +183,29 @@ function IvyExpertPointer1Content() {
         // Update local state immediately for responsive UI
         setSections(prev => prev.map(s =>
             s._id === sectionId
-                ? { ...s, subSections: s.subSections.map(ss => ss._id === subSectionId ? { ...ss, [field]: value } : ss) }
+                ? {
+                    ...s,
+                    subSections: s.subSections.map(ss => {
+                        if (ss._id !== subSectionId) return ss;
+                        const updated = { ...ss, [field]: value };
+                        // When switching to project type, initialize projects array locally
+                        if (field === 'testType' && value === 'project' && (!ss.projects || ss.projects.length === 0)) {
+                            updated.projects = [{ title: 'Project 1', description: '', organizationName: '', projectUrl: '', feedback: '' }];
+                        }
+                        // When switching away from project type, initialize subjects array locally
+                        if (field === 'testType' && value !== 'project' && (!ss.subjects || ss.subjects.length === 0)) {
+                            updated.subjects = [{ name: 'Subject 1', marksObtained: 0, totalMarks: 100, feedback: '' }];
+                        }
+                        return updated;
+                    })
+                }
                 : s
         ));
         // Debounce API call by 2 seconds
         const key = `subsection-${sectionId}-${subSectionId}-${field}`;
         if (debounceTimers.current[key]) clearTimeout(debounceTimers.current[key]);
         debounceTimers.current[key] = setTimeout(() => {
-            updateSubSectionAPI(sectionId, subSectionId, field, value, activeTab);
+            updateSubSectionAPI(sectionId, subSectionId, field, value, activeTabRef.current);
         }, 2000);
     };
 
@@ -203,6 +227,40 @@ function IvyExpertPointer1Content() {
         }
     };
 
+    const addProject = async (sectionId: string, subSectionId: string) => {
+        // Optimistically add to local state
+        const tempProject: Project = { title: '', description: '', organizationName: '', projectUrl: '', feedback: '' };
+        setSections(prev => prev.map(s =>
+            s._id === sectionId
+                ? {
+                    ...s,
+                    subSections: s.subSections.map(ss =>
+                        ss._id === subSectionId
+                            ? { ...ss, projects: [...(ss.projects || []), tempProject] }
+                            : ss
+                    )
+                }
+                : s
+        ));
+        try {
+            await axios.post(`${IVY_API_URL}/pointer1/academic/project`, {
+                studentId,
+                studentIvyServiceId,
+                sectionId,
+                subSectionId,
+                title: '',
+                description: '',
+                organizationName: '',
+                projectUrl: '',
+                tab: activeTab
+            });
+            fetchAcademicData();
+        } catch (error) {
+            console.error('Error adding project:', error);
+            fetchAcademicData(); // Revert on error
+        }
+    };
+
     const updateSubjectAPI = useCallback(async (sectionId: string, subSectionId: string, subjectId: string, field: string, value: any, tab: string) => {
         try {
             await axios.put(`${IVY_API_URL}/pointer1/academic/subject`, {
@@ -214,9 +272,24 @@ function IvyExpertPointer1Content() {
                 [field]: value,
                 tab
             });
-            fetchAcademicData();
         } catch (error) {
             console.error('Error updating subject:', error);
+        }
+    }, [studentId, studentIvyServiceId]);
+
+    const updateProjectAPI = useCallback(async (sectionId: string, subSectionId: string, projectId: string, field: string, value: any, tab: string) => {
+        try {
+            await axios.put(`${IVY_API_URL}/pointer1/academic/project`, {
+                studentId,
+                studentIvyServiceId,
+                sectionId,
+                subSectionId,
+                projectId,
+                [field]: value,
+                tab
+            });
+        } catch (error) {
+            console.error('Error updating project:', error);
         }
     }, [studentId, studentIvyServiceId]);
 
@@ -234,11 +307,34 @@ function IvyExpertPointer1Content() {
                 }
                 : s
         ));
-        // Debounce API call by 2 seconds
+        // Debounce API call by 2 seconds (skip if no ID yet)
+        if (!subjectId) return;
         const key = `subject-${subjectId}-${field}`;
         if (debounceTimers.current[key]) clearTimeout(debounceTimers.current[key]);
         debounceTimers.current[key] = setTimeout(() => {
-            updateSubjectAPI(sectionId, subSectionId, subjectId, field, value, activeTab);
+            updateSubjectAPI(sectionId, subSectionId, subjectId, field, value, activeTabRef.current);
+        }, 2000);
+    };
+
+    const updateProject = (sectionId: string, subSectionId: string, projectId: string, field: string, value: any) => {
+        setSections(prev => prev.map(s =>
+            s._id === sectionId
+                ? {
+                    ...s,
+                    subSections: s.subSections.map(ss =>
+                        ss._id === subSectionId
+                            ? { ...ss, projects: ss.projects?.map(proj => proj._id === projectId ? { ...proj, [field]: value } : proj) }
+                            : ss
+                    )
+                }
+                : s
+        ));
+        // Debounce API call by 2 seconds (skip if no ID yet)
+        if (!projectId) return;
+        const key = `project-${projectId}-${field}`;
+        if (debounceTimers.current[key]) clearTimeout(debounceTimers.current[key]);
+        debounceTimers.current[key] = setTimeout(() => {
+            updateProjectAPI(sectionId, subSectionId, projectId, field, value, activeTabRef.current);
         }, 2000);
     };
 
@@ -275,6 +371,18 @@ function IvyExpertPointer1Content() {
             fetchAcademicData();
         } catch (error) {
             console.error('Error deleting subject:', error);
+        }
+    };
+
+    const deleteProjectHandler = async (sectionId: string, subSectionId: string, projectId: string) => {
+        if (!confirm('Are you sure you want to delete this project?')) return;
+        try {
+            await axios.delete(`${IVY_API_URL}/pointer1/academic/project`, {
+                data: { studentId, studentIvyServiceId, sectionId, subSectionId, projectId, tab: activeTab }
+            });
+            fetchAcademicData();
+        } catch (error) {
+            console.error('Error deleting project:', error);
         }
     };
 
@@ -349,11 +457,6 @@ function IvyExpertPointer1Content() {
                         <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-blue-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
                             <span className="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase mb-2">Academic Excellence Score</span>
                             <div className="text-7xl font-black text-blue-600 leading-none">{academicScore.finalScore.toFixed(2)}</div>
-                            <div className="mt-3 text-[10px] font-bold text-gray-400 space-y-1">
-                                <div>Marksheet Avg: {academicScore.documentAvg.toFixed(2)}/10 ({academicScore.evaluatedDocsCount} docs)</div>
-                                <div>Informal Score: {academicScore.weightedScoreSum.toFixed(2)}/10</div>
-                                <div className="text-gray-300 pt-1">(DocAvg/2 + Informal/2)</div>
-                            </div>
                         </div>
                     )}
                 </div>
@@ -517,6 +620,7 @@ function IvyExpertPointer1Content() {
                                                                     <>
                                                                         <option value="olympiad">Olympiad</option>
                                                                         <option value="test">Test</option>
+                                                                        <option value="project">Project</option>
                                                                     </>
                                                                 ) : (
                                                                     <>
@@ -564,74 +668,149 @@ function IvyExpertPointer1Content() {
                                                     </button>
                                                 </div>
 
-                                                {/* Subjects */}
-                                                <div className="space-y-3">
-                                                    {subSection.subjects?.map((subject, subjectIndex) => (
-                                                        <div key={subject._id || subjectIndex} className="grid grid-cols-6 gap-3 items-start p-4 bg-gray-50 rounded-xl">
-                                                            <div>
-                                                                <label className="block text-xs font-bold text-gray-600 mb-1">Subject</label>
-                                                                <input
-                                                                    type="text"
-                                                                    value={subject.name}
-                                                                    onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'name', e.target.value)}
-                                                                    placeholder="Subject name"
-                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400"
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="block text-xs font-bold text-gray-600 mb-1">Marks Obtained</label>
-                                                                <input
-                                                                    type="number"
-                                                                    value={subject.marksObtained}
-                                                                    onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'marksObtained', parseFloat(e.target.value))}
-                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black"
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="block text-xs font-bold text-gray-600 mb-1">Total Marks</label>
-                                                                <input
-                                                                    type="number"
-                                                                    value={subject.totalMarks}
-                                                                    onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'totalMarks', parseFloat(e.target.value))}
-                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black"
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="block text-xs font-bold text-gray-600 mb-1">Percentage</label>
-                                                                <div className="px-3 py-2 bg-indigo-50 text-indigo-700 font-bold rounded-lg text-sm text-center">
-                                                                    {subject.totalMarks > 0 ? ((subject.marksObtained / subject.totalMarks) * 100).toFixed(2) : '0.00'}%
+                                                {activeTab === 'informal' && subSection.testType === 'project' ? (
+                                                    <div className="space-y-3">
+                                                        {subSection.projects?.map((project, projectIndex) => (
+                                                            <div key={project._id || projectIndex} className="grid grid-cols-2 gap-3 items-start p-4 bg-gray-50 rounded-xl">
+                                                                <div>
+                                                                    <label className="block text-xs font-bold text-gray-600 mb-1">Project Title</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={project.title}
+                                                                        onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'title', e.target.value)}
+                                                                        placeholder="Project title"
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="block text-xs font-bold text-gray-600 mb-1">Organization (if any)</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={project.organizationName || ''}
+                                                                        onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'organizationName', e.target.value)}
+                                                                        placeholder="Organization name"
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400"
+                                                                    />
+                                                                </div>
+                                                                <div className="col-span-2">
+                                                                    <label className="block text-xs font-bold text-gray-600 mb-1">Project Description</label>
+                                                                    <textarea
+                                                                        rows={3}
+                                                                        value={project.description}
+                                                                        onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'description', e.target.value)}
+                                                                        placeholder="Describe the project"
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400 resize-none"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="block text-xs font-bold text-gray-600 mb-1">Project URL (if any)</label>
+                                                                    <input
+                                                                        type="url"
+                                                                        value={project.projectUrl || ''}
+                                                                        onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'projectUrl', e.target.value)}
+                                                                        placeholder="https://..."
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="block text-xs font-bold text-gray-600 mb-1">Feedback</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={project.feedback || ''}
+                                                                        onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'feedback', e.target.value)}
+                                                                        placeholder="Enter feedback"
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400"
+                                                                    />
+                                                                </div>
+                                                                <div className="flex items-end justify-center h-full pb-1">
+                                                                    <button
+                                                                        onClick={() => deleteProjectHandler(section._id!, subSection._id!, project._id!)}
+                                                                        className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
+                                                                        title="Delete Project"
+                                                                    >
+                                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                        </svg>
+                                                                    </button>
                                                                 </div>
                                                             </div>
-                                                            <div>
-                                                                <label className="block text-xs font-bold text-gray-600 mb-1">Feedback</label>
-                                                                <input
-                                                                    type="text"
-                                                                    value={subject.feedback || ''}
-                                                                    onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'feedback', e.target.value)}
-                                                                    placeholder="Enter feedback"
-                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400"
-                                                                />
+                                                        ))}
+                                                        <button
+                                                            onClick={() => addProject(section._id!, subSection._id!)}
+                                                            className="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-300 w-full"
+                                                        >
+                                                            + Add Project
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-3">
+                                                        {subSection.subjects?.map((subject, subjectIndex) => (
+                                                            <div key={subject._id || subjectIndex} className="grid grid-cols-6 gap-3 items-start p-4 bg-gray-50 rounded-xl">
+                                                                <div>
+                                                                    <label className="block text-xs font-bold text-gray-600 mb-1">Subject</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={subject.name}
+                                                                        onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'name', e.target.value)}
+                                                                        placeholder="Subject name"
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="block text-xs font-bold text-gray-600 mb-1">Marks Obtained</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        value={subject.marksObtained}
+                                                                        onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'marksObtained', parseFloat(e.target.value))}
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="block text-xs font-bold text-gray-600 mb-1">Total Marks</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        value={subject.totalMarks}
+                                                                        onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'totalMarks', parseFloat(e.target.value))}
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="block text-xs font-bold text-gray-600 mb-1">Percentage</label>
+                                                                    <div className="px-3 py-2 bg-indigo-50 text-indigo-700 font-bold rounded-lg text-sm text-center">
+                                                                        {subject.totalMarks > 0 ? ((subject.marksObtained / subject.totalMarks) * 100).toFixed(2) : '0.00'}%
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="block text-xs font-bold text-gray-600 mb-1">Feedback</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={subject.feedback || ''}
+                                                                        onChange={(e) => updateSubject(section._id!, subSection._id!, subject._id!, 'feedback', e.target.value)}
+                                                                        placeholder="Enter feedback"
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none text-sm text-black placeholder:text-gray-400"
+                                                                    />
+                                                                </div>
+                                                                <div className="flex items-end justify-center h-full pb-1">
+                                                                    <button
+                                                                        onClick={() => deleteSubjectHandler(section._id!, subSection._id!, subject._id!)}
+                                                                        className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
+                                                                        title="Delete Subject"
+                                                                    >
+                                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                        </svg>
+                                                                    </button>
+                                                                </div>
                                                             </div>
-                                                            <div className="flex items-end justify-center h-full pb-1">
-                                                                <button
-                                                                    onClick={() => deleteSubjectHandler(section._id!, subSection._id!, subject._id!)}
-                                                                    className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
-                                                                    title="Delete Subject"
-                                                                >
-                                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                                    </svg>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                    <button
-                                                        onClick={() => addSubject(section._id!, subSection._id!)}
-                                                        className="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-300 w-full"
-                                                    >
-                                                        + Add Subject
-                                                    </button>
-                                                </div>
+                                                        ))}
+                                                        <button
+                                                            onClick={() => addSubject(section._id!, subSection._id!)}
+                                                            className="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-300 w-full"
+                                                        >
+                                                            + Add Subject
+                                                        </button>
+                                                    </div>
+                                                )}
                                                 
                                                 {/* Overall Feedback and Score - Editable for Ivy Expert */}
                                                 <div className="mt-4 pt-4 border-t border-gray-200">
