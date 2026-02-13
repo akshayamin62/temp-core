@@ -224,6 +224,9 @@ export default function StudentDetailPage() {
                 <p className="font-medium text-gray-900">
                   {student.adminId?.companyName || 'Not assigned'}
                 </p>
+                {student.adminId?.userId?.email && (
+                  <p className="text-sm text-gray-500">{student.adminId.userId.email}</p>
+                )}
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Counselor</p>
@@ -240,12 +243,12 @@ export default function StudentDetailPage() {
           {/* Service Registrations */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Service Registrations ({registrations.length})
+              Service Registrations ({registrations.filter(r => r.serviceId.name === 'Study Abroad').length})
             </h2>
 
-            {registrations.length > 0 ? (
+            {registrations.filter(r => r.serviceId.name === 'Study Abroad').length > 0 ? (
               <div className="space-y-4">
-                {registrations.map((registration) => (
+                {registrations.filter(r => r.serviceId.name === 'Study Abroad').map((registration) => (
                   <div
                     key={registration._id}
                     className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"

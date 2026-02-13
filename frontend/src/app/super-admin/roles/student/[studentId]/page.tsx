@@ -399,14 +399,20 @@ export default function StudentDetailPage() {
               <div>
                 <p className="text-sm text-gray-600 mb-1">Admin</p>
                 <p className="font-medium text-gray-900">
-                  {getFullName(student.adminId?.userId) || 'N/A'}
+                  {student.adminId?.companyName || 'N/A'}
                 </p>
+                {student.adminId?.userId?.email && (
+                  <p className="text-sm text-gray-500">{student.adminId.userId.email}</p>
+                )}
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Counselor</p>
                 <p className="font-medium text-gray-900">
                   {getFullName(student.counselorId?.userId) || 'N/A'}
                 </p>
+                {student.counselorId?.userId?.email && (
+                  <p className="text-sm text-gray-500">{student.counselorId.userId.email}</p>
+                )}
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Joined Date</p>
