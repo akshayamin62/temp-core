@@ -192,12 +192,20 @@ const seedFormData = async () => {
         order: 4,
         isActive: true,
       },
+      {
+        partId: profilePart._id,
+        title: "Finance",
+        description: "Financial information and sponsorers",
+        order: 5,
+        isActive: true,
+      },
     ]);
 
     const personalDetailsSection = profileSections[0];
     const academicSection = profileSections[1];
     const workExperienceSection = profileSections[2];
     const testsSection = profileSections[3];
+    const financeSection = profileSections[4];
 
     // ========== STEP 5: Create Personal Details SubSections ==========
     console.log("📄 Creating Personal Details subsections...");
@@ -1439,6 +1447,152 @@ const seedFormData = async () => {
         required: false,
         order: 8,
         isActive: true,
+      },
+    ]);
+
+    // ========== STEP 13.5: Create Finance SubSection (Sponsorers - Repeatable) ==========
+    console.log("💰 Creating Finance subsection...");
+    const sponsorersSubSection = await FormSubSection.create({
+      sectionId: financeSection._id,
+      title: "Sponsorers",
+      description: "Add your sponsors' information",
+      order: 1,
+      isRepeatable: true,
+      maxRepeat: 10,
+      isActive: true,
+    });
+
+    console.log("💳 Creating Sponsorers fields...");
+    await FormField.insertMany([
+      {
+        subSectionId: sponsorersSubSection._id,
+        label: "Name of Sponsorer",
+        key: "sponsorerName",
+        type: FieldType.TEXT,
+        placeholder: "Enter sponsor's full name",
+        required: true,
+        order: 1,
+        isActive: true,
+        validation: { minLength: 2, maxLength: 100 },
+      },
+      {
+        subSectionId: sponsorersSubSection._id,
+        label: "Address",
+        key: "sponsorerAddress",
+        type: FieldType.TEXTAREA,
+        placeholder: "Enter sponsor's complete address",
+        required: true,
+        order: 2,
+        isActive: true,
+        validation: { minLength: 10 },
+      },
+      {
+        subSectionId: sponsorersSubSection._id,
+        label: "Mobile Number",
+        key: "sponsorerMobile",
+        type: FieldType.PHONE,
+        placeholder: "+1 (555) 000-0000",
+        required: true,
+        order: 3,
+        isActive: true,
+        validation: { pattern: "^\\+?[1-9]\\d{1,14}$" },
+      },
+      {
+        subSectionId: sponsorersSubSection._id,
+        label: "Email",
+        key: "sponsorerEmail",
+        type: FieldType.EMAIL,
+        placeholder: "sponsor@example.com",
+        required: true,
+        order: 4,
+        isActive: true,
+        validation: { pattern: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$" },
+      },
+      {
+        subSectionId: sponsorersSubSection._id,
+        label: "Relationship with Student",
+        key: "sponsorerRelationship",
+        type: FieldType.TEXT,
+        placeholder: "e.g., Father, Mother, Uncle, Self",
+        required: true,
+        order: 5,
+        isActive: true,
+        validation: { minLength: 2, maxLength: 50 },
+      },
+      {
+        subSectionId: sponsorersSubSection._id,
+        label: "Source of Fund",
+        key: "sourceOfFund",
+        type: FieldType.SELECT,
+        required: true,
+        order: 6,
+        isActive: true,
+        options: [
+          { label: "Loan", value: "loan" },
+          { label: "Self Funding", value: "self_funding" },
+        ],
+      },
+      {
+        subSectionId: sponsorersSubSection._id,
+        label: "Currency Type",
+        key: "currencyType",
+        type: FieldType.SELECT,
+        required: true,
+        order: 7,
+        isActive: true,
+        options: [
+          { label: "USD - US Dollar", value: "USD" },
+          { label: "EUR - Euro", value: "EUR" },
+          { label: "GBP - British Pound Sterling", value: "GBP" },
+          { label: "JPY - Japanese Yen", value: "JPY" },
+          { label: "CHF - Swiss Franc", value: "CHF" },
+          { label: "CAD - Canadian Dollar", value: "CAD" },
+          { label: "AUD - Australian Dollar", value: "AUD" },
+          { label: "NZD - New Zealand Dollar", value: "NZD" },
+          { label: "CNY - Chinese Yuan", value: "CNY" },
+          { label: "INR - Indian Rupee", value: "INR" },
+          { label: "SGD - Singapore Dollar", value: "SGD" },
+          { label: "HKD - Hong Kong Dollar", value: "HKD" },
+          { label: "KRW - South Korean Won", value: "KRW" },
+          { label: "MXN - Mexican Peso", value: "MXN" },
+          { label: "BRL - Brazilian Real", value: "BRL" },
+          { label: "ZAR - South African Rand", value: "ZAR" },
+          { label: "RUB - Russian Ruble", value: "RUB" },
+          { label: "TRY - Turkish Lira", value: "TRY" },
+          { label: "SEK - Swedish Krona", value: "SEK" },
+          { label: "NOK - Norwegian Krone", value: "NOK" },
+          { label: "DKK - Danish Krone", value: "DKK" },
+          { label: "PLN - Polish Zloty", value: "PLN" },
+          { label: "THB - Thai Baht", value: "THB" },
+          { label: "IDR - Indonesian Rupiah", value: "IDR" },
+          { label: "MYR - Malaysian Ringgit", value: "MYR" },
+          { label: "PHP - Philippine Peso", value: "PHP" },
+          { label: "AED - UAE Dirham", value: "AED" },
+          { label: "SAR - Saudi Riyal", value: "SAR" },
+          { label: "ILS - Israeli Shekel", value: "ILS" },
+          { label: "CZK - Czech Koruna", value: "CZK" },
+          { label: "HUF - Hungarian Forint", value: "HUF" },
+          { label: "CLP - Chilean Peso", value: "CLP" },
+          { label: "ARS - Argentine Peso", value: "ARS" },
+          { label: "COP - Colombian Peso", value: "COP" },
+          { label: "EGP - Egyptian Pound", value: "EGP" },
+          { label: "PKR - Pakistani Rupee", value: "PKR" },
+          { label: "BDT - Bangladeshi Taka", value: "BDT" },
+          { label: "VND - Vietnamese Dong", value: "VND" },
+          { label: "NGN - Nigerian Naira", value: "NGN" },
+          { label: "KES - Kenyan Shilling", value: "KES" },
+        ],
+      },
+      {
+        subSectionId: sponsorersSubSection._id,
+        label: "Amount",
+        key: "sponsorAmount",
+        type: FieldType.NUMBER,
+        placeholder: "Enter amount",
+        required: true,
+        order: 8,
+        isActive: true,
+        validation: { min: 0 },
       },
     ]);
 

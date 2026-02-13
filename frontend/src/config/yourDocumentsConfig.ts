@@ -202,5 +202,32 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     helpText: 'Upload certificates of social contributions or volunteer work',
     order: 21,
   },
+  {
+    documentKey: 'bank_certificate_statement',
+    documentName: 'Bank Certificate and Statement',
+    category: 'SECONDARY',
+    required: false,
+    allowMultiple: true,
+    helpText: 'Upload bank certificates and statements',
+    order: 22,
+  },
+  {
+    documentKey: 'finance_declaration_certification',
+    documentName: 'Declaration and Certification of Finances for Visa',
+    category: 'SECONDARY',
+    required: false,
+    allowMultiple: true,
+    helpText: 'Upload financial declaration and certification documents for visa',
+    order: 23,
+  },
+  {
+    documentKey: 'health_document',
+    documentName: 'Health Document',
+    category: 'SECONDARY',
+    required: false,
+    allowMultiple: true,
+    helpText: 'Upload health-related documents (medical certificates, vaccination records, etc.)',
+    order: 24,
+  },
 ];
 
