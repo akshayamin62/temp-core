@@ -6,8 +6,13 @@ import Program from '../models/Program';
 import Student from '../models/Student';
 import User from '../models/User';
 import StudentServiceRegistration from '../models/StudentServiceRegistration';
+import COREDocumentField, { COREDocumentType } from '../models/COREDocumentField';
+import StudentDocument, { DocumentStatus } from '../models/StudentDocument';
 import { AuthRequest } from '../types/auth';
 import { USER_ROLE } from '../types/roles';
+import path from 'path';
+import fs from 'fs';
+import { getUploadBaseDir, ensureDir } from '../utils/uploadDir';
 
 // Get or create chat for a program
 export const getOrCreateChat = async (req: AuthRequest, res: Response) => {
@@ -496,6 +501,292 @@ export const getMyChatsList = async (req: AuthRequest, res: Response) => {
   } catch (error: any) {
     console.error('Get my chats list error:', error);
     return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Upload a document in chat (open chat only)
+export const uploadChatDocument = async (req: AuthRequest, res: Response) => {
+  try {
+    const { programId } = req.params;
+    const userId = req.user!.userId;
+    const userRole = req.user!.role;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    // Find the program
+    const program = await Program.findById(programId);
+    if (!program) {
+      fs.unlinkSync(file.path);
+      return res.status(404).json({ message: 'Program not found' });
+    }
+
+    if (!program.priority || !program.intake || !program.year) {
+      fs.unlinkSync(file.path);
+      return res.status(400).json({ message: 'Program must be applied/selected before chatting' });
+    }
+
+    // Extract studentId (handle both populated and non-populated cases)
+    const studentIdValue = typeof program.studentId === 'object' && (program.studentId as any)._id 
+      ? (program.studentId as any)._id 
+      : program.studentId;
+
+    if (!studentIdValue) {
+      fs.unlinkSync(file.path);
+      return res.status(400).json({ message: 'Program has no student associated' });
+    }
+
+    const student = await Student.findById(studentIdValue).populate('userId');
+    if (!student || !student.userId) {
+      fs.unlinkSync(file.path);
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    const studentUserId = student.userId._id;
+
+    // Authorization (same as sendMessage)
+    if (userRole === USER_ROLE.STUDENT) {
+      if (studentUserId.toString() !== userId) {
+        fs.unlinkSync(file.path);
+        return res.status(403).json({ message: 'Access denied' });
+      }
+    } else if (userRole === USER_ROLE.OPS) {
+      const registrations = await StudentServiceRegistration.find({ studentId: studentIdValue })
+        .populate('activeOpsId', 'userId')
+        .populate('primaryOpsId', 'userId');
+      const isAuthorized = registrations.some((reg: any) => {
+        return reg.activeOpsId?.userId?.toString() === userId || reg.primaryOpsId?.userId?.toString() === userId;
+      });
+      if (!isAuthorized) {
+        fs.unlinkSync(file.path);
+        return res.status(403).json({ message: 'You are not the OPS for this student' });
+      }
+    }
+
+    // Move file to student's chat-documents folder
+    const chatDocDir = path.join(getUploadBaseDir(), studentIdValue.toString(), 'chat-documents');
+    ensureDir(chatDocDir);
+
+    const timestamp = Date.now();
+    const ext = path.extname(file.originalname);
+    const sanitizedName = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9]/g, '_');
+    const finalFilename = `chat_${timestamp}_${sanitizedName}${ext}`;
+    const finalPath = path.join(chatDocDir, finalFilename);
+
+    fs.renameSync(file.path, finalPath);
+
+    const relativePath = `uploads/${studentIdValue.toString()}/chat-documents/${finalFilename}`;
+
+    // Find or create open chat
+    let chat = await ProgramChat.findOne({ programId, studentId: studentIdValue, chatType: 'open' });
+    if (!chat) {
+      const registrations = await StudentServiceRegistration.find({ studentId: studentIdValue })
+        .populate('activeOpsId', 'userId')
+        .populate('primaryOpsId', 'userId');
+      let ops: any = null;
+      for (const reg of registrations) {
+        const activeOps = reg.activeOpsId as any;
+        const primaryOps = reg.primaryOpsId as any;
+        if (activeOps || primaryOps) { ops = activeOps || primaryOps; break; }
+      }
+      chat = await ProgramChat.findOneAndUpdate(
+        { programId, studentId: studentIdValue, chatType: 'open' },
+        {
+          $setOnInsert: {
+            programId,
+            studentId: studentIdValue,
+            chatType: 'open',
+            participants: {
+              student: studentUserId,
+              OPS: ops?.userId || undefined,
+              superAdmin: userRole === USER_ROLE.SUPER_ADMIN ? userId : undefined,
+              admin: userRole === USER_ROLE.ADMIN ? userId : undefined,
+              counselor: userRole === USER_ROLE.COUNSELOR ? userId : undefined,
+            },
+          },
+        },
+        { upsert: true, new: true }
+      );
+    }
+
+    // Determine OPS type
+    let opsType: 'PRIMARY' | 'ACTIVE' | undefined = undefined;
+    if (userRole === USER_ROLE.OPS) {
+      const registrations = await StudentServiceRegistration.find({ studentId: studentIdValue })
+        .populate('activeOpsId', 'userId')
+        .populate('primaryOpsId', 'userId');
+      for (const reg of registrations) {
+        if ((reg.primaryOpsId as any)?.userId?.toString() === userId) { opsType = 'PRIMARY'; break; }
+        else if ((reg.activeOpsId as any)?.userId?.toString() === userId) { opsType = 'ACTIVE'; break; }
+      }
+    }
+
+    // Create document message
+    const newMessage = await ChatMessage.create({
+      chatId: chat!._id,
+      senderId: userId,
+      senderRole: userRole,
+      opsType,
+      messageType: 'document',
+      message: file.originalname,
+      documentMeta: {
+        fileName: file.originalname,
+        filePath: relativePath,
+        fileSize: file.size,
+        mimeType: file.mimetype,
+      },
+      timestamp: new Date(),
+      readBy: [userId],
+    });
+
+    await newMessage.populate('senderId', 'firstName middleName lastName');
+    const messageResponse: any = newMessage.toObject();
+    messageResponse.senderName = [
+      (newMessage.senderId as any)?.firstName,
+      (newMessage.senderId as any)?.middleName,
+      (newMessage.senderId as any)?.lastName,
+    ].filter(Boolean).join(' ');
+
+    return res.status(201).json({
+      success: true,
+      data: { message: messageResponse },
+    });
+  } catch (error: any) {
+    console.error('Upload chat document error:', error);
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Save a chat document to Extra Documents (OPS / SUPER_ADMIN only)
+export const saveChatDocumentToExtra = async (req: AuthRequest, res: Response) => {
+  try {
+    const { messageId } = req.params;
+    const { documentName, description } = req.body;
+    const userId = req.user!.userId;
+    const userRole = req.user!.role;
+
+    // Only OPS and SUPER_ADMIN can do this
+    if (userRole !== USER_ROLE.OPS && userRole !== USER_ROLE.SUPER_ADMIN) {
+      return res.status(403).json({ success: false, message: 'Only OPS and Super Admin can save documents to Extra section' });
+    }
+
+    if (!documentName || !documentName.trim()) {
+      return res.status(400).json({ success: false, message: 'Document name is required' });
+    }
+
+    // Find the chat message
+    const chatMessage = await ChatMessage.findById(messageId);
+    if (!chatMessage) {
+      return res.status(404).json({ success: false, message: 'Message not found' });
+    }
+
+    if (chatMessage.messageType !== 'document' || !chatMessage.documentMeta) {
+      return res.status(400).json({ success: false, message: 'This message does not contain a document' });
+    }
+
+    if (chatMessage.savedToExtra) {
+      return res.status(400).json({ success: false, message: 'Document already saved to Extra Documents' });
+    }
+
+    // Get the chat to find program and student
+    const chat = await ProgramChat.findById(chatMessage.chatId);
+    if (!chat) {
+      return res.status(404).json({ success: false, message: 'Chat not found' });
+    }
+
+    // Extract studentId (handle both populated and non-populated cases)
+    const studentIdValue = typeof chat.studentId === 'object' && (chat.studentId as any)._id 
+      ? (chat.studentId as any)._id 
+      : chat.studentId;
+
+    // Find registration for this student (Study Abroad / first registration)
+    const registration = await StudentServiceRegistration.findOne({ studentId: studentIdValue }).sort({ createdAt: 1 });
+    if (!registration) {
+      return res.status(404).json({ success: false, message: 'No registration found for this student' });
+    }
+
+    // Copy file from chat-documents to student folder
+    const srcPath = path.join(process.cwd(), chatMessage.documentMeta.filePath);
+    if (!fs.existsSync(srcPath)) {
+      return res.status(404).json({ success: false, message: 'Source file not found on disk' });
+    }
+
+    const studentDir = path.join(getUploadBaseDir(), studentIdValue.toString());
+    ensureDir(studentDir);
+
+    const timestamp = Date.now();
+    const ext = path.extname(chatMessage.documentMeta.fileName);
+    const sanitizedName = path.basename(chatMessage.documentMeta.fileName, ext).replace(/[^a-zA-Z0-9]/g, '_');
+    const finalFilename = `extra_${timestamp}_${sanitizedName}${ext}`;
+    const destPath = path.join(studentDir, finalFilename);
+
+    fs.copyFileSync(srcPath, destPath);
+
+    const docKey = `extra_${documentName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}_${timestamp}`;
+
+    // Create the EXTRA document field
+    const maxOrderField = await COREDocumentField.findOne({
+      studentId: studentIdValue,
+      registrationId: registration._id,
+      documentType: COREDocumentType.EXTRA,
+    }).sort({ order: -1 });
+
+    const nextOrder = maxOrderField ? maxOrderField.order + 1 : 1;
+
+    await COREDocumentField.create({
+      studentId: studentIdValue,
+      registrationId: registration._id,
+      documentName: documentName.trim(),
+      documentKey: docKey,
+      documentType: COREDocumentType.EXTRA,
+      category: 'SECONDARY',
+      required: false,
+      helpText: description?.trim() || undefined,
+      allowMultiple: false,
+      order: nextOrder,
+      isActive: true,
+      createdBy: new mongoose.Types.ObjectId(userId),
+      createdByRole: userRole as 'SUPER_ADMIN' | 'OPS',
+    });
+
+    // Create the StudentDocument record
+    await StudentDocument.create({
+      registrationId: registration._id,
+      studentId: studentIdValue,
+      documentCategory: 'SECONDARY',
+      documentName: documentName.trim(),
+      documentKey: docKey,
+      fileName: finalFilename,
+      filePath: `uploads/${studentIdValue.toString()}/${finalFilename}`,
+      fileSize: chatMessage.documentMeta.fileSize,
+      mimeType: chatMessage.documentMeta.mimeType,
+      uploadedBy: new mongoose.Types.ObjectId(userId),
+      uploadedByRole: userRole as any,
+      status: DocumentStatus.APPROVED,
+      approvedBy: new mongoose.Types.ObjectId(userId),
+      approvedAt: new Date(),
+      version: 1,
+      isCustomField: true,
+    });
+
+    // Mark the chat message as saved
+    chatMessage.savedToExtra = true;
+    chatMessage.savedBy = new mongoose.Types.ObjectId(userId);
+    chatMessage.savedAt = new Date();
+    await chatMessage.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Document saved to Extra Documents successfully',
+    });
+  } catch (error: any) {
+    console.error('Save chat document to extra error:', error);
+    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };
 

@@ -431,6 +431,19 @@ export const chatAPI = {
   sendMessage: (programId: string, message: string, chatType: 'open' | 'private' = 'open') => 
     api.post(`/chat/program/${programId}/messages`, { message, chatType }),
   
+  // Upload document in chat (open chat)
+  uploadDocument: (programId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/chat/program/${programId}/upload-document`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  // Save chat document to Extra Documents
+  saveToExtra: (messageId: string, documentName: string, description: string) =>
+    api.post(`/chat/messages/${messageId}/save-to-extra`, { documentName, description }),
+
   // Get all chats for current user
   getMyChatsList: (chatType?: 'open' | 'private') => 
     api.get('/chat/my-chats', { params: chatType ? { chatType } : {} }),

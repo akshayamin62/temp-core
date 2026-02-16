@@ -226,7 +226,7 @@ export default function AdminStudentFormViewPage() {
                   <ProgramSection
                     studentId={studentId}
                     sectionType={currentSection.title === 'Apply to Program' ? 'available' : 'applied'}
-                    userRole="OPS"
+                    userRole="ADMIN"
                     isReadOnly={true}
                   />
                 </div>

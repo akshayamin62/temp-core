@@ -25,12 +25,16 @@ const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterC
     "image/jpeg",
     "image/jpg",
     "image/png",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   ];
 
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Invalid file type. Only PDF, JPG, JPEG, and PNG are allowed."));
+    cb(new Error("Invalid file type. Only PDF, JPG, PNG, DOC, DOCX, XLS, and XLSX are allowed."));
   }
 };
 
