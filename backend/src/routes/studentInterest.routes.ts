@@ -6,7 +6,7 @@ import { USER_ROLE } from '../types/roles';
 const router = Router();
 
 // GET /api/student-interest?studentIvyServiceId=xxx - Get student interest
-router.get('/', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), getStudentInterestData);
+router.get('/', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), getStudentInterestData);
 
 // PATCH /api/student-interest - Update student interest (Ivy Expert only)
 router.patch('/', authorize(USER_ROLE.IVY_EXPERT), patchStudentInterest);

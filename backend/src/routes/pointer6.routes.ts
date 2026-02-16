@@ -43,12 +43,12 @@ router.post('/evaluate', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]
 
 // GET /pointer6/status/:studentId - by studentId
 // GET /pointer6/status?studentIvyServiceId=xxx - by serviceId
-router.get('/status', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), getPointer6StatusHandler);
-router.get('/status/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), getPointer6StatusHandler);
+router.get('/status', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), getPointer6StatusHandler);
+router.get('/status/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), getPointer6StatusHandler);
 
 // GET /pointer6/score/:studentIvyServiceId - Get pointer6 average score
-router.get('/score/:studentIvyServiceId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), getPointer6ScoreHandler);
-router.get('/score', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), getPointer6ScoreHandler);
+router.get('/score/:studentIvyServiceId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), getPointer6ScoreHandler);
+router.get('/score', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), getPointer6ScoreHandler);
 
 // POST /pointer6/select-course - Select a course with start and end dates
 router.post('/select-course', authorize([USER_ROLE.STUDENT, USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), selectCourseHandler);
@@ -63,8 +63,8 @@ router.post('/upload-course-certificate', authorize([USER_ROLE.STUDENT, USER_ROL
 router.post('/score-course-certificate', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), scoreCourseCertificateHandler);
 
 // GET /pointer6/course-score/:studentIvyServiceId - Get Pointer 6 course average score
-router.get('/course-score/:studentIvyServiceId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), getPointer6CourseScoreHandler);
-router.get('/course-score', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), getPointer6CourseScoreHandler);
+router.get('/course-score/:studentIvyServiceId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), getPointer6CourseScoreHandler);
+router.get('/course-score', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), getPointer6CourseScoreHandler);
 
 export default router;
 

@@ -131,7 +131,12 @@ export default function AdminStudentDetailPage() {
     }
   };
 
-  const handleViewFormData = (registrationId: string) => {
+  const handleViewFormData = (registrationId: string, serviceName?: string) => {
+    // For Ivy League, open the student ivy-league view in read-only mode
+    if (serviceName === 'Ivy League Preparation' && student?.userId?._id) {
+      router.push(`/ivy-league/student?studentId=${student.userId._id}&readOnly=true`);
+      return;
+    }
     router.push(`/admin/students/${studentId}/registration/${registrationId}`);
   };
 
@@ -327,7 +332,7 @@ export default function AdminStudentDetailPage() {
                         )}
                       </div>
                       <button
-                        onClick={() => handleViewFormData(registration._id)}
+                        onClick={() => handleViewFormData(registration._id, registration.serviceId.name)}
                         className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium inline-flex items-center gap-2"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

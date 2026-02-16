@@ -21,7 +21,7 @@ router.get('/health', (_req, res) => {
 router.post('/activity/select', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), selectActivitiesHandler);
 
 // GET /pointer/activity/student/:studentId - Get student activities
-router.get('/activity/student/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), getStudentActivitiesHandler);
+router.get('/activity/student/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), getStudentActivitiesHandler);
 
 // PUT /pointer/activity/weightages - Ivy Expert updates weightages
 router.put('/activity/weightages', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), updateWeightagesHandler);

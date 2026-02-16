@@ -9,7 +9,7 @@ const router = Router();
 router.get('/my-score', authorize(USER_ROLE.STUDENT), getMyIvyScore);
 
 // GET /api/ivy/ivy-score/:studentId - Get Ivy score for a student
-router.get('/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), getStudentIvyScore);
+router.get('/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), getStudentIvyScore);
 
 // POST /api/ivy/ivy-score/recalculate/:studentId - Manually recalculate score
 router.post('/recalculate/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), recalculateIvyScore);

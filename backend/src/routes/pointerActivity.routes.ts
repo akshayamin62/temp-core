@@ -21,8 +21,8 @@ const router = Router();
 router.post('/select', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), selectActivitiesHandler);
 
 // Student / Ivy Expert fetch activities
-router.get('/student/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), getStudentActivitiesHandler);
-router.get('/student', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), getStudentActivitiesHandler);
+router.get('/student/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), getStudentActivitiesHandler);
+router.get('/student', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), getStudentActivitiesHandler);
 
 // Student uploads proof files
 router.post('/proof/upload', authorize([USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), proofUploadMiddleware, uploadProofHandler);
@@ -43,8 +43,8 @@ router.post('/evaluate', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]
 router.post('/deadline', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), setDeadlineHandler);
 
 // Get pointer activity score
-router.get('/score/:studentIvyServiceId/:pointerNo', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), getPointerActivityScoreHandler);
-router.get('/score', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), getPointerActivityScoreHandler);
+router.get('/score/:studentIvyServiceId/:pointerNo', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), getPointerActivityScoreHandler);
+router.get('/score', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), getPointerActivityScoreHandler);
 
 export default router;
 
