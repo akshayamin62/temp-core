@@ -176,6 +176,16 @@ export default function ProgramSection({
     }
   };
 
+  const handleDownloadSample = () => {
+    const link = document.createElement('a');
+    link.href = '/samples/program-upload-sample.xlsx';
+    link.download = 'program-upload-sample.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Sample Excel file downloaded');
+  };
+
   const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -347,6 +357,12 @@ export default function ProgramSection({
               <div className="flex gap-3">
                 {(userRole === 'OPS' || userRole === 'SUPER_ADMIN') && (
                   <>
+                    <button
+                      onClick={handleDownloadSample}
+                      className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium text-sm"
+                    >
+                      Sample Excel
+                    </button>
                     <input
                       type="file"
                       accept=".xlsx,.xls"
