@@ -268,7 +268,33 @@ export const getRegistrationDetails = async (
     const registration = await StudentServiceRegistration.findOne({
       _id: registrationId,
       studentId: student._id,
-    }).populate("serviceId");
+    })
+      .populate("serviceId")
+      .populate({
+        path: "studentId",
+        populate: [
+          {
+            path: "adminId",
+            populate: { path: "userId", select: "firstName middleName lastName email" }
+          },
+          {
+            path: "counselorId",
+            populate: { path: "userId", select: "firstName middleName lastName email" }
+          }
+        ]
+      })
+      .populate({
+        path: "primaryOpsId",
+        populate: { path: "userId", select: "firstName middleName lastName email" }
+      })
+      .populate({
+        path: "secondaryOpsId",
+        populate: { path: "userId", select: "firstName middleName lastName email" }
+      })
+      .populate({
+        path: "activeOpsId",
+        populate: { path: "userId", select: "firstName middleName lastName email" }
+      });
 
     if (!registration) {
       return res.status(404).json({

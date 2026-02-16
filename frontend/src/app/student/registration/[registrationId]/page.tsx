@@ -8,6 +8,71 @@ import toast, { Toaster } from 'react-hot-toast';
 import FormSectionRenderer from '@/components/FormSectionRenderer';
 import StudentLayout from '@/components/StudentLayout';
 import ProgramSection from '@/components/ProgramSection';
+import { getFullName } from '@/utils/nameHelpers';
+
+// Extended interface for registration with populated fields
+interface ExtendedRegistration extends StudentServiceRegistration {
+  studentId?: {
+    _id: string;
+    mobileNumber?: string;
+    adminId?: {
+      _id: string;
+      companyName?: string;
+      mobileNumber?: string;
+      userId: {
+        _id: string;
+        firstName: string;
+        middleName?: string;
+        lastName: string;
+        email: string;
+      };
+    };
+    counselorId?: {
+      _id: string;
+      mobileNumber?: string;
+      userId: {
+        _id: string;
+        firstName: string;
+        middleName?: string;
+        lastName: string;
+        email: string;
+      };
+    };
+  };
+  primaryOpsId?: {
+    _id: string;
+    mobileNumber?: string;
+    userId: {
+      _id: string;
+      firstName: string;
+      middleName?: string;
+      lastName: string;
+      email: string;
+    };
+  };
+  secondaryOpsId?: {
+    _id: string;
+    mobileNumber?: string;
+    userId: {
+      _id: string;
+      firstName: string;
+      middleName?: string;
+      lastName: string;
+      email: string;
+    };
+  };
+  activeOpsId?: {
+    _id: string;
+    mobileNumber?: string;
+    userId: {
+      _id: string;
+      firstName: string;
+      middleName?: string;
+      lastName: string;
+      email: string;
+    };
+  };
+}
 
 function MyDetailsContent() {
   const router = useRouter();
@@ -16,7 +81,7 @@ function MyDetailsContent() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [registration, setRegistration] = useState<StudentServiceRegistration | null>(null);
+  const [registration, setRegistration] = useState<ExtendedRegistration | null>(null);
   const [formStructure, setFormStructure] = useState<FormStructure[]>([]);
   const [selectedPartIndex, setSelectedPartIndex] = useState(0);
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(0);
@@ -394,9 +459,70 @@ function MyDetailsContent() {
         onSectionChange={setSelectedSectionIndex}
         serviceName={service?.name || 'Service'}
       >
+        {/* Team Information Header */}
+        {registration.studentId && (registration.studentId.adminId || registration.studentId.counselorId || registration.primaryOpsId) && (
+          <div className="bg-white border-b border-gray-200 mb-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Your Support Team</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {registration.studentId.adminId && (
+                  <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                    <p className="text-xs font-medium text-gray-700 mb-1">Admin</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {registration.studentId.adminId.companyName || getFullName(registration.studentId.adminId.userId)}
+                    </p>
+                    {registration.studentId.adminId.userId?.email && (
+                      <p className="text-xs text-gray-600">{registration.studentId.adminId.userId.email}</p>
+                    )}
+                    {registration.studentId.adminId.mobileNumber && (
+                      <p className="text-xs text-gray-600">{registration.studentId.adminId.mobileNumber}</p>
+                    )}
+                  </div>
+                )}
+                
+                {registration.studentId.counselorId && (
+                  <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                    <p className="text-xs font-medium text-gray-700 mb-1">Counselor</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {getFullName(registration.studentId.counselorId.userId)}
+                    </p>
+                    {registration.studentId.counselorId.userId?.email && (
+                      <p className="text-xs text-gray-600">{registration.studentId.counselorId.userId.email}</p>
+                    )}
+                    {registration.studentId.counselorId.mobileNumber && (
+                      <p className="text-xs text-gray-600">{registration.studentId.counselorId.mobileNumber}</p>
+                    )}
+                  </div>
+                )}
+                
+                {(registration.primaryOpsId || registration.activeOpsId) && (
+                  <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                    <p className="text-xs font-medium text-gray-700 mb-1">
+                      {service?.name === 'Ivy League Preparation' ? 'Ivy Expert' : service?.name === 'Education Planning' ? 'Eduplan Coach' : 'OPS'}
+                    </p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {getFullName((registration.activeOpsId || registration.primaryOpsId)?.userId)}
+                    </p>
+                    {(registration.activeOpsId || registration.primaryOpsId)?.userId?.email && (
+                      <p className="text-xs text-gray-600">
+                        {(registration.activeOpsId || registration.primaryOpsId)?.userId.email}
+                      </p>
+                    )}
+                    {(registration.activeOpsId || registration.primaryOpsId)?.mobileNumber && (
+                      <p className="text-xs text-gray-600">
+                        {(registration.activeOpsId || registration.primaryOpsId)?.mobileNumber}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Section Navigation (Horizontal Tabs) */}
         {currentPart && currentPart.sections && currentPart.sections.length > 0 && (
-          <div className="bg-white border-b border-gray-200 sticky top-20 z-20 shadow-sm">
+          <div className="bg-white border-b border-gray-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
               <div className="inline-flex bg-gray-100 rounded-lg p-1 border border-gray-200 overflow-x-auto">
                 {[...currentPart.sections]

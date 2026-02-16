@@ -28,6 +28,7 @@ interface StudentDetails {
   adminId?: {
     _id: string;
     companyName?: string;
+    mobileNumber?: string;
     userId: {
       _id: string;
       firstName: string;
@@ -38,6 +39,7 @@ interface StudentDetails {
   };
   counselorId?: {
     _id: string;
+    mobileNumber?: string;
     userId: {
       _id: string;
       firstName: string;
@@ -404,6 +406,9 @@ export default function StudentDetailPage() {
                 {student.adminId?.userId?.email && (
                   <p className="text-sm text-gray-500">{student.adminId.userId.email}</p>
                 )}
+                {student.adminId?.mobileNumber && (
+                  <p className="text-sm text-gray-500">{student.adminId.mobileNumber}</p>
+                )}
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Counselor</p>
@@ -412,6 +417,9 @@ export default function StudentDetailPage() {
                 </p>
                 {student.counselorId?.userId?.email && (
                   <p className="text-sm text-gray-500">{student.counselorId.userId.email}</p>
+                )}
+                {student.counselorId?.mobileNumber && (
+                  <p className="text-sm text-gray-500">{student.counselorId.mobileNumber}</p>
                 )}
               </div>
               <div>

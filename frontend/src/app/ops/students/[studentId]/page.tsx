@@ -28,6 +28,7 @@ interface StudentDetails {
   adminId?: {
     _id: string;
     companyName?: string;
+    mobileNumber?: string;
     userId: {
       _id: string;
       firstName: string;
@@ -38,6 +39,7 @@ interface StudentDetails {
   };
   counselorId?: {
     _id: string;
+    mobileNumber?: string;
     userId: {
       _id: string;
       firstName: string;
@@ -198,7 +200,7 @@ export default function StudentDetailPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Mobile Number</p>
                 <p className="font-medium text-gray-900">
@@ -206,26 +208,15 @@ export default function StudentDetailPage() {
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600 mb-1">Role</p>
-                <p className="font-medium text-gray-900">{student.userId.role}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Joined Date</p>
-                <p className="font-medium text-gray-900">
-                  {new Date(student.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-
-            {/* Admin and Counselor Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 mt-4 border-t border-gray-200">
-              <div>
                 <p className="text-sm text-gray-600 mb-1">Admin</p>
                 <p className="font-medium text-gray-900">
                   {student.adminId?.companyName || 'Not assigned'}
                 </p>
                 {student.adminId?.userId?.email && (
                   <p className="text-sm text-gray-500">{student.adminId.userId.email}</p>
+                )}
+                {student.adminId?.mobileNumber && (
+                  <p className="text-sm text-gray-500">{student.adminId.mobileNumber}</p>
                 )}
               </div>
               <div>
@@ -236,6 +227,15 @@ export default function StudentDetailPage() {
                 {student.counselorId?.userId?.email && (
                   <p className="text-sm text-gray-500">{student.counselorId.userId.email}</p>
                 )}
+                {student.counselorId?.mobileNumber && (
+                  <p className="text-sm text-gray-500">{student.counselorId.mobileNumber}</p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Joined Date</p>
+                <p className="font-medium text-gray-900">
+                  {new Date(student.createdAt).toLocaleDateString()}
+                </p>
               </div>
             </div>
           </div>

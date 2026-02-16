@@ -25,6 +25,7 @@ interface StudentDetails {
   adminId?: {
     _id: string;
     companyName?: string;
+    mobileNumber?: string;
     userId: {
       _id: string;
       firstName: string;
@@ -35,6 +36,7 @@ interface StudentDetails {
   };
   counselorId?: {
     _id: string;
+    mobileNumber?: string;
     userId: {
       _id: string;
       firstName: string;
@@ -56,14 +58,17 @@ interface Registration {
   };
   primaryOpsId?: {
     _id: string;
+    mobileNumber?: string;
     userId: { _id: string; firstName: string; middleName?: string; lastName: string; email: string };
   };
   secondaryOpsId?: {
     _id: string;
+    mobileNumber?: string;
     userId: { _id: string; firstName: string; middleName?: string; lastName: string; email: string };
   };
   activeOpsId?: {
     _id: string;
+    mobileNumber?: string;
     userId: { _id: string; firstName: string; middleName?: string; lastName: string; email: string };
   };
   status: string;
@@ -233,6 +238,9 @@ export default function AdminStudentDetailPage() {
                 {student.adminId?.userId?.email && (
                   <p className="text-sm text-gray-500">{student.adminId.userId.email}</p>
                 )}
+                {student.adminId?.mobileNumber && (
+                  <p className="text-sm text-gray-500">{student.adminId.mobileNumber}</p>
+                )}
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Counselor</p>
@@ -241,6 +249,9 @@ export default function AdminStudentDetailPage() {
                 </p>
                 {student.counselorId?.userId?.email && (
                   <p className="text-sm text-gray-500">{student.counselorId.userId.email}</p>
+                )}
+                {student.counselorId?.mobileNumber && (
+                  <p className="text-sm text-gray-500">{student.counselorId.mobileNumber}</p>
                 )}
               </div>
               <div>
@@ -282,20 +293,34 @@ export default function AdminStudentDetailPage() {
                         
                         {/* OPS Info (Read-only) */}
                         {(registration.primaryOpsId || registration.secondaryOpsId) && (
-                          <div className="mt-3 space-y-2">
+                          <div className="mt-3 space-y-1">
                             {registration.primaryOpsId && (
                               <p className="text-xs text-gray-600">
-                <span className="font-medium">Primary OPS:</span> {getFullName(registration.primaryOpsId.userId) || 'N/A'}
+                                <span className="font-medium">Primary OPS:</span>{' '}
+                                {getFullName(registration.primaryOpsId.userId) || 'N/A'}
+                                {registration.primaryOpsId.userId?.email && (
+                                  <span className="text-gray-500"> • {registration.primaryOpsId.userId.email}</span>
+                                )}
+                                {registration.primaryOpsId.mobileNumber && (
+                                  <span className="text-gray-500"> • {registration.primaryOpsId.mobileNumber}</span>
+                                )}
                               </p>
                             )}
                             {registration.secondaryOpsId && (
                               <p className="text-xs text-gray-600">
-                <span className="font-medium">Secondary OPS:</span> {getFullName(registration.secondaryOpsId.userId) || 'N/A'}
+                                <span className="font-medium">Secondary OPS:</span>{' '}
+                                {getFullName(registration.secondaryOpsId.userId) || 'N/A'}
+                                {registration.secondaryOpsId.userId?.email && (
+                                  <span className="text-gray-500"> • {registration.secondaryOpsId.userId.email}</span>
+                                )}
+                                {registration.secondaryOpsId.mobileNumber && (
+                                  <span className="text-gray-500"> • {registration.secondaryOpsId.mobileNumber}</span>
+                                )}
                               </p>
                             )}
                             {registration.activeOpsId && (
                               <p className="text-xs font-medium text-blue-600">
-                ✓ Active: {getFullName(registration.activeOpsId.userId) || 'N/A'}
+                                ✓ Active: {getFullName(registration.activeOpsId.userId) || 'N/A'}
                               </p>
                             )}
                           </div>
