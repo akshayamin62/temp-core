@@ -687,7 +687,7 @@ export default function DocumentUploadSection({
           {extraDocumentFields.length > 0 && (
             <div className="bg-white rounded-xl border-2 border-gray-200 overflow-hidden shadow-md">
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b-2 border-gray-200">
-                <h3 className="text-xl font-bold ">Extra Documents</h3>
+                <h3 className="text-xl text-red-500 font-bold ">Extra Documents</h3>
                 {/* <p className=" text-sm mt-1">Additional documents specific to your profile</p> */}
               </div>
               <div className="p-6 space-y-3">

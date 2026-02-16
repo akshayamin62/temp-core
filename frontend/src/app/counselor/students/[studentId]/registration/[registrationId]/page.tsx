@@ -10,6 +10,7 @@ import FormSectionsNavigation from '@/components/FormSectionsNavigation';
 import StudentFormHeader from '@/components/StudentFormHeader';
 import ProgramSection from '@/components/ProgramSection';
 import toast, { Toaster } from 'react-hot-toast';
+import { getFullName } from '@/utils/nameHelpers';
 
 export default function CounselorStudentRegistrationPage() {
   const router = useRouter();
@@ -182,7 +183,7 @@ export default function CounselorStudentRegistrationPage() {
           {/* Student & Service Info */}
           {studentInfo && serviceInfo && (
             <StudentFormHeader
-              studentName={studentInfo.userId?.name || 'Student'}
+              studentName={getFullName(studentInfo.userId) || 'Student'}
               serviceName={serviceInfo.name}
               editMode="admin"
             />

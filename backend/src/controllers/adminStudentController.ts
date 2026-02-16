@@ -295,10 +295,9 @@ export const getAdminStudentFormAnswers = async (req: AuthRequest, res: Response
       });
     }
 
-    // Get form answers
+    // Get form answers (answers are stored by studentId and partKey only)
     const answers = await StudentFormAnswer.find({
       studentId,
-      registrationId,
     }).lean().exec();
 
     return res.status(200).json({

@@ -676,7 +676,7 @@ export default function RoleUserListPage({
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Company Logo
+                          Company Thumbnail
                         </label>
                         <input
                           type="file"

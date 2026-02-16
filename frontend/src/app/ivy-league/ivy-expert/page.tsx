@@ -83,7 +83,7 @@ function IvyExpertDashboard() {
     const router = useRouter();
     const selectedStudentId = searchParams.get('studentId');
     const studentIvyServiceId = searchParams.get('studentIvyServiceId');
-    
+
     const [students, setStudents] = useState<StudentService[]>([]);
     const [scoreData, setScoreData] = useState<IvyScoreData | null>(null);
     const [academicScore, setAcademicScore] = useState<AcademicExcellenceScore | null>(null);
@@ -220,7 +220,7 @@ function IvyExpertDashboard() {
     // If a student is selected, show the Ivy Score dashboard
     if (selectedStudentId && studentIvyServiceId) {
         const selectedStudent = students.find(s => s.studentId._id === selectedStudentId);
-        
+
         if (scoreLoading) {
             return (
                 <div className="p-20 text-center">
@@ -255,19 +255,19 @@ function IvyExpertDashboard() {
         if (!scoreData) return null;
 
         const totalMaxScore = 10;
-        
+
         // Calculate weighted overall score
         let calculatedOverallScore = 0;
         scoreData.pointerScores.forEach((pointer) => {
-            const score = pointer.pointerNo === 1 && academicScore 
-                ? academicScore.finalScore 
+            const score = pointer.pointerNo === 1 && academicScore
+                ? academicScore.finalScore
                 : pointer.pointerNo === 5 && pointer5Score !== null
-                ? pointer5Score
-                : pointer.score;
+                    ? pointer5Score
+                    : pointer.score;
             const weight = pointerWeightages[pointer.pointerNo] || 0;
             calculatedOverallScore += score * weight;
         });
-        
+
         const overallScore = calculatedOverallScore;
         const overallPercentage = (overallScore / totalMaxScore) * 100;
 
@@ -291,12 +291,12 @@ function IvyExpertDashboard() {
                             <div className="flex-1 text-center md:text-left">
                                 <span className="text-[10px] font-black tracking-[0.4em] text-gray-400 uppercase mb-4 block">Calculated Potential</span>
                                 <div className="flex items-baseline justify-center md:justify-start gap-4 mb-6">
-                                <span className="text-9xl font-black text-brand-600 leading-none tracking-tighter">{overallScore.toFixed(1)}</span>
-                                <span className="text-3xl font-black text-gray-300">/ {totalMaxScore}</span>
-                            </div>
-                            <div className="inline-flex items-center gap-3 bg-brand-50 text-brand-600 px-6 py-3 rounded-full text-base font-black uppercase tracking-widest">
-                                <span className="h-2 w-2 bg-brand-600 rounded-full animate-pulse"></span>
-                                {getScoreGrade(overallScore, totalMaxScore)}
+                                    <span className="text-9xl font-black text-brand-600 leading-none tracking-tighter">{overallScore.toFixed(1)}</span>
+                                    <span className="text-3xl font-black text-gray-300">/ {totalMaxScore}</span>
+                                </div>
+                                <div className="inline-flex items-center gap-3 bg-brand-50 text-brand-600 px-6 py-3 rounded-full text-base font-black uppercase tracking-widest">
+                                    <span className="h-2 w-2 bg-brand-600 rounded-full animate-pulse"></span>
+                                    {getScoreGrade(overallScore, totalMaxScore)}
                                 </div>
                             </div>
 
@@ -322,11 +322,11 @@ function IvyExpertDashboard() {
                     {scoreData.pointerScores.map((pointer) => {
                         // Use academic excellence score for Pointer 1 if available
                         // Use pointer5Score for Pointer 5 if available
-                        const displayScore = pointer.pointerNo === 1 && academicScore 
-                            ? academicScore.finalScore 
+                        const displayScore = pointer.pointerNo === 1 && academicScore
+                            ? academicScore.finalScore
                             : pointer.pointerNo === 5 && pointer5Score !== null
-                            ? pointer5Score
-                            : pointer.score;
+                                ? pointer5Score
+                                : pointer.score;
                         const percentage = (displayScore / pointer.maxScore) * 100;
                         const colorClass = getScoreColor(displayScore, pointer.maxScore);
 
@@ -407,7 +407,7 @@ function IvyExpertDashboard() {
                         <div>
                             <h4 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Understanding Student Profile</h4>
                             <p className="text-brand-200/60 font-medium leading-relaxed max-w-3xl">
-                                Each pointer follows the Ivy League evaluation matrix scaled from 0-10. Scores are manually verified based on shared evidences. 
+                                Each pointer follows the Ivy League evaluation matrix scaled from 0-10. Scores are manually verified based on shared evidences.
                             </p>
                         </div>
                     </div>
@@ -445,9 +445,12 @@ function IvyExpertDashboard() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3">
-                                                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${service.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                                {/* <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${service.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                                                     }`}>
                                                     {service.status}
+                                                </span> */}
+                                                <span className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white pointer-events-none">
+                                                    View Details
                                                 </span>
                                                 <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />

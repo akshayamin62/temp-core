@@ -190,12 +190,9 @@ export default function IvyExpertStudentsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => handleStudentClick(service)}
-                          className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white hover:bg-blue-700"
-                          >
-                            View Details
-                          </button>
+                        <span className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white pointer-events-none">
+                          View Details
+                        </span>
                       </div>
                     </div>
                   </button>

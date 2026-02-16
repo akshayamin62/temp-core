@@ -138,7 +138,7 @@ export default function OpsScheduleFormPanel({
                 required
                 disabled={readOnly}
               >
-                <option value="me">Me (Personal Task)</option>
+                <option value="me">My Task (Personal Task)</option>
                 <optgroup label="Students">
                   {students.map((student) => (
                     <option key={student._id} value={student._id}>
