@@ -68,6 +68,7 @@ function IvyScoreContent() {
     const [pointer5Score, setPointer5Score] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [serviceData, setServiceData] = useState<any>(null);
 
     // Resolved from auth or URL params
     const [studentId, setStudentId] = useState<string>('');
@@ -101,6 +102,7 @@ function IvyScoreContent() {
                 const resolvedServiceId = svc._id || '';
                 setStudentId(resolvedStudentId);
                 setStudentIvyServiceId(resolvedServiceId);
+                setServiceData(svc);
 
                 // Fetch scores in parallel
                 await Promise.all([
@@ -400,6 +402,71 @@ function IvyScoreContent() {
                     </div>
                 </div>
             </div>
+
+            {/* Team Contact Info */}
+            {serviceData && (
+                <div className="mt-8 bg-white rounded-[3rem] p-12 border-2 border-gray-100 shadow-xl">
+                    <h4 className="text-2xl font-black text-gray-900 mb-8 uppercase tracking-tight">Your Support Team</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {/* Admin */}
+                        {serviceData.studentId?.adminId && (
+                            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                                        <svg className="w-6 h-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                    </div>
+                                    <h5 className="font-black text-gray-900 uppercase tracking-tight text-sm">Admin</h5>
+                                </div>
+                                <p className="text-sm font-bold text-gray-900 mb-1">{serviceData.studentId.adminId.firstName} {serviceData.studentId.adminId.lastName}</p>
+                                <p className="text-xs text-gray-600 mb-1">{serviceData.studentId.adminId.email}</p>
+                                {serviceData.studentId.adminId.mobileNumber && (
+                                    <p className="text-xs text-gray-600">{serviceData.studentId.adminId.mobileNumber}</p>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Counselor */}
+                        {serviceData.studentId?.counselorId && (
+                            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center">
+                                        <svg className="w-6 h-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                    </div>
+                                    <h5 className="font-black text-gray-900 uppercase tracking-tight text-sm">Counselor</h5>
+                                </div>
+                                <p className="text-sm font-bold text-gray-900 mb-1">{serviceData.studentId.counselorId.firstName} {serviceData.studentId.counselorId.lastName}</p>
+                                <p className="text-xs text-gray-600 mb-1">{serviceData.studentId.counselorId.email}</p>
+                                {serviceData.studentId.counselorId.mobileNumber && (
+                                    <p className="text-xs text-gray-600">{serviceData.studentId.counselorId.mobileNumber}</p>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Ivy Expert */}
+                        {serviceData.activeIvyExpertId && (
+                            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center">
+                                        <svg className="w-6 h-6 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                        </svg>
+                                    </div>
+                                    <h5 className="font-black text-gray-900 uppercase tracking-tight text-sm">Ivy Expert</h5>
+                                </div>
+                                <p className="text-sm font-bold text-gray-900 mb-1">{serviceData.activeIvyExpertId.firstName} {serviceData.activeIvyExpertId.lastName}</p>
+                                <p className="text-xs text-gray-600 mb-1">{serviceData.activeIvyExpertId.email}</p>
+                                {serviceData.activeIvyExpertId.mobileNumber && (
+                                    <p className="text-xs text-gray-600">{serviceData.activeIvyExpertId.mobileNumber}</p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

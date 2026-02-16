@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import axios from 'axios';
+import { IVY_API_URL } from '@/lib/ivyApi';
 
 function StudentSidebar() {
     const pathname = usePathname();
@@ -11,6 +13,37 @@ function StudentSidebar() {
     const isConversationOpen = searchParams.get('conversationOpen') === 'true';
     const urlStudentId = searchParams.get('studentId');
     const readOnly = searchParams.get('readOnly') === 'true';
+    
+    const [studentInfo, setStudentInfo] = useState<{ firstName: string; lastName: string; email: string } | null>(null);
+
+    useEffect(() => {
+        const fetchStudentInfo = async () => {
+            try {
+                let svc: any = null;
+                if (urlStudentId) {
+                    const serviceRes = await axios.get(`${IVY_API_URL}/ivy-service/student/${urlStudentId}`);
+                    if (serviceRes.data.success && serviceRes.data.data) {
+                        svc = serviceRes.data.data;
+                    }
+                } else {
+                    const serviceRes = await axios.get(`${IVY_API_URL}/ivy-service/my-service`);
+                    if (serviceRes.data.success && serviceRes.data.data) {
+                        svc = serviceRes.data.data;
+                    }
+                }
+                if (svc?.studentId) {
+                    setStudentInfo({
+                        firstName: svc.studentId.firstName || '',
+                        lastName: svc.studentId.lastName || '',
+                        email: svc.studentId.email || '',
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching student info:', error);
+            }
+        };
+        fetchStudentInfo();
+    }, [urlStudentId]);
 
     // Build query string to forward to sub-pages
     const forwardQs = urlStudentId ? `studentId=${urlStudentId}&readOnly=true` : '';
@@ -138,8 +171,21 @@ function StudentSidebar() {
                         <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active Session</span>
                     </div>
-                    <p className="text-xs font-bold text-gray-900 leading-relaxed uppercase tracking-tight">Johnny Doe</p>
-                    <p className="text-[10px] font-medium text-gray-400 mt-1 uppercase tracking-wider">Candidate #239</p>
+                    {studentInfo ? (
+                        <>
+                            <p className="text-xs font-bold text-gray-900 leading-relaxed uppercase tracking-tight">
+                                {studentInfo.firstName} {studentInfo.lastName}
+                            </p>
+                            <p className="text-[10px] font-medium text-gray-400 mt-1 tracking-wider break-all">
+                                {studentInfo.email}
+                            </p>
+                        </>
+                    ) : (
+                        <>
+                            <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                            <div className="h-3 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                        </>
+                    )}
                 </div>
             </div>
             )}

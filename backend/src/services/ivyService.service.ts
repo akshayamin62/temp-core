@@ -151,7 +151,17 @@ export const getServiceByStudentId = async (studentUserId: string) => {
     throw new Error('Invalid student ID');
   }
   // Find Student record by userId
-  const student = await Student.findOne({ userId: studentUserId });
+  const student = await Student.findOne({ userId: studentUserId })
+    .populate({
+      path: 'adminId',
+      select: 'email mobileNumber',
+      populate: { path: 'userId', select: 'firstName lastName email' }
+    })
+    .populate({
+      path: 'counselorId',
+      select: 'email mobileNumber',
+      populate: { path: 'userId', select: 'firstName lastName email' }
+    });
   if (!student) return null;
 
   // Find the Ivy League service registration specifically
@@ -159,13 +169,21 @@ export const getServiceByStudentId = async (studentUserId: string) => {
   const filter: any = { studentId: student._id };
   if (ivyServiceId) filter.serviceId = ivyServiceId;
 
-  const reg = await StudentServiceRegistration.findOne(filter).populate({
-    path: 'studentId',
-    populate: { path: 'userId', select: 'firstName lastName email' }
-  });
+  const reg = await StudentServiceRegistration.findOne(filter)
+    .populate({
+      path: 'studentId',
+      populate: { path: 'userId', select: 'firstName lastName email' }
+    })
+    .populate({
+      path: 'activeIvyExpertId',
+      select: 'email mobileNumber',
+      populate: { path: 'userId', select: 'firstName lastName email' }
+    });
   if (!reg) return null;
 
   const regObj = reg.toObject() as any;
+  const studentObj = student.toObject() as any;
+  
   return {
     ...regObj,
     studentId: {
@@ -174,7 +192,27 @@ export const getServiceByStudentId = async (studentUserId: string) => {
       firstName: regObj.studentId?.userId?.firstName || '',
       lastName: regObj.studentId?.userId?.lastName || '',
       email: regObj.studentId?.userId?.email || regObj.studentId?.email || '',
+      adminId: studentObj.adminId ? {
+        _id: studentObj.adminId._id,
+        firstName: studentObj.adminId.userId?.firstName || '',
+        lastName: studentObj.adminId.userId?.lastName || '',
+        email: studentObj.adminId.userId?.email || '',
+        mobileNumber: studentObj.adminId.mobileNumber || '',
+      } : null,
+      counselorId: studentObj.counselorId ? {
+        _id: studentObj.counselorId._id,
+        firstName: studentObj.counselorId.userId?.firstName || '',
+        lastName: studentObj.counselorId.userId?.lastName || '',
+        email: studentObj.counselorId.userId?.email || '',
+        mobileNumber: studentObj.counselorId.mobileNumber || '',
+      } : null,
     },
+    activeIvyExpertId: regObj.activeIvyExpertId ? {
+      _id: regObj.activeIvyExpertId._id,
+      firstName: regObj.activeIvyExpertId.userId?.firstName || '',
+      lastName: regObj.activeIvyExpertId.userId?.lastName || '',
+      email: regObj.activeIvyExpertId.userId?.email || '',
+      mobileNumber: regObj.activeIvyExpertId.mobileNumber || '',
+    } : null,
   };
 };
-
