@@ -671,58 +671,12 @@ function IvyExpertPointer1Content() {
                                                 {activeTab === 'informal' && subSection.testType === 'project' ? (
                                                     <div className="space-y-3">
                                                         {subSection.projects?.map((project, projectIndex) => (
-                                                            <div key={project._id || projectIndex} className="grid grid-cols-2 gap-3 items-start p-4 bg-gray-50 rounded-xl">
-                                                                <div>
-                                                                    <label className="block text-xs font-bold text-gray-600 mb-1">Project Title</label>
-                                                                    <input
-                                                                        type="text"
-                                                                        value={project.title}
-                                                                        onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'title', e.target.value)}
-                                                                        placeholder="Project title"
-                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400"
-                                                                    />
-                                                                </div>
-                                                                <div>
-                                                                    <label className="block text-xs font-bold text-gray-600 mb-1">Organization (if any)</label>
-                                                                    <input
-                                                                        type="text"
-                                                                        value={project.organizationName || ''}
-                                                                        onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'organizationName', e.target.value)}
-                                                                        placeholder="Organization name"
-                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400"
-                                                                    />
-                                                                </div>
-                                                                <div className="col-span-2">
-                                                                    <label className="block text-xs font-bold text-gray-600 mb-1">Project Description</label>
-                                                                    <textarea
-                                                                        rows={3}
-                                                                        value={project.description}
-                                                                        onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'description', e.target.value)}
-                                                                        placeholder="Describe the project"
-                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400 resize-none"
-                                                                    />
-                                                                </div>
-                                                                <div>
-                                                                    <label className="block text-xs font-bold text-gray-600 mb-1">Project URL (if any)</label>
-                                                                    <input
-                                                                        type="url"
-                                                                        value={project.projectUrl || ''}
-                                                                        onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'projectUrl', e.target.value)}
-                                                                        placeholder="https://..."
-                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400"
-                                                                    />
-                                                                </div>
-                                                                <div>
-                                                                    <label className="block text-xs font-bold text-gray-600 mb-1">Feedback</label>
-                                                                    <input
-                                                                        type="text"
-                                                                        value={project.feedback || ''}
-                                                                        onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'feedback', e.target.value)}
-                                                                        placeholder="Enter feedback"
-                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400"
-                                                                    />
-                                                                </div>
-                                                                <div className="flex items-end justify-center h-full pb-1">
+                                                            <div key={project._id || projectIndex} className="bg-gray-50 rounded-xl border border-gray-200">
+                                                                {/* Project Header */}
+                                                                <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white rounded-t-xl">
+                                                                    <h3 className="text-sm font-bold text-gray-900">
+                                                                        {project.title || `Project ${projectIndex + 1}`}
+                                                                    </h3>
                                                                     <button
                                                                         onClick={() => deleteProjectHandler(section._id!, subSection._id!, project._id!)}
                                                                         className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
@@ -732,6 +686,59 @@ function IvyExpertPointer1Content() {
                                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                                         </svg>
                                                                     </button>
+                                                                </div>
+                                                                {/* Project Content */}
+                                                                <div className="grid grid-cols-2 gap-3 p-4">
+                                                                    <div>
+                                                                        <label className="block text-xs font-bold text-gray-600 mb-1">Project Title</label>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={project.title}
+                                                                            onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'title', e.target.value)}
+                                                                            placeholder="Project title"
+                                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400"
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="block text-xs font-bold text-gray-600 mb-1">Organization (if any)</label>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={project.organizationName || ''}
+                                                                            onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'organizationName', e.target.value)}
+                                                                            placeholder="Organization name"
+                                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400"
+                                                                        />
+                                                                    </div>
+                                                                    <div className="col-span-2">
+                                                                        <label className="block text-xs font-bold text-gray-600 mb-1">Project Description</label>
+                                                                        <textarea
+                                                                            rows={3}
+                                                                            value={project.description}
+                                                                            onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'description', e.target.value)}
+                                                                            placeholder="Describe the project"
+                                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400 resize-none"
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="block text-xs font-bold text-gray-600 mb-1">Project URL (if any)</label>
+                                                                        <input
+                                                                            type="url"
+                                                                            value={project.projectUrl || ''}
+                                                                            onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'projectUrl', e.target.value)}
+                                                                            placeholder="https://..."
+                                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400"
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="block text-xs font-bold text-gray-600 mb-1">Feedback</label>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={project.feedback || ''}
+                                                                            onChange={(e) => updateProject(section._id!, subSection._id!, project._id!, 'feedback', e.target.value)}
+                                                                            placeholder="Enter feedback"
+                                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-brand-500 outline-none text-sm text-black placeholder:text-gray-400"
+                                                                        />
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         ))}

@@ -980,10 +980,10 @@ function ActivitiesContent() {
   const filteredActivities = activities.filter(a => a.pointerNo === activePointer);
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="h-screen flex overflow-hidden bg-gray-50">
       {/* Tasks List Section */}
-      <div className={`transition-all duration-300 ${selectedTask ? 'w-[35%]' : 'w-full'} overflow-y-auto`}>
-        <div className="py-12 px-4 sm:px-6 lg:px-8">
+      <div className={`flex-1 overflow-y-auto transition-all duration-300 ${selectedTask ? 'w-[35%]' : 'w-full'}`}>
+        <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
       {/* Read-Only Banner */}
       {readOnly && (
         <div className="max-w-6xl mx-auto mb-4">
@@ -1402,11 +1402,11 @@ function ActivitiesContent() {
         )}
       {/* </div> */}
       </div>
-    </div>
+      </div>
 
       {/* Conversation Window Section */}
       {selectedTask && (
-        <div className="w-[65%] border-l border-gray-200 h-screen overflow-hidden">
+        <div className="w-[65%] border-l border-gray-200 flex-shrink-0 overflow-hidden">
           <ConversationWindow
             activityTitle={selectedTask.activityTitle}
             task={selectedTask.task}
