@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import axios from 'axios';
 import { useStudentService } from '../useStudentService';
 import { IVY_API_URL } from '@/lib/ivyApi';
+import IvyLeagueApplicantInfoPanel from '@/components/IvyLeagueApplicantInfoPanel';
 
 interface Course {
   _id: string;
@@ -290,7 +291,6 @@ function Pointer6Content() {
               <h1 className="text-5xl font-black text-gray-900 mb-2">
                 POINTER 6: ENGAGEMENT WITH LEARNING & INTELLECTUAL CURIOSITY
               </h1>
-              <p className="text-gray-600">Select courses you want to pursue</p>
             </div>
             {pointer6Score != null && (
               // <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-brand-50 flex flex-col items-center justify-center text-center scale-110 md:mr-10">
@@ -304,6 +304,9 @@ function Pointer6Content() {
               </div>
             )}
           </div>
+
+          {/* Ivy League Applicant Info Panel */}
+          <IvyLeagueApplicantInfoPanel pointerNo={6} />
 
           {/* Success/Error Message */}
           {message && (

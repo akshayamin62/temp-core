@@ -6,6 +6,7 @@ import axios from 'axios';
 import { ErrorHighlightedText } from '@/components/ErrorHighlightedText';
 import { IVY_API_URL } from '@/lib/ivyApi';
 import { fileApi } from '@/lib/useBlobUrl';
+import IvyLeagueApplicantInfoPanel from '@/components/IvyLeagueApplicantInfoPanel';
 
 interface Attachment {
     fileName: string;
@@ -225,9 +226,6 @@ function IvyExpertPointer5Content() {
                         <h1 className="text-5xl font-black text-gray-900 tracking-tighter mb-4">
                             POINTER 5: AUTHENTIC & REFLECTIVE STORYTELLING
                         </h1>
-                        <p className="text-xl text-gray-400 font-medium max-w-xl">
-                            Assign writing tasks and evaluate student responses
-                        </p>
                     </div>
 
                     {/* Pointer 5 Score Card */}
@@ -238,6 +236,9 @@ function IvyExpertPointer5Content() {
                         </div>
                     )} */}
                 </header>
+
+                {/* Ivy League Applicant Info Panel */}
+                <IvyLeagueApplicantInfoPanel pointerNo={5} />
 
                 {/* Add Task Button */}
                 {!showAddTask && (

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import Link from 'next/link';
 import { IVY_API_URL } from '@/lib/ivyApi';
+import IvyLeagueApplicantInfoPanel from '@/components/IvyLeagueApplicantInfoPanel';
 
 interface Subject {
     _id?: string;
@@ -447,9 +448,6 @@ function IvyExpertPointer1Content() {
                         <h1 className="text-5xl font-black text-gray-900 tracking-tighter mb-4">
                             POINTER 1: ACADEMIC EXCELLENCE
                         </h1>
-                        <p className="text-xl text-gray-400 font-medium max-w-xl">
-                            Manage student academic performance and provide evaluations.
-                        </p>
                     </div>
 
                     {/* Academic Excellence Score Card */}
@@ -460,6 +458,9 @@ function IvyExpertPointer1Content() {
                         </div>
                     )} */}
                 </div>
+
+                {/* Ivy League Applicant Info Panel */}
+                <IvyLeagueApplicantInfoPanel pointerNo={1} />
 
                 {/* Tabs */}
                 <div className="flex gap-2 mb-8 border-b border-gray-200">
