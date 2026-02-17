@@ -11,10 +11,12 @@ import ProgramSection from '@/components/ProgramSection';
 import { getFullName } from '@/utils/nameHelpers';
 
 // Extended interface for registration with populated fields
-interface ExtendedRegistration extends StudentServiceRegistration {
+interface ExtendedRegistration extends Omit<StudentServiceRegistration, 'studentId' | 'primaryOpsId' | 'secondaryOpsId' | 'activeOpsId'> {
   studentId?: {
     _id: string;
     mobileNumber?: string;
+    intake?: string;
+    year?: string;
     adminId?: {
       _id: string;
       companyName?: string;
@@ -464,7 +466,7 @@ function MyDetailsContent() {
           <div className="bg-white border-b border-gray-200 mb-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Your Support Team</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {registration.studentId.adminId && (
                   <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
                     <p className="text-xs font-medium text-gray-700 mb-1">Admin</p>
@@ -512,6 +514,24 @@ function MyDetailsContent() {
                       <p className="text-xs text-gray-600">
                         {(registration.activeOpsId || registration.primaryOpsId)?.mobileNumber}
                       </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Intake & Year - Single Box on Right Side */}
+                {(registration.studentId.intake || registration.studentId.year) && (
+                  <div className="border border-blue-200 rounded-lg p-3 bg-blue-50">
+                    {registration.studentId.intake && (
+                      <div className="mb-2">
+                        <p className="text-xs font-medium text-gray-700 mb-1">Intake</p>
+                        <p className="text-sm font-semibold text-blue-700">{registration.studentId.intake}</p>
+                      </div>
+                    )}
+                    {registration.studentId.year && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-700 mb-1">Year</p>
+                        <p className="text-sm font-semibold text-blue-700">{registration.studentId.year}</p>
+                      </div>
                     )}
                   </div>
                 )}

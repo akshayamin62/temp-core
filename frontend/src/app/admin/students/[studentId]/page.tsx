@@ -45,6 +45,8 @@ interface StudentDetails {
       email: string;
     };
   };
+  intake?: string;
+  year?: string;
   createdAt: string;
 }
 
@@ -228,7 +230,7 @@ export default function AdminStudentDetailPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 pt-4 border-t border-gray-200">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Mobile Number</p>
                 <p className="font-medium text-gray-900">
@@ -265,6 +267,18 @@ export default function AdminStudentDetailPage() {
                   {new Date(student.createdAt).toLocaleDateString('en-GB')}
                 </p>
               </div>
+              {student.intake && (
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Intake</p>
+                  <p className="font-medium text-blue-600">{student.intake}</p>
+                </div>
+              )}
+              {student.year && (
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Year</p>
+                  <p className="font-medium text-blue-600">{student.year}</p>
+                </div>
+              )}
             </div>
           </div>
 

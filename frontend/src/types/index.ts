@@ -288,6 +288,8 @@ export interface Lead {
   mobileNumber: string;
   city: string;
   serviceTypes: SERVICE_TYPE[];
+  intake?: string;
+  year?: string;
   stage: LEAD_STAGE;
   conversionRequestId?: string;
   conversionStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';

@@ -27,7 +27,29 @@ export default function PublicEnquiryFormPage() {
     mobileNumber: '',
     city: '',
     serviceTypes: [] as string[],
+    intake: '',
+    year: '',
   });
+
+  // Service types that require intake and year fields
+  const INTAKE_REQUIRED_SERVICES = [
+    SERVICE_TYPE.CARRER_FOCUS_STUDY_ABROAD,
+    SERVICE_TYPE.IVY_LEAGUE_ADMISSION,
+    SERVICE_TYPE.IELTS_GRE_LANGUAGE_COACHING,
+  ];
+
+  const showIntakeYear = formData.serviceTypes.some(s =>
+    INTAKE_REQUIRED_SERVICES.includes(s as SERVICE_TYPE)
+  );
+
+  const intakeOptions = [
+    'Spring', 'Summer', 'Fall', 'Winter',
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 6 }, (_, i) => String(currentYear + i));
 
   useEffect(() => {
     fetchAdminInfo();
@@ -96,6 +118,18 @@ export default function PublicEnquiryFormPage() {
       return;
     }
 
+    // Intake/Year validation when qualifying services are selected
+    if (showIntakeYear) {
+      if (!formData.intake) {
+        toast.error('Please select an intake');
+        return;
+      }
+      if (!formData.year) {
+        toast.error('Please select a year');
+        return;
+      }
+    }
+
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
@@ -123,6 +157,7 @@ export default function PublicEnquiryFormPage() {
         mobileNumber: formData.mobileNumber.trim(),
         city: formData.city.trim(),
         serviceTypes: formData.serviceTypes,
+        ...(showIntakeYear && { intake: formData.intake, year: formData.year }),
       });
       setSubmitted(true);
       toast.success('Your enquiry has been submitted successfully!');
@@ -367,6 +402,49 @@ export default function PublicEnquiryFormPage() {
                 You can select multiple option
               </p>
             </div>
+
+            {/* Conditional Year & Intake Fields */}
+            {showIntakeYear && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <label htmlFor="year" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Year <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="year"
+                    name="year"
+                    value={formData.year}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900"
+                    required
+                  >
+                    <option value="">Select Year</option>
+                    {yearOptions.map(y => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="intake" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Intake <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="intake"
+                    name="intake"
+                    value={formData.intake}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900"
+                    required
+                  >
+                    <option value="">Select Intake</option>
+                    {intakeOptions.map(i => (
+                      <option key={i} value={i}>{i}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
 
             {/* Submit Button */}
             <button

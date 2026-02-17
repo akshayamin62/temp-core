@@ -22,11 +22,13 @@ export interface ILead extends Document {
   mobileNumber: string;
   city?: string;
   serviceTypes: SERVICE_TYPE[];
-  adminId: mongoose.Types.ObjectId; // Reference to Admin's userId
-  assignedCounselorId?: mongoose.Types.ObjectId; // Reference to Counselor document
+  intake?: string;
+  year?: string;
+  adminId: mongoose.Types.ObjectId;
+  assignedCounselorId?: mongoose.Types.ObjectId;
   stage: LEAD_STAGE;
   source: string;
-  conversionRequestId?: mongoose.Types.ObjectId; // Reference to LeadStudentConversion
+  conversionRequestId?: mongoose.Types.ObjectId;
   conversionStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt?: Date;
   updatedAt?: Date;
@@ -54,6 +56,16 @@ const leadSchema = new Schema<ILead>(
       type: String,
       trim: true,
       required: true,
+    },
+    intake: {
+      type: String,
+      trim: true,
+      required: false,
+    },
+    year: {
+      type: String,
+      trim: true,
+      required: false,
     },
     serviceTypes: {
       type: [String],

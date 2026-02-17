@@ -324,6 +324,8 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
       mobileNumber: lead.mobileNumber,
       adminId: admin._id,
       counselorId: counselor?._id || null,
+      ...(lead.intake && { intake: lead.intake }),
+      ...(lead.year && { year: lead.year }),
       convertedFromLeadId: lead._id,
       conversionDate: new Date()
     });

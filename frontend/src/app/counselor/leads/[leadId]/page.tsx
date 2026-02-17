@@ -456,6 +456,18 @@ export default function CounselorLeadDetailPage() {
                   })}
                 </p>
               </div>
+              {lead.intake && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Intake</label>
+                  <p className="text-gray-900 font-medium">{lead.intake}</p>
+                </div>
+              )}
+              {lead.year && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Year</label>
+                  <p className="text-gray-900 font-medium">{lead.year}</p>
+                </div>
+              )}
             </div>
           </div>
 
