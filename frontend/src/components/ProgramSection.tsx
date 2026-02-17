@@ -47,8 +47,8 @@ interface Program {
   studyLevel: string;
   duration?: number;
   ieltsScore?: number;
-  applicationFee?: number;
-  yearlyTuitionFees?: number;
+  applicationFee?: string;
+  yearlyTuitionFees?: string;
   priority?: number;
   intake?: string;
   year?: string;
@@ -187,8 +187,8 @@ export default function ProgramSection({
       if (formData.campus) programData.campus = formData.campus;
       if (formData.duration) programData.duration = parseInt(formData.duration);
       if (formData.ieltsScore) programData.ieltsScore = parseFloat(formData.ieltsScore);
-      if (formData.applicationFee) programData.applicationFee = parseFloat(formData.applicationFee);
-      if (formData.yearlyTuitionFees) programData.yearlyTuitionFees = parseFloat(formData.yearlyTuitionFees);
+      if (formData.applicationFee) programData.applicationFee = formData.applicationFee;
+      if (formData.yearlyTuitionFees) programData.yearlyTuitionFees = formData.yearlyTuitionFees;
 
       let endpoint = '';
       if (userRole === 'STUDENT') {
@@ -470,8 +470,8 @@ export default function ProgramSection({
                           <div><span className="font-medium">Study Level:</span> {program.studyLevel}</div>
                           {program.duration && <div><span className="font-medium">Duration:</span> {program.duration} months</div>}
                           {program.ieltsScore && <div><span className="font-medium">IELTS:</span> {program.ieltsScore}</div>}
-                          {program.yearlyTuitionFees && <div><span className="font-medium">Tuition:</span> £{program.yearlyTuitionFees.toLocaleString('en-GB')}</div>}
-                          {program.applicationFee && <div><span className="font-medium">App Fee:</span> £{program.applicationFee.toLocaleString('en-GB')}</div>}
+                          {program.yearlyTuitionFees && <div><span className="font-medium">Tuition:</span> {program.yearlyTuitionFees}</div>}
+                          {program.applicationFee && <div><span className="font-medium">App Fee:</span> {program.applicationFee}</div>}
                           {program.programUrl && (
                             <div>
                               <span className="font-medium">Program Link:</span>{' '}

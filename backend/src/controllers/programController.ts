@@ -834,8 +834,8 @@ export const uploadProgramsFromExcel = async (req: AuthRequest & { file?: Expres
           studyLevel: getValue(['Study Level', 'studyLevel', 'Level', 'level']) || 'Postgraduate',
           duration: getNumber(['Duration', 'duration', 'DURATION'], 12),
           ieltsScore: getNumber(['IELTS Score', 'ieltsScore', 'IELTS', 'ielts'], 0),
-          applicationFee: getNumber(['Application Fee', 'applicationFee', 'Fee', 'fee'], 0),
-          yearlyTuitionFees: getNumber(['Yearly Tuition Fees', 'yearlyTuitionFees', 'Tuition', 'tuition'], 0),
+          applicationFee: getValue(['Application Fee', 'applicationFee', 'Fee', 'fee']),
+          yearlyTuitionFees: getValue(['Yearly Tuition Fees', 'yearlyTuitionFees', 'Tuition', 'tuition']),
           universityRanking: {
             webometricsWorld: getInt(['Webometrics World', 'webometricsWorld', 'Webometrics World Ranking']),
             webometricsNational: getInt(['Webometrics Continent', 'webometricsContinent', 'Webometrics National', 'webometricsNational', 'Webometrics National Ranking']),

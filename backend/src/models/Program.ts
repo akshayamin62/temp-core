@@ -28,8 +28,8 @@ export interface IProgram extends Document {
   studyLevel: string;
   duration: number; // in months
   ieltsScore: number;
-  applicationFee: number; // in GBP
-  yearlyTuitionFees: number; // in GBP
+  applicationFee: string; // With currency symbol from Excel
+  yearlyTuitionFees: string; // With currency symbol from Excel
   priority?: number; // Student's priority (if selected)
   intake?: string; // Student's selected intake
   year?: string; // Student's selected year
@@ -96,11 +96,11 @@ const programSchema = new Schema<IProgram>(
       required: false,
     },
     applicationFee: {
-      type: Number,
+      type: String,
       required: false,
     },
     yearlyTuitionFees: {
-      type: Number,
+      type: String,
       required: false,
     },
     priority: {

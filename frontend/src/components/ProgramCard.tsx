@@ -18,8 +18,8 @@ interface Program {
   studyLevel: string;
   duration?: number;
   ieltsScore?: number;
-  applicationFee?: number;
-  yearlyTuitionFees?: number;
+  applicationFee?: string;
+  yearlyTuitionFees?: string;
   priority?: number;
   intake?: string;
   year?: string;
@@ -116,12 +116,12 @@ export default function ProgramCard({
             )}
             {program.yearlyTuitionFees && (
               <div>
-                <span className="font-medium">Tuition:</span> £{program.yearlyTuitionFees.toLocaleString('en-GB')}
+                <span className="font-medium">Tuition:</span> {program.yearlyTuitionFees}
               </div>
             )}
             {program.applicationFee && (
               <div>
-                <span className="font-medium">Application Fee:</span> £{program.applicationFee.toLocaleString('en-GB')}
+                <span className="font-medium">Application Fee:</span> {program.applicationFee}
               </div>
             )}
             {program.programUrl && (
