@@ -67,7 +67,7 @@ function TeamMeetItem({ teamMeet, onClick, showDate = false, currentUserId, isAc
             </span>
             {showDate && (
               <span className="text-xs text-gray-500">
-                {format(new Date(teamMeet.scheduledDate), 'MMM d')}
+                {format(new Date(teamMeet.scheduledDate), 'd MMM')}
               </span>
             )}
             <span className={`px-1.5 py-0.5 text-xs rounded ${getStatusBadgeColor(teamMeet.status)}`}>

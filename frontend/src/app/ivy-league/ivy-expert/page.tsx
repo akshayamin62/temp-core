@@ -311,7 +311,7 @@ function IvyExpertDashboard() {
                                         style={{ width: `${overallPercentage}%` }}
                                     ></div>
                                 </div>
-                                <p className="text-xs text-center text-gray-400 font-bold italic">Last evaluated on {new Date(scoreData.generatedAt).toLocaleDateString(undefined, { dateStyle: 'long' })}</p>
+                                <p className="text-xs text-center text-gray-400 font-bold italic">Last evaluated on {new Date(scoreData.generatedAt).toLocaleDateString('en-GB')}</p>
                             </div>
                         </div>
                     </div>

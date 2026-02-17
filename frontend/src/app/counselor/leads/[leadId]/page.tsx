@@ -447,10 +447,10 @@ export default function CounselorLeadDetailPage() {
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1">Submitted On</label>
                 <p className="text-gray-900">
-                  {new Date(lead.createdAt).toLocaleDateString('en-US', {
+                  {new Date(lead.createdAt).toLocaleString('en-GB', {
+                    day: '2-digit',
+                    month: '2-digit',
                     year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
@@ -664,6 +664,7 @@ export default function CounselorLeadDetailPage() {
                           setAvailabilityStatus(null);
                         }}
                         min={format(new Date(), 'yyyy-MM-dd')}
+                        lang="en-GB"
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
@@ -792,7 +793,7 @@ export default function CounselorLeadDetailPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-medium text-gray-900">
-                            {format(new Date(followUp.scheduledDate), 'MMM d, yyyy')} at {followUp.scheduledTime}
+                            {format(new Date(followUp.scheduledDate), 'dd/MM/yyyy')} at {followUp.scheduledTime}
                           </span>
                           {followUp.meetingType && (
                             <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded flex items-center gap-1">

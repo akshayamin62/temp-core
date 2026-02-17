@@ -425,7 +425,7 @@ export default function StudentDetailPage() {
               <div>
                 <p className="text-sm text-gray-600 mb-1">Joined Date</p>
                 <p className="font-medium text-gray-900">
-                  {new Date(student.createdAt).toLocaleDateString()}
+                  {new Date(student.createdAt).toLocaleDateString('en-GB')}
                 </p>
               </div>
             </div>
@@ -453,7 +453,7 @@ export default function StudentDetailPage() {
                           {registration.serviceId.shortDescription}
                         </p>
                         <div className="flex items-center gap-4 text-sm text-gray-500">
-                          <span>Registered: {new Date(registration.createdAt).toLocaleDateString()}</span>
+                          <span>Registered: {new Date(registration.createdAt).toLocaleDateString('en-GB')}</span>
                           <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
                             {registration.status}
                           </span>

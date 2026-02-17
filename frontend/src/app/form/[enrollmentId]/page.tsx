@@ -435,6 +435,8 @@ export default function FormPage() {
             onChange={(e) => handleAnswerChange(questionId, e.target.value)}
             disabled={isDisabled}
             required={questionConfig.isRequired}
+            lang="en-GB"
+            placeholder="dd/mm/yyyy"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
           />
         );

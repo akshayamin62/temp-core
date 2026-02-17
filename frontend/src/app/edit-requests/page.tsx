@@ -231,7 +231,7 @@ export default function EditRequestsPage() {
 
                     <div className="flex items-center justify-between text-sm text-gray-500">
                       <span>
-                        Requested: {request.createdAt ? new Date(request.createdAt).toLocaleString() : 'N/A'}
+                        Requested: {request.createdAt ? new Date(request.createdAt).toLocaleString('en-GB') : 'N/A'}
                       </span>
                       {request.status === EditRequestStatus.PENDING && (isAdmin || isCounselor) && (
                         <div className="flex gap-2">

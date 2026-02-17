@@ -1867,7 +1867,7 @@ function ActivitiesContent() {
                         <div className="mb-4 p-4 bg-brand-50 border border-brand-200 rounded-md">
                           <p className="text-sm font-medium text-brand-900 mb-2">Proof Submitted</p>
                           <p className="text-xs text-brand-700 mb-3">
-                            Submitted: {new Date(activity.submission!.submittedAt).toLocaleString()}
+                            Submitted: {new Date(activity.submission!.submittedAt).toLocaleString('en-GB')}
                           </p>
                           <div className="space-y-4">
                             {activity.submission!.files.map((fileUrl, index) => (
@@ -1906,7 +1906,7 @@ function ActivitiesContent() {
                             </p>
                           )}
                           <p className="text-xs text-green-700 mt-2">
-                            Evaluated: {new Date(activity.evaluation!.evaluatedAt).toLocaleString()}
+                            Evaluated: {new Date(activity.evaluation!.evaluatedAt).toLocaleString('en-GB')}
                           </p>
                         </div>
                       ) : activity.proofUploaded ? (

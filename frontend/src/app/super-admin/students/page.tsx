@@ -198,7 +198,7 @@ export default function SuperAdminStudentsPage() {
                                 {getFullName(student.user) || 'N/A'}
                               </div>
                               <div className="text-sm text-gray-500">
-                                Joined {new Date(student.createdAt).toLocaleDateString()}
+                                Joined {new Date(student.createdAt).toLocaleDateString('en-GB')}
                               </div>
                             </div>
                           </div>

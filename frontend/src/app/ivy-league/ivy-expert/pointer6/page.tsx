@@ -541,6 +541,7 @@ function Pointer6Content() {
                                 value={dateInputs[course._id]?.startDate || ''}
                                 onChange={(e) => handleDateChange(course._id, 'startDate', e.target.value)}
                                 disabled={course.selected}
+                                lang="en-GB"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900 disabled:text-gray-900"
                               />
                             </div>
@@ -553,6 +554,7 @@ function Pointer6Content() {
                                 value={dateInputs[course._id]?.endDate || ''}
                                 onChange={(e) => handleDateChange(course._id, 'endDate', e.target.value)}
                                 disabled={course.selected}
+                                lang="en-GB"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900 disabled:text-gray-900"
                               />
                             </div>
@@ -581,7 +583,7 @@ function Pointer6Content() {
                                         <p className="text-sm font-medium text-gray-900">{course.certificateFileName}</p>
                                         {course.certificateUploadedAt && (
                                           <p className="text-xs text-gray-500">
-                                            Uploaded on {new Date(course.certificateUploadedAt).toLocaleDateString()}
+                                            Uploaded on {new Date(course.certificateUploadedAt).toLocaleDateString('en-GB')}
                                           </p>
                                         )}
                                       </div>
@@ -617,7 +619,7 @@ function Pointer6Content() {
                                         </div>
                                         {course.scoredAt && (
                                           <p className="text-xs text-gray-500">
-                                            Scored on {new Date(course.scoredAt).toLocaleDateString()}
+                                            Scored on {new Date(course.scoredAt).toLocaleDateString('en-GB')}
                                           </p>
                                         )}
                                       </div>

@@ -388,6 +388,7 @@ export default function TeamMeetFormPanel({
                 onChange={(e) => setScheduledDate(e.target.value)}
                 disabled={mode !== 'create' && teamMeet?.status !== TEAMMEET_STATUS.REJECTED}
                 min={format(new Date(), 'yyyy-MM-dd')}
+                lang="en-GB"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent disabled:bg-gray-100"
               />
             </div>

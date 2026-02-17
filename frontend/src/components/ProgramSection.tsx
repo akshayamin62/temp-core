@@ -422,8 +422,8 @@ export default function ProgramSection({
                           <div><span className="font-medium">Study Level:</span> {program.studyLevel}</div>
                           {program.duration && <div><span className="font-medium">Duration:</span> {program.duration} months</div>}
                           {program.ieltsScore && <div><span className="font-medium">IELTS:</span> {program.ieltsScore}</div>}
-                          {program.yearlyTuitionFees && <div><span className="font-medium">Tuition:</span> £{program.yearlyTuitionFees.toLocaleString()}</div>}
-                          {program.applicationFee && <div><span className="font-medium">App Fee:</span> £{program.applicationFee.toLocaleString()}</div>}
+                          {program.yearlyTuitionFees && <div><span className="font-medium">Tuition:</span> £{program.yearlyTuitionFees.toLocaleString('en-GB')}</div>}
+                          {program.applicationFee && <div><span className="font-medium">App Fee:</span> £{program.applicationFee.toLocaleString('en-GB')}</div>}
                           {program.programUrl && (
                             <div>
                               <span className="font-medium">Program Link:</span>{' '}

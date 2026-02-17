@@ -336,7 +336,7 @@ export default function SuperAdminCounselorDashboardPage() {
                   {counselor.userId.email} • {counselor.mobileNumber || 'No phone'}
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  Joined: {new Date(counselor.createdAt).toLocaleDateString()}
+                  Joined: {new Date(counselor.createdAt).toLocaleDateString('en-GB')}
                 </p>
               </div>
               {/* Copy Enquiry URL */}
@@ -668,7 +668,7 @@ export default function SuperAdminCounselorDashboardPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-500">
-                              {new Date(lead.createdAt).toLocaleDateString()}
+                              {new Date(lead.createdAt).toLocaleDateString('en-GB')}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

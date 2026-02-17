@@ -275,6 +275,8 @@ export default function FormFieldRenderer({
             onChange={handleChange}
             required={field.required}
             disabled={readOnly}
+            lang="en-GB"
+            placeholder="dd/mm/yyyy"
             className={baseInputClasses}
           />
         );
