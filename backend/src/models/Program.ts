@@ -1,8 +1,19 @@
 import mongoose, { Document, Schema } from "mongoose";
 
+export enum PROGRAM_STATUS {
+  SHORTLISTED = 'Shortlisted',
+  IN_PROGRESS = 'In Progress',
+  APPLIED = 'Applied',
+  OFFER_RECEIVED = 'Offer Received',
+  OFFER_ACCEPTED = 'Offer Accepted',
+  REJECTED_DECLINED = 'Rejected / Declined',
+  CLOSED = 'Closed',
+}
+
 export interface IProgram extends Document {
   createdBy: mongoose.Types.ObjectId; // User who created this program (can be student, OPS, or admin)
   studentId?: mongoose.Types.ObjectId; // Student who selected this program (if selected)
+  registrationId?: mongoose.Types.ObjectId; // Service registration this program belongs to
   university: string;
   universityRanking: {
     webometricsWorld?: number;
@@ -22,6 +33,7 @@ export interface IProgram extends Document {
   priority?: number; // Student's priority (if selected)
   intake?: string; // Student's selected intake
   year?: string; // Student's selected year
+  status?: string; // Application status type
   selectedAt?: Date; // When student selected this program
   isSelectedByStudent: boolean; // Whether student has selected this program
   createdAt?: Date;
@@ -38,6 +50,11 @@ const programSchema = new Schema<IProgram>(
     studentId: {
       type: Schema.Types.ObjectId,
       ref: "Student",
+      required: false,
+    },
+    registrationId: {
+      type: Schema.Types.ObjectId,
+      ref: "StudentServiceRegistration",
       required: false,
     },
     university: {
@@ -98,6 +115,12 @@ const programSchema = new Schema<IProgram>(
       type: String,
       required: false,
     },
+    status: {
+      type: String,
+      enum: Object.values(PROGRAM_STATUS),
+      required: false,
+      default: undefined,
+    },
     selectedAt: {
       type: Date,
       required: false,
@@ -112,6 +135,7 @@ const programSchema = new Schema<IProgram>(
 
 // Database indexes for performance
 programSchema.index({ studentId: 1, isSelectedByStudent: 1 });
+programSchema.index({ studentId: 1, registrationId: 1 });
 programSchema.index({ createdBy: 1, createdAt: -1 });
 programSchema.index({ country: 1, studyLevel: 1 });
 programSchema.index({ university: 1, programName: 1 });

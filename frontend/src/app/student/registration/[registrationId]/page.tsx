@@ -555,7 +555,8 @@ function MyDetailsContent() {
                  (currentSection.title === 'Apply to Program' || currentSection.title === 'Applied Program') ? (
                   <ProgramSection
                     sectionType={currentSection.title === 'Apply to Program' ? 'available' : 'applied'}
-                    studentId={registrationId!}
+                    studentId={registration?.studentId?._id || ''}
+                    registrationId={registrationId}
                     userRole="STUDENT"
                   />
                 ) : currentPart.part.key === 'DOCUMENT' ? (

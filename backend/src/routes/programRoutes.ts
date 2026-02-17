@@ -12,6 +12,7 @@ import {
   removeProgram,
   uploadProgramsFromExcel,
   updateProgramSelection,
+  updateProgramStatus,
   getStudentAppliedPrograms,
   getSuperAdminStudentPrograms,
 } from '../controllers/programController';
@@ -53,6 +54,7 @@ router.post('/ops/programs', authorize([USER_ROLE.OPS]), createProgram);
 router.post('/ops/student/:studentId/programs', authorize([USER_ROLE.OPS]), createProgram);
 router.post('/ops/programs/upload-excel', authorize([USER_ROLE.OPS]), upload.single('file'), uploadProgramsFromExcel);
 router.post('/ops/student/:studentId/programs/upload-excel', authorize([USER_ROLE.OPS]), upload.single('file'), uploadProgramsFromExcel);
+router.put('/ops/programs/:programId/status', authorize([USER_ROLE.OPS]), updateProgramStatus);
 
 // Super Admin routes
 router.get('/super-admin/student/:studentId/programs', authorize([USER_ROLE.SUPER_ADMIN]), getSuperAdminStudentPrograms);
@@ -60,6 +62,7 @@ router.get('/super-admin/student/:studentId/applied-programs', authorize([USER_R
 router.post('/super-admin/programs/create', authorize([USER_ROLE.SUPER_ADMIN]), createProgram);
 router.post('/super-admin/programs/upload-excel', authorize([USER_ROLE.SUPER_ADMIN]), upload.single('file'), uploadProgramsFromExcel);
 router.put('/super-admin/programs/:programId/selection', authorize([USER_ROLE.SUPER_ADMIN]), updateProgramSelection);
+router.put('/super-admin/programs/:programId/status', authorize([USER_ROLE.SUPER_ADMIN]), updateProgramStatus);
 
 export default router;
 

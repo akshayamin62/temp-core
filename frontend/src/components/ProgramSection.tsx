@@ -11,6 +11,26 @@ import { getFullName } from '@/utils/nameHelpers';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
+const PROGRAM_STATUSES = [
+  'Shortlisted',
+  'In Progress',
+  'Applied',
+  'Offer Received',
+  'Offer Accepted',
+  'Rejected / Declined',
+  'Closed',
+] as const;
+
+const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  'Shortlisted': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+  'In Progress': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
+  'Applied': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
+  'Offer Received': { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200' },
+  'Offer Accepted': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
+  'Rejected / Declined': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
+  'Closed': { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' },
+};
+
 interface Program {
   _id: string;
   university: string;
@@ -32,6 +52,8 @@ interface Program {
   priority?: number;
   intake?: string;
   year?: string;
+  status?: string;
+  registrationId?: string;
   isSelectedByStudent?: boolean;
   selectedAt?: string;
   createdBy?: {
@@ -51,6 +73,7 @@ interface ProgramSectionProps {
   userRole: UserRole;
   sectionType: SectionType;
   studentId?: string; // Required for OPS/ADMIN, optional for STUDENT
+  registrationId?: string; // Service registration ID
   isReadOnly?: boolean;
 }
 
@@ -58,6 +81,7 @@ export default function ProgramSection({
   userRole,
   sectionType,
   studentId,
+  registrationId,
   isReadOnly = false,
 }: ProgramSectionProps) {
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -78,6 +102,7 @@ export default function ProgramSection({
   const [editingProgram, setEditingProgram] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState<{ [key: string]: { priority: number; intake: string; year: string } }>({});
   const [saving, setSaving] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
   const intakeOptions = [
     'Spring', 'Summer', 'Fall', 'Winter',
@@ -91,19 +116,21 @@ export default function ProgramSection({
   const canAddPrograms = sectionType === 'available' && !isReadOnly;
   const canEditApplied = sectionType === 'applied' && userRole === 'SUPER_ADMIN';
   const canSelectPrograms = sectionType === 'available' && userRole === 'STUDENT' && !isReadOnly;
+  const canChangeStatus = sectionType === 'applied' && (userRole === 'OPS' || userRole === 'SUPER_ADMIN') && !isReadOnly;
 
   useEffect(() => {
     fetchPrograms();
-  }, [userRole, sectionType, studentId]);
+  }, [userRole, sectionType, studentId, registrationId]);
 
   const fetchPrograms = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
       let response;
+      const regParam = registrationId ? `&registrationId=${registrationId}` : '';
 
       if (userRole === 'STUDENT') {
-        response = await programAPI.getStudentPrograms();
+        response = await programAPI.getStudentPrograms(registrationId);
         if (sectionType === 'available') {
           setPrograms(response.data.data.availablePrograms || []);
         } else {
@@ -111,16 +138,16 @@ export default function ProgramSection({
         }
       } else if (userRole === 'OPS' && studentId) {
         response = await axios.get(
-          `${API_URL}/programs/ops/student/${studentId}/programs?section=${sectionType === 'applied' ? 'applied' : 'all'}`,
+          `${API_URL}/programs/ops/student/${studentId}/programs?section=${sectionType === 'applied' ? 'applied' : 'all'}${regParam}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setPrograms(response.data.data.programs || []);
       } else if (userRole === 'SUPER_ADMIN' && studentId) {
-        response = await programAPI.getSuperAdminStudentPrograms(studentId, sectionType === 'applied' ? 'applied' : 'all');
+        response = await programAPI.getSuperAdminStudentPrograms(studentId, sectionType === 'applied' ? 'applied' : 'all', registrationId);
         setPrograms(response.data.data.programs || []);
       } else if ((userRole === 'ADMIN' || userRole === 'COUNSELOR') && studentId) {
         response = await axios.get(
-          `${API_URL}/programs/ops/student/${studentId}/programs?section=${sectionType === 'applied' ? 'applied' : 'all'}`,
+          `${API_URL}/programs/ops/student/${studentId}/programs?section=${sectionType === 'applied' ? 'applied' : 'all'}${regParam}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setPrograms(response.data.data.programs || []);
@@ -156,6 +183,7 @@ export default function ProgramSection({
       };
 
       if (studentId) programData.studentId = studentId;
+      if (registrationId) programData.registrationId = registrationId;
       if (formData.campus) programData.campus = formData.campus;
       if (formData.duration) programData.duration = parseInt(formData.duration);
       if (formData.ieltsScore) programData.ieltsScore = parseFloat(formData.ieltsScore);
@@ -212,6 +240,7 @@ export default function ProgramSection({
       const formData = new FormData();
       formData.append('file', file);
       if (studentId) formData.append('studentId', studentId);
+      if (registrationId) formData.append('registrationId', registrationId);
 
       let endpoint = '';
       if (userRole === 'OPS') {
@@ -261,6 +290,7 @@ export default function ProgramSection({
         priority: formData.priority,
         intake: formData.intake,
         year: formData.year,
+        registrationId: registrationId,
       });
       toast.success('Program added to applied list');
       setExpandedPrograms(prev => {
@@ -341,6 +371,24 @@ export default function ProgramSection({
       toast.error(error.response?.data?.message || 'Failed to update program');
     } finally {
       setSaving(null);
+    }
+  };
+
+  const handleStatusChange = async (programId: string, newStatus: string) => {
+    setUpdatingStatus(programId);
+    try {
+      if (userRole === 'SUPER_ADMIN') {
+        await programAPI.updateProgramStatusSuperAdmin(programId, newStatus);
+      } else if (userRole === 'OPS') {
+        await programAPI.updateProgramStatusOps(programId, newStatus);
+      }
+      toast.success('Status updated successfully');
+      // Update local state immediately
+      setPrograms(prev => prev.map(p => p._id === programId ? { ...p, status: newStatus } : p));
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update status');
+    } finally {
+      setUpdatingStatus(null);
     }
   };
 
@@ -629,67 +677,110 @@ export default function ProgramSection({
                       <ProgramCard program={program} showPriority={true} showActions={false} index={index} />
                     </div>
                   ) : (
-                    <div className="relative">
-                      {/* Program Number Badge */}
+                    <div>
                       <ProgramCard
                         program={program}
-                        showPriority={true}
+                        showPriority={false}
                         showActions={false}
                         index={index}
+                        topRow={
+                          <div className="flex items-start justify-between gap-2">
+                            <div className={`flex items-center gap-2 flex-wrap ${selectedChatProgram ? 'max-w-[55%]' : ''}`}>
+                              {/* Status Dropdown for OPS / Super Admin */}
+                              {canChangeStatus && (
+                                <select
+                                  value={program.status || ''}
+                                  onChange={(e) => handleStatusChange(program._id, e.target.value)}
+                                  disabled={updatingStatus === program._id}
+                                  className={`px-3 py-1 text-xs font-semibold rounded-full border cursor-pointer focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                                    program.status
+                                      ? `${STATUS_COLORS[program.status]?.bg || 'bg-gray-50'} ${STATUS_COLORS[program.status]?.text || 'text-gray-700'} ${STATUS_COLORS[program.status]?.border || 'border-gray-200'}`
+                                      : 'bg-gray-50 text-gray-500 border-gray-200'
+                                  } ${updatingStatus === program._id ? 'opacity-50' : ''}`}
+                                >
+                                  <option value="">— Status —</option>
+                                  {PROGRAM_STATUSES.map((s) => (
+                                    <option key={s} value={s}>{s}</option>
+                                  ))}
+                                </select>
+                              )}
+                              {/* Read-only status badge for non-OPS/SuperAdmin */}
+                              {!canChangeStatus && program.status && (
+                                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${STATUS_COLORS[program.status]?.bg || 'bg-gray-50'} ${STATUS_COLORS[program.status]?.text || 'text-gray-700'}`}>
+                                  {program.status}
+                                </span>
+                              )}
+                              {program.priority && (
+                                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                                  Priority: {program.priority}
+                                </span>
+                              )}
+                              {program.intake && (
+                                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
+                                  Intake: {program.intake}
+                                </span>
+                              )}
+                              {program.year && (
+                                <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-semibold">
+                                  Year: {program.year}
+                                </span>
+                              )}
+                            </div>
+                            {/* Chat buttons on the right */}
+                            <div className="flex gap-2 shrink-0">
+                              {userRole === 'STUDENT' ? (
+                                <button
+                                  onClick={() => {
+                                    setSelectedChatProgram(program);
+                                    setSelectedChatType('open');
+                                  }}
+                                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-medium shadow flex items-center space-x-1"
+                                >
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                  </svg>
+                                  <span>Chat</span>
+                                </button>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedChatProgram(program);
+                                      setSelectedChatType('open');
+                                    }}
+                                    className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-medium shadow flex items-center space-x-1"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg>
+                                    <span>Open</span>
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedChatProgram(program);
+                                      setSelectedChatType('private');
+                                    }}
+                                    className="px-2 py-1 bg-teal-600 text-white rounded hover:bg-teal-700 transition-colors text-xs font-medium shadow flex items-center space-x-1"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                    <span>Private</span>
+                                  </button>
+                                </>
+                              )}
+                              {canEditApplied && !isReadOnly && (
+                                <button
+                                  onClick={() => handleEdit(program._id, program)}
+                                  className="px-2 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-md hover:shadow-lg"
+                                >
+                                  Edit
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        }
                       />
-                      <div className="absolute top-4 right-4 flex gap-2">
-                        {userRole === 'STUDENT' ? (
-                          // Student sees only one Chat button (open chat)
-                          <button
-                            onClick={() => {
-                              setSelectedChatProgram(program);
-                              setSelectedChatType('open');
-                            }}
-                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-medium shadow flex items-center space-x-1"
-                          >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                            <span>Chat</span>
-                          </button>
-                        ) : (
-                          // Non-students see Open Chat and Private Chat buttons
-                          <>
-                            <button
-                              onClick={() => {
-                                setSelectedChatProgram(program);
-                                setSelectedChatType('open');
-                              }}
-                              className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-medium shadow flex items-center space-x-1"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                              </svg>
-                              <span>Open</span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedChatProgram(program);
-                                setSelectedChatType('private');
-                              }}
-                              className="px-2 py-1 bg-teal-600 text-white rounded hover:bg-teal-700 transition-colors text-xs font-medium shadow flex items-center space-x-1"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                              </svg>
-                              <span>Private</span>
-                            </button>
-                          </>
-                        )}
-                        {canEditApplied && !isReadOnly && (
-                          <button
-                            onClick={() => handleEdit(program._id, program)}
-                            className="px-2 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-md hover:shadow-lg"
-                          >
-                            Edit
-                          </button>
-                        )}
-                      </div>
                     </div>
                   )}
                 </div>

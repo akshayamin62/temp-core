@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import Program from '../models/Program';
+import Program, { PROGRAM_STATUS } from '../models/Program';
 import Ops from '../models/Ops';
 import Student from '../models/Student';
 import { USER_ROLE } from '../types/roles';
@@ -32,13 +32,22 @@ export const getStudentPrograms = async (req: AuthRequest, res: Response): Promi
 
     // Get all programs made for this student by any OPS
     // Show all programs where studentId matches, regardless of which OPS created them
-    const allPrograms = await Program.find({
+    const { registrationId } = req.query;
+    
+    const baseQuery: any = {
       $or: [
         { studentId: student._id }, // Programs specifically for this student
         { studentId: null }, // General programs (not linked to any student)
         { studentId: { $exists: false } }, // Programs without studentId field
       ],
-    })
+    };
+    
+    // If registrationId is provided, also filter by it
+    if (registrationId) {
+      baseQuery.registrationId = registrationId;
+    }
+    
+    const allPrograms = await Program.find(baseQuery)
       .populate({
         path: 'createdBy',
         select: 'firstName middleName lastName email role'
@@ -114,14 +123,17 @@ export const getOpsStudentPrograms = async (req: AuthRequest, res: Response): Pr
     // Get all programs for this student from ANY OPS (not just this OPS)
     // If section is "Applied Program", only return programs selected by the student
     // If section is "all" or not specified, only show programs NOT selected by student (for "Apply to Program")
-    const { section } = req.query;
+    const { section, registrationId } = req.query;
     
     // If requesting applied programs, only show selected ones
     if (section === 'applied') {
-      const query = {
+      const query: any = {
         studentId: studentId,
         isSelectedByStudent: true,
       };
+      if (registrationId) {
+        query.registrationId = registrationId;
+      }
       const programs = await Program.find(query)
         .populate({
           path: 'createdBy',
@@ -137,10 +149,13 @@ export const getOpsStudentPrograms = async (req: AuthRequest, res: Response): Pr
     } else {
       // For "Apply to Program", show only programs that are NOT selected
       // $ne: true will match false, null, and undefined (since default is false)
-      const query = {
+      const query: any = {
         studentId: studentId,
         isSelectedByStudent: { $ne: true },
       };
+      if (registrationId) {
+        query.registrationId = registrationId;
+      }
       const programs = await Program.find(query)
         .populate({
           path: 'createdBy',
@@ -223,6 +238,7 @@ export const createProgram = async (req: AuthRequest, res: Response): Promise<Re
 
     const {
       studentId, // Optional for OPS/admin: if provided, link program to specific student
+      registrationId, // Optional: link program to a specific service registration
       university,
       universityRanking,
       programName,
@@ -306,6 +322,7 @@ export const createProgram = async (req: AuthRequest, res: Response): Promise<Re
       createdBy: userId,
       opsId: opsObjectId,
       studentId: studentObjectId, // Link to specific student if provided
+      registrationId: registrationId || undefined,
       university,
       universityRanking: universityRanking || {},
       programName,
@@ -358,7 +375,7 @@ export const selectProgram = async (req: AuthRequest, res: Response): Promise<Re
       });
     }
 
-    const { programId, priority, intake, year } = req.body;
+    const { programId, priority, intake, year, registrationId } = req.body;
 
     if (!programId || priority === undefined || !intake || !year) {
       return res.status(400).json({
@@ -389,6 +406,10 @@ export const selectProgram = async (req: AuthRequest, res: Response): Promise<Re
     program.year = year;
     program.selectedAt = new Date();
     program.isSelectedByStudent = true;
+    program.status = PROGRAM_STATUS.SHORTLISTED;
+    if (registrationId) {
+      program.registrationId = registrationId;
+    }
     await program.save();
 
     return res.status(200).json({
@@ -515,6 +536,65 @@ export const updateProgramSelection = async (req: AuthRequest, res: Response): P
 };
 
 /**
+ * Update program application status (OPS and Super Admin only)
+ */
+export const updateProgramStatus = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const userId = req.user?.userId;
+    const user = await User.findById(userId);
+    
+    if (!user || (user.role !== USER_ROLE.OPS && user.role !== USER_ROLE.SUPER_ADMIN)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Only OPS and Super Admin can update program status.',
+      });
+    }
+
+    const { programId } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        message: 'Status is required',
+      });
+    }
+
+    const validStatuses = Object.values(PROGRAM_STATUS);
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+      });
+    }
+
+    const program = await Program.findById(programId);
+    if (!program) {
+      return res.status(404).json({
+        success: false,
+        message: 'Program not found',
+      });
+    }
+
+    program.status = status;
+    await program.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Program status updated successfully',
+      data: { program },
+    });
+  } catch (error: any) {
+    console.error('Update program status error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update program status',
+      error: error.message,
+    });
+  }
+};
+
+/**
  * Get programs for a specific student (super admin view) - only filter by studentId, not opsId
  */
 export const getSuperAdminStudentPrograms = async (req: AuthRequest, res: Response): Promise<Response> => {
@@ -541,14 +621,17 @@ export const getSuperAdminStudentPrograms = async (req: AuthRequest, res: Respon
     // Get all programs for this student (only filter by studentId, not opsId)
     // If section is "Applied Program", only return programs selected by the student
     // If section is "all" or not specified, only show programs NOT selected by student (for "Apply to Program")
-    const { section } = req.query;
+    const { section, registrationId } = req.query;
     
     // If requesting applied programs, only show selected ones
     if (section === 'applied') {
-      const query = {
+      const query: any = {
         studentId: studentId,
         isSelectedByStudent: true,
       };
+      if (registrationId) {
+        query.registrationId = registrationId;
+      }
       const programs = await Program.find(query)
         .populate({
           path: 'createdBy',
@@ -564,10 +647,13 @@ export const getSuperAdminStudentPrograms = async (req: AuthRequest, res: Respon
     } else {
       // For "Apply to Program", show only programs that are NOT selected
       // $ne: true will match false, null, and undefined (since default is false)
-      const query = {
+      const query: any = {
         studentId: studentId,
         isSelectedByStudent: { $ne: true },
       };
+      if (registrationId) {
+        query.registrationId = registrationId;
+      }
       const programs = await Program.find(query)
         .populate({
           path: 'createdBy',
@@ -739,6 +825,7 @@ export const uploadProgramsFromExcel = async (req: AuthRequest & { file?: Expres
         const programData: any = {
           createdBy: userId, // Track who created the program
           studentId: studentObjectId, // Link to specific student if provided
+          registrationId: req.body.registrationId || undefined,
           university: getValue(['University', 'university', 'UNIVERSITY']),
           programName: getValue(['Program Name', 'programName', 'Program', 'program']),
           programUrl: getValue(['Program Link', 'programLink', 'Website URL', 'programUrl', 'Website', 'website', 'URL', 'url']),

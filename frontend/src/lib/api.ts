@@ -230,8 +230,12 @@ export const studentAPI = {
 
 // Program API
 export const programAPI = {
-  getStudentPrograms: () => api.get('/programs/student/programs'),
-  selectProgram: (data: { programId: string; priority: number; intake: string; year: string }) =>
+  getStudentPrograms: (registrationId?: string) => {
+    const params: any = {};
+    if (registrationId) params.registrationId = registrationId;
+    return api.get('/programs/student/programs', { params });
+  },
+  selectProgram: (data: { programId: string; priority: number; intake: string; year: string; registrationId?: string }) =>
     api.post('/programs/student/programs/select', data),
   removeProgram: (programId: string) => api.delete(`/programs/student/programs/${programId}`),
   createStudentProgram: (data: any) => api.post('/programs/student/programs/create', data),
@@ -249,7 +253,11 @@ export const programAPI = {
       },
     });
   },
-  getOpsStudentPrograms: (studentId: string) => api.get(`/programs/ops/student/${studentId}/programs`),
+  getOpsStudentPrograms: (studentId: string, registrationId?: string) => {
+    const params: any = {};
+    if (registrationId) params.registrationId = registrationId;
+    return api.get(`/programs/ops/student/${studentId}/programs`, { params });
+  },
   createOpsStudentProgram: (studentId: string, data: any) => api.post(`/programs/ops/student/${studentId}/programs`, data),
   uploadOpsStudentProgramsExcel: (studentId: string, file: File) => {
     const formData = new FormData();
@@ -262,13 +270,19 @@ export const programAPI = {
     });
   },
   // Super Admin functions
-  getSuperAdminStudentPrograms: (studentId: string, section?: string) => {
-    const params = section ? { section } : {};
+  getSuperAdminStudentPrograms: (studentId: string, section?: string, registrationId?: string) => {
+    const params: any = {};
+    if (section) params.section = section;
+    if (registrationId) params.registrationId = registrationId;
     return api.get(`/programs/super-admin/student/${studentId}/programs`, { params });
   },
   getStudentAppliedPrograms: (studentId: string) => api.get(`/programs/super-admin/student/${studentId}/applied-programs`),
   updateProgramSelection: (programId: string, data: { priority: number; intake: string; year: string }) => 
     api.put(`/programs/super-admin/programs/${programId}/selection`, data),
+  updateProgramStatusSuperAdmin: (programId: string, status: string) =>
+    api.put(`/programs/super-admin/programs/${programId}/status`, { status }),
+  updateProgramStatusOps: (programId: string, status: string) =>
+    api.put(`/programs/ops/programs/${programId}/status`, { status }),
   createSuperAdminProgram: (studentId: string, data: any) => api.post('/programs/super-admin/programs/create', { ...data, studentId }),
   uploadSuperAdminProgramsExcel: (file: File, studentId: string) => {
     const formData = new FormData();

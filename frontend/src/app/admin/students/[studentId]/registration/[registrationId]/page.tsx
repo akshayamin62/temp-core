@@ -226,6 +226,7 @@ export default function AdminStudentFormViewPage() {
                   <ProgramSection
                     studentId={studentId}
                     sectionType={currentSection.title === 'Apply to Program' ? 'available' : 'applied'}
+                    registrationId={registrationId}
                     userRole="ADMIN"
                     isReadOnly={true}
                   />

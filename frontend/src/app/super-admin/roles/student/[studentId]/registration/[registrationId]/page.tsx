@@ -359,6 +359,7 @@ export default function StudentFormEditPage() {
                   <ProgramSection
                     studentId={studentId}
                     sectionType={currentSection.title === 'Apply to Program' ? 'available' : 'applied'}
+                    registrationId={registrationId}
                     userRole="SUPER_ADMIN"
                   />
                 </div>
