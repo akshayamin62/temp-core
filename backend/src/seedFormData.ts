@@ -199,6 +199,13 @@ const seedFormData = async () => {
         order: 5,
         isActive: true,
       },
+      {
+        partId: profilePart._id,
+        title: "Visa",
+        description: "Visa referral information",
+        order: 6,
+        isActive: true,
+      },
     ]);
 
     const personalDetailsSection = profileSections[0];
@@ -206,6 +213,7 @@ const seedFormData = async () => {
     const workExperienceSection = profileSections[2];
     const testsSection = profileSections[3];
     const financeSection = profileSections[4];
+    const visaSection = profileSections[5];
 
     // ========== STEP 5: Create Personal Details SubSections ==========
     console.log("📄 Creating Personal Details subsections...");
@@ -1596,6 +1604,65 @@ const seedFormData = async () => {
       },
     ]);
 
+    // ========== STEP 13.6: Create Visa SubSection (Visa Referred Details - Non-Repeatable) ==========
+    console.log("🛂 Creating Visa subsection...");
+    const visaReferredSubSection = await FormSubSection.create({
+      sectionId: visaSection._id,
+      title: "Visa Referred Details",
+      description: "Visa referral contact information",
+      order: 1,
+      isRepeatable: false,
+      isActive: true,
+    });
+
+    console.log("📝 Creating Visa Referred Details fields...");
+    await FormField.insertMany([
+      {
+        subSectionId: visaReferredSubSection._id,
+        label: "Name",
+        key: "visaReferredName",
+        type: FieldType.TEXT,
+        placeholder: "Enter name",
+        required: true,
+        order: 1,
+        isActive: true,
+        validation: { minLength: 2, maxLength: 100 },
+      },
+      {
+        subSectionId: visaReferredSubSection._id,
+        label: "Email",
+        key: "visaReferredEmail",
+        type: FieldType.EMAIL,
+        placeholder: "example@email.com",
+        required: true,
+        order: 2,
+        isActive: true,
+        validation: { pattern: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$" },
+      },
+      {
+        subSectionId: visaReferredSubSection._id,
+        label: "Mobile Number",
+        key: "visaReferredMobile",
+        type: FieldType.PHONE,
+        placeholder: "+1 (555) 000-0000",
+        required: true,
+        order: 3,
+        isActive: true,
+        validation: { pattern: "^\\+?[1-9]\\d{1,14}$" },
+      },
+      {
+        subSectionId: visaReferredSubSection._id,
+        label: "Location",
+        key: "visaReferredLocation",
+        type: FieldType.TEXT,
+        placeholder: "Enter location",
+        required: true,
+        order: 4,
+        isActive: true,
+        validation: { minLength: 2, maxLength: 100 },
+      },
+    ]);
+
     // ========== STEP 14: Create APPLICATION Sections (Split into two) ==========
     console.log("📝 Creating APPLICATION sections...");
     
@@ -1694,6 +1761,8 @@ const seedFormData = async () => {
     console.log("     • Academic Qualification (repeatable)");
     console.log("     • Work Experience (repeatable)");
     console.log("     • Tests (6 test types)");
+    console.log("     • Finance (Sponsorers - repeatable)");
+    console.log("     • Visa (Visa Referred Details)");
     console.log("     • Application (program selection)");
     console.log("     • Documents (2 sections)");
     console.log("     • Payment (placeholder)");
