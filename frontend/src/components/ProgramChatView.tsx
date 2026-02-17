@@ -287,7 +287,7 @@ export default function ProgramChatView({ program, onClose, userRole, isReadOnly
     <div className="w-full h-[600px] bg-white rounded-lg shadow-lg overflow-hidden flex flex-col relative">
       {/* Save to Extra Modal */}
       {saveModalOpen && (
-        <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Save to Extra Documents</h3>
             <div className="space-y-4">
@@ -334,7 +334,7 @@ export default function ProgramChatView({ program, onClose, userRole, isReadOnly
 
       {/* Document Preview Modal */}
       {previewModalOpen && previewDoc && (
-        <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPreviewModalOpen(false)}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPreviewModalOpen(false)}>
           <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
