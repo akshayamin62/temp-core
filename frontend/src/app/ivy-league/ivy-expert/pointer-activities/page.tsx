@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import ActivitySelector from '@/components/ActivitySelector';
 import { BACKEND_URL } from '@/lib/ivyApi';
 import { fetchBlobUrl, useBlobUrl, fileApi } from '@/lib/useBlobUrl';
+import IvyLeagueApplicantInfoPanel from '@/components/IvyLeagueApplicantInfoPanel';
 
 function BlobDocPanel({ url, type }: { url: string; type: 'pdf' | 'image' }) {
   const { blobUrl, loading, error } = useBlobUrl(url);
@@ -351,6 +352,11 @@ function IvyExpertPointerActivitiesContent() {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-md p-8 space-y-8">
         <h1 className="text-2xl font-bold text-gray-900">Pointers 2 / 3 / 4 - Activity Execution</h1>
+
+        {/* Ivy League Applicant Info Panel - Show based on selected pointer */}
+        {selectedPointer && [2, 3, 4].includes(Number(selectedPointer)) && (
+          <IvyLeagueApplicantInfoPanel pointerNo={Number(selectedPointer)} />
+        )}
 
         {/* Inputs */}
         <div className="grid gap-4 md:grid-cols-2">

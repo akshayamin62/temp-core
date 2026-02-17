@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useSearchParams } from 'next/navigation';
 import { IVY_API_URL } from '@/lib/ivyApi';
 import { fetchBlobUrl } from '@/lib/useBlobUrl';
+import IvyLeagueApplicantInfoPanel from '@/components/IvyLeagueApplicantInfoPanel';
 
 interface Course {
   _id: string;
@@ -334,7 +335,6 @@ function Pointer6Content() {
               <h1 className="text-5xl font-black text-gray-900 tracking-tighter mb-4">
                 POINTER 6: ENGAGEMENT WITH LEARNING & INTELLECTUAL CURIOSITY
               </h1>
-              <p className="text-gray-600">Manage and recommend courses for the student</p>
             </div>
             {pointer6Score != null && (
               <div className="bg-brand-100 rounded-lg p-4 text-center min-w-[120px]">
@@ -344,6 +344,9 @@ function Pointer6Content() {
               </div>
             )}
           </div>
+
+          {/* Ivy League Applicant Info */}
+          <IvyLeagueApplicantInfoPanel pointerNo={6} />
 
           {/* Upload Section */}
           <div className={`mb-8 border border-gray-200 rounded-lg p-6 ${coursesUploaded ? 'bg-gray-100' : 'bg-gray-50'}`}>

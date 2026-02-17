@@ -7,6 +7,7 @@ import mammoth from 'mammoth';
 import { useStudentService } from '../useStudentService';
 import { IVY_API_URL } from '@/lib/ivyApi';
 import { useBlobUrl, fetchBlobUrl, fileApi } from '@/lib/useBlobUrl';
+import IvyLeagueApplicantInfoPanel from '@/components/IvyLeagueApplicantInfoPanel';
 
 function InlineDocViewer({ url, onClose }: { url: string, onClose: () => void }) {
   const { blobUrl, loading, error } = useBlobUrl(url);
@@ -1000,7 +1001,6 @@ function ActivitiesContent() {
         <div className="mb-10 pb-6 border-b border-gray-100 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-5xl font-black text-gray-900 tracking-tight uppercase">{getPointerLabel(activePointer)}</h1>
-            <p className="text-gray-500 font-medium mt-1">Proof submission and tracking.</p>
           </div>
           <div className="flex items-center gap-4">
             {/* <div className={`px-6 py-3 rounded-2xl border-2 flex items-center gap-3 ${activePointer === 2 ? 'border-brand-100 bg-brand-50 text-brand-700' : activePointer === 3 ? 'border-brand-100 bg-brand-50 text-brand-700' : 'border-brand-100 bg-brand-50 text-brand-700'}`}>
@@ -1018,6 +1018,9 @@ function ActivitiesContent() {
             )}
           </div>
         </div>
+
+        {/* Ivy League Applicant Info Panel */}
+        <IvyLeagueApplicantInfoPanel pointerNo={activePointer} />
 
         {/* Messages */}
         {message && (

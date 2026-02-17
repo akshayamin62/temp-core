@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import axios from 'axios';
 import { useStudentService } from '../useStudentService';
 import { IVY_API_URL } from '@/lib/ivyApi';
+import IvyLeagueApplicantInfoPanel from '@/components/IvyLeagueApplicantInfoPanel';
 
 interface Subject {
     _id?: string;
@@ -421,9 +422,6 @@ function Pointer1Content() {
                     <h1 className="text-5xl font-black text-gray-900 mb-4 tracking-tight">
                         POINTER 1: ACADEMIC EXCELLENCE
                     </h1>
-                    <p className="text-xl text-gray-500 max-w-2xl leading-relaxed">
-                        Manage your academic performance records and evaluations.
-                    </p>
                 </div>
 
                 {/* Academic Excellence Score Card */}
@@ -439,6 +437,9 @@ function Pointer1Content() {
                     </div>
                 )}
             </div>
+
+            {/* Ivy League Applicant Info Panel */}
+            <IvyLeagueApplicantInfoPanel pointerNo={1} />
 
             {/* Tabs */}
             <div className="flex gap-2 mb-8 border-b border-gray-200">
