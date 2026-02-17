@@ -118,6 +118,12 @@ export default function ProgramSection({
       } else if (userRole === 'SUPER_ADMIN' && studentId) {
         response = await programAPI.getSuperAdminStudentPrograms(studentId, sectionType === 'applied' ? 'applied' : 'all');
         setPrograms(response.data.data.programs || []);
+      } else if ((userRole === 'ADMIN' || userRole === 'COUNSELOR') && studentId) {
+        response = await axios.get(
+          `${API_URL}/programs/ops/student/${studentId}/programs?section=${sectionType === 'applied' ? 'applied' : 'all'}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setPrograms(response.data.data.programs || []);
       }
     } catch (error: any) {
       console.error('Failed to fetch programs:', error);

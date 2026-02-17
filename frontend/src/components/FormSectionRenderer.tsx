@@ -15,7 +15,7 @@ interface FormSectionRendererProps {
   isAdminEdit?: boolean;
   registrationId?: string;
   studentId?: string;
-  userRole?: 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN';
+  userRole?: 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN' | 'COUNSELOR';
   readOnly?: boolean;
 }
 

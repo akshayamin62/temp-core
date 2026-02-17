@@ -244,7 +244,7 @@ export default function CounselorStudentRegistrationPage() {
                   isAdminEdit={false}
                   registrationId={registrationId}
                   studentId={studentId}
-                  userRole="ADMIN"
+                  userRole="COUNSELOR"
                   readOnly={true}
                 />
               )}
