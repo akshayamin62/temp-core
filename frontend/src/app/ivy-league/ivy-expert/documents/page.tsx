@@ -256,7 +256,7 @@ function IvyExpertDocumentsContent() {
                                         </p>
                                     )}
                                     <p className="text-xs text-green-700">
-                                        Evaluated: {new Date(d.evaluation.evaluatedAt).toLocaleString()}
+                                        Evaluated: {new Date(d.evaluation.evaluatedAt).toLocaleString('en-GB')}
                                     </p>
                                 </div>
                             </div>

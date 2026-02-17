@@ -173,7 +173,7 @@ function ParentIvyScoreDashboard() {
                             {getScoreGrade(scoreData.overallScore, totalMaxScore)}
                         </p>
                         <p className="text-sm text-brand-200 mt-2">
-                            Last updated: {new Date(scoreData.generatedAt).toLocaleDateString()}
+                            Last updated: {new Date(scoreData.generatedAt).toLocaleDateString('en-GB')}
                         </p>
                     </div>
                 </div>

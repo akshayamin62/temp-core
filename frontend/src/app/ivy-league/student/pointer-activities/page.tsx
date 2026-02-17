@@ -298,7 +298,7 @@ function StudentPointerActivitiesContent() {
                     ))}
                   </ul>
                   <p className="text-xs text-brand-700">
-                    Submitted at: {new Date(act.submission.submittedAt).toLocaleString()}
+                    Submitted at: {new Date(act.submission.submittedAt).toLocaleString('en-GB')}
                   </p>
                 </div>
               )}
@@ -333,7 +333,7 @@ function StudentPointerActivitiesContent() {
                     <p className="text-sm text-green-800 whitespace-pre-wrap">{act.evaluation.feedback}</p>
                   )}
                   <p className="text-xs text-green-700">
-                    Updated: {new Date(act.evaluation.evaluatedAt).toLocaleString()}
+                    Updated: {new Date(act.evaluation.evaluatedAt).toLocaleString('en-GB')}
                   </p>
                 </div>
               )}

@@ -222,8 +222,8 @@ function IvyExpertIvyScoreDashboard() {
                             {getScoreGrade(scoreData.overallScore, totalMaxScore)}
                         </p>
                         <p className="text-sm text-brand-200 mt-2">
-                            Last updated: {new Date(scoreData.generatedAt).toLocaleDateString()} at{' '}
-                            {new Date(scoreData.generatedAt).toLocaleTimeString()}
+                            Last updated: {new Date(scoreData.generatedAt).toLocaleDateString('en-GB')} at{' '}
+                            {new Date(scoreData.generatedAt).toLocaleTimeString('en-GB')}
                         </p>
                     </div>
                 </div>

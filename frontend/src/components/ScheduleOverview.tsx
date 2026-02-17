@@ -116,7 +116,7 @@ function FollowUpItem({ followUp, onClick, showDate = false, isMissed = false, l
             </span>
             {showDate && (
               <span className="text-xs text-gray-500">
-                {format(new Date(followUp.scheduledDate), 'MMM d')}
+                {format(new Date(followUp.scheduledDate), 'd MMM')}
               </span>
             )}
             <span className={`px-1.5 py-0.5 text-xs rounded ${getStageBadgeColor(stage)}`}>
@@ -187,7 +187,7 @@ function TeamMeetItem({ teamMeet, onClick, showDate = false, currentUserId, isAc
             </span>
             {showDate && (
               <span className="text-xs text-gray-500">
-                {format(new Date(teamMeet.scheduledDate), 'MMM d')}
+                {format(new Date(teamMeet.scheduledDate), 'd MMM')}
               </span>
             )}
             <span className={`px-1.5 py-0.5 text-xs rounded ${getTeamMeetStatusBadgeColor(teamMeet.status)}`}>

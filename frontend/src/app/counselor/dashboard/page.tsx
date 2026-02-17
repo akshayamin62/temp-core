@@ -652,7 +652,7 @@ export default function CounselorDashboardPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-500">
-                              {new Date(lead.createdAt).toLocaleDateString()}
+                              {new Date(lead.createdAt).toLocaleDateString('en-GB')}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

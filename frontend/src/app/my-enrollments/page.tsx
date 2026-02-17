@@ -117,13 +117,13 @@ export default function MyEnrollmentsPage() {
                       <div className="flex items-center text-sm text-gray-600">
                         <span className="font-medium mr-2">Enrolled:</span>
                         {enrollment.createdAt
-                          ? new Date(enrollment.createdAt).toLocaleDateString()
+                          ? new Date(enrollment.createdAt).toLocaleDateString('en-GB')
                           : 'N/A'}
                       </div>
                       {enrollment.submittedAt && (
                         <div className="flex items-center text-sm text-gray-600">
                           <span className="font-medium mr-2">Submitted:</span>
-                          {new Date(enrollment.submittedAt).toLocaleDateString()}
+                          {new Date(enrollment.submittedAt).toLocaleDateString('en-GB')}
                         </div>
                       )}
                     </div>

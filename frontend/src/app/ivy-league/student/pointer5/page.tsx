@@ -428,7 +428,7 @@ function StudentPointer5Content() {
                                                             <div className="flex-1">
                                                                 <p className="text-gray-900">{taskStatus.evaluation.feedback}</p>
                                                                 <p className="text-sm text-gray-500 mt-2">
-                                                                    Evaluated: {new Date(taskStatus.evaluation.evaluatedAt).toLocaleString()}
+                                                                    Evaluated: {new Date(taskStatus.evaluation.evaluatedAt).toLocaleString('en-GB')}
                                                                 </p>
                                                             </div>
                                                         )}

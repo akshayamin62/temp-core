@@ -192,7 +192,7 @@ export default function AdminEnrollmentsPage() {
                         </td>
                         <td className="px-6 py-4 text-gray-600 text-sm">
                           {enrollment.createdAt
-                            ? new Date(enrollment.createdAt).toLocaleDateString()
+                            ? new Date(enrollment.createdAt).toLocaleDateString('en-GB')
                             : 'N/A'}
                         </td>
                         <td className="px-6 py-4">

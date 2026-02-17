@@ -666,7 +666,7 @@ function IvyExpertPointerActivitiesContent() {
                       ))}
                     </ul>
                     <p className="text-xs text-brand-700">
-                      Submitted at: {new Date(act.submission.submittedAt).toLocaleString()}
+                      Submitted at: {new Date(act.submission.submittedAt).toLocaleString('en-GB')}
                     </p>
                   </div>
                 )}
@@ -693,7 +693,7 @@ function IvyExpertPointerActivitiesContent() {
                         </p>
                       )}
                       <p className="text-xs text-green-700">
-                        Last updated: {new Date(act.evaluation.evaluatedAt).toLocaleString()}
+                        Last updated: {new Date(act.evaluation.evaluatedAt).toLocaleString('en-GB')}
                       </p>
                     </div>
                   </div>

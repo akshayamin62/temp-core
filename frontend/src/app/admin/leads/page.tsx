@@ -563,7 +563,7 @@ export default function AdminLeadsPage() {
                         </td>
                         <td className="px-4 py-4">
                           <span className="text-sm text-gray-500">
-                            {new Date(lead.createdAt).toLocaleDateString()}
+                            {new Date(lead.createdAt).toLocaleDateString('en-GB')}
                           </span>
                         </td>
                         <td className="px-4 py-4 text-center">

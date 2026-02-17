@@ -357,10 +357,10 @@ export default function AdminLeadDetailPage() {
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1">Submitted On</label>
                   <p className="text-gray-900">
-                    {new Date(lead.createdAt).toLocaleDateString('en-US', {
+                    {new Date(lead.createdAt).toLocaleString('en-GB', {
+                      day: '2-digit',
+                      month: '2-digit',
                       year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit',
                     })}
@@ -499,7 +499,7 @@ export default function AdminLeadDetailPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-medium text-gray-900">
-                            {format(new Date(followUp.scheduledDate), 'MMM d, yyyy')} at {followUp.scheduledTime}
+                            {format(new Date(followUp.scheduledDate), 'dd/MM/yyyy')} at {followUp.scheduledTime}
                           </span>
                           <span className={`px-2 py-0.5 text-xs rounded-full ${getFollowUpStatusColor(followUp.status)}`}>
                             {followUp.status}

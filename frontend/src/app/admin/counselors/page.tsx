@@ -401,7 +401,7 @@ export default function CounselorsListPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-gray-600 text-sm">
-                        {new Date(counselor.createdAt).toLocaleDateString()}
+                        {new Date(counselor.createdAt).toLocaleDateString('en-GB')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">

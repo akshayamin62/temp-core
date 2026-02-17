@@ -255,7 +255,7 @@ export default function LeadDetailPanel({
           <div className="bg-gray-50 rounded-lg p-3">
             <p className="text-xs font-medium text-gray-500 uppercase">Created</p>
             <p className="text-gray-900 font-medium mt-1 text-sm">
-              {format(new Date(lead.createdAt), 'MMM d, yyyy')}
+              {format(new Date(lead.createdAt), 'dd/MM/yyyy')}
             </p>
           </div>
         </div>
@@ -300,6 +300,7 @@ export default function LeadDetailPanel({
                   value={scheduleDate}
                   onChange={(e) => setScheduleDate(e.target.value)}
                   min={format(new Date(), 'yyyy-MM-dd')}
+                  lang="en-GB"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -414,7 +415,7 @@ export default function LeadDetailPanel({
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-gray-900">
-                        {format(new Date(followUp.scheduledDate), 'MMM d, yyyy')}
+                        {format(new Date(followUp.scheduledDate), 'dd/MM/yyyy')}
                       </span>
                       <span className="text-gray-500">at</span>
                       <span className="text-sm font-medium text-gray-900">
@@ -451,7 +452,7 @@ export default function LeadDetailPanel({
                       <span>Updated by: {getFullName(followUp.updatedBy)}</span>
                     )}
                     {followUp.completedAt && (
-                      <span>Completed: {format(new Date(followUp.completedAt), 'MMM d, yyyy HH:mm')}</span>
+                      <span>Completed: {format(new Date(followUp.completedAt), 'dd/MM/yyyy HH:mm')}</span>
                     )}
                   </div>
                 </div>

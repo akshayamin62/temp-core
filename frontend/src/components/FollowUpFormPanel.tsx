@@ -260,7 +260,7 @@ export default function FollowUpFormPanel({
                   <div>
                     <p className="text-xs text-gray-500">Date & Time</p>
                     <p className="text-sm font-medium text-gray-900">
-                      {format(new Date(followUpData.scheduledDate), 'MMM d, yyyy')} at {followUpData.scheduledTime}
+                      {format(new Date(followUpData.scheduledDate), 'dd/MM/yyyy')} at {followUpData.scheduledTime}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -468,6 +468,7 @@ export default function FollowUpFormPanel({
                           value={nextDate}
                           onChange={(e) => setNextDate(e.target.value)}
                           min={format(new Date(), 'yyyy-MM-dd')}
+                          lang="en-GB"
                           className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
@@ -552,7 +553,7 @@ export default function FollowUpFormPanel({
                     </div>
                     <div className="text-sm text-teal-900">
                       <p className="font-medium">
-                        {format(new Date(nextFollowUpInfo.scheduledDate), 'MMM d, yyyy')} at {nextFollowUpInfo.scheduledTime}
+                        {format(new Date(nextFollowUpInfo.scheduledDate), 'dd/MM/yyyy')} at {nextFollowUpInfo.scheduledTime}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         <p className="text-xs text-teal-700">Duration: {nextFollowUpInfo.duration} min</p>

@@ -116,12 +116,12 @@ export default function ProgramCard({
             )}
             {program.yearlyTuitionFees && (
               <div>
-                <span className="font-medium">Tuition:</span> £{program.yearlyTuitionFees.toLocaleString()}
+                <span className="font-medium">Tuition:</span> £{program.yearlyTuitionFees.toLocaleString('en-GB')}
               </div>
             )}
             {program.applicationFee && (
               <div>
-                <span className="font-medium">Application Fee:</span> £{program.applicationFee.toLocaleString()}
+                <span className="font-medium">Application Fee:</span> £{program.applicationFee.toLocaleString('en-GB')}
               </div>
             )}
             {program.programUrl && (

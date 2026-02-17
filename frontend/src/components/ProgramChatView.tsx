@@ -277,7 +277,7 @@ export default function ProgramChatView({ program, onClose, userRole, isReadOnly
     const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     if (isToday) return `Today, ${timeStr}`;
     if (isYesterday) return `Yesterday, ${timeStr}`;
-    const dateStr = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+    const dateStr = date.toLocaleDateString('en-GB');
     return `${dateStr}, ${timeStr}`;
   };
 
