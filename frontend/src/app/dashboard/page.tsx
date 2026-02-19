@@ -33,6 +33,8 @@ export default function DashboardPage() {
         router.push('/counselor/dashboard');
       } else if (user.role === 'IVY_EXPERT') {
         router.push('/ivy-league/ivy-expert');
+      } else if (user.role === 'SERVICE_PROVIDER') {
+        router.push('/service-provider/dashboard');
       } else {
         fetchMyServices();
       }

@@ -12,6 +12,7 @@ import StudentServiceRegistration from "../models/StudentServiceRegistration";
 import TeamMeet from "../models/TeamMeet";
 import LeadStudentConversion from "../models/LeadStudentConversion";
 import FollowUp, { FOLLOWUP_STATUS } from "../models/FollowUp";
+import ServiceProvider from "../models/ServiceProvider";
 import { generateSlug, getUniqueSlug } from "./leadController";
 // import { sendEmail } from "../utils/email";
 
@@ -71,6 +72,23 @@ export const getAllUsers = async (req: Request, res: Response): Promise<Response
             if (adminProfile) {
               userObj.companyName = adminProfile.companyName;
               userObj.companyLogo = adminProfile.companyLogo;
+            }
+          }
+          return userObj;
+        })
+      );
+    }
+
+    // If filtering by SERVICE_PROVIDER role, include companyLogo from ServiceProvider profile
+    if (role && String(role).toUpperCase() === 'SERVICE_PROVIDER') {
+      enrichedUsers = await Promise.all(
+        users.map(async (user: any) => {
+          const userObj = user.toObject();
+          if (userObj.role === USER_ROLE.SERVICE_PROVIDER) {
+            const spProfile = await ServiceProvider.findOne({ userId: user._id }).select('companyName companyLogo');
+            if (spProfile) {
+              userObj.companyName = spProfile.companyName;
+              userObj.companyLogo = spProfile.companyLogo;
             }
           }
           return userObj;
@@ -1728,5 +1746,49 @@ export const getOpsStudentsForSuperAdmin = async (req: Request, res: Response): 
     });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: 'Failed to fetch ops students', error: error.message });
+  }
+};
+
+/**
+ * Get Service Provider Detail (for View Details page)
+ */
+export const getServiceProviderDetail = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { providerId } = req.params;
+
+    // Find the service provider and populate user data
+    const serviceProvider = await ServiceProvider.findOne({ userId: providerId });
+    
+    if (!serviceProvider) {
+      return res.status(404).json({
+        success: false,
+        message: "Service provider not found",
+      });
+    }
+
+    // Get user data
+    const user = await User.findById(providerId).select("-password -emailVerificationToken -passwordResetToken -otp -otpExpires");
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        user,
+        serviceProvider,
+      },
+    });
+  } catch (error: any) {
+    console.error("Error fetching service provider detail:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch service provider details",
+      error: error.message,
+    });
   }
 };

@@ -20,6 +20,7 @@ import followUpRoutes from "./routes/followUpRoutes";
 import teamMeetRoutes from "./routes/teamMeetRoutes";
 import opsScheduleRoutes from "./routes/opsScheduleRoutes";
 import leadStudentConversionRoutes from "./routes/leadStudentConversionRoutes";
+import spDocumentRoutes from "./routes/spDocumentRoutes";
 
 // Ivy League route imports
 import ivyServiceRoutes from "./routes/ivyService.routes";
@@ -64,6 +65,7 @@ import "./models/FollowUp";
 import "./models/TeamMeet";
 import "./models/OpsSchedule";
 import "./models/LeadStudentConversion";
+import "./models/ServiceProviderDocument";
 
 // Import Ivy League models to register them with Mongoose
 import "./models/ivy/AcademicData";
@@ -122,6 +124,7 @@ app.use("/api/follow-ups", followUpRoutes); // Follow-up routes
 app.use("/api/team-meets", teamMeetRoutes); // TeamMeet routes
 app.use("/api/ops-schedules", opsScheduleRoutes); // OPS Schedule routes
 app.use("/api/lead-conversions", leadStudentConversionRoutes); // Lead to Student conversion routes
+app.use("/api/sp-documents", spDocumentRoutes); // Service Provider document routes
 app.use("/api", leadRoutes); // Lead routes (includes public, admin, counselor endpoints)
 
 // Ivy League routes (all protected by authenticate middleware)

@@ -33,7 +33,21 @@ export default function SignupPage() {
     middleName: '',
     lastName: '',
     email: '',
-    role: USER_ROLE.STUDENT,
+    mobileNumber: '',
+    role: USER_ROLE.ALUMNI,
+    // Service Provider specific fields
+    companyName: '',
+    businessType: '',
+    registrationNumber: '',
+    gstNumber: '',
+    address: '',
+    city: '',
+    state: '',
+    country: '',
+    pincode: '',
+    website: '',
+    servicesOffered: '',
+    coachingTests: [] as string[],
   });
   const [otp, setOtp] = useState('');
   const [captcha, setCaptcha] = useState('');
@@ -41,6 +55,22 @@ export default function SignupPage() {
   const [step, setStep] = useState<'signup' | 'verify-otp'>('signup');
   const [loading, setLoading] = useState(false);
   const [userEmail, setUserEmail] = useState('');
+  const [userMobileNumber, setUserMobileNumber] = useState('');
+  const [userRole, setUserRole] = useState('');
+  const [userServiceProviderData, setUserServiceProviderData] = useState<{
+    companyName: string;
+    businessType: string;
+    registrationNumber: string;
+    gstNumber: string;
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    pincode: string;
+    website: string;
+    servicesOffered: string;
+    coachingTests: string[];
+  } | null>(null);
 
   // Generate and store hashed captcha in localStorage on mount
   useEffect(() => {
@@ -95,6 +125,27 @@ export default function SignupPage() {
       const message = response.data.message || 'OTP sent to your email!';
       toast.success(message, { duration: 4000 });
       setUserEmail(formData.email);
+      setUserMobileNumber(formData.mobileNumber);
+      setUserRole(formData.role);
+      
+      // Store Service Provider data if applicable
+      if (formData.role === USER_ROLE.SERVICE_PROVIDER) {
+        setUserServiceProviderData({
+          companyName: formData.companyName,
+          businessType: formData.businessType,
+          registrationNumber: formData.registrationNumber,
+          gstNumber: formData.gstNumber,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          country: formData.country,
+          pincode: formData.pincode,
+          website: formData.website,
+          servicesOffered: formData.servicesOffered,
+          coachingTests: formData.coachingTests,
+        });
+      }
+      
       localStorage.removeItem('signup_captcha'); // Clear captcha after use
       setStep('verify-otp');
     } catch (error: any) {
@@ -112,7 +163,18 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const response = await authAPI.verifySignupOTP({ email: userEmail, otp });
+      const otpData: any = { 
+        email: userEmail, 
+        otp, 
+        mobileNumber: userMobileNumber 
+      };
+      
+      // Add Service Provider fields if applicable
+      if (userRole === USER_ROLE.SERVICE_PROVIDER && userServiceProviderData) {
+        Object.assign(otpData, userServiceProviderData);
+      }
+      
+      const response = await authAPI.verifySignupOTP(otpData);
       const message = response.data.message || 'OTP verified! Check your email for verification link.';
       toast.success(message, { duration: 4000 });
       
@@ -142,7 +204,6 @@ export default function SignupPage() {
   };
 
   const roleOptions = [
-    { value: USER_ROLE.STUDENT, label: 'Student', icon: '🎓', color: 'from-blue-500 to-cyan-500' },
     { value: USER_ROLE.ALUMNI, label: 'Alumni', icon: '🎖️', color: 'from-purple-500 to-pink-500' },
     { value: USER_ROLE.SERVICE_PROVIDER, label: 'Service Provider', icon: '🏢', color: 'from-emerald-500 to-teal-500' },
   ];
@@ -157,7 +218,7 @@ export default function SignupPage() {
         <div className="absolute bottom-20 left-10 w-96 h-96 bg-cyan-400/20 rounded-full blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
       </div>
 
-      <div className="relative max-w-md w-full">
+      <div className="relative max-w-3xl w-full">
         {/* Header */}
         <div className="text-center mb-10 animate-fade-in">
           <div className="inline-block p-4 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-3xl shadow-2xl mb-5 transform hover:scale-105 transition-transform">
@@ -181,30 +242,39 @@ export default function SignupPage() {
           {step === 'signup' ? (
             <>
             <form onSubmit={handleSignup} className="space-y-5">
-            {/* Name Fields - 2 per row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Name Fields - 3 in one row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* First Name Input */}
               <div>
                 <label htmlFor="firstName" className="block text-sm font-bold text-gray-900 mb-2">
                   First Name <span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    required
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    className="block w-full pl-12 pr-4 py-3.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-gray-50 hover:bg-white"
-                    placeholder="John"
-                  />
-                </div>
+                <input
+                  id="firstName"
+                  name="firstName"
+                  type="text"
+                  required
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  className="block w-full px-4 py-3.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-gray-50 hover:bg-white"
+                  placeholder="John"
+                />
+              </div>
+
+              {/* Middle Name Input */}
+              <div>
+                <label htmlFor="middleName" className="block text-sm font-bold text-gray-900 mb-2">
+                  Middle Name <span className="text-gray-400 font-normal text-xs">(Optional)</span>
+                </label>
+                <input
+                  id="middleName"
+                  name="middleName"
+                  type="text"
+                  value={formData.middleName}
+                  onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
+                  className="block w-full px-4 py-3.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-gray-50 hover:bg-white"
+                  placeholder="Optional"
+                />
               </div>
 
               {/* Last Name Input */}
@@ -212,70 +282,67 @@ export default function SignupPage() {
                 <label htmlFor="lastName" className="block text-sm font-bold text-gray-900 mb-2">
                   Last Name <span className="text-red-500">*</span>
                 </label>
+                <input
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  required
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  className="block w-full px-4 py-3.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-gray-50 hover:bg-white"
+                  placeholder="Doe"
+                />
+              </div>
+            </div>
+
+            {/* Email and Phone Number - 2 in second row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Email Input */}
+              <div>
+                <label htmlFor="email" className="block text-sm font-bold text-gray-900 mb-2">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
                   <input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
+                    id="email"
+                    name="email"
+                    type="email"
                     required
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="block w-full pl-12 pr-4 py-3.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-gray-50 hover:bg-white"
-                    placeholder="Doe"
+                    placeholder="you@example.com"
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Middle Name Input - Full Width */}
-            <div>
-              <label htmlFor="middleName" className="block text-sm font-bold text-gray-900 mb-2">
-                Middle Name <span className="text-gray-400 font-normal">(Optional)</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+              {/* Mobile Number Input */}
+              <div>
+                <label htmlFor="mobileNumber" className="block text-sm font-bold text-gray-900 mb-2">
+                  Mobile Number <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  </div>
+                  <input
+                    id="mobileNumber"
+                    name="mobileNumber"
+                    type="tel"
+                    required
+                    value={formData.mobileNumber}
+                    onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
+                    className="block w-full pl-12 pr-4 py-3.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-gray-50 hover:bg-white"
+                    placeholder="+1 234 567 8900"
+                  />
                 </div>
-                <input
-                  id="middleName"
-                  name="middleName"
-                  type="text"
-                  value={formData.middleName}
-                  onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
-                  className="block w-full pl-12 pr-4 py-3.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-gray-50 hover:bg-white"
-                  placeholder="Optional"
-                />
-              </div>
-            </div>
-
-            {/* Email Input */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-bold text-gray-900 mb-2">
-                Email Address <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="block w-full pl-12 pr-4 py-3.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-gray-50 hover:bg-white"
-                  placeholder="you@example.com"
-                />
               </div>
             </div>
 
@@ -285,7 +352,7 @@ export default function SignupPage() {
               <label className="block text-sm font-semibold text-gray-900 mb-3">
                 Select Your Role
               </label>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 {roleOptions.map((option) => (
                   <button
                     key={option.value}
@@ -314,6 +381,260 @@ export default function SignupPage() {
                 ))}
               </div>
             </div>
+
+            {/* Service Provider Additional Fields */}
+            {formData.role === USER_ROLE.SERVICE_PROVIDER && (
+              <div className="space-y-5 border-2 border-blue-200 rounded-2xl p-6 bg-blue-50">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Service Provider Details</h3>
+                
+                {/* Company Name and Business Type */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label htmlFor="companyName" className="block text-sm font-bold text-gray-900 mb-2">
+                      Company Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="companyName"
+                      name="companyName"
+                      type="text"
+                      required
+                      value={formData.companyName}
+                      onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white"
+                      placeholder="Enter company name"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="businessType" className="block text-sm font-bold text-gray-900 mb-2">
+                      Business Type <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      id="businessType"
+                      name="businessType"
+                      required
+                      value={formData.businessType}
+                      onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
+                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 bg-white"
+                    >
+                      <option value="">Select business type</option>
+                      <option value="Individual">Individual</option>
+                      <option value="Sole Proprietors">Sole Proprietors</option>
+                      <option value="Partnership Firm">Partnership Firm</option>
+                      <option value="Private Ltd. Company">Private Ltd. Company</option>
+                      <option value="Public Ltd. Company">Public Ltd. Company</option>
+                      <option value="Limited Liability Partnership (LLP)">Limited Liability Partnership (LLP)</option>
+                      <option value="Trust, Association, Society, Club">Trust, Association, Society, Club</option>
+                      <option value="Government Entity">Government Entity</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Registration Number and GST Number */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label htmlFor="registrationNumber" className="block text-sm font-bold text-gray-900 mb-2">
+                      Registration Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="registrationNumber"
+                      name="registrationNumber"
+                      type="text"
+                      required
+                      value={formData.registrationNumber}
+                      onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value })}
+                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white"
+                      placeholder="Enter registration number"
+                    />
+                  </div>
+                
+                  <div>
+                    <label htmlFor="gstNumber" className="block text-sm font-bold text-gray-900 mb-2">
+                      GST Number <span className="text-gray-500">(Optional)</span>
+                    </label>
+                    <input
+                      id="gstNumber"
+                      name="gstNumber"
+                      type="text"
+                      value={formData.gstNumber}
+                      onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })}
+                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white"
+                      placeholder="Enter GST number"
+                    />
+                  </div>
+                </div>
+
+                {/* Website */}
+                <div>
+                  <label htmlFor="website" className="block text-sm font-bold text-gray-900 mb-2">
+                    Website <span className="text-gray-500">(Optional)</span>
+                  </label>
+                  <input
+                    id="website"
+                    name="website"
+                    type="url"
+                    value={formData.website}
+                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                    className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white"
+                    placeholder="https://example.com"
+                  />
+                </div>
+
+                {/* Address */}
+                <div>
+                  <label htmlFor="address" className="block text-sm font-bold text-gray-900 mb-2">
+                    Address <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    id="address"
+                    name="address"
+                    required
+                    rows={3}
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white resize-none"
+                    placeholder="Enter full address"
+                  />
+                </div>
+
+                {/* City and State */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label htmlFor="city" className="block text-sm font-bold text-gray-900 mb-2">
+                      City <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="city"
+                      name="city"
+                      type="text"
+                      required
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white"
+                      placeholder="Enter city"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="state" className="block text-sm font-bold text-gray-900 mb-2">
+                      State <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="state"
+                      name="state"
+                      type="text"
+                      required
+                      value={formData.state}
+                      onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white"
+                      placeholder="Enter state"
+                    />
+                  </div>
+                </div>
+
+                {/* Country and Pincode */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label htmlFor="country" className="block text-sm font-bold text-gray-900 mb-2">
+                      Country <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="country"
+                      name="country"
+                      type="text"
+                      required
+                      value={formData.country}
+                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white"
+                      placeholder="Enter country"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="pincode" className="block text-sm font-bold text-gray-900 mb-2">
+                      Pincode <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="pincode"
+                      name="pincode"
+                      type="text"
+                      required
+                      value={formData.pincode}
+                      onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white"
+                      placeholder="Enter pincode"
+                    />
+                  </div>
+                </div>
+
+                {/* Services Offered Dropdown */}
+                <div>
+                  <label htmlFor="servicesOffered" className="block text-sm font-bold text-gray-900 mb-2">
+                    Services Offered <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="servicesOffered"
+                    name="servicesOffered"
+                    required
+                    value={formData.servicesOffered}
+                    onChange={(e) => setFormData({ ...formData, servicesOffered: e.target.value })}
+                    className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 bg-white"
+                  >
+                    <option value="">Select a service</option>
+                    <option value="SOP/LOR/Resume writer">SOP/LOR/Resume writer</option>
+                    <option value="Coaching Classes">Coaching Classes</option>
+                    <option value="Portfolio Designer">Portfolio Designer</option>
+                    <option value="Student Education Loan">Student Education Loan</option>
+                    <option value="Visa Consultant">Visa Consultant</option>
+                    <option value="Forex">Forex</option>
+                    <option value="Insurance">Insurance</option>
+                    <option value="Air Ticket">Air Ticket</option>
+                    <option value="GIC/Blocked Account">GIC/Blocked Account</option>
+                    <option value="Stay Arrangement">Stay Arrangement</option>
+                    <option value="Medical checkup">Medical checkup</option>
+                    <option value="International Sim Card">International Sim Card</option>
+                  </select>
+                </div>
+
+                {/* Coaching Classes Tests - shown only if Coaching Classes is selected */}
+                {formData.servicesOffered === "Coaching Classes" && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">
+                      Select Tests You Offer Coaching For <span className="text-red-500">*</span>
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {['IELTS', 'TOEFL', 'GRE', 'GMAT', 'SAT', 'ACT', 'PTE', 'Duolingo'].map((test) => (
+                        <label
+                          key={test}
+                          className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-blue-50 transition-all duration-200"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.coachingTests.includes(test)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData({
+                                  ...formData,
+                                  coachingTests: [...formData.coachingTests, test]
+                                });
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  coachingTests: formData.coachingTests.filter(t => t !== test)
+                                });
+                              }
+                            }}
+                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-sm font-medium text-gray-900">{test}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+              </div>
+            )}
 
             {/* Captcha Section */}
             <div>

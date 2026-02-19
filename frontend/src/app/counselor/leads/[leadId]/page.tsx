@@ -310,7 +310,7 @@ export default function CounselorLeadDetailPage() {
 
   const getServiceColor = (service: string) => {
     switch (service) {
-      case SERVICE_TYPE.CARRER_FOCUS_STUDY_ABROAD:
+      case SERVICE_TYPE.CAREER_FOCUS_STUDY_ABROAD:
         return 'bg-indigo-100 text-indigo-800';
       case SERVICE_TYPE.IVY_LEAGUE_ADMISSION:
         return 'bg-amber-100 text-amber-800';

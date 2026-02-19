@@ -29,6 +29,7 @@ import {
   getOpsSchedulesForSuperAdmin,
   getOpsScheduleSummaryForSuperAdmin,
   getOpsStudentsForSuperAdmin,
+  getServiceProviderDetail,
 } from "../controllers/superAdminController";
 import { authenticate } from "../middleware/auth";
 import { authorize } from "../middleware/authorize";
@@ -254,6 +255,15 @@ router.get("/ops/:opsUserId/schedule-summary", getOpsScheduleSummaryForSuperAdmi
  * @access  Super Admin only
  */
 router.get("/ops/:opsUserId/students", getOpsStudentsForSuperAdmin);
+
+// ============= SERVICE PROVIDER ROUTES =============
+
+/**
+ * @route   GET /api/super-admin/service-providers/:providerId
+ * @desc    Get service provider details
+ * @access  Super Admin only
+ */
+router.get("/service-providers/:providerId", getServiceProviderDetail);
 
 export default router;
 

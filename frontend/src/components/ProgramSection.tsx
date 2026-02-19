@@ -13,20 +13,24 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 const PROGRAM_STATUSES = [
   'Shortlisted',
+  'Application not Open',
   'In Progress',
   'Applied',
   'Offer Received',
   'Offer Accepted',
+  'Offer not Accepted',
   'Rejected / Declined',
   'Closed',
 ] as const;
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   'Shortlisted': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+  'Application not Open': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
   'In Progress': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
   'Applied': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
   'Offer Received': { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200' },
   'Offer Accepted': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
+  'Offer not Accepted': { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
   'Rejected / Declined': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
   'Closed': { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' },
 };
@@ -53,6 +57,7 @@ interface Program {
   intake?: string;
   year?: string;
   status?: string;
+  applicationOpenDate?: string;
   registrationId?: string;
   isSelectedByStudent?: boolean;
   selectedAt?: string;
@@ -103,6 +108,12 @@ export default function ProgramSection({
   const [editFormData, setEditFormData] = useState<{ [key: string]: { priority: number; intake: string; year: string } }>({});
   const [saving, setSaving] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+
+  // For "Application not Open" modal
+  const [showAppNotOpenModal, setShowAppNotOpenModal] = useState(false);
+  const [pendingStatusProgramId, setPendingStatusProgramId] = useState<string | null>(null);
+  const [appOpenDate, setAppOpenDate] = useState('');
+  const [appScheduleTime, setAppScheduleTime] = useState('');
 
   const intakeOptions = [
     'Spring', 'Summer', 'Fall', 'Winter',
@@ -375,6 +386,15 @@ export default function ProgramSection({
   };
 
   const handleStatusChange = async (programId: string, newStatus: string) => {
+    // Intercept "Application not Open" to show date/time modal
+    if (newStatus === 'Application not Open') {
+      setPendingStatusProgramId(programId);
+      setAppOpenDate('');
+      setAppScheduleTime('');
+      setShowAppNotOpenModal(true);
+      return;
+    }
+
     setUpdatingStatus(programId);
     try {
       if (userRole === 'SUPER_ADMIN') {
@@ -384,11 +404,35 @@ export default function ProgramSection({
       }
       toast.success('Status updated successfully');
       // Update local state immediately
-      setPrograms(prev => prev.map(p => p._id === programId ? { ...p, status: newStatus } : p));
+      setPrograms(prev => prev.map(p => p._id === programId ? { ...p, status: newStatus, applicationOpenDate: undefined } : p));
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update status');
     } finally {
       setUpdatingStatus(null);
+    }
+  };
+
+  const handleAppNotOpenConfirm = async () => {
+    if (!pendingStatusProgramId || !appOpenDate || !appScheduleTime) {
+      toast.error('Please select both date and time');
+      return;
+    }
+    setShowAppNotOpenModal(false);
+    setUpdatingStatus(pendingStatusProgramId);
+    try {
+      const extra = { applicationOpenDate: appOpenDate, scheduleTime: appScheduleTime };
+      if (userRole === 'SUPER_ADMIN') {
+        await programAPI.updateProgramStatusSuperAdmin(pendingStatusProgramId, 'Application not Open', extra);
+      } else if (userRole === 'OPS') {
+        await programAPI.updateProgramStatusOps(pendingStatusProgramId, 'Application not Open', extra);
+      }
+      toast.success('Status updated & OPS schedule created');
+      setPrograms(prev => prev.map(p => p._id === pendingStatusProgramId ? { ...p, status: 'Application not Open', applicationOpenDate: appOpenDate } : p));
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update status');
+    } finally {
+      setUpdatingStatus(null);
+      setPendingStatusProgramId(null);
     }
   };
 
@@ -595,6 +639,7 @@ export default function ProgramSection({
 
   // Render applied programs
   return (
+  <>
     <div className="space-y-4">
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Applied Programs</h3>
@@ -725,6 +770,11 @@ export default function ProgramSection({
                                   Year: {program.year}
                                 </span>
                               )}
+                              {program.applicationOpenDate && (
+                                <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold">
+                                  App Opens: {new Date(program.applicationOpenDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                </span>
+                              )}
                             </div>
                             {/* Chat buttons on the right */}
                             <div className="flex gap-2 shrink-0">
@@ -811,6 +861,52 @@ export default function ProgramSection({
         )}
       </div>
     </div>
+
+    {/* Application not Open - Date & Time Modal */}
+    {showAppNotOpenModal && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4">
+          <h3 className="text-lg font-bold text-gray-900 mb-1">Application Opening Date</h3>
+          <p className="text-sm text-gray-500 mb-5">Select the date the application opens and a time for the OPS schedule reminder.</p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Application Open Date</label>
+              <input
+                type="date"
+                value={appOpenDate}
+                onChange={(e) => setAppOpenDate(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Schedule Time</label>
+              <input
+                type="time"
+                value={appScheduleTime}
+                onChange={(e) => setAppScheduleTime(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              onClick={() => { setShowAppNotOpenModal(false); setPendingStatusProgramId(null); }}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAppNotOpenConfirm}
+              disabled={!appOpenDate || !appScheduleTime}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   );
 }
 

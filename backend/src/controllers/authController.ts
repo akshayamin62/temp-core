@@ -2,6 +2,8 @@ import { Response } from "express";
 import User from "../models/User";
 import Student from "../models/Student";
 import Admin from "../models/Admin";
+import Alumni from "../models/Alumni";
+import ServiceProvider from "../models/ServiceProvider";
 import { USER_ROLE } from "../types/roles";
 import { generateToken } from "../utils/jwt";
 import { Request } from "express";
@@ -22,6 +24,7 @@ interface SignupRequest extends Request {
     middleName?: string;
     lastName: string;
     email: string;
+    mobileNumber?: string;
     role: USER_ROLE;
     captcha: string;
     captchaInput: string;
@@ -40,12 +43,26 @@ interface VerifyOTPRequest extends Request {
   body: {
     email: string;
     otp: string;
+    mobileNumber?: string;
+    // Service Provider fields
+    companyName?: string;
+    businessType?: string;
+    registrationNumber?: string;
+    gstNumber?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    pincode?: string;
+    website?: string;
+    servicesOffered?: string;
+    coachingTests?: string[];
   };
 }
 
 export const signup = async (req: SignupRequest, res: Response): Promise<Response> => {
   try {
-    const { firstName, middleName, lastName, email, role, captcha, captchaInput } = req.body;
+    const { firstName, middleName, lastName, email, mobileNumber, role, captcha, captchaInput } = req.body;
 
     const emailKey = email.toLowerCase().trim();
 
@@ -87,10 +104,15 @@ export const signup = async (req: SignupRequest, res: Response): Promise<Respons
       email: emailKey,
       role,
       isVerified: false,
-      isActive: false,
+      isActive: true,
       otp: hashedOTP,
       otpExpires,
     });
+
+    // Store mobile number temporarily in a custom property for later use
+    if (mobileNumber) {
+      (user as any).tempMobileNumber = mobileNumber.trim();
+    }
 
     // Send OTP email - build full name from parts
     const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
@@ -101,6 +123,7 @@ export const signup = async (req: SignupRequest, res: Response): Promise<Respons
       message: "OTP sent to your email. Please verify to complete signup.",
       data: {
         email: user.email,
+        mobileNumber: mobileNumber || '',
       },
     });
   } catch (err: any) {
@@ -162,14 +185,6 @@ export const login = async (req: LoginRequest, res: Response): Promise<Response>
       });
     }
 
-    // Check if account is fully verified (admin approved if needed)
-    if (!user.isVerified) {
-      return res.status(403).json({
-        success: false,
-        message: "Your account is pending verification. You will be notified via email once approved.",
-      });
-    }
-
     // Check if account is active
     if (!user.isActive) {
       return res.status(403).json({
@@ -212,7 +227,23 @@ export const login = async (req: LoginRequest, res: Response): Promise<Response>
 // Verify OTP for signup
 export const verifySignupOTP = async (req: VerifyOTPRequest, res: Response): Promise<Response> => {
   try {
-    const { email, otp } = req.body;
+    const { 
+      email, 
+      otp, 
+      mobileNumber,
+      companyName,
+      businessType,
+      registrationNumber,
+      gstNumber,
+      address,
+      city,
+      state,
+      country,
+      pincode,
+      website,
+      servicesOffered,
+      coachingTests
+    } = req.body;
 
     if (!email || !otp) {
       return res.status(400).json({
@@ -259,7 +290,7 @@ export const verifySignupOTP = async (req: VerifyOTPRequest, res: Response): Pro
     user.otpExpires = undefined;
 
     // For STUDENTS: Auto-verify and activate (no admin approval needed)
-    // For OTHERS: Keep isVerified = false (need admin approval)
+    // For ALUMNI and SERVICE_PROVIDER: Create their entries and keep isVerified = false (need admin approval)
     if (user.role === USER_ROLE.STUDENT) {
       user.isVerified = true;
       user.isActive = true;
@@ -273,6 +304,49 @@ export const verifySignupOTP = async (req: VerifyOTPRequest, res: Response): Pro
         });
       } catch (error) {
         console.log("Student entry creation error (might already exist):", error);
+      }
+    } else if (user.role === USER_ROLE.ALUMNI) {
+      // Create Alumni entry with email and mobile number
+      try {
+        await Alumni.create({
+          userId: user._id,
+          email: user.email,
+          mobileNumber: mobileNumber || "",
+        });
+      } catch (error) {
+        console.log("Alumni entry creation error (might already exist):", error);
+      }
+    } else if (user.role === USER_ROLE.SERVICE_PROVIDER) {
+      // Create ServiceProvider entry with all fields
+      try {
+        // Prepare servicesOffered array - include coaching tests if applicable
+        let finalServicesOffered: string[] = [];
+        if (servicesOffered) {
+          finalServicesOffered.push(servicesOffered);
+          // If Coaching Classes is selected and tests are provided, add them
+          if (servicesOffered === "Coaching Classes" && coachingTests && coachingTests.length > 0) {
+            finalServicesOffered = [...finalServicesOffered, ...coachingTests];
+          }
+        }
+
+        await ServiceProvider.create({
+          userId: user._id,
+          email: user.email,
+          mobileNumber: mobileNumber || "",
+          companyName: companyName || "",
+          businessType: businessType || "",
+          registrationNumber: registrationNumber || "",
+          gstNumber: gstNumber || "",
+          address: address || "",
+          city: city || "",
+          state: state || "",
+          country: country || "",
+          pincode: pincode || "",
+          website: website || "",
+          servicesOffered: finalServicesOffered,
+        });
+      } catch (error) {
+        console.log("ServiceProvider entry creation error (might already exist):", error);
       }
     }
 
@@ -350,14 +424,6 @@ export const verifyOTP = async (req: VerifyOTPRequest, res: Response): Promise<R
       return res.status(401).json({
         success: false,
         message: "Invalid OTP",
-      });
-    }
-
-    // Check if account is verified
-    if (!user.isVerified) {
-      return res.status(403).json({
-        success: false,
-        message: "Your account is pending verification. You will be notified via email once approved.",
       });
     }
 
@@ -450,6 +516,32 @@ export const getProfile = async (
           address: admin.address,
           enquiryFormSlug: admin.enquiryFormSlug,
         };
+      }
+    }
+
+    // If user is a SERVICE_PROVIDER, include SP profile data
+    if (user.role === USER_ROLE.SERVICE_PROVIDER) {
+      const sp = await ServiceProvider.findOne({ userId: user._id });
+      if (sp) {
+        responseData.serviceProvider = {
+          _id: sp._id,
+          companyName: sp.companyName,
+          companyLogo: sp.companyLogo,
+          businessType: sp.businessType,
+          mobileNumber: sp.mobileNumber,
+          registrationNumber: sp.registrationNumber,
+          gstNumber: sp.gstNumber,
+          address: sp.address,
+          city: sp.city,
+          state: sp.state,
+          country: sp.country,
+          pincode: sp.pincode,
+          website: sp.website,
+          servicesOffered: sp.servicesOffered,
+        };
+        // Also include companyLogo and companyName in user object for easy access
+        responseData.user.companyName = sp.companyName;
+        responseData.user.companyLogo = sp.companyLogo;
       }
     }
 

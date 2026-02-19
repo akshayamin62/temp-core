@@ -54,13 +54,13 @@ export const authenticate = async (
     }
 
     // Check if account is fully verified (email verified + admin approved if needed)
-    if (!user.isVerified) {
-      res.status(403).json({
-        success: false,
-        message: "Your account is pending verification. You will be notified via email once approved.",
-      });
-      return;
-    }
+    // if (!user.isVerified) {
+    //   res.status(403).json({
+    //     success: false,
+    //     message: "Your account is pending verification. You will be notified via email once approved.",
+    //   });
+    //   return;
+    // }
 
     // Check if account is active
     if (!user.isActive) {

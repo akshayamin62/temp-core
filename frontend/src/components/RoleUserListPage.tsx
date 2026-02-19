@@ -429,9 +429,9 @@ export default function RoleUserListPage({
                       <tr key={user._id || user.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            {isAdminRole && user.companyLogo ? (
+                            {((isAdminRole || roleEnum === USER_ROLE.SERVICE_PROVIDER) && user.companyLogo) ? (
                               <img
-                                src={`${BACKEND_URL}${user.companyLogo}`}
+                                src={`${BACKEND_URL}/${user.companyLogo.replace(/^\//, '')}`}
                                 alt={user.companyName || 'Company Logo'}
                                 className="w-10 h-10 rounded-full object-cover"
                                 onError={(e) => {
@@ -442,10 +442,12 @@ export default function RoleUserListPage({
                                 }}
                               />
                             ) : null}
-                            <div className={`w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center ${isAdminRole && user.companyLogo ? 'hidden' : ''}`}>
+                            <div className={`w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center ${
+                              (isAdminRole || roleEnum === USER_ROLE.SERVICE_PROVIDER) && user.companyLogo ? 'hidden' : ''
+                            }`}>
                               <span className="text-blue-600 font-semibold">
-                                {isAdminRole && user.companyName 
-                                  ? user.companyName.charAt(0).toUpperCase() 
+                                {(isAdminRole || roleEnum === USER_ROLE.SERVICE_PROVIDER) && user.companyName
+                                  ? user.companyName.charAt(0).toUpperCase()
                                   : getInitials(user)}
                               </span>
                             </div>
@@ -525,6 +527,14 @@ export default function RoleUserListPage({
                             {roleEnum === USER_ROLE.OPS && (
                               <button
                                 onClick={() => router.push(`/super-admin/roles/ops/${user._id || user.id}`)}
+                                className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white hover:bg-blue-700"
+                              >
+                                View Details
+                              </button>
+                            )}
+                            {roleEnum === USER_ROLE.SERVICE_PROVIDER && (
+                              <button
+                                onClick={() => router.push(`/super-admin/roles/service-provider/${user._id || user.id}`)}
                                 className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white hover:bg-blue-700"
                               >
                                 View Details

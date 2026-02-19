@@ -2,10 +2,12 @@ import mongoose, { Document, Schema } from "mongoose";
 
 export enum PROGRAM_STATUS {
   SHORTLISTED = 'Shortlisted',
+  APPLICATION_NOT_OPEN = 'Application not Open',
   IN_PROGRESS = 'In Progress',
   APPLIED = 'Applied',
   OFFER_RECEIVED = 'Offer Received',
   OFFER_ACCEPTED = 'Offer Accepted',
+  OFFER_NOT_ACCEPTED = 'Offer not Accepted',
   REJECTED_DECLINED = 'Rejected / Declined',
   CLOSED = 'Closed',
 }
@@ -34,6 +36,7 @@ export interface IProgram extends Document {
   intake?: string; // Student's selected intake
   year?: string; // Student's selected year
   status?: string; // Application status type
+  applicationOpenDate?: Date; // Date when application opens (for "Application not Open" status)
   selectedAt?: Date; // When student selected this program
   isSelectedByStudent: boolean; // Whether student has selected this program
   createdAt?: Date;
@@ -120,6 +123,10 @@ const programSchema = new Schema<IProgram>(
       enum: Object.values(PROGRAM_STATUS),
       required: false,
       default: undefined,
+    },
+    applicationOpenDate: {
+      type: Date,
+      required: false,
     },
     selectedAt: {
       type: Date,

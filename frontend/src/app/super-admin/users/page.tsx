@@ -349,45 +349,72 @@ export default function UserManagementPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end space-x-2">
-                            {!user.isVerified && user.role !== USER_ROLE.SUPER_ADMIN && user.role !== USER_ROLE.STUDENT && (
+                            {/* Service Provider specific buttons */}
+                            {user.role === USER_ROLE.SERVICE_PROVIDER && (
                               <>
                                 <button
-                                  onClick={() => handleApprove(user._id || user.id!)}
-                                  disabled={actionLoading === (user._id || user.id)}
-                                  className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-xs"
+                                  onClick={() => router.push(`/super-admin/roles/service-provider/${user._id || user.id}`)}
+                                  className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs"
                                 >
-                                  Approve
+                                  View Details
                                 </button>
-                                <button
-                                  onClick={() => handleReject(user._id || user.id!)}
-                                  disabled={actionLoading === (user._id || user.id)}
-                                  className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 text-xs"
-                                >
-                                  Reject
-                                </button>
+                                {!user.isVerified ? (
+                                  <button
+                                    onClick={() => handleApprove(user._id || user.id!)}
+                                    disabled={actionLoading === (user._id || user.id)}
+                                    className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-xs"
+                                  >
+                                    Verify
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handleToggleStatus(user._id || user.id!)}
+                                    disabled={actionLoading === (user._id || user.id)}
+                                    className={`px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 text-xs ${
+                                      user.isActive ? 'bg-yellow-600 text-white hover:bg-yellow-700' : 'bg-blue-600 text-white hover:bg-blue-700'
+                                    }`}
+                                  >
+                                    {user.isActive ? 'Deactivate' : 'Activate'}
+                                  </button>
+                                )}
                               </>
                             )}
-                            
-                            {(user.isVerified || user.role === USER_ROLE.STUDENT) && user.role !== USER_ROLE.SUPER_ADMIN && (
+
+                            {/* Other roles buttons */}
+                            {user.role !== USER_ROLE.SERVICE_PROVIDER && user.role !== USER_ROLE.SUPER_ADMIN && (
                               <>
-                                <button
-                                  onClick={() => handleToggleStatus(user._id || user.id!)}
-                                  disabled={actionLoading === (user._id || user.id)}
-                                  className={`px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 text-xs ${
-                                    user.isActive ? 'bg-yellow-600 text-white hover:bg-yellow-700' : 'bg-blue-600 text-white hover:bg-blue-700'
-                                  }`}
-                                >
-                                  {user.isActive ? 'Deactivate' : 'Activate'}
-                                </button>
-                                {/* Delete button hidden as per requirement
-                                <button
-                                  onClick={() => handleDelete(user._id || user.id!)}
-                                  disabled={actionLoading === (user._id || user.id)}
-                                  className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 text-xs"
-                                >
-                                  Delete
-                                </button>
-                                */}
+                                {!user.isVerified && user.role !== USER_ROLE.STUDENT && (
+                                  <>
+                                    <button
+                                      onClick={() => handleApprove(user._id || user.id!)}
+                                      disabled={actionLoading === (user._id || user.id)}
+                                      className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-xs"
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      onClick={() => handleReject(user._id || user.id!)}
+                                      disabled={actionLoading === (user._id || user.id)}
+                                      className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 text-xs"
+                                    >
+                                      Reject
+                                    </button>
+                                  </>
+                                )}
+                                
+                                {(user.isVerified || user.role === USER_ROLE.STUDENT) && (
+                                  <>
+                                    <button
+                                      onClick={() => handleToggleStatus(user._id || user.id!)}
+                                      disabled={actionLoading === (user._id || user.id)}
+                                      className={`px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 text-xs ${
+                                        user.isActive ? 'bg-yellow-600 text-white hover:bg-yellow-700' : 'bg-blue-600 text-white hover:bg-blue-700'
+                                      }`}
+                                    >
+                                      {user.isActive ? 'Deactivate' : 'Activate'}
+                                    </button>
+                                  </>
+                                )}
                               </>
                             )}
                           </div>

@@ -5,6 +5,8 @@ import Ops from '../models/Ops';
 import Student from '../models/Student';
 import { USER_ROLE } from '../types/roles';
 import User from '../models/User';
+import StudentServiceRegistration from '../models/StudentServiceRegistration';
+import OpsSchedule, { OPS_SCHEDULE_STATUS } from '../models/OpsSchedule';
 import * as XLSX from 'xlsx';
 
 /**
@@ -551,7 +553,7 @@ export const updateProgramStatus = async (req: AuthRequest, res: Response): Prom
     }
 
     const { programId } = req.params;
-    const { status } = req.body;
+    const { status, applicationOpenDate, scheduleTime } = req.body;
 
     if (!status) {
       return res.status(400).json({
@@ -568,6 +570,29 @@ export const updateProgramStatus = async (req: AuthRequest, res: Response): Prom
       });
     }
 
+    // Validate applicationOpenDate if status is "Application not Open"
+    if (status === PROGRAM_STATUS.APPLICATION_NOT_OPEN) {
+      if (!applicationOpenDate) {
+        return res.status(400).json({
+          success: false,
+          message: 'Application open date is required for "Application not Open" status',
+        });
+      }
+      if (!scheduleTime) {
+        return res.status(400).json({
+          success: false,
+          message: 'Schedule time is required for "Application not Open" status',
+        });
+      }
+      // Validate time format HH:mm
+      if (!/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(scheduleTime)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Schedule time must be in HH:mm format',
+        });
+      }
+    }
+
     const program = await Program.findById(programId);
     if (!program) {
       return res.status(404).json({
@@ -577,7 +602,58 @@ export const updateProgramStatus = async (req: AuthRequest, res: Response): Prom
     }
 
     program.status = status;
+
+    // Handle applicationOpenDate
+    if (status === PROGRAM_STATUS.APPLICATION_NOT_OPEN) {
+      program.applicationOpenDate = new Date(applicationOpenDate);
+    } else {
+      // Clear applicationOpenDate if status changes away from "Application not Open"
+      program.applicationOpenDate = undefined;
+    }
+
     await program.save();
+
+    // Auto-create OPS schedule when status is "Application not Open"
+    if (status === PROGRAM_STATUS.APPLICATION_NOT_OPEN && program.studentId) {
+      try {
+        // Find OPS profile for the current user
+        let opsProfile = await Ops.findOne({ userId: userId });
+
+        // If the current user is SUPER_ADMIN, find the OPS assigned to this student
+        if (!opsProfile && user.role === USER_ROLE.SUPER_ADMIN) {
+          const registration = await StudentServiceRegistration.findOne({
+            studentId: program.studentId,
+          });
+          if (registration?.activeOpsId) {
+            opsProfile = await Ops.findById(registration.activeOpsId);
+          }
+        }
+
+        if (opsProfile) {
+          // Get student info for the description
+          const student = await Student.findById(program.studentId).populate('userId', 'firstName middleName lastName');
+          const studentUser = student?.userId as any;
+          const studentName = studentUser
+            ? [studentUser.firstName, studentUser.middleName, studentUser.lastName].filter(Boolean).join(' ')
+            : 'Student';
+
+          const openDate = new Date(applicationOpenDate);
+          const description = `Application Opens: ${program.programName} at ${program.university} for ${studentName}. Application start date: ${openDate.toLocaleDateString('en-GB')}.`;
+
+          await OpsSchedule.create({
+            opsId: opsProfile._id,
+            studentId: program.studentId,
+            scheduledDate: openDate,
+            scheduledTime: scheduleTime,
+            description,
+            status: OPS_SCHEDULE_STATUS.SCHEDULED,
+          });
+        }
+      } catch (scheduleError: any) {
+        console.error('Failed to create auto OPS schedule:', scheduleError);
+        // Don't fail the status update if schedule creation fails
+      }
+    }
 
     return res.status(200).json({
       success: true,

@@ -24,6 +24,7 @@ interface Program {
   intake?: string;
   year?: string;
   status?: string;
+  applicationOpenDate?: string;
   createdBy?: {
     _id: string;
     firstName: string;

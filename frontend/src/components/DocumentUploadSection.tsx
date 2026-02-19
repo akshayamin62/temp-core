@@ -133,13 +133,6 @@ export default function DocumentUploadSection({
     allowMultiple: boolean = false,
     documentIdToReplace?: string
   ) => {
-    // Validate file
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error('Only PDF, JPG, and PNG files are allowed');
-      return;
-    }
-
     if (file.size > 10 * 1024 * 1024) {
       toast.error('File size must be less than 10MB');
       return;
@@ -411,7 +404,6 @@ export default function DocumentUploadSection({
                   <input
                     type="file"
                     className="hidden"
-                    accept=".pdf,.jpg,.jpeg,.png"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) handleFileSelect(documentKey, documentName, category, file, allowMultiple);
@@ -481,7 +473,6 @@ export default function DocumentUploadSection({
                             <input
                               type="file"
                               className="hidden"
-                              accept=".pdf,.jpg,.jpeg,.png"
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (file) handleFileSelect(documentKey, documentName, category, file, allowMultiple, document._id);
@@ -932,6 +923,48 @@ export default function DocumentUploadSection({
           </div>
         )}
         </div>
+
+        {/* Multiple Upload Name Prompt Modal */}
+        {uploadingMultiple && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Name Your Document</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Please provide a name for this document to help identify it later.
+              </p>
+              <input
+                type="text"
+                value={customDocumentName}
+                onChange={(e) => setCustomDocumentName(e.target.value)}
+                placeholder="e.g., Mathematics Certificate"
+                className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                autoFocus
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleMultipleUploadSubmit();
+                  }
+                }}
+              />
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    setUploadingMultiple(null);
+                    setCustomDocumentName('');
+                  }}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleMultipleUploadSubmit}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Upload Document
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </>
     );
   }

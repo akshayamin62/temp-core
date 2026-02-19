@@ -33,7 +33,7 @@ interface DashboardStats {
   };
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
 
 export default function SuperAdminAdminDashboardPage() {
   const router = useRouter();
@@ -150,7 +150,7 @@ export default function SuperAdminAdminDashboardPage() {
             <div className="flex items-center gap-3">
               {stats?.admin?.companyLogo ? (
                 <img
-                  src={`${API_URL}${stats.admin.companyLogo}`}
+                  src={`${API_URL}/${stats.admin.companyLogo.replace(/^\//, '')}`}
                   alt={stats.admin.companyName || 'Company Logo'}
                   className="w-10 h-10 rounded-lg object-cover border border-gray-200"
                   onError={(e) => {

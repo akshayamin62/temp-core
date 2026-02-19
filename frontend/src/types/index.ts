@@ -243,10 +243,79 @@ export interface DocumentFieldConfig {
   helpText?: string;
 }
 
+// Service Provider Document Types
+export enum SPDocumentStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
+
+export interface SPDocument {
+  _id: string;
+  serviceProviderId: string;
+  documentName: string;
+  documentKey: string;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  mimeType: string;
+  uploadedAt: string;
+  uploadedBy: {
+    _id: string;
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    email: string;
+  };
+  uploadedByRole: string;
+  status: SPDocumentStatus;
+  approvedBy?: {
+    _id: string;
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    email: string;
+  };
+  approvedAt?: string;
+  rejectedBy?: {
+    _id: string;
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    email: string;
+  };
+  rejectedAt?: string;
+  rejectionMessage?: string;
+  version: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ServiceProviderProfile {
+  _id: string;
+  userId: string;
+  email?: string;
+  mobileNumber?: string;
+  companyName?: string;
+  businessType?: string;
+  registrationNumber?: string;
+  gstNumber?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  pincode?: string;
+  website?: string;
+  companyLogo?: string;
+  servicesOffered?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // Lead Types
 export enum SERVICE_TYPE {
   EDUCATION_PLANNING = "Education Planning",
-  CARRER_FOCUS_STUDY_ABROAD = "Carrer Focus Study Abroad ",
+  CAREER_FOCUS_STUDY_ABROAD = "Career Focus Study Abroad",
   IVY_LEAGUE_ADMISSION = "Ivy League Admission",
   IELTS_GRE_LANGUAGE_COACHING = "IELTS/GRE/Language Coaching",
 }

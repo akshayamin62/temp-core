@@ -33,7 +33,7 @@ export default function PublicEnquiryFormPage() {
 
   // Service types that require intake and year fields
   const INTAKE_REQUIRED_SERVICES = [
-    SERVICE_TYPE.CARRER_FOCUS_STUDY_ABROAD,
+    SERVICE_TYPE.CAREER_FOCUS_STUDY_ABROAD,
     SERVICE_TYPE.IVY_LEAGUE_ADMISSION,
     SERVICE_TYPE.IELTS_GRE_LANGUAGE_COACHING,
   ];
@@ -239,7 +239,7 @@ export default function PublicEnquiryFormPage() {
         <div className="text-center mb-8">
           {adminInfo?.companyLogo ? (
             <img
-              src={`${BACKEND_URL}${adminInfo.companyLogo}`}
+              src={`${BACKEND_URL}/${adminInfo.companyLogo.replace(/^\//, '')}`}
               alt={adminInfo.companyName || 'Company Logo'}
               className="w-24 h-24 rounded-2xl object-cover mx-auto mb-4 shadow-lg border border-gray-200"
               onError={(e) => {

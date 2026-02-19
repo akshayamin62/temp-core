@@ -103,7 +103,7 @@ export default function AdminLayout({ children, user: userProp }: AdminLayoutPro
             <div className="flex items-center gap-2">
               {adminProfile?.companyLogo ? (
                 <img
-                  src={`${BACKEND_URL}${adminProfile.companyLogo}`}
+                  src={`${BACKEND_URL}/${adminProfile.companyLogo.replace(/^\//, '')}`}
                   alt="Company Logo"
                   className="w-8 h-8 rounded-lg object-cover"
                   onError={(e) => {

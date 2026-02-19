@@ -1304,150 +1304,52 @@ function ActivitiesContent() {
         {/* Select Activities Tab */}
         {activeTab === 'suggestions' && (
           <div className="space-y-6">
-            {/* Activity Dropdown */}
+            {/* Select Activities Button - navigates to full selection page */}
             <div className="mb-6">
-              <label
-                htmlFor="activityDropdown"
-                className="block text-sm font-medium text-gray-700 mb-2"
+              <button
+                onClick={() => {
+                  const params = new URLSearchParams();
+                  params.set('studentId', searchParams.get('studentId') || '');
+                  params.set('studentIvyServiceId', studentIvyServiceId || '');
+                  params.set('ivyExpertId', ivyExpertId);
+                  params.set('pointerNo', String(selectedPointer));
+                  router.push(`/ivy-league/ivy-expert/select-activities?${params.toString()}`);
+                }}
+                className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-brand-600 text-white rounded-xl hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 transition-all shadow-sm hover:shadow-md font-semibold text-base"
               >
-                Select Activity for {getPointerLabel(selectedPointer as number)}
-              </label>
-              {loadingAdminActivities ? (
-                <div className="text-center py-4 text-gray-500">Loading activities...</div>
-              ) : availableActivities.length === 0 && currentPointerSelectionCount === 0 ? (
-                <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                  No activities available for this pointer. Super Admin needs to upload activities first.
-                </div>
-              ) : (
-                <select
-                  id="activityDropdown"
-                  value={dropdownValue}
-                  onChange={(e) => {
-                    const activityId = e.target.value;
-                    if (activityId && !selectedActivities.has(activityId)) {
-                      handleToggleActivity(activityId);
-                      setDropdownValue(activityId); // Keep the value showing the selected activity
-                    }
-                  }}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-gray-900 bg-white"
-                >
-                  <option value="">Choose an activity to add</option>
-                  {adminActivities
-                    .filter(a => !selectedActivities.has(a._id))
-                    .map((activity) => (
-                      <option key={activity._id} value={activity._id}>
-                        {activity.title}
-                      </option>
-                    ))}
-                </select>
-              )}
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                Select Activities for {getPointerLabel(selectedPointer as number)}
+              </button>
             </div>
 
-            {/* Selected Activities Display */}
-            {selectedPointer && currentPointerSelectionCount > 0 && (
+            {/* Currently Assigned Activities Display */}
+            {loadingActivities ? (
+              <div className="text-center py-8 text-gray-500">Loading assigned activities...</div>
+            ) : studentActivities.filter(a => a.pointerNo === selectedPointer).length > 0 ? (
               <div className="space-y-4">
-                {/* Weightage Info Banner for Pointers 2, 3, 4 */}
-                {[2, 3, 4].includes(selectedPointer as number) && currentPointerSelectionCount > 0 && (
-                  <div className={`p-4 rounded-lg border ${
-                    currentPointerSelectionCount === 1 
-                      ? 'bg-green-50 border-green-300' 
-                      : isWeightageValid() 
-                        ? 'bg-green-50 border-green-300' 
-                        : 'bg-red-50 border-red-300'
-                  }`}>
-                    <h4 className="font-bold text-sm mb-2 text-gray-900">
-                      {currentPointerSelectionCount === 1 ? '✓ Single Activity Selected' : '⚠️ Multiple Activities - Weightage Required'}
-                    </h4>
-                    {currentPointerSelectionCount === 1 ? (
-                      <p className="text-sm text-green-900 font-medium">
-                        This activity will automatically receive 100% weightage.
-                      </p>
-                    ) : (
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-gray-900">
-                          Total Weightage: <span className={`text-lg font-bold ${isWeightageValid() ? 'text-green-800' : 'text-red-800'}`}>
-                            {getTotalWeightage().toFixed(1)}/100
-                          </span>
-                        </p>
-                        <p className="text-sm text-gray-800 font-medium">
-                          Assign weightage to each activity below. The total must equal exactly 100%.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Selected Activities
-                  </h2>
-                  <span className="text-sm text-gray-500">
-                    {currentPointerSelectionCount} selected
-                    {[2, 3, 4].includes(selectedPointer as number) && currentPointerSelectionCount > 1 && (
-                      <span className={`ml-2 font-semibold ${isWeightageValid() ? 'text-green-600' : 'text-red-600'}`}>
-                        • Total: {getTotalWeightage().toFixed(1)}/100
-                      </span>
-                    )}
-                  </span>
-                </div>
-
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Assigned Activities ({studentActivities.filter(a => a.pointerNo === selectedPointer).length})
+                </h2>
                 <div className="space-y-3">
-                  {adminActivities
-                    .filter(activity => selectedActivities.has(activity._id))
+                  {studentActivities
+                    .filter(a => a.pointerNo === selectedPointer)
                     .map((activity) => (
                     <div
-                      key={activity._id}
+                      key={activity.selectionId}
                       className="border border-brand-500 bg-brand-50 rounded-lg p-4 transition-all"
                     >
                       <div className="flex items-start gap-3">
                         <div className="flex-1">
-                          <div className="flex items-start justify-between gap-4 mb-2">
-                            <div className="flex-1">
-                              <h3 className="text-lg font-semibold text-gray-900">
-                                {activity.title}
-                              </h3>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {activity.documentUrl && (
-                                <button
-                                  onClick={() => setViewingDocumentForActivity(
-                                    viewingDocumentForActivity === activity._id ? null : activity._id
-                                  )}
-                                  className={`flex-shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-brand-100 transition text-sm font-medium border ${
-                                    viewingDocumentForActivity === activity._id
-                                      ? 'bg-brand-600 text-white border-brand-600'
-                                      : 'bg-brand-50 text-brand-700 border-brand-200'
-                                  }`}
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    {viewingDocumentForActivity === activity._id ? (
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    ) : (
-                                      <>
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                      </>
-                                    )}
-                                  </svg>
-                                  {viewingDocumentForActivity === activity._id ? 'Hide Doc' : 'View Doc'}
-                                </button>
-                              )}
-                              <button
-                                onClick={() => handleToggleActivity(activity._id)}
-                                className="flex-shrink-0 p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
-                                title="Remove activity"
-                              >
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            </div>
-                          </div>
-                          <p className="text-gray-700 mb-3 whitespace-pre-wrap">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                            {activity.title}
+                          </h3>
+                          <p className="text-gray-700 mb-3 whitespace-pre-wrap text-sm">
                             {activity.description}
                           </p>
                           {activity.tags && activity.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-2 mb-2">
                               {activity.tags.map((tag, tagIndex) => (
                                 <span
                                   key={tagIndex}
@@ -1458,135 +1360,27 @@ function ActivitiesContent() {
                               ))}
                             </div>
                           )}
-                          
-                          {/* Weightage input for Pointers 2, 3, 4 - Multiple Activities */}
-                          {[2, 3, 4].includes(selectedPointer as number) && selectedActivities.has(activity._id) && currentPointerSelectionCount > 1 && (
-                            <div className="mt-3 p-4 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-400 rounded-lg shadow-sm">
-                              <div className="flex items-center gap-3">
-                                <label className="text-sm font-bold text-orange-900">Weightage:</label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  step="0.1"
-                                  value={activityWeightages[activity._id] || 0}
-                                  onChange={(e) => handleWeightageChange(activity._id, e.target.value)}
-                                  className="w-28 px-4 py-2.5 border border-orange-500 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 text-base font-bold text-orange-900 bg-white"
-                                />
-                                <span className="text-base font-bold text-orange-900">%</span>
-                              </div>
-                              <p className="text-xs text-orange-800 mt-2 font-medium">
-                                Assign weightage for this activity (total must equal 100%)
-                              </p>
-                            </div>
-                          )}
-                          
-                          {/* Weightage for Pointers 2, 3, 4 - Single Activity */}
-                          {[2, 3, 4].includes(selectedPointer as number) && selectedActivities.has(activity._id) && currentPointerSelectionCount === 1 && (
-                            <div className="mt-3">
-                              <span className="text-sm font-semibold text-green-700 bg-green-100 px-3 py-1.5 rounded-md border border-green-300">
-                                ✓ Weightage: 100% (Auto-assigned)
+                          <div className="flex items-center gap-4 mt-2 text-sm">
+                            {activity.weightage !== undefined && (
+                              <span className="font-semibold text-brand-700 bg-brand-100 px-2 py-0.5 rounded">
+                                Weightage: {activity.weightage}%
                               </span>
-                            </div>
-                          )}
-
-                          {/* Deadline Picker - shown when activity is selected */}
-                          {selectedActivities.has(activity._id) && (
-                            <div className="mt-3 p-3 bg-brand-50 border border-brand-200 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <span className="text-sm font-bold text-brand-900">⏰ Deadline:</span>
-                                <input
-                                  type="datetime-local"
-                                  value={activityDeadlines[activity._id] || ''}
-                                  onChange={(e) => setActivityDeadlines(prev => ({ ...prev, [activity._id]: e.target.value }))}
-                                  className="flex-1 px-3 py-2 border border-brand-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-                                />
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Inline Document Viewer */}
-                          {viewingDocumentForActivity === activity._id && activity.documentUrl && (
-                            <div className="mt-4 border border-brand-200 rounded-lg overflow-hidden bg-gray-50">
-                              <div className="bg-brand-600 text-white px-4 py-2 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                  </svg>
-                                  <span className="font-semibold text-sm">{activity.documentName || 'Activity Document'}</span>
-                                </div>
-                                <span className="text-xs bg-white/20 px-2 py-1 rounded">View-only</span>
-                              </div>
-                              <div 
-                                className="bg-white"
-                                style={{ userSelect: 'none' }}
-                                onContextMenu={(e) => e.preventDefault()}
-                              >
-                                <InlineDocViewer 
-                                  url={activity.documentUrl} 
-                                  onClose={() => setViewingDocumentForActivity(null)} 
-                                />
-                              </div>
-                            </div>
-                          )}
+                            )}
+                            {activity.deadline && (
+                              <span className="text-gray-600">
+                                ⏰ Deadline: {new Date(activity.deadline).toLocaleString()}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-
-                {/* Select Button */}
-                {currentPointerSelectionCount > 0 && (
-                  <div>
-                    {/* Weightage Validation Warning */}
-                    {[2, 3, 4].includes(selectedPointer as number) && currentPointerSelectionCount > 1 && !isWeightageValid() && (
-                      <div className="mb-4 p-4 bg-red-50 border border-red-400 rounded-lg">
-                        <div className="flex items-start gap-3">
-                          <svg className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                          </svg>
-                          <div className="flex-1">
-                            <h4 className="text-sm font-bold text-red-900 mb-1">Invalid Weightage Total</h4>
-                            <p className="text-sm text-red-800">
-                              Total weightage must equal <strong>100%</strong>. Current total: <strong className="text-red-900">{getTotalWeightage().toFixed(1)}%</strong>
-                            </p>
-                            <p className="text-xs text-red-700 mt-2">
-                              Please adjust the weightages above so they add up to exactly 100%.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Deadline Validation Warning */}
-                    {!areDeadlinesValid() && (
-                      <div className="mb-4 p-4 bg-red-50 border border-red-400 rounded-lg">
-                        <div className="flex items-start gap-3">
-                          <svg className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                          </svg>
-                          <div className="flex-1">
-                            <h4 className="text-sm font-bold text-red-900 mb-1">Missing Deadlines</h4>
-                            <p className="text-sm text-red-800">
-                              All selected activities must have a deadline set before you can proceed.
-                            </p>
-                            <p className="text-xs text-red-700 mt-2">
-                              Please set a deadline for each selected activity above.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <button
-                      onClick={handleSelectActivities}
-                      disabled={selectingActivities || ([2, 3, 4].includes(selectedPointer as number) && currentPointerSelectionCount > 1 && !isWeightageValid()) || !areDeadlinesValid()}
-                      className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {selectingActivities ? 'Selecting...' : `Select ${currentPointerSelectionCount} Activity(ies)`}
-                    </button>
-                  </div>
-                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                No activities assigned yet. Click the button above to select activities.
               </div>
             )}
           </div>

@@ -136,7 +136,7 @@ export default function SuperAdminLeadsPage() {
 
   const getServiceColor = (service: string) => {
     switch (service) {
-      case SERVICE_TYPE.CARRER_FOCUS_STUDY_ABROAD:
+      case SERVICE_TYPE.CAREER_FOCUS_STUDY_ABROAD:
         return 'bg-indigo-100 text-indigo-800';
       case SERVICE_TYPE.IVY_LEAGUE_ADMISSION:
         return 'bg-amber-100 text-amber-800';
@@ -229,7 +229,7 @@ export default function SuperAdminLeadsPage() {
                   className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                 >
                   <option value="">All Services</option>
-                  <option value={SERVICE_TYPE.CARRER_FOCUS_STUDY_ABROAD}>Career Focus Study Abroad</option>
+                  <option value={SERVICE_TYPE.CAREER_FOCUS_STUDY_ABROAD}>Career Focus Study Abroad</option>
                   <option value={SERVICE_TYPE.IVY_LEAGUE_ADMISSION}>Ivy League Admission</option>
                   <option value={SERVICE_TYPE.EDUCATION_PLANNING}>Education Planning</option>
                   <option value={SERVICE_TYPE.IELTS_GRE_LANGUAGE_COACHING}>IELTS/GRE Language Coaching</option>
