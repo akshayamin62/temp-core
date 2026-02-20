@@ -117,6 +117,7 @@ export default function LoginPage() {
         user.role === 'SUPER_ADMIN' ? '/super-admin/dashboard' :
         user.role === 'ADMIN' ? '/admin/dashboard' :
         user.role === 'OPS' ? '/ops/dashboard' :
+        user.role === 'EDUPLAN_COACH' ? '/eduplan-coach/dashboard' :
         '/dashboard';
       
       setTimeout(() => {

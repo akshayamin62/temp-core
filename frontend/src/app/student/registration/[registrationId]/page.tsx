@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { serviceAPI, formAnswerAPI } from '@/lib/api';
 import { FormStructure, StudentServiceRegistration, Service } from '@/types';
@@ -9,6 +9,19 @@ import FormSectionRenderer from '@/components/FormSectionRenderer';
 import StudentLayout from '@/components/StudentLayout';
 import ProgramSection from '@/components/ProgramSection';
 import { getFullName } from '@/utils/nameHelpers';
+import axios from 'axios';
+
+const BRAINOGRAPHY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+interface BrainographyDoc {
+  _id: string;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  mimeType: string;
+  uploadedAt: string;
+  version: number;
+}
 
 // Extended interface for registration with populated fields
 interface ExtendedRegistration extends Omit<StudentServiceRegistration, 'studentId' | 'primaryOpsId' | 'secondaryOpsId' | 'activeOpsId'> {
@@ -89,6 +102,7 @@ function MyDetailsContent() {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(0);
   const [formValues, setFormValues] = useState<any>({});
   const [errors, setErrors] = useState<any>({});
+  const [brainographyDoc, setBrainographyDoc] = useState<BrainographyDoc | null>(null);
 
   useEffect(() => {
     if (!registrationId) {
@@ -97,7 +111,47 @@ function MyDetailsContent() {
       return;
     }
     fetchData();
+    fetchBrainography();
   }, [registrationId]);
+
+  const fetchBrainography = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${BRAINOGRAPHY_API_URL}/brainography/${registrationId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setBrainographyDoc(response.data.data.document || null);
+    } catch (error) {
+      // Silently fail - brainography may not exist for this service
+    }
+  };
+
+  const handleBrainographyView = () => {
+    if (!brainographyDoc) return;
+    const baseUrl = BRAINOGRAPHY_API_URL.replace('/api', '') || 'http://localhost:5000';
+    window.open(`${baseUrl}/${brainographyDoc.filePath}`, '_blank');
+  };
+
+  const handleBrainographyDownload = async () => {
+    if (!brainographyDoc) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${BRAINOGRAPHY_API_URL}/brainography/${registrationId}/download`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', brainographyDoc.fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error('Failed to download brainography report');
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -423,11 +477,11 @@ function MyDetailsContent() {
     );
   }
 
-  if (!registration || formStructure.length === 0) {
+  if (!registration) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <p className="text-gray-600">No form data available</p>
+          <p className="text-gray-600">No registration data available</p>
           <button
             onClick={() => router.push('/dashboard')}
             className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -439,11 +493,173 @@ function MyDetailsContent() {
     );
   }
 
-  const currentPart = formStructure[selectedPartIndex];
-  const currentSection = currentPart.sections.sort((a, b) => a.order - b.order)[selectedSectionIndex];
   const service = typeof registration.serviceId === 'object' 
     ? registration.serviceId 
     : null;
+
+  // Education Planning has no form parts — render a dedicated view showing only the Brainography Report
+  if (formStructure.length === 0) {
+    const isEducationPlanning = service?.slug === 'education-planning' || service?.name === 'Education Planning';
+    if (!isEducationPlanning) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <p className="text-gray-600">No form data available</p>
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Education Planning — show support team + brainography only
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Toaster position="top-right" />
+        <StudentLayout
+          formStructure={[]}
+          currentPartIndex={0}
+          currentSectionIndex={0}
+          onPartChange={() => {}}
+          onSectionChange={() => {}}
+          serviceName={service?.name || 'Education Planning'}
+        >
+          {registration.studentId && (registration.studentId.adminId || registration.studentId.counselorId || registration.primaryOpsId) && (
+            <div className="bg-white border-b border-gray-200 mb-6">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Your Support Team</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {registration.studentId.adminId && (
+                    <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                      <p className="text-xs font-medium text-gray-700 mb-1">Admin</p>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {registration.studentId.adminId.companyName || getFullName(registration.studentId.adminId.userId)}
+                      </p>
+                      {registration.studentId.adminId.userId?.email && (
+                        <p className="text-xs text-gray-600">{registration.studentId.adminId.userId.email}</p>
+                      )}
+                      {registration.studentId.adminId.mobileNumber && (
+                        <p className="text-xs text-gray-600">{registration.studentId.adminId.mobileNumber}</p>
+                      )}
+                    </div>
+                  )}
+                  {registration.studentId.counselorId && (
+                    <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                      <p className="text-xs font-medium text-gray-700 mb-1">Counselor</p>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {getFullName(registration.studentId.counselorId.userId)}
+                      </p>
+                      {registration.studentId.counselorId.userId?.email && (
+                        <p className="text-xs text-gray-600">{registration.studentId.counselorId.userId.email}</p>
+                      )}
+                      {registration.studentId.counselorId.mobileNumber && (
+                        <p className="text-xs text-gray-600">{registration.studentId.counselorId.mobileNumber}</p>
+                      )}
+                    </div>
+                  )}
+                  {(registration.primaryOpsId || registration.activeOpsId) && (
+                    <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                      <p className="text-xs font-medium text-gray-700 mb-1">Eduplan Coach</p>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {getFullName((registration.activeOpsId || registration.primaryOpsId)?.userId)}
+                      </p>
+                      {(registration.activeOpsId || registration.primaryOpsId)?.userId?.email && (
+                        <p className="text-xs text-gray-600">
+                          {(registration.activeOpsId || registration.primaryOpsId)?.userId.email}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {(registration.studentId.intake || registration.studentId.year) && (
+                    <div className="border border-blue-200 rounded-lg p-3 bg-blue-50">
+                      {registration.studentId.intake && (
+                        <div className="mb-2">
+                          <p className="text-xs font-medium text-gray-700 mb-1">Intake</p>
+                          <p className="text-sm font-semibold text-blue-700">{registration.studentId.intake}</p>
+                        </div>
+                      )}
+                      {registration.studentId.year && (
+                        <div>
+                          <p className="text-xs font-medium text-gray-700 mb-1">Year</p>
+                          <p className="text-sm font-semibold text-blue-700">{registration.studentId.year}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Brainography Report */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="border border-teal-200 rounded-xl p-5 bg-teal-50/50">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Brainography Report</h3>
+                  <p className="text-xs text-gray-500">Your personalized brainography report</p>
+                </div>
+              </div>
+              {brainographyDoc ? (
+                <div className="border border-gray-200 rounded-lg p-4 bg-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-teal-50 rounded-lg flex items-center justify-center">
+                        <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{brainographyDoc.fileName}</p>
+                        <p className="text-xs text-gray-500">
+                          {(brainographyDoc.fileSize / 1024).toFixed(1)} KB | 
+                          Uploaded: {new Date(brainographyDoc.uploadedAt).toLocaleDateString('en-GB')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleBrainographyView}
+                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={handleBrainographyDownload}
+                        className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium"
+                      >
+                        Download
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-white">
+                  <svg className="w-10 h-10 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <p className="text-sm text-gray-500">No brainography report uploaded yet</p>
+                  <p className="text-xs text-gray-400 mt-1">Your Eduplan Coach will upload this report</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </StudentLayout>
+      </div>
+    );
+  }
+
+  const currentPart = formStructure[selectedPartIndex];
+  const currentSection = currentPart.sections.sort((a, b) => a.order - b.order)[selectedSectionIndex];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -541,6 +757,71 @@ function MyDetailsContent() {
         )}
 
         {/* Section Navigation (Horizontal Tabs) */}
+        {/* Brainography Report Box - Only for Education Planning */}
+        {service?.name === 'Education Planning' && (
+          <div className="bg-white border-b border-gray-200 mb-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <div className="border border-teal-200 rounded-xl p-5 bg-teal-50/50">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">Brainography Report</h3>
+                    <p className="text-xs text-gray-500">Your personalized brainography report</p>
+                  </div>
+                </div>
+
+                {brainographyDoc ? (
+                  <div className="border border-gray-200 rounded-lg p-4 bg-white">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-teal-50 rounded-lg flex items-center justify-center">
+                          <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 text-sm">{brainographyDoc.fileName}</p>
+                          <p className="text-xs text-gray-500">
+                            {(brainographyDoc.fileSize / 1024).toFixed(1)} KB | 
+                            Uploaded: {new Date(brainographyDoc.uploadedAt).toLocaleDateString('en-GB')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleBrainographyView}
+                          className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium"
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={handleBrainographyDownload}
+                          className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium"
+                        >
+                          Download
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-white">
+                    <svg className="w-10 h-10 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p className="text-sm text-gray-500">No brainography report uploaded yet</p>
+                    <p className="text-xs text-gray-400 mt-1">Your Eduplan Coach will upload this report</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Section Navigation (Horizontal Tabs) - renamed comment */}
         {currentPart && currentPart.sections && currentPart.sections.length > 0 && (
           <div className="bg-white border-b border-gray-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">

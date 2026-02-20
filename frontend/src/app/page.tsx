@@ -248,9 +248,9 @@ export default function Home() {
       return;
     }
 
-    // Check if service is configured (only study-abroad is currently configured)
+    // Check if service is configured
     const service = services.find(s => s._id === serviceId);
-    if (service && service.slug !== 'study-abroad') {
+    if (service && service.slug !== 'study-abroad' && service.slug !== 'education-planning' && service.name !== 'Education Planning') {
       toast('This service will be available soon for registration.');
       return;
     }

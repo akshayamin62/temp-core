@@ -32,9 +32,9 @@ export default function StudentFormHeader({
             Service: <span className="font-medium text-gray-900">{serviceName}</span>
           </p>
         </div>
-        <div className={`px-4 py-2 ${badgeStyles[editMode]} rounded-lg font-medium`}>
+        {/* <div className={`px-4 py-2 ${badgeStyles[editMode]} rounded-lg font-medium`}>
           {badgeText[editMode]}
-        </div>
+        </div> */}
       </div>
     </div>
   );

@@ -21,6 +21,7 @@ import teamMeetRoutes from "./routes/teamMeetRoutes";
 import opsScheduleRoutes from "./routes/opsScheduleRoutes";
 import leadStudentConversionRoutes from "./routes/leadStudentConversionRoutes";
 import spDocumentRoutes from "./routes/spDocumentRoutes";
+import brainographyRoutes from "./routes/brainographyRoutes";
 
 // Ivy League route imports
 import ivyServiceRoutes from "./routes/ivyService.routes";
@@ -125,6 +126,7 @@ app.use("/api/team-meets", teamMeetRoutes); // TeamMeet routes
 app.use("/api/ops-schedules", opsScheduleRoutes); // OPS Schedule routes
 app.use("/api/lead-conversions", leadStudentConversionRoutes); // Lead to Student conversion routes
 app.use("/api/sp-documents", spDocumentRoutes); // Service Provider document routes
+app.use("/api/brainography", brainographyRoutes); // Brainography report routes
 app.use("/api", leadRoutes); // Lead routes (includes public, admin, counselor endpoints)
 
 // Ivy League routes (all protected by authenticate middleware)

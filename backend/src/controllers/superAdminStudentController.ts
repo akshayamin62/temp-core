@@ -61,6 +61,40 @@ export const getAllStudents = async (req: AuthRequest, res: Response): Promise<R
       
       studentQuery = { _id: { $in: studentIds } };
     }
+
+    // If user is an Eduplan Coach, filter by active assignments only
+    if (userRole === USER_ROLE.EDUPLAN_COACH) {
+      const coach = await EduplanCoach.findOne({ userId });
+      if (!coach) {
+        return res.status(404).json({
+          success: false,
+          message: 'Eduplan Coach record not found',
+        });
+      }
+      
+      const registrations = await StudentServiceRegistration.find({
+        $or: [
+          { activeEduplanCoachId: coach._id },
+          { activeEduplanCoachId: { $exists: false }, primaryEduplanCoachId: coach._id },
+          { activeEduplanCoachId: null, primaryEduplanCoachId: coach._id }
+        ]
+      }).select('studentId');
+      
+      const studentIds = [...new Set(registrations.map(r => r.studentId.toString()))];
+      
+      if (studentIds.length === 0) {
+        return res.status(200).json({
+          success: true,
+          message: 'Students fetched successfully',
+          data: {
+            students: [],
+            total: 0,
+          },
+        });
+      }
+      
+      studentQuery = { _id: { $in: studentIds } };
+    }
     
     const students = await Student.find(studentQuery)
       .populate('userId', 'firstName middleName lastName email isVerified isActive createdAt')
@@ -278,6 +312,31 @@ export const getStudentDetails = async (req: AuthRequest, res: Response): Promis
       }
     }
 
+    // If user is EDUPLAN_COACH, verify they are active coach for at least one registration
+    if (user?.role === USER_ROLE.EDUPLAN_COACH) {
+      const coach = await EduplanCoach.findOne({ userId });
+
+      if (!coach) {
+        return res.status(404).json({
+          success: false,
+          message: 'Eduplan Coach record not found',
+        });
+      }
+
+      const hasAccess = registrations.some(reg => {
+        const activeCoachIdValue = reg.activeEduplanCoachId || reg.primaryEduplanCoachId;
+        const activeCoachIdString = activeCoachIdValue?._id?.toString() || activeCoachIdValue?.toString();
+        return activeCoachIdString === coach._id.toString();
+      });
+
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. You are not the active Eduplan Coach for this student.',
+        });
+      }
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Student details fetched successfully',
@@ -347,6 +406,33 @@ export const getStudentFormAnswers = async (req: AuthRequest, res: Response): Pr
         return res.status(403).json({
           success: false,
           message: 'Access denied. You are not the active OPS for this registration.',
+        });
+      }
+    }
+
+    // If user is EDUPLAN_COACH, verify they are the active coach for this registration
+    if (user?.role === USER_ROLE.EDUPLAN_COACH) {
+      const coach = await EduplanCoach.findOne({ userId }).lean().exec();
+      if (!coach) {
+        return res.status(404).json({
+          success: false,
+          message: 'Eduplan Coach record not found',
+        });
+      }
+
+      const fullRegistration = await StudentServiceRegistration.findById(registrationId)
+        .populate('primaryEduplanCoachId')
+        .populate('activeEduplanCoachId')
+        .lean()
+        .exec();
+      
+      const activeCoachIdValue = fullRegistration?.activeEduplanCoachId || fullRegistration?.primaryEduplanCoachId;
+      const activeCoachIdString = activeCoachIdValue?._id?.toString() || activeCoachIdValue?.toString();
+      
+      if (activeCoachIdString !== coach._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. You are not the active Eduplan Coach for this registration.',
         });
       }
     }

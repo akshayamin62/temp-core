@@ -33,6 +33,8 @@ export default function DashboardPage() {
         router.push('/counselor/dashboard');
       } else if (user.role === 'IVY_EXPERT') {
         router.push('/ivy-league/ivy-expert');
+      } else if (user.role === 'EDUPLAN_COACH') {
+        router.push('/eduplan-coach/dashboard');
       } else if (user.role === 'SERVICE_PROVIDER') {
         router.push('/service-provider/dashboard');
       } else {
@@ -107,9 +109,9 @@ export default function DashboardPage() {
   };
 
   const handleRegister = async (serviceId: string) => {
-    // Check if service is configured (only study-abroad is currently configured)
+    // Check if service is configured
     const service = otherServices.find(s => s._id === serviceId);
-    if (service && service.slug !== 'study-abroad' && service.slug !== 'ivy-league' && service.slug !== 'ivy-league-admission' && service.name !== 'Ivy League Preparation' && service.name !== 'Ivy League Admission') {
+    if (service && service.slug !== 'study-abroad' && service.slug !== 'ivy-league' && service.slug !== 'ivy-league-admission' && service.name !== 'Ivy League Preparation' && service.name !== 'Ivy League Admission' && service.slug !== 'education-planning' && service.name !== 'Education Planning') {
       toast('This service will be available soon for registration.');
       return;
     }

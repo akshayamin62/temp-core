@@ -14,9 +14,9 @@ import {
 
 const router = express.Router();
 
-// All routes require authentication and super admin/ops role
+// All routes require authentication and super admin/ops/eduplan-coach role
 router.use(authenticate);
-router.use(authorize([USER_ROLE.SUPER_ADMIN, USER_ROLE.OPS]));
+router.use(authorize([USER_ROLE.SUPER_ADMIN, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH]));
 
 // Get all students
 router.get('/', getAllStudents);

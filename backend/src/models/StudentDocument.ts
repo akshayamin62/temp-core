@@ -15,6 +15,7 @@ export enum UploaderRole {
   STUDENT = "STUDENT",
   OPS = "OPS",
   SUPER_ADMIN = "SUPER_ADMIN",
+  EDUPLAN_COACH = "EDUPLAN_COACH",
 }
 
 export interface IStudentDocument extends Document {
