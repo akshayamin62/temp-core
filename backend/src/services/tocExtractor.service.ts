@@ -2,18 +2,18 @@ import fs from 'fs';
 import path from 'path';
 import mammoth from 'mammoth';
 
-// Lazy-load pdf-parse to avoid crashing in serverless environments
-// (pdf-parse depends on @napi-rs/canvas + DOMMatrix which aren't available on Vercel)
-let pdfParse: any = null;
-const getPdfParse = () => {
-  if (!pdfParse) {
+// Lazy-load pdf-parse v2 (class-based API)
+let PDFParseClass: any = null;
+const getPDFParseClass = () => {
+  if (!PDFParseClass) {
     try {
-      pdfParse = require('pdf-parse');
+      const mod = require('pdf-parse');
+      PDFParseClass = mod.PDFParse || mod.default?.PDFParse || mod;
     } catch (err) {
       console.warn('pdf-parse not available in this environment:', err);
     }
   }
-  return pdfParse;
+  return PDFParseClass;
 };
 
 export interface ExtractedTask {
@@ -59,14 +59,16 @@ async function extractWordTOC(filePath: string): Promise<ExtractedTask[]> {
  */
 async function extractPDFTOC(filePath: string): Promise<ExtractedTask[]> {
   try {
-    const parser = getPdfParse();
-    if (!parser) {
+    const Cls = getPDFParseClass();
+    if (!Cls) {
       console.warn('pdf-parse unavailable, returning default task');
       return [{ title: 'Complete Document Review' }];
     }
 
     const dataBuffer = fs.readFileSync(filePath);
-    const data = await parser(dataBuffer);
+    const parser = new Cls({ data: new Uint8Array(dataBuffer) });
+    const data = await parser.getText();
+    await parser.destroy().catch(() => {});
 
     const tasks: ExtractedTask[] = [];
     const lines = data.text.split('\n');

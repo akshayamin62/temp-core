@@ -10,6 +10,7 @@ import { USER_ROLE } from '../types/roles';
 import fs from 'fs';
 import path from 'path';
 import { getUploadBaseDir, ensureDir } from '../utils/uploadDir';
+import { runBrainographyExtraction } from './portfolioController';
 
 const BRAINOGRAPHY_DOC_KEY = 'brainography_report';
 const BRAINOGRAPHY_DOC_NAME = 'Brainography Report';
@@ -146,6 +147,11 @@ export const uploadBrainography = async (req: AuthRequest, res: Response): Promi
         approvedAt: new Date(),
       });
     }
+
+    // Fire-and-forget: auto-extract brainography data via ChatGPT
+    runBrainographyExtraction(registrationId).catch(err => {
+      console.error('Auto-extraction after brainography upload failed:', err.message);
+    });
 
     return res.status(201).json({
       success: true,

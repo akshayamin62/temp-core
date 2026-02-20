@@ -14,6 +14,8 @@ import ProgramSection from '@/components/ProgramSection';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName } from '@/utils/nameHelpers';
 import axios from 'axios';
+import BrainographyDataDisplay, { BrainographyDataType } from '@/components/BrainographyDataDisplay';
+import PortfolioSection, { PortfolioItem, PortfolioRow, usePortfolioDownload } from '@/components/PortfolioSection';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -59,6 +61,12 @@ export default function EduplanCoachStudentFormEditPage() {
   const [uploadingBrainography, setUploadingBrainography] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Extracted data & Portfolio
+  const [brainographyData, setBrainographyData] = useState<BrainographyDataType | null>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [portfolios, setPortfolios] = useState<PortfolioItem[]>([]);
+  const handlePortfolioDownload = usePortfolioDownload();
+
   // Prevent double fetch in React StrictMode
   const hasFetchedRef = useRef(false);
 
@@ -84,6 +92,8 @@ export default function EduplanCoachStudentFormEditPage() {
       try {
         await fetchAllData();
         await fetchBrainography();
+        await fetchBrainographyData();
+        await fetchPortfolios();
       } catch (fetchError) {
         console.error('fetchAllData failed:', fetchError);
       }
@@ -107,6 +117,46 @@ export default function EduplanCoachStudentFormEditPage() {
     }
   };
 
+  const fetchBrainographyData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/portfolio/${registrationId}/data`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setBrainographyData(response.data.data.brainographyData || null);
+    } catch (error) {
+      // Silently fail
+    }
+  };
+
+  const fetchPortfolios = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/portfolio/${registrationId}/portfolios`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setPortfolios(response.data.data.portfolios || []);
+    } catch (error) {
+      // Silently fail
+    }
+  };
+
+  const handleExtractData = async () => {
+    setExtracting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API_URL}/portfolio/${registrationId}/extract`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setBrainographyData(response.data.data.brainographyData || null);
+      toast.success('Brainography data extracted successfully!');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to extract data');
+    } finally {
+      setExtracting(false);
+    }
+  };
+
   const handleBrainographyUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -124,8 +174,12 @@ export default function EduplanCoachStudentFormEditPage() {
         },
       });
 
-      toast.success('Brainography report uploaded successfully!');
+      toast.success('Brainography report uploaded successfully! Extracting data...');
       await fetchBrainography();
+      // Auto-extraction happens in the backend; poll for results after a delay
+      setTimeout(async () => {
+        await fetchBrainographyData();
+      }, 5000);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to upload brainography report');
     } finally {
@@ -507,7 +561,94 @@ export default function EduplanCoachStudentFormEditPage() {
                 </label>
               </div>
             )}
+
+            {/* Generated portfolio reports shown in same section */}
+            {portfolios.length > 0 && (
+              <div className="mt-4 space-y-2">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Generated Reports</p>
+                {portfolios.map(p => (
+                  <PortfolioRow key={p._id} portfolio={p} onDownload={handlePortfolioDownload} />
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* Extracted Brainography Data */}
+          {brainographyDoc && (
+            <div className="mb-6">
+              {!brainographyData ? (
+                <div className="bg-white rounded-xl shadow-sm border border-amber-200 p-6 text-center">
+                  <svg className="w-10 h-10 mx-auto mb-3 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <p className="text-gray-600 mb-3">Brainography data not yet extracted</p>
+                  <button
+                    onClick={handleExtractData}
+                    disabled={extracting}
+                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm transition-all ${
+                      extracting
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-teal-600 text-white hover:bg-teal-700 shadow-md'
+                    }`}
+                  >
+                    {extracting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Extracting with AI...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Extract Data from PDF
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <BrainographyDataDisplay data={brainographyData} />
+              )}
+            </div>
+          )}
+
+          {/* Re-extract button (when data exists) */}
+          {brainographyData && brainographyDoc && (
+            <div className="mb-6 flex justify-end">
+              <button
+                onClick={handleExtractData}
+                disabled={extracting}
+                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium text-teal-700 bg-teal-50 border border-teal-200 rounded-lg hover:bg-teal-100 transition-colors"
+              >
+                {extracting ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+                    Re-extracting...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Re-extract Data
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Portfolio Section */}
+          {brainographyData && (
+            <div className="mb-6">
+              <PortfolioSection
+                registrationId={registrationId}
+                brainographyData={brainographyData}
+                portfolios={portfolios}
+                onPortfoliosChange={fetchPortfolios}
+                allowGenerate={false}
+              />
+            </div>
+          )}
 
           {/* Form Parts Navigation */}
           <FormPartsNavigation
