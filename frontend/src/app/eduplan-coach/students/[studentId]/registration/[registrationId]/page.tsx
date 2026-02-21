@@ -64,6 +64,7 @@ export default function EduplanCoachStudentFormEditPage() {
   // Extracted data & Portfolio
   const [brainographyData, setBrainographyData] = useState<BrainographyDataType | null>(null);
   const [extracting, setExtracting] = useState(false);
+  const [extractProgress, setExtractProgress] = useState<{ step: string; pct: number } | null>(null);
   const [portfolios, setPortfolios] = useState<PortfolioItem[]>([]);
   const handlePortfolioDownload = usePortfolioDownload();
 
@@ -143,15 +144,38 @@ export default function EduplanCoachStudentFormEditPage() {
 
   const handleExtractData = async () => {
     setExtracting(true);
+    setExtractProgress({ step: 'Preparing PDF for AI analysis...', pct: 10 });
     try {
       const token = localStorage.getItem('token');
+
+      // Simulate progress during the long extraction
+      const progressSteps = [
+        { step: 'Sending PDF to GPT-4o...', pct: 20 },
+        { step: 'Analyzing brainography patterns...', pct: 40 },
+        { step: 'Extracting skills & quotients...', pct: 60 },
+        { step: 'Parsing career goals & styles...', pct: 80 },
+        { step: 'Saving extracted data...', pct: 90 },
+      ];
+      let stepIdx = 0;
+      const interval = setInterval(() => {
+        if (stepIdx < progressSteps.length) {
+          setExtractProgress(progressSteps[stepIdx]);
+          stepIdx++;
+        }
+      }, 5000);
+
       const response = await axios.post(`${API_URL}/portfolio/${registrationId}/extract`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      clearInterval(interval);
+      setExtractProgress({ step: 'Extraction complete!', pct: 100 });
       setBrainographyData(response.data.data.brainographyData || null);
       toast.success('Brainography data extracted successfully!');
+      setTimeout(() => setExtractProgress(null), 2000);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to extract data');
+      setExtractProgress(null);
     } finally {
       setExtracting(false);
     }
@@ -562,13 +586,17 @@ export default function EduplanCoachStudentFormEditPage() {
               </div>
             )}
 
-            {/* Generated portfolio reports shown in same section */}
+            {/* Generated portfolio reports shown horizontally */}
             {portfolios.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Generated Reports</p>
-                {portfolios.map(p => (
-                  <PortfolioRow key={p._id} portfolio={p} onDownload={handlePortfolioDownload} />
-                ))}
+              <div className="mt-4">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Generated Reports</p>
+                <div className="flex flex-wrap gap-3">
+                  {portfolios.map(p => (
+                    <div key={p._id} className="flex-1 min-w-[260px]">
+                      <PortfolioRow portfolio={p} onDownload={handlePortfolioDownload} />
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -582,6 +610,20 @@ export default function EduplanCoachStudentFormEditPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                   <p className="text-gray-600 mb-3">Brainography data not yet extracted</p>
+                  {extractProgress && (
+                    <div className="mb-4 max-w-md mx-auto">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-medium text-teal-800">{extractProgress.step}</span>
+                        <span className="text-xs font-bold text-teal-700">{extractProgress.pct}%</span>
+                      </div>
+                      <div className="w-full bg-teal-100 rounded-full h-2.5 overflow-hidden">
+                        <div
+                          className="bg-gradient-to-r from-teal-500 to-emerald-500 h-2.5 rounded-full transition-all duration-1000 ease-out"
+                          style={{ width: `${extractProgress.pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                   <button
                     onClick={handleExtractData}
                     disabled={extracting}
@@ -614,7 +656,22 @@ export default function EduplanCoachStudentFormEditPage() {
 
           {/* Re-extract button (when data exists) */}
           {brainographyData && brainographyDoc && (
-            <div className="mb-6 flex justify-end">
+            <div className="mb-6">
+              {extractProgress && (
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-medium text-teal-800">{extractProgress.step}</span>
+                    <span className="text-xs font-bold text-teal-700">{extractProgress.pct}%</span>
+                  </div>
+                  <div className="w-full bg-teal-100 rounded-full h-2.5 overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-teal-500 to-emerald-500 h-2.5 rounded-full transition-all duration-1000 ease-out"
+                      style={{ width: `${extractProgress.pct}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-end">
               <button
                 onClick={handleExtractData}
                 disabled={extracting}
@@ -634,6 +691,7 @@ export default function EduplanCoachStudentFormEditPage() {
                   </>
                 )}
               </button>
+              </div>
             </div>
           )}
 

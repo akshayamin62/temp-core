@@ -29,6 +29,7 @@ export interface IPortfolio extends Document {
 
   generatedAt: Date;
   generationError?: string;
+  topicLabel: string; // e.g. "STEM, Medicine" — groups career+dev pair
 }
 
 const PortfolioSchema = new Schema<IPortfolio>({
@@ -46,11 +47,12 @@ const PortfolioSchema = new Schema<IPortfolio>({
 
   generatedAt: { type: Date },
   generationError: { type: String },
+  topicLabel: { type: String, default: '' },
 }, {
   timestamps: true,
 });
 
-// Unique per registration + reportType (one career + one development per registration)
-PortfolioSchema.index({ registrationId: 1, reportType: 1 }, { unique: true });
+// Unique per registration + reportType + topicLabel
+PortfolioSchema.index({ registrationId: 1, reportType: 1, topicLabel: 1 }, { unique: true });
 
 export default mongoose.model<IPortfolio>('Portfolio', PortfolioSchema);

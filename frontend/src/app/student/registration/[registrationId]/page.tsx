@@ -628,7 +628,7 @@ function MyDetailsContent() {
             </div>
           )}
 
-          {/* Brainography Report & Generated Reports */}
+          {/* Brainography Report & Generated Reports — Horizontal Layout */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="border border-teal-200 rounded-xl p-5 bg-teal-50/50">
               <div className="flex items-center gap-3 mb-4">
@@ -642,42 +642,40 @@ function MyDetailsContent() {
                   <p className="text-xs text-gray-500">Brainography report & generated portfolio reports</p>
                 </div>
               </div>
-              <div className="space-y-2">
+              {/* Horizontal wrapping row — all boxes fill the width, no scroll */}
+              <div className="flex flex-wrap gap-3">
                 {brainographyDoc ? (
-                  <div className="border border-gray-200 rounded-lg p-4 bg-white">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-teal-50 rounded-lg flex items-center justify-center">
-                          <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 text-sm">{brainographyDoc.fileName}</p>
-                          <p className="text-xs text-gray-500">
-                            {(brainographyDoc.fileSize / 1024).toFixed(1)} KB | 
-                            Uploaded: {new Date(brainographyDoc.uploadedAt).toLocaleDateString('en-GB')}
-                          </p>
-                        </div>
+                  <div className="border border-gray-200 rounded-lg p-4 bg-white flex-1 min-w-[220px]">
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 bg-teal-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={handleBrainographyView}
-                          className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium"
-                        >
-                          View
-                        </button>
-                        <button
-                          onClick={handleBrainographyDownload}
-                          className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium"
-                        >
-                          Download
-                        </button>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 text-sm truncate">{brainographyDoc.fileName}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {(brainographyDoc.fileSize / 1024).toFixed(1)} KB &middot; Uploaded: {new Date(brainographyDoc.uploadedAt).toLocaleDateString('en-GB')}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <button
+                            onClick={handleBrainographyView}
+                            className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium"
+                          >
+                            View
+                          </button>
+                          <button
+                            onClick={handleBrainographyDownload}
+                            className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium"
+                          >
+                            Download
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-white">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-white flex-1 min-w-[260px]">
                     <svg className="w-10 h-10 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
@@ -685,9 +683,11 @@ function MyDetailsContent() {
                     <p className="text-xs text-gray-400 mt-1">Your Eduplan Coach will upload this report</p>
                   </div>
                 )}
-                {/* Generated portfolio reports shown in same section */}
+                {/* Generated portfolio reports shown horizontally */}
                 {portfolios.map(p => (
-                  <PortfolioRow key={p._id} portfolio={p} onDownload={handlePortfolioDownload} />
+                  <div key={p._id} className="flex-1 min-w-[260px]">
+                    <PortfolioRow portfolio={p} onDownload={handlePortfolioDownload} />
+                  </div>
                 ))}
               </div>
             </div>

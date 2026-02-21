@@ -81,7 +81,7 @@ export async function runBrainographyExtraction(registrationId: string): Promise
   const extractionPrompt = buildExtractionPrompt();
 
   const response = await client.chat.completions.create({
-    model: 'gpt-5.2',
+    model: 'gpt-4o',
     messages: [
       {
         role: 'user',
@@ -101,8 +101,8 @@ export async function runBrainographyExtraction(registrationId: string): Promise
       },
     ],
     temperature: 0.1,
-    // max_tokens: 8000,
-    max_completion_tokens:8000
+    max_tokens: 8000,
+    // max_completion_tokens:8000
   });
 
   const rawContent = response.choices[0]?.message?.content?.trim() || '{}';
@@ -301,16 +301,13 @@ export const getBrainographyData = async (req: AuthRequest, res: Response): Prom
 };
 
 // ─────────────────────────────────────────────────────────────────────────
-// 3. GENERATE PORTFOLIO (Career or Development report)
+// 3. GENERATE BOTH REPORTS (Career + Development) for a single topic
 // ─────────────────────────────────────────────────────────────────────────
-export const generatePortfolio = async (req: AuthRequest, res: Response): Promise<Response> => {
+export const generateBothReports = async (req: AuthRequest, res: Response): Promise<Response> => {
   try {
     const { registrationId } = req.params;
-    const { reportType, selectedCareerGoals } = req.body;
+    const { selectedCareerGoals } = req.body;
 
-    if (!reportType || !['career', 'development'].includes(reportType)) {
-      return res.status(400).json({ success: false, message: 'reportType must be "career" or "development"' });
-    }
     if (!selectedCareerGoals || !Array.isArray(selectedCareerGoals) || selectedCareerGoals.length === 0 || selectedCareerGoals.length > 2) {
       return res.status(400).json({ success: false, message: 'Select 1 or 2 career goals' });
     }
@@ -326,71 +323,121 @@ export const generatePortfolio = async (req: AuthRequest, res: Response): Promis
       return res.status(404).json({ success: false, message: 'Registration not found' });
     }
 
-    // Check if portfolio already exists — update it
-    let portfolio = await Portfolio.findOne({ registrationId, reportType });
-    if (!portfolio) {
-      portfolio = new Portfolio({
-        registrationId,
-        studentId: registration.studentId,
-        reportType,
-        selectedCareerGoals,
-        status: PortfolioStatus.GENERATING,
+    // ── Topic limit check ──
+    const maxTopics = (registration as any).maxReportGenerations ?? 2;
+    const topicLabel = selectedCareerGoals.slice().sort().join(', ');
+
+    // Count distinct topics already generated (completed career+dev pairs count as 1 topic)
+    const existingTopics = await Portfolio.distinct('topicLabel', {
+      registrationId,
+      topicLabel: { $ne: '' },
+      status: { $in: [PortfolioStatus.COMPLETED, PortfolioStatus.GENERATING] },
+    });
+
+    const isExistingTopic = existingTopics.includes(topicLabel);
+    if (!isExistingTopic && existingTopics.length >= maxTopics) {
+      return res.status(400).json({
+        success: false,
+        message: `Report generation limit reached (${maxTopics} topics). Contact your admin to increase the limit.`,
       });
-    } else {
-      portfolio.selectedCareerGoals = selectedCareerGoals;
-      portfolio.status = PortfolioStatus.GENERATING;
-      portfolio.generationError = undefined;
     }
-    await portfolio.save();
 
-    // Generate report using multi-agent approach (ported from Python)
-    try {
-      const careerRolesStr = selectedCareerGoals.join(', ');
-      const reportContent = await generateReportWithAgents(reportType as PortfolioType, brainData, careerRolesStr);
+    const careerRolesStr = selectedCareerGoals.join(', ');
+    const results: { career?: any; development?: any } = {};
 
-      // Save the generated DOCX file
-      const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } = await import('docx');
-      const { Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType } = await import('docx');
-      const docSections = buildDocxSections(reportContent, reportType, brainData, careerRolesStr, { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType });
-      const doc = new Document({ sections: docSections });
-
-      const buffer = await Packer.toBuffer(doc);
-      const studentDir = path.join(getUploadBaseDir(), registration.studentId.toString());
-      ensureDir(studentDir);
-
-      const sanitizedName = brainData.studentName.replace(/[^a-zA-Z0-9]/g, '_') || 'student';
-      const sanitizedGoals = careerRolesStr.replace(/[^a-zA-Z0-9,]/g, '_').substring(0, 60);
-      const reportName = reportType === 'career' ? 'Career_Report' : 'Development_Report';
-      const fileName = `${reportName}_${sanitizedName}_${sanitizedGoals}.docx`;
-      const filePath = path.join(studentDir, fileName);
-
-      fs.writeFileSync(filePath, buffer);
-
-      portfolio.reportContent = reportContent;
-      portfolio.fileName = fileName;
-      portfolio.filePath = `uploads/${registration.studentId}/${fileName}`;
-      portfolio.fileSize = buffer.length;
-      portfolio.status = PortfolioStatus.COMPLETED;
-      portfolio.generatedAt = new Date();
+    // Generate both report types sequentially
+    for (const reportType of ['career', 'development'] as const) {
+      let portfolio = await Portfolio.findOne({ registrationId, reportType, topicLabel });
+      if (!portfolio) {
+        portfolio = new Portfolio({
+          registrationId,
+          studentId: registration.studentId,
+          reportType,
+          selectedCareerGoals,
+          topicLabel,
+          status: PortfolioStatus.GENERATING,
+        });
+      } else {
+        portfolio.selectedCareerGoals = selectedCareerGoals;
+        portfolio.status = PortfolioStatus.GENERATING;
+        portfolio.generationError = undefined;
+      }
       await portfolio.save();
 
-      return res.status(200).json({
-        success: true,
-        message: `${reportType === 'career' ? 'Career' : 'Development'} report generated successfully`,
-        data: { portfolio },
-      });
-    } catch (genError: any) {
-      portfolio.status = PortfolioStatus.FAILED;
-      portfolio.generationError = genError.message;
-      await portfolio.save();
-      throw genError;
+      try {
+        const reportContent = await generateReportWithAgents(reportType as PortfolioType, brainData, careerRolesStr);
+
+        const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } = await import('docx');
+        const { Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType } = await import('docx');
+        const docSections = buildDocxSections(reportContent, reportType, brainData, careerRolesStr, { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType });
+        const doc = new Document({ sections: docSections });
+
+        const buffer = await Packer.toBuffer(doc);
+        const studentDir = path.join(getUploadBaseDir(), registration.studentId.toString());
+        ensureDir(studentDir);
+
+        const sanitizedName = brainData.studentName.replace(/[^a-zA-Z0-9]/g, '_') || 'student';
+        const sanitizedGoals = careerRolesStr.replace(/[^a-zA-Z0-9,]/g, '_').substring(0, 60);
+        const reportName = reportType === 'career' ? 'Career_Report' : 'Development_Report';
+        const fileName = `${reportName}_${sanitizedName}_${sanitizedGoals}.docx`;
+        const filePath = path.join(studentDir, fileName);
+
+        fs.writeFileSync(filePath, buffer);
+
+        portfolio.reportContent = reportContent;
+        portfolio.fileName = fileName;
+        portfolio.filePath = `uploads/${registration.studentId}/${fileName}`;
+        portfolio.fileSize = buffer.length;
+        portfolio.status = PortfolioStatus.COMPLETED;
+        portfolio.generatedAt = new Date();
+        await portfolio.save();
+
+        results[reportType] = portfolio.toObject();
+      } catch (genError: any) {
+        portfolio.status = PortfolioStatus.FAILED;
+        portfolio.generationError = genError.message;
+        await portfolio.save();
+        results[reportType] = portfolio.toObject();
+      }
     }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Both Career & Development reports generated',
+      data: { career: results.career, development: results.development },
+    });
   } catch (error: any) {
-    console.error('Generate portfolio error:', error);
+    console.error('Generate both reports error:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to generate portfolio',
+      message: error.message || 'Failed to generate reports',
     });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// 3b. GET REPORT LIMIT INFO
+// ─────────────────────────────────────────────────────────────────────────
+export const getReportLimit = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const { registrationId } = req.params;
+    const registration = await StudentServiceRegistration.findById(registrationId).lean().exec();
+    if (!registration) {
+      return res.status(404).json({ success: false, message: 'Registration not found' });
+    }
+    const maxTopics = (registration as any).maxReportGenerations ?? 2;
+    const usedTopics = await Portfolio.distinct('topicLabel', {
+      registrationId,
+      topicLabel: { $ne: '' },
+      status: { $in: [PortfolioStatus.COMPLETED, PortfolioStatus.GENERATING] },
+    });
+    return res.status(200).json({
+      success: true,
+      data: { maxTopics, usedTopics: usedTopics.length, topics: usedTopics },
+    });
+  } catch (error: any) {
+    console.error('Get report limit error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to get report limits' });
   }
 };
 
@@ -506,8 +553,8 @@ async function generateReportWithAgents(
       try {
         console.log(`[GENERATOR] Section ${i + 1}/${sections.length}: ${sectionName} (attempt ${retries + 1})`);
         const resp = await client.chat.completions.create({
-        //   model: 'gpt-4o',
-          model: 'gpt-5.2',
+          model: 'gpt-4o',
+          // model: 'gpt-5.2',
           messages: [
             {
               role: 'system',
@@ -517,8 +564,8 @@ async function generateReportWithAgents(
             { role: 'user', content: sectionPrompt },
           ],
           temperature: 0.7,
-        //   max_tokens: 8000,
-          max_completion_tokens: 15000
+          max_tokens: 100,
+          // max_completion_tokens: 15000
         });
 
         content = resp.choices[0]?.message?.content?.trim() || '';

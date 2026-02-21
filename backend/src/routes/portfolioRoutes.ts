@@ -5,7 +5,8 @@ import { USER_ROLE } from '../types/roles';
 import {
   extractBrainographyData,
   getBrainographyData,
-  generatePortfolio,
+  generateBothReports,
+  getReportLimit,
   getPortfolios,
   downloadPortfolio,
 } from '../controllers/portfolioController';
@@ -29,11 +30,18 @@ router.get(
   getBrainographyData,
 );
 
-// Generate portfolio report (Student, Eduplan Coach, Super Admin)
+// Generate both career + development reports in one click (Student, Eduplan Coach, Super Admin)
 router.post(
   '/:registrationId/generate',
   authorize([USER_ROLE.STUDENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN]),
-  generatePortfolio,
+  generateBothReports,
+);
+
+// Get report generation limit info
+router.get(
+  '/:registrationId/report-limit',
+  authorize([USER_ROLE.STUDENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN]),
+  getReportLimit,
 );
 
 // Get portfolios for a registration (Student, Eduplan Coach, Super Admin)
