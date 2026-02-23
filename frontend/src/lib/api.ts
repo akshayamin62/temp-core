@@ -621,6 +621,29 @@ export const leadConversionAPI = {
   getAllConversions: (status?: string) => api.get('/lead-conversions/all', { params: { status } }),
 };
 
+// Activity Management API
+export const activityAPI = {
+  // Monthly Focus
+  getMonthlyFocus: (registrationId: string, month: string) =>
+    api.get(`/activity/${registrationId}/monthly-focus`, { params: { month } }),
+  upsertMonthlyFocus: (registrationId: string, data: any) =>
+    api.put(`/activity/${registrationId}/monthly-focus`, data),
+
+  // Daily Planner
+  getDailyPlanner: (registrationId: string, date: string) =>
+    api.get(`/activity/${registrationId}/planner`, { params: { date } }),
+  upsertDailyPlanner: (registrationId: string, data: any) =>
+    api.put(`/activity/${registrationId}/planner`, data),
+
+  // Month summary for calendar
+  getMonthSummary: (registrationId: string, month: string) =>
+    api.get(`/activity/${registrationId}/month-summary`, { params: { month } }),
+
+  // Analytics
+  getActivityAnalytics: (registrationId: string, months?: number) =>
+    api.get(`/activity/${registrationId}/analytics`, { params: { months: months || 3 } }),
+};
+
 export default api;
 
 
