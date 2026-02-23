@@ -116,12 +116,19 @@ function typeToDomain(type: string): string {
 
 /** Auto-bullet: prefix each non-empty line with • */
 function bulletFormat(raw: string): string {
+  // If nothing remains after stripping all bullet chars and whitespace, return empty
+  if (!raw.replace(/[•\-*\s]/g, '')) return '';
   return raw.split('\n').map((line, idx, arr) => {
     const stripped = line.replace(/^[\s•\-*]+/, '').trim();
     if (!stripped && idx === arr.length - 1) return '• ';
     if (!stripped) return '';
     return `• ${stripped}`;
   }).join('\n');
+}
+
+/** True only when the string has real content beyond bullet symbols/whitespace */
+function hasContent(s: string): boolean {
+  return s.replace(/[•\-*\s]/g, '').length > 0;
 }
 
 /* ── Star Rating ── */
@@ -189,6 +196,7 @@ function ActivityContent() {
   const [plannerLoaded, setPlannerLoaded] = useState(false);
   const [plannerSaving, setPlannerSaving] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+  const [saveAttempted, setSaveAttempted] = useState(false);
 
   const currentMonth = toYM(calDate);
 
@@ -270,6 +278,7 @@ function ActivityContent() {
       setPlanner(JSON.parse(JSON.stringify(emptyPlanner)));
     }
     setPlannerLoaded(true);
+    setSaveAttempted(false);
     setActiveTab(0);
   }, [registrationId]);
 
@@ -286,9 +295,44 @@ function ActivityContent() {
     setFocusSaving(false);
   };
 
+  /* ── Field pair validation (text + star rating must both be filled or both empty) ── */
+  const isFieldError = (key: string): boolean => {
+    if (!saveAttempted) return false;
+    switch (key) {
+      case 'feeling':        return hasContent(planner.feeling) !== !!planner.feelingRating;
+      case 'blessings':      return hasContent(planner.blessings) !== !!planner.blessingsRating;
+      case 'happyMoment':    return hasContent(planner.happyMoment) !== !!planner.happyMomentRating;
+      case 'selfReflection': return hasContent(planner.selfCare.selfReflection) !== !!planner.selfCare.selfReflectionRating;
+      case 'skillsUsed':     return hasContent(planner.selfCare.skillsUsed) !== !!planner.selfCare.skillsUsedRating;
+      case 'achievements':   return hasContent(planner.selfCare.achievements) !== !!planner.selfCare.achievementsRating;
+      default: return false;
+    }
+  };
+
   /* ── Save planner (with validation: only save complete plan rows) ── */
   const savePlanner = async () => {
     if (!selectedDate) return;
+    setSaveAttempted(true);
+
+    // Validate: text+rating pairs must be all-or-nothing
+    const pairs = [
+      { key: 'feeling',        label: 'How am I feeling this morning?', filled: hasContent(planner.feeling),                   rating: planner.feelingRating,                 tab: 0 },
+      { key: 'blessings',      label: 'Blessings earned for the day!',  filled: hasContent(planner.blessings),                 rating: planner.blessingsRating,               tab: 2 },
+      { key: 'happyMoment',    label: 'Happy moment of the day',        filled: hasContent(planner.happyMoment),               rating: planner.happyMomentRating,             tab: 2 },
+      { key: 'selfReflection', label: 'Self-Reflection / Self-Advice',  filled: hasContent(planner.selfCare.selfReflection),   rating: planner.selfCare.selfReflectionRating, tab: 4 },
+      { key: 'skillsUsed',     label: 'Skills I used today',            filled: hasContent(planner.selfCare.skillsUsed),       rating: planner.selfCare.skillsUsedRating,     tab: 4 },
+      { key: 'achievements',   label: 'My Achievements',                filled: hasContent(planner.selfCare.achievements),     rating: planner.selfCare.achievementsRating,   tab: 4 },
+    ];
+    const firstError = pairs.find((p) => (p.filled && !p.rating) || (!p.filled && p.rating));
+    if (firstError) {
+      const msg = !firstError.filled
+        ? `Please add a star rating for "${firstError.label}"`
+        : `Please fill in text for "${firstError.label}"`;
+      toast.error(msg, { duration: 4000 });
+      setActiveTab(firstError.tab);
+      return;
+    }
+
     setPlannerSaving(true);
     try {
       // Filter plan rows: only keep rows where all 3 fields are filled
@@ -583,7 +627,7 @@ function ActivityContent() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <h3 className="text-base font-semibold text-gray-700 mb-3">How am I feeling this morning?</h3>
-                        <div className="flex items-start gap-3 rounded-lg border border-gray-200 p-4 h-[calc(100%-40px)]">
+<div className={`flex items-start gap-3 rounded-lg border p-4 h-[calc(100%-40px)] transition-colors ${isFieldError('feeling') ? 'border-red-400 bg-red-50/30' : 'border-gray-200'}`}>
                           <div className="flex-1">
                             <textarea rows={3} value={planner.feeling}
                               onChange={(e) => handleBulletPlanner('feeling', e.target.value)}
@@ -593,6 +637,9 @@ function ActivityContent() {
                             <StarRating value={planner.feelingRating} onChange={(v) => setPlanner((p) => ({ ...p, feelingRating: v }))} />
                           </div>
                         </div>
+                        {isFieldError('feeling') && (
+                          <p className="text-xs text-red-500 mt-1.5 font-medium flex items-center gap-1"><span>⚠️</span> Both text and a star rating are required</p>
+                        )}
                       </div>
 
                       <div>
@@ -761,7 +808,7 @@ function ActivityContent() {
                     })}
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                      <div className="rounded-lg border border-gray-200 p-4">
+                      <div className={`rounded-lg border p-4 transition-colors ${isFieldError('blessings') ? 'border-red-400 bg-red-50/30' : 'border-gray-200'}`}>
                         <div className="flex items-center justify-between mb-2">
                           <label className="text-sm font-semibold text-gray-600">✨ Blessings earned for the day!</label>
                           <StarRating size="sm" value={planner.blessingsRating}
@@ -770,8 +817,11 @@ function ActivityContent() {
                         <textarea rows={2} value={planner.blessings}
                           onChange={(e) => handleBulletPlanner('blessings', e.target.value)}
                           className="w-full resize-none bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400" placeholder="• What blessings did you earn?" />
+                        {isFieldError('blessings') && (
+                          <p className="text-xs text-red-500 mt-1.5 font-medium flex items-center gap-1"><span>⚠️</span> Both text and a star rating are required</p>
+                        )}
                       </div>
-                      <div className="rounded-lg border border-gray-200 p-4">
+                      <div className={`rounded-lg border p-4 transition-colors ${isFieldError('happyMoment') ? 'border-red-400 bg-red-50/30' : 'border-gray-200'}`}>
                         <div className="flex items-center justify-between mb-2">
                           <label className="text-sm font-semibold text-gray-600">😊 Happy moment of the day</label>
                           <StarRating size="sm" value={planner.happyMomentRating}
@@ -780,6 +830,9 @@ function ActivityContent() {
                         <textarea rows={2} value={planner.happyMoment}
                           onChange={(e) => handleBulletPlanner('happyMoment', e.target.value)}
                           className="w-full resize-none bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400" placeholder="• What made you smile?" />
+                        {isFieldError('happyMoment') && (
+                          <p className="text-xs text-red-500 mt-1.5 font-medium flex items-center gap-1"><span>⚠️</span> Both text and a star rating are required</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -843,7 +896,7 @@ function ActivityContent() {
                       {/* Text fields with star ratings */}
                       <div className="space-y-3">
                         {/* Self-Reflection */}
-                        <div className="rounded-lg border border-gray-200 p-3">
+                        <div className={`rounded-lg border p-3 transition-colors ${isFieldError('selfReflection') ? 'border-red-400 bg-red-50/30' : 'border-gray-200'}`}>
                           <div className="flex items-center justify-between mb-1.5">
                             <label className="text-sm font-semibold text-gray-600">🪻 Self-Reflection / Self-Advice</label>
                             <StarRating size="sm" value={planner.selfCare.selfReflectionRating}
@@ -852,10 +905,13 @@ function ActivityContent() {
                           <textarea rows={2} value={planner.selfCare.selfReflection}
                             onChange={(e) => handleBulletSelfCare('selfReflection', e.target.value)}
                             className="w-full resize-none bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400" placeholder="• Reflect on your day..." />
+                          {isFieldError('selfReflection') && (
+                            <p className="text-xs text-red-500 mt-1.5 font-medium flex items-center gap-1"><span>⚠️</span> Both text and a star rating are required</p>
+                          )}
                         </div>
 
                         {/* Skills Used */}
-                        <div className="rounded-lg border border-gray-200 p-3">
+                        <div className={`rounded-lg border p-3 transition-colors ${isFieldError('skillsUsed') ? 'border-red-400 bg-red-50/30' : 'border-gray-200'}`}>
                           <div className="flex items-center justify-between mb-1.5">
                             <label className="text-sm font-semibold text-gray-600">🛠 Skills I used today</label>
                             <StarRating size="sm" value={planner.selfCare.skillsUsedRating}
@@ -864,10 +920,13 @@ function ActivityContent() {
                           <textarea rows={2} value={planner.selfCare.skillsUsed}
                             onChange={(e) => handleBulletSelfCare('skillsUsed', e.target.value)}
                             className="w-full resize-none bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400" placeholder="• Skills practiced..." />
+                          {isFieldError('skillsUsed') && (
+                            <p className="text-xs text-red-500 mt-1.5 font-medium flex items-center gap-1"><span>⚠️</span> Both text and a star rating are required</p>
+                          )}
                         </div>
 
                         {/* Achievements */}
-                        <div className="rounded-lg border border-gray-200 p-3">
+                        <div className={`rounded-lg border p-3 transition-colors ${isFieldError('achievements') ? 'border-red-400 bg-red-50/30' : 'border-gray-200'}`}>
                           <div className="flex items-center justify-between mb-1.5">
                             <label className="text-sm font-semibold text-gray-600">🏅 My Achievements</label>
                             <StarRating size="sm" value={planner.selfCare.achievementsRating}
@@ -876,6 +935,9 @@ function ActivityContent() {
                           <textarea rows={2} value={planner.selfCare.achievements}
                             onChange={(e) => handleBulletSelfCare('achievements', e.target.value)}
                             className="w-full resize-none bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400" placeholder="• What did you achieve?" />
+                          {isFieldError('achievements') && (
+                            <p className="text-xs text-red-500 mt-1.5 font-medium flex items-center gap-1"><span>⚠️</span> Both text and a star rating are required</p>
+                          )}
                         </div>
                       </div>
                     </div>
