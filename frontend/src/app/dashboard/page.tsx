@@ -116,6 +116,12 @@ export default function DashboardPage() {
       return;
     }
 
+    // For Ivy League services, redirect to the registration form instead of adding to My List
+    if (service && (service.slug === 'ivy-league' || service.slug === 'ivy-league-admission' || service.name === 'Ivy League Preparation' || service.name === 'Ivy League Admission')) {
+      router.push('/ivy-league/register');
+      return;
+    }
+
     setRegisteringServiceId(serviceId);
     try {
       await serviceAPI.registerForService(serviceId);

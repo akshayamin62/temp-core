@@ -216,6 +216,27 @@ export const serviceAPI = {
     api.get(`/services/registrations/${registrationId}`),
 };
 
+// Ivy League Registration API
+export const ivyLeagueRegistrationAPI = {
+  getPrefill: () => api.get('/ivy-league-registration/prefill'),
+  
+  submit: (data: {
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    parentFirstName: string;
+    parentMiddleName?: string;
+    parentLastName: string;
+    parentMobile: string;
+    parentEmail: string;
+    schoolName: string;
+    curriculum: string;
+    currentGrade: string;
+  }) => api.post('/ivy-league-registration', data),
+
+  getStatus: () => api.get('/ivy-league-registration/status'),
+};
+
 // Form Answer API
 export const formAnswerAPI = {
   saveFormAnswers: (data: {

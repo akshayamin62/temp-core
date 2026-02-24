@@ -15,6 +15,8 @@ interface RoleUserListPageProps {
   roleEnum: USER_ROLE;
   canAddUser?: boolean;
   headerExtra?: React.ReactNode;
+  extraStats?: React.ReactNode;
+  hideActiveUsers?: boolean;
 }
 
 interface UserStats {
@@ -37,6 +39,8 @@ export default function RoleUserListPage({
   roleEnum,
   canAddUser = false,
   headerExtra,
+  extraStats,
+  hideActiveUsers = false,
 }: RoleUserListPageProps) {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -349,12 +353,15 @@ export default function RoleUserListPage({
           </div>
 
           {/* Stats Cards */}
-          <div className={`grid grid-cols-1 ${showVerifiedStats ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6 mb-6`}>
+          <div className={`grid grid-cols-1 ${extraStats ? 'md:grid-cols-3' : showVerifiedStats ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6 mb-6`}>
             <StatCard title={`Total ${roleDisplayName}s`} value={stats.total.toString()} color="blue" />
-            <StatCard title="Active Users" value={stats.active.toString()} color="green" />
+            {!hideActiveUsers && (
+              <StatCard title="Active Users" value={stats.active.toString()} color="green" />
+            )}
             {showVerifiedStats && (
               <StatCard title="Verified Users" value={stats.verified.toString()} color="purple" />
             )}
+            {extraStats}
           </div>
 
           {/* Search & Filters */}
