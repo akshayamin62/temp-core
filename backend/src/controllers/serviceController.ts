@@ -294,6 +294,18 @@ export const getRegistrationDetails = async (
       .populate({
         path: "activeOpsId",
         populate: { path: "userId", select: "firstName middleName lastName email" }
+      })
+      .populate({
+        path: "primaryEduplanCoachId",
+        populate: { path: "userId", select: "firstName middleName lastName email" }
+      })
+      .populate({
+        path: "secondaryEduplanCoachId",
+        populate: { path: "userId", select: "firstName middleName lastName email" }
+      })
+      .populate({
+        path: "activeEduplanCoachId",
+        populate: { path: "userId", select: "firstName middleName lastName email" }
       });
 
     if (!registration) {
