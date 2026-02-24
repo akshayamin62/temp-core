@@ -105,7 +105,7 @@ const ACHIEVEMENTS = [
 ];
 
 function generateDay(date: string) {
-  const completedOptions = ['Yes', 'No', 'Partial', ''] as const;
+  const completedOptions = ['Completed', 'Not Started', 'In Progress', 'Completed', 'Completed', 'Completed', 'Completed', 'Completed', 'Completed'] as const;
   const experiences = ['Great session!', 'Could be better', 'Loved it', 'Challenging but worth it', 'Need more practice', 'Very productive'];
 
   const makePlanRows = (session: string, count: number) => {
@@ -190,12 +190,12 @@ async function seed() {
   // Pick 10 random unique days in February 2026
   const allDays = Array.from({ length: 28 }, (_, i) => i + 1);
   const shuffled = allDays.sort(() => Math.random() - 0.5);
-  const selectedDays = shuffled.slice(0, 15).sort((a, b) => a - b);
+  const selectedDays = shuffled.slice(0, 10).sort((a, b) => a - b);
 
   console.log(`Seeding 10 daily planners for February 2026: days ${selectedDays.join(', ')}`);
 
   for (const day of selectedDays) {
-    const dateStr = `2025-05-${String(day).padStart(2, '0')}`;
+    const dateStr = `2026-02-${String(day).padStart(2, '0')}`;
     const data = generateDay(dateStr);
 
     await DailyPlanner.findOneAndUpdate(

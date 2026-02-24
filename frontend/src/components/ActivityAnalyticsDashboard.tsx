@@ -96,7 +96,7 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
     const raw = data.completionByDate;
     if (raw.length <= 60) {
       // Show individual days
-      return raw.map(d => ({ ...d, date: d.date.slice(5) }));
+      return raw.map(d => ({ ...d, date: d.date.slice(8) + '/' + d.date.slice(5, 7) }));
     } else if (raw.length <= 180) {
       // Aggregate by ISO week
       const weeks = new Map<string, { planned: number; completed: number; partial: number }>();
@@ -106,7 +106,7 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
         const day = dt.getDay() || 7;
         const monday = new Date(dt);
         monday.setDate(dt.getDate() - day + 1);
-        const wk = `${String(monday.getMonth() + 1).padStart(2, '0')}/${String(monday.getDate()).padStart(2, '0')}`;
+        const wk = `${String(monday.getDate()).padStart(2, '0')}/${String(monday.getMonth() + 1).padStart(2, '0')}`;
         const existing = weeks.get(wk) || { planned: 0, completed: 0, partial: 0 };
         existing.planned += d.planned;
         existing.completed += d.completed;
@@ -136,7 +136,7 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
   /* mood chart: same smart aggregation */
   const moodData = (() => {
     const raw = data.moodTrend;
-    if (raw.length <= 60) return raw.map(d => ({ ...d, date: d.date.slice(5) }));
+    if (raw.length <= 60) return raw.map(d => ({ ...d, date: d.date.slice(8) + '/' + d.date.slice(5, 7) }));
     // Aggregate by week
     const weeks = new Map<string, { count: number; feeling: number; sleep: number; exercise: number; diet: number; study: number; productivity: number }>();
     for (const d of raw) {
@@ -144,7 +144,7 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
       const day = dt.getDay() || 7;
       const monday = new Date(dt);
       monday.setDate(dt.getDate() - day + 1);
-      const wk = `${String(monday.getMonth() + 1).padStart(2, '0')}/${String(monday.getDate()).padStart(2, '0')}`;
+      const wk = `${String(monday.getDate()).padStart(2, '0')}/${String(monday.getMonth() + 1).padStart(2, '0')}`;
       const ex = weeks.get(wk) || { count: 0, feeling: 0, sleep: 0, exercise: 0, diet: 0, study: 0, productivity: 0 };
       ex.count++; ex.feeling += d.feeling; ex.sleep += d.sleep; ex.exercise += d.exercise;
       ex.diet += d.diet; ex.study += d.study; ex.productivity += d.productivity;
@@ -164,14 +164,14 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
   /* time chart: same aggregation */
   const timeData = (() => {
     const raw = data.timeAllocation;
-    if (raw.length <= 60) return raw.map(d => ({ ...d, date: d.date.slice(5) }));
+    if (raw.length <= 60) return raw.map(d => ({ ...d, date: d.date.slice(8) + '/' + d.date.slice(5, 7) }));
     const weeks = new Map<string, { count: number; mobile: number; socialMedia: number; study: number; exercise: number; reading: number }>();
     for (const d of raw) {
       const dt = new Date(d.date + 'T00:00:00');
       const day = dt.getDay() || 7;
       const monday = new Date(dt);
       monday.setDate(dt.getDate() - day + 1);
-      const wk = `${String(monday.getMonth() + 1).padStart(2, '0')}/${String(monday.getDate()).padStart(2, '0')}`;
+      const wk = `${String(monday.getDate()).padStart(2, '0')}/${String(monday.getMonth() + 1).padStart(2, '0')}`;
       const ex = weeks.get(wk) || { count: 0, mobile: 0, socialMedia: 0, study: 0, exercise: 0, reading: 0 };
       ex.count++; ex.mobile += d.mobile; ex.socialMedia += d.socialMedia; ex.study += d.study;
       ex.exercise += d.exercise; ex.reading += d.reading;
@@ -230,11 +230,18 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
       </div>
 
       {/* ─── Stats Cards ─── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <StatCard icon="🔥" label="Current Streak" value={`${data.streak.current} days`} accent="orange" />
         <StatCard icon="🏆" label="Longest Streak" value={`${data.streak.longest} days`} accent="yellow" />
         <StatCard icon="📅" label="Total Days" value={`${data.streak.totalDays}`} accent="blue" />
         <StatCard icon="📝" label="New Words" value={`${data.wordCount.total}`} sub={`${data.wordCount.thisMonth} this month`} accent="green" />
+        {(() => {
+          const entries = Object.values(data.domainBalance);
+          const totalPlanned = entries.reduce((s, e) => s + e.planned, 0);
+          const totalCompleted = entries.reduce((s, e) => s + e.completed, 0);
+          const overall = totalPlanned > 0 ? Math.round((totalCompleted / totalPlanned) * 50) / 10 : 0; // out of 5
+          return <StatCard icon="⭐" label="Overall Performance" value={`${overall} / 5`} sub={`${totalCompleted}/${totalPlanned} completed`} accent="purple" />;
+        })()}
       </div>
 
       {/* ─── Row 1: Completion + Domain Balance ─── */}
@@ -245,10 +252,10 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={completionData} barSize={completionData.length > 30 ? 8 : completionData.length > 15 ? 12 : 16} barGap={1}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={completionData.length > 20 ? Math.floor(completionData.length / 12) : 0} angle={completionData.length > 15 ? -45 : 0} textAnchor={completionData.length > 15 ? 'end' : 'middle'} height={completionData.length > 15 ? 50 : 30} />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#000', fontWeight: 700 }} interval={completionData.length > 20 ? Math.floor(completionData.length / 12) : 0} angle={completionData.length > 15 ? -45 : 0} textAnchor={completionData.length > 15 ? 'end' : 'middle'} height={completionData.length > 15 ? 50 : 30} />
+                <YAxis tick={{ fontSize: 10, fill: '#000', fontWeight: 700 }} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb', color: '#000', fontWeight: 600 }} />
+                <Legend wrapperStyle={{ fontSize: 11, fontWeight: 700, color: '#000' }} />
                 <Bar dataKey="planned" fill={BRAND_LIGHT} name="Planned" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="completed" fill={ACCENT} name="Completed" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="partial" fill={ACCENT2} name="Partial" radius={[4, 4, 0, 0]} />
@@ -263,12 +270,12 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
             <ResponsiveContainer width="100%" height={260}>
               <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">
                 <PolarGrid stroke="#e5e7eb" />
-                <PolarAngleAxis dataKey="domain" tick={{ fontSize: 10 }} />
-                <PolarRadiusAxis tick={{ fontSize: 9 }} />
+                <PolarAngleAxis dataKey="domain" tick={{ fontSize: 10, fill: '#000', fontWeight: 700 }} />
+                <PolarRadiusAxis tick={{ fontSize: 9, fill: '#000', fontWeight: 600 }} />
                 <Radar name="Planned" dataKey="planned" stroke={BRAND} fill={BRAND} fillOpacity={0.15} />
                 <Radar name="Completed" dataKey="completed" stroke={ACCENT} fill={ACCENT} fillOpacity={0.25} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb', color: '#000', fontWeight: 600 }} />
+                <Legend wrapperStyle={{ fontSize: 11, fontWeight: 700, color: '#000' }} />
               </RadarChart>
             </ResponsiveContainer>
           ) : <EmptyChart />}
@@ -283,10 +290,10 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={moodData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                <YAxis domain={[0, 5]} tick={{ fontSize: 10 }} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#000', fontWeight: 700 }} />
+                <YAxis domain={[0, 5]} tick={{ fontSize: 10, fill: '#000', fontWeight: 700 }} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb', color: '#000', fontWeight: 600 }} />
+                <Legend wrapperStyle={{ fontSize: 11, fontWeight: 700, color: '#000' }} />
                 <Line type="monotone" dataKey="feeling" stroke={WARN} name="Feeling" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="sleep" stroke={BRAND} name="Sleep" strokeWidth={1.5} dot={false} />
                 <Line type="monotone" dataKey="exercise" stroke={ACCENT} name="Exercise" strokeWidth={1.5} dot={false} />
@@ -302,10 +309,10 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
             <ResponsiveContainer width="100%" height={260}>
               <RadarChart data={selfCareRadar} cx="50%" cy="50%" outerRadius="70%">
                 <PolarGrid stroke="#e5e7eb" />
-                <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11 }} />
-                <PolarRadiusAxis domain={[0, 5]} tick={{ fontSize: 9 }} />
+                <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11, fill: '#000', fontWeight: 700 }} />
+                <PolarRadiusAxis domain={[0, 5]} tick={{ fontSize: 9, fill: '#000', fontWeight: 600 }} />
                 <Radar name="Average Rating" dataKey="value" stroke={BRAND} fill={BRAND} fillOpacity={0.3} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb', color: '#000', fontWeight: 600 }} />
               </RadarChart>
             </ResponsiveContainer>
           ) : <EmptyChart />}
@@ -318,10 +325,10 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
           <ResponsiveContainer width="100%" height={280}>
             <AreaChart data={timeData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#000', fontWeight: 700 }} />
+              <YAxis tick={{ fontSize: 10, fill: '#000', fontWeight: 700 }} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb', color: '#000', fontWeight: 600 }} />
+              <Legend wrapperStyle={{ fontSize: 11, fontWeight: 700, color: '#000' }} />
               <Area type="monotone" dataKey="study" stroke={BRAND} fill={BRAND} fillOpacity={0.15} name="Study" />
               <Area type="monotone" dataKey="reading" stroke={ACCENT} fill={ACCENT} fillOpacity={0.15} name="Reading" />
               <Area type="monotone" dataKey="exercise" stroke={ACCENT2} fill={ACCENT2} fillOpacity={0.15} name="Exercise" />
@@ -392,6 +399,7 @@ function StatCard({ icon, label, value, sub, accent }: { icon: string; label: st
   const bg = accent === 'orange' ? 'bg-orange-50 border-orange-200' :
     accent === 'yellow' ? 'bg-amber-50 border-amber-200' :
     accent === 'blue' ? 'bg-blue-50 border-blue-200' :
+    accent === 'purple' ? 'bg-purple-50 border-purple-200' :
     'bg-emerald-50 border-emerald-200';
   return (
     <div className={`rounded-xl border p-4 ${bg}`}>
@@ -478,12 +486,14 @@ function HeatmapGrid({ heatmap }: { heatmap: { date: string; status: string; fil
   });
 
   const cellColor = (status: string, filled: number) => {
-    if (status === 'pad')      return 'transparent';
-    if (status === 'empty')    return '#ebedf0';
-    if (status === 'complete') return '#2959ba';
-    if (filled >= 3)           return '#5b8ad4';
-    if (filled >= 2)           return '#93b4e4';
-    return '#c4d5f0';
+    if (status === 'pad')   return 'transparent';
+    if (status === 'empty') return '#ebedf0';
+    if (filled >= 5)        return '#2959ba';
+    if (filled >= 4)        return '#3a6ec5';
+    if (filled >= 3)        return '#5b8ad4';
+    if (filled >= 2)        return '#93b4e4';
+    if (filled >= 1)        return '#c4d5f0';
+    return '#ebedf0';
   };
 
   const cellTitle = (day: typeof all[0]) => {
@@ -492,7 +502,7 @@ function HeatmapGrid({ heatmap }: { heatmap: { date: string; status: string; fil
     const label = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     return day.status === 'empty'
       ? `${label}: No activity`
-      : `${label}: ${day.filled}/5 sections filled`;
+      : `${label}: ${day.filled}/6 sections filled`;
   };
 
   const activeDays = days.filter(d => d.status !== 'empty').length;
@@ -590,13 +600,21 @@ function HeatmapGrid({ heatmap }: { heatmap: { date: string; status: string; fil
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-500">
-        <span>Less</span>
-        {['#ebedf0', '#c4d5f0', '#93b4e4', '#5b8ad4', '#2959ba'].map(c => (
-          <div key={c} style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: c }} />
+      {/* Legend — 6 activity levels */}
+      <div className="flex flex-wrap items-center gap-3 mt-4 text-xs">
+        {[
+          { color: '#ebedf0', label: 'No activity' },
+          { color: '#c4d5f0', label: '1 completed' },
+          { color: '#93b4e4', label: '2 completed' },
+          { color: '#5b8ad4', label: '3 completed' },
+          { color: '#3a6ec5', label: '4 completed' },
+          { color: '#2959ba', label: '5+ completed' },
+        ].map(({ color, label }) => (
+          <span key={color} className="flex items-center gap-1.5">
+            <span style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: color, display: 'inline-block', flexShrink: 0 }} />
+            <span className="text-gray-700 font-semibold">{label}</span>
+          </span>
         ))}
-        <span>More</span>
       </div>
     </div>
   );

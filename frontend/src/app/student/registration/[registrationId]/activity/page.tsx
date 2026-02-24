@@ -34,7 +34,7 @@ interface MonthlyFocusData {
   physicalGrooming: string;
   readingBooks: string;
 }
-interface PlanRow { time: string; activity: string; type: '' | 'A' | 'RB' | 'N' | 'H' | 'PS' | 'PH'; completed: 'Yes' | 'No' | 'Partial' | ''; experience: string; }
+interface PlanRow { time: string; activity: string; type: '' | 'A' | 'RB' | 'N' | 'H' | 'PS' | 'PH'; completed: 'Completed' | 'Not Started' | 'In Progress' | ''; experience: string; }
 interface SessionPlan { session: 'MORNING' | 'AFTERNOON' | 'EVENING' | 'NIGHT'; rows: PlanRow[]; }
 interface NightLogData { mobileTime: number; socialMediaTime: number; studyTime: number; physicalExerciseTime: number; readingTime: number; newWords: string[]; }
 interface SelfCareData {
@@ -55,7 +55,7 @@ interface DaySummary { date: string; status: 'empty' | 'partial' | 'complete'; }
 interface CalendarEvent { id: string; title: string; start: Date; end: Date; status: 'partial' | 'complete'; }
 
 /* ─────────── Constants ─────────── */
-const DOMAINS = ['Academic', 'Reading Books', 'Non-Academic', 'Habit Focus', 'Psychological', 'Physical'] as const;
+const DOMAINS = ['Academic', 'Non-Academic', 'Habit Focus', 'Psychological', 'Physical', 'Reading Books'] as const;
 
 const TYPE_OPTIONS = [
   { value: '', label: '—' },
@@ -66,7 +66,7 @@ const TYPE_OPTIONS = [
   { value: 'PS', label: 'PS' },
   { value: 'PH', label: 'PH' },
 ];
-const TYPE_LEGEND = ['A – Academic', 'RB – Reading', 'N – Non-Academic', 'H – Habit', 'PS – Psychological', 'PH – Physical'];
+const TYPE_LEGEND = ['A – Academic', 'N – Non-Academic', 'H – Habit', 'PS – Psychological', 'PH – Physical', 'RB – Reading'];
 
 const SESSION_ICONS: Record<string, string> = { MORNING: '🌅', AFTERNOON: '☀️', EVENING: '🌇', NIGHT: '🌙' };
 const SESSION_FIXED: Record<string, { before?: string; after?: string }> = {
@@ -194,9 +194,9 @@ function ActivityContent() {
 
   const [planner, setPlanner] = useState<DailyPlannerData>(JSON.parse(JSON.stringify(emptyPlanner)));
   const [plannerLoaded, setPlannerLoaded] = useState(false);
-  const [plannerSaving, setPlannerSaving] = useState(false);
+  const [savingSection, setSavingSection] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState(0);
-  const [saveAttempted, setSaveAttempted] = useState(false);
+  const [sectionAttempted, setSectionAttempted] = useState<Set<number>>(new Set());
 
   const currentMonth = toYM(calDate);
 
@@ -278,7 +278,7 @@ function ActivityContent() {
       setPlanner(JSON.parse(JSON.stringify(emptyPlanner)));
     }
     setPlannerLoaded(true);
-    setSaveAttempted(false);
+    setSectionAttempted(new Set());
     setActiveTab(0);
   }, [registrationId]);
 
@@ -297,7 +297,9 @@ function ActivityContent() {
 
   /* ── Field pair validation (text + star rating must both be filled or both empty) ── */
   const isFieldError = (key: string): boolean => {
-    if (!saveAttempted) return false;
+    // Only show errors for sections that have been attempted
+    const sectionMap: Record<string, number> = { feeling: 0, blessings: 2, happyMoment: 2, selfReflection: 4, skillsUsed: 4, achievements: 4 };
+    if (!sectionAttempted.has(sectionMap[key] ?? -1)) return false;
     switch (key) {
       case 'feeling':        return hasContent(planner.feeling) !== !!planner.feelingRating;
       case 'blessings':      return hasContent(planner.blessings) !== !!planner.blessingsRating;
@@ -309,43 +311,120 @@ function ActivityContent() {
     }
   };
 
-  /* ── Save planner (with validation: only save complete plan rows) ── */
-  const savePlanner = async () => {
+  /* ── Helper: persist current planner to API ── */
+  const persistPlanner = async () => {
     if (!selectedDate) return;
-    setSaveAttempted(true);
+    const filteredPlans = planner.plans.map((session) => ({
+      ...session,
+      rows: session.rows.filter((r) => r.time.trim() && r.activity.trim() && r.type !== ''),
+    }));
+    await activityAPI.upsertDailyPlanner(registrationId, { date: selectedDate, ...planner, plans: filteredPlans });
+    const res = await activityAPI.getMonthSummary(registrationId, currentMonth);
+    setSummaries(res.data.data || []);
+  };
 
-    // Validate: text+rating pairs must be all-or-nothing
-    const pairs = [
-      { key: 'feeling',        label: 'How am I feeling this morning?', filled: hasContent(planner.feeling),                   rating: planner.feelingRating,                 tab: 0 },
-      { key: 'blessings',      label: 'Blessings earned for the day!',  filled: hasContent(planner.blessings),                 rating: planner.blessingsRating,               tab: 2 },
-      { key: 'happyMoment',    label: 'Happy moment of the day',        filled: hasContent(planner.happyMoment),               rating: planner.happyMomentRating,             tab: 2 },
-      { key: 'selfReflection', label: 'Self-Reflection / Self-Advice',  filled: hasContent(planner.selfCare.selfReflection),   rating: planner.selfCare.selfReflectionRating, tab: 4 },
-      { key: 'skillsUsed',     label: 'Skills I used today',            filled: hasContent(planner.selfCare.skillsUsed),       rating: planner.selfCare.skillsUsedRating,     tab: 4 },
-      { key: 'achievements',   label: 'My Achievements',                filled: hasContent(planner.selfCare.achievements),     rating: planner.selfCare.achievementsRating,   tab: 4 },
-    ];
-    const firstError = pairs.find((p) => (p.filled && !p.rating) || (!p.filled && p.rating));
-    if (firstError) {
-      const msg = !firstError.filled
-        ? `Please add a star rating for "${firstError.label}"`
-        : `Please fill in text for "${firstError.label}"`;
-      toast.error(msg, { duration: 4000 });
-      setActiveTab(firstError.tab);
+  /* ── Section-level save functions ── */
+  const saveMorningLog = async () => {
+    if (!selectedDate) return;
+    setSectionAttempted(prev => new Set(prev).add(0));
+    // Validation: feeling text + rating required (compulsory)
+    if (!hasContent(planner.feeling) || !planner.feelingRating) {
+      toast.error('"How am I feeling this morning?" is required — fill both text and star rating', { duration: 4000 });
       return;
     }
+    // Text+rating pair check
+    if (hasContent(planner.feeling) !== !!planner.feelingRating) {
+      toast.error('Feeling: both text and a star rating are required', { duration: 4000 });
+      return;
+    }
+    setSavingSection(0);
+    try { await persistPlanner(); toast.success('Morning Log saved!'); }
+    catch { toast.error('Failed to save Morning Log'); }
+    setSavingSection(null);
+  };
 
-    setPlannerSaving(true);
-    try {
-      // Filter plan rows: only keep rows where all 3 fields are filled
-      const filteredPlans = planner.plans.map((session) => ({
-        ...session,
-        rows: session.rows.filter((r) => r.time.trim() && r.activity.trim() && r.type !== ''),
-      }));
-      await activityAPI.upsertDailyPlanner(registrationId, { date: selectedDate, ...planner, plans: filteredPlans });
-      toast.success('All changes saved!');
-      const res = await activityAPI.getMonthSummary(registrationId, currentMonth);
-      setSummaries(res.data.data || []);
-    } catch { toast.error('Failed to save'); }
-    setPlannerSaving(false);
+  const saveTodaysPlan = async () => {
+    if (!selectedDate) return;
+    setSectionAttempted(prev => new Set(prev).add(1));
+    // Validation: any partial row (some but not all of time/activity/type) is an error
+    for (const session of planner.plans) {
+      for (const row of session.rows) {
+        const hasTime = row.time.trim() !== '';
+        const hasAct = row.activity.trim() !== '';
+        const hasType = row.type !== '';
+        const any = hasTime || hasAct || hasType;
+        const all = hasTime && hasAct && hasType;
+        if (any && !all) {
+          const missing = [!hasTime && 'time', !hasAct && 'activity', !hasType && 'type'].filter(Boolean).join(', ');
+          toast.error(`${session.session}: a row is missing ${missing}. Fill all 3 fields or clear the row.`, { duration: 5000 });
+          return;
+        }
+      }
+    }
+    setSavingSection(1);
+    try { await persistPlanner(); toast.success("Today's Plan saved!"); }
+    catch { toast.error('Failed to save Plan'); }
+    setSavingSection(null);
+  };
+
+  const saveAccomplishments = async () => {
+    if (!selectedDate) return;
+    setSectionAttempted(prev => new Set(prev).add(2));
+    // Validate blessings + happyMoment pairs
+    const pairs = [
+      { key: 'blessings', label: 'Blessings earned for the day!', filled: hasContent(planner.blessings), rating: planner.blessingsRating },
+      { key: 'happyMoment', label: 'Happy moment of the day', filled: hasContent(planner.happyMoment), rating: planner.happyMomentRating },
+    ];
+    const err = pairs.find(p => (p.filled && !p.rating) || (!p.filled && p.rating));
+    if (err) {
+      toast.error(`"${err.label}": both text and a star rating are required`, { duration: 4000 });
+      return;
+    }
+    setSavingSection(2);
+    try { await persistPlanner(); toast.success('Accomplishments saved!'); }
+    catch { toast.error('Failed to save Accomplishments'); }
+    setSavingSection(null);
+  };
+
+  const saveNightLog = async () => {
+    if (!selectedDate) return;
+    setSectionAttempted(prev => new Set(prev).add(3));
+    // Validation: all time fields must be > 0 or intentionally filled, and all 5 words required
+    const nl = planner.nightLog;
+    const allTimeFilled = nl.mobileTime > 0 || nl.socialMediaTime > 0 || nl.studyTime > 0 || nl.physicalExerciseTime > 0 || nl.readingTime > 0;
+    if (!allTimeFilled) {
+      toast.error('Night Log: fill at least one time-spent field', { duration: 4000 });
+      return;
+    }
+    const emptyWords = nl.newWords.filter(w => !w.trim());
+    if (emptyWords.length > 0) {
+      toast.error(`Night Log: all 5 new words are required (${emptyWords.length} missing)`, { duration: 4000 });
+      return;
+    }
+    setSavingSection(3);
+    try { await persistPlanner(); toast.success('Night Log saved!'); }
+    catch { toast.error('Failed to save Night Log'); }
+    setSavingSection(null);
+  };
+
+  const saveSelfCare = async () => {
+    if (!selectedDate) return;
+    setSectionAttempted(prev => new Set(prev).add(4));
+    // Validate text+rating pairs
+    const pairs = [
+      { key: 'selfReflection', label: 'Self-Reflection / Self-Advice', filled: hasContent(planner.selfCare.selfReflection), rating: planner.selfCare.selfReflectionRating },
+      { key: 'skillsUsed', label: 'Skills I used today', filled: hasContent(planner.selfCare.skillsUsed), rating: planner.selfCare.skillsUsedRating },
+      { key: 'achievements', label: 'My Achievements', filled: hasContent(planner.selfCare.achievements), rating: planner.selfCare.achievementsRating },
+    ];
+    const err = pairs.find(p => (p.filled && !p.rating) || (!p.filled && p.rating));
+    if (err) {
+      toast.error(`"${err.label}": both text and a star rating are required`, { duration: 4000 });
+      return;
+    }
+    setSavingSection(4);
+    try { await persistPlanner(); toast.success('Self-Care saved!'); }
+    catch { toast.error('Failed to save Self-Care'); }
+    setSavingSection(null);
   };
 
   /* ── Calendar nav ── */
@@ -420,7 +499,7 @@ function ActivityContent() {
             <h1 className="text-lg font-bold text-gray-800">Activity Management</h1>
             {selectedDate && (
               <span className="text-sm font-medium text-brand-700 bg-brand-50 border border-brand-200 px-3 py-1 rounded-full hidden sm:inline">
-                {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: '2-digit' })}
               </span>
             )}
           </div>
@@ -593,16 +672,11 @@ function ActivityContent() {
                 <span className="text-xl">📅</span>
                 <div>
                   <h2 className="text-white font-semibold text-base leading-tight">
-                    {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                    {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
                   </h2>
                   <p className="text-brand-200 text-xs">Daily Planner</p>
                 </div>
               </div>
-              <button onClick={savePlanner} disabled={plannerSaving}
-                className="px-4 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-semibold transition-all disabled:opacity-50 flex items-center gap-1.5">
-                {plannerSaving ? <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <span>💾</span>}
-                {plannerSaving ? 'Saving...' : 'Save'}
-              </button>
             </div>
 
             {/* Tabs - underline style */}
@@ -657,21 +731,31 @@ function ActivityContent() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {[
                           { key: 'goalAcademic', label: 'Academic', icon: '📚' },
-                          { key: 'goalReadingBooks', label: 'Reading Books', icon: '📖' },
                           { key: 'goalNonAcademic', label: 'Non-Academic', icon: '🎨' },
                           { key: 'goalHabitFocus', label: 'Habit Focus', icon: '🔄' },
                           { key: 'goalPsychological', label: 'Psychological', icon: '🧠' },
                           { key: 'goalPhysical', label: 'Physical', icon: '💪' },
+                          { key: 'goalReadingBooks', label: 'Reading Books', icon: '📖' },
                         ].map(({ key, label, icon }) => (
                           <div key={key} className="rounded-lg border border-gray-200 p-3">
                             <label className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1.5"><span>{icon}</span>{label}</label>
-                            <textarea rows={2} value={(planner as unknown as Record<string, string>)[key]}
+                            <textarea rows={2} value={(planner as unknown as Record<string, string | number>)[key] as string}
                               onChange={(e) => handleBulletPlanner(key, e.target.value)}
                               className="w-full resize-none bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400"
                               placeholder={`• ${label} goal...`} />
                           </div>
                         ))}
                       </div>
+                    </div>
+
+                    {/* Save Morning Log */}
+                    <div className="flex justify-end pt-3 border-t border-gray-100 mt-2">
+                      <button onClick={saveMorningLog} disabled={savingSection === 0}
+                        className="px-5 py-2 bg-brand-600 text-white rounded-lg font-semibold text-sm hover:bg-brand-700 transition-all disabled:opacity-50 flex items-center gap-2 active:scale-[0.98]">
+                        {savingSection === 0
+                          ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Saving...</>
+                          : <>💾 Save Morning Log</>}
+                      </button>
                     </div>
                   </div>
                 )}
@@ -711,20 +795,21 @@ function ActivityContent() {
                               const isComplete = row.time.trim() && row.activity.trim() && row.type !== '';
                               const isPartial = row.time.trim() || row.activity.trim() || row.type !== '';
                               return (
-                                <div key={rIdx} className={`flex items-center gap-1.5 group ${isPartial && !isComplete ? 'bg-amber-50/50 rounded px-1 -mx-1' : ''}`}>
+                                <div key={rIdx} className={`flex items-start gap-1.5 group ${isPartial && !isComplete ? 'bg-amber-50/50 rounded px-1 -mx-1' : ''}`}>
                                   <input type="time" value={row.time}
                                     onChange={(e) => updatePlan(sIdx, rIdx, 'time', e.target.value)}
-                                    className="w-[110px] px-2 py-1.5 border border-gray-200 rounded text-xs focus:ring-1 focus:ring-brand-300 outline-none" />
-                                  <input type="text" placeholder="Activity" value={row.activity}
-                                    onChange={(e) => updatePlan(sIdx, rIdx, 'activity', e.target.value)}
-                                    className="flex-1 px-2 py-1.5 border border-gray-200 rounded text-xs focus:ring-1 focus:ring-brand-300 outline-none" />
+                                    className="w-[110px] px-2 py-1.5 border border-gray-200 rounded text-xs focus:ring-1 focus:ring-brand-300 outline-none shrink-0 mt-0.5" />
+                                  <textarea placeholder="Activity" value={row.activity}
+                                    onChange={(e) => { updatePlan(sIdx, rIdx, 'activity', e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
+                                    rows={1}
+                                    className="flex-1 px-2 py-1.5 border border-gray-200 rounded text-xs focus:ring-1 focus:ring-brand-300 outline-none resize-none overflow-hidden leading-relaxed" />
                                   <select value={row.type} onChange={(e) => updatePlan(sIdx, rIdx, 'type', e.target.value)}
-                                    className="w-16 px-1 py-1.5 border border-gray-200 rounded text-xs bg-white focus:ring-1 focus:ring-brand-300 outline-none">
+                                    className="w-16 px-1 py-1.5 border border-gray-200 rounded text-xs bg-white focus:ring-1 focus:ring-brand-300 outline-none shrink-0 mt-0.5">
                                     {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                                   </select>
                                   {session.rows.length > 1 && (
                                     <button onClick={() => removePlanRow(sIdx, rIdx)}
-                                      className="p-1 text-gray-400 hover:text-red-500 rounded opacity-0 group-hover:opacity-100 transition-all">
+                                      className="p-1 text-gray-400 hover:text-red-500 rounded opacity-0 group-hover:opacity-100 transition-all shrink-0 mt-0.5">
                                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                     </button>
@@ -751,6 +836,16 @@ function ActivityContent() {
                         </div>
                       );
                     })}
+
+                    {/* Save Today's Plan */}
+                    <div className="flex justify-end pt-3 border-t border-gray-100 mt-2">
+                      <button onClick={saveTodaysPlan} disabled={savingSection === 1}
+                        className="px-5 py-2 bg-brand-600 text-white rounded-lg font-semibold text-sm hover:bg-brand-700 transition-all disabled:opacity-50 flex items-center gap-2 active:scale-[0.98]">
+                        {savingSection === 1
+                          ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Saving...</>
+                          : <>💾 Save Today&apos;s Plan</>}
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -777,7 +872,7 @@ function ActivityContent() {
                         <div key={domainName} className="rounded-lg border border-gray-200 overflow-hidden">
                           <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
                             <span className="font-semibold text-gray-700 text-sm uppercase tracking-wide">{domainName}</span>
-                            <span className="text-xs text-gray-400">{domainRows.filter(d => d.row.completed === 'Yes').length}/{domainRows.length} completed</span>
+                            <span className="text-xs text-gray-400">{domainRows.filter(d => d.row.completed === 'Completed').length}/{domainRows.length} completed</span>
                           </div>
                           <div className="p-3 space-y-1.5">
                             <div className="grid grid-cols-[80px_1fr_100px_1fr] gap-1.5 text-xs font-semibold text-gray-400 uppercase px-0.5">
@@ -785,17 +880,17 @@ function ActivityContent() {
                             </div>
                             {domainRows.map(({ sIdx, rIdx, row }) => (
                               <div key={`${sIdx}-${rIdx}`} className="grid grid-cols-[80px_1fr_100px_1fr] gap-1.5">
-                                <span className="px-2 py-1.5 text-xs text-gray-500 flex items-center gap-1">
+                                <span className="px-5 py-1.5 text-xs text-gray-500 flex items-center gap-1">
                                   <span>{SESSION_ICONS[planner.plans[sIdx].session]}</span>
-                                  <span className="text-[10px]">{planner.plans[sIdx].session.slice(0, 4)}</span>
+                                  {/* <span className="text-[10px]">{planner.plans[sIdx].session.slice(0, 4)}</span> */}
                                 </span>
-                                <span className="px-2 py-1.5 border border-gray-100 rounded text-xs bg-gray-50 text-gray-600 truncate">{row.activity}</span>
+                                <span className="px-2 py-1.5 border border-gray-100 rounded text-xs bg-gray-50 text-gray-600 break-words min-w-0">{row.activity}</span>
                                 <select value={row.completed} onChange={(e) => updatePlan(sIdx, rIdx, 'completed', e.target.value)}
                                   className="px-1 py-1.5 border border-gray-200 rounded text-xs bg-white focus:ring-1 focus:ring-brand-300 outline-none">
                                   <option value="">—</option>
-                                  <option value="Yes">Completed</option>
-                                  <option value="No">No</option>
-                                  <option value="Partial">In Progress</option>
+                                  <option value="Not Started">Not Started</option>
+                                  <option value="In Progress">In Progress</option>
+                                  <option value="Completed">Completed</option>
                                 </select>
                                 <input type="text" placeholder="Experience" value={row.experience}
                                   onChange={(e) => updatePlan(sIdx, rIdx, 'experience', e.target.value)}
@@ -835,6 +930,16 @@ function ActivityContent() {
                         )}
                       </div>
                     </div>
+
+                    {/* Save Accomplishments */}
+                    <div className="flex justify-end pt-3 border-t border-gray-100 mt-2">
+                      <button onClick={saveAccomplishments} disabled={savingSection === 2}
+                        className="px-5 py-2 bg-brand-600 text-white rounded-lg font-semibold text-sm hover:bg-brand-700 transition-all disabled:opacity-50 flex items-center gap-2 active:scale-[0.98]">
+                        {savingSection === 2
+                          ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Saving...</>
+                          : <>💾 Save Accomplishments</>}
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -863,6 +968,16 @@ function ActivityContent() {
                           </div>
                         ))}
                       </div>
+                    </div>
+
+                    {/* Save Night Log */}
+                    <div className="flex justify-end pt-3 border-t border-gray-100 mt-2">
+                      <button onClick={saveNightLog} disabled={savingSection === 3}
+                        className="px-5 py-2 bg-brand-600 text-white rounded-lg font-semibold text-sm hover:bg-brand-700 transition-all disabled:opacity-50 flex items-center gap-2 active:scale-[0.98]">
+                        {savingSection === 3
+                          ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Saving...</>
+                          : <>💾 Save Night Log</>}
+                      </button>
                     </div>
                   </div>
                 )}
@@ -941,18 +1056,19 @@ function ActivityContent() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Save Self-Care */}
+                    <div className="flex justify-end pt-3 border-t border-gray-100 mt-2">
+                      <button onClick={saveSelfCare} disabled={savingSection === 4}
+                        className="px-5 py-2 bg-brand-600 text-white rounded-lg font-semibold text-sm hover:bg-brand-700 transition-all disabled:opacity-50 flex items-center gap-2 active:scale-[0.98]">
+                        {savingSection === 4
+                          ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Saving...</>
+                          : <>💾 Save Self-Care</>}
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                {/* Save bottom */}
-                <div className="flex justify-end pt-4 border-t border-gray-100 mt-5">
-                  <button onClick={savePlanner} disabled={plannerSaving}
-                    className="px-6 py-2 bg-brand-600 text-white rounded-lg font-semibold text-sm hover:bg-brand-700 transition-all disabled:opacity-50 flex items-center gap-2 active:scale-[0.98]">
-                    {plannerSaving
-                      ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Saving...</>
-                      : <>💾 Save All Changes</>}
-                  </button>
-                </div>
               </div>
             ) : (
               <div className="flex items-center justify-center py-16">

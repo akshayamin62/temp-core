@@ -6,7 +6,7 @@ export interface IPlanRow {
   time: string;
   activity: string;
   type: '' | 'A' | 'RB' | 'N' | 'H' | 'PS' | 'PH';
-  completed: 'Yes' | 'No' | 'Partial' | '';
+  completed: 'Completed' | 'Not Started' | 'In Progress' | '';
   experience: string;
 }
 
@@ -92,7 +92,7 @@ const planRowSchema = new Schema<IPlanRow>(
     time: { type: String, default: '' },
     activity: { type: String, default: '' },
     type: { type: String, enum: ['', 'A', 'RB', 'N', 'H', 'PS', 'PH'], default: '' },
-    completed: { type: String, enum: ['Yes', 'No', 'Partial', ''], default: '' },
+    completed: { type: String, enum: ['Completed', 'Not Started', 'In Progress', ''], default: '' },
     experience: { type: String, default: '' },
   },
   { _id: false }

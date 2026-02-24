@@ -11,7 +11,7 @@ const getStudentId = async (userId: string) => {
   return student?._id?.toString() ?? null;
 };
 
-const DOMAINS = ['Academic', 'Reading Books', 'Non-Academic', 'Habit Focus', 'Psychological', 'Physical'] as const;
+const DOMAINS = ['Academic', 'Non-Academic', 'Habit Focus', 'Psychological', 'Physical', 'Reading Books'] as const;
 
 function typeToDomain(type: string): string {
   switch (type) {
@@ -233,8 +233,8 @@ export const getActivityAnalytics = async (req: AuthRequest, res: Response) => {
         for (const row of session.rows || []) {
           if (row.activity?.trim() && row.type) {
             planned++;
-            if (row.completed === 'Yes') completed++;
-            else if (row.completed === 'Partial') partial++;
+            if (row.completed === 'Completed') completed++;
+            else if (row.completed === 'In Progress') partial++;
           }
         }
       }
@@ -252,7 +252,7 @@ export const getActivityAnalytics = async (req: AuthRequest, res: Response) => {
           if (row.activity?.trim() && row.type) {
             const domain = typeToDomain(row.type);
             domainBalance[domain].planned++;
-            if (row.completed === 'Yes') {
+            if (row.completed === 'Completed') {
               domainBalance[domain].completed++;
             }
           }
