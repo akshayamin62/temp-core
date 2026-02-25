@@ -110,10 +110,22 @@ function MyDetailsContent() {
       return;
     }
     fetchData();
-    fetchBrainography();
-    fetchBrainographyData();
-    fetchPortfolios();
   }, [registrationId]);
+
+  // Fetch Education Planning specific data & set correct default view after registration loads
+  useEffect(() => {
+    if (!registration) return;
+    const svc = typeof registration.serviceId === 'object' ? registration.serviceId : null;
+    const isEduPlan = svc?.slug === 'education-planning' || svc?.name === 'Education Planning';
+    if (isEduPlan) {
+      fetchBrainography();
+      fetchBrainographyData();
+      fetchPortfolios();
+    } else {
+      // Non-EduPlan services (e.g. Study Abroad) should default to form view
+      setActiveView('form');
+    }
+  }, [registration]);
 
   const fetchBrainography = async () => {
     try {
@@ -521,13 +533,14 @@ function MyDetailsContent() {
   const service = typeof registration.serviceId === 'object' 
     ? registration.serviceId 
     : null;
+  const isEducationPlanning = service?.slug === 'education-planning' || service?.name === 'Education Planning';
 
-  /* ─── Shared: Navigation Buttons ─── */
-  const navButtons = [
+  /* ─── Navigation Buttons (Education Planning only) ─── */
+  const navButtons = isEducationPlanning ? [
     { key: 'analytics' as ActiveView, label: 'Activity Analysis', icon: '📊' },
     { key: 'brainography' as ActiveView, label: 'Brainography Analysis', icon: '🧠' },
     { key: 'portfolio' as ActiveView, label: 'Education Portfolio Generator', icon: '📁' },
-  ];
+  ] : [];
 
     /* ─── Shared: Support Team Section ─── */
     const eduplanCoach = registration.activeEduplanCoachId || registration.primaryEduplanCoachId;
@@ -536,7 +549,7 @@ function MyDetailsContent() {
 
     const renderSupportTeam = () => {
       if (!registration.studentId) return null;
-      const hasTeam = registration.studentId.adminId || registration.studentId.counselorId || opsUser || eduplanCoach;
+      const hasTeam = registration.studentId.adminId || registration.studentId.counselorId || opsUser || (isEducationPlanning && eduplanCoach);
       if (!hasTeam) return null;
       return (
         <div className="bg-white border-b border-gray-200 mb-6">
@@ -579,7 +592,7 @@ function MyDetailsContent() {
                   {opsUser.mobileNumber && <p className="text-xs text-gray-600">{opsUser.mobileNumber}</p>}
                 </div>
               )}
-              {eduplanCoach && (
+              {isEducationPlanning && eduplanCoach && (
                 <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
                   <p className="text-xs font-medium text-gray-700 mb-1">Eduplan Coach</p>
                   <p className="text-sm font-semibold text-gray-900">{getFullName(eduplanCoach.userId)}</p>
@@ -641,13 +654,15 @@ function MyDetailsContent() {
                 <span>📋</span> My Form
               </button>
             )}
-            <button
-              onClick={() => router.push(`/student/registration/${registrationId}/activity`)}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 ml-auto"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
-              My Activity
-            </button>
+            {isEducationPlanning && (
+              <button
+                onClick={() => router.push(`/student/registration/${registrationId}/activity`)}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 ml-auto"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                My Activity
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -820,16 +835,16 @@ function MyDetailsContent() {
         serviceName={service?.name || 'Service'}
       >
         {renderSupportTeam()}
-        {renderNavBar(true)}
+        {isEducationPlanning && renderNavBar(true)}
 
         {/* Dynamic Content Area */}
-        {activeView === 'analytics' && (
+        {isEducationPlanning && activeView === 'analytics' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <ActivityAnalyticsDashboard registrationId={registrationId} />
           </div>
         )}
-        {activeView === 'brainography' && renderBrainographyContent()}
-        {activeView === 'portfolio' && renderPortfolioContent()}
+        {isEducationPlanning && activeView === 'brainography' && renderBrainographyContent()}
+        {isEducationPlanning && activeView === 'portfolio' && renderPortfolioContent()}
 
         {activeView === 'form' && (
           <>
