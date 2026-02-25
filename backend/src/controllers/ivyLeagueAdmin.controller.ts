@@ -335,3 +335,78 @@ export const convertCandidateToStudent = async (req: AuthRequest, res: Response)
     res.status(500).json({ success: false, message: err.message || 'Failed to convert candidate' });
   }
 };
+
+/* ══════════════════════════════════════════════════════════════════════
+   PUT /api/super-admin/ivy-league/interview/:userId
+   Save student or parent interview data (scores + responses)
+   Body: { type: 'student' | 'parent', answers: [{ sectionIndex, questionIndex, score, response }] }
+   ══════════════════════════════════════════════════════════════════════ */
+export const saveInterviewData = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const { type, answers } = req.body;
+
+    if (!type || !['student', 'parent'].includes(type)) {
+      res.status(400).json({ success: false, message: 'type must be "student" or "parent"' });
+      return;
+    }
+    if (!Array.isArray(answers)) {
+      res.status(400).json({ success: false, message: 'answers must be an array' });
+      return;
+    }
+
+    // Find existing session or create a minimal one to hold interview data
+    let session = await IvyTestSession.findOne({ studentId: userId });
+    if (!session) {
+      session = await IvyTestSession.create({
+        studentId: userId,
+        sections: [],
+        status: 'not-started',
+      });
+    }
+
+    const interviewData = {
+      answers: answers.map((a: any) => ({
+        sectionIndex: a.sectionIndex,
+        questionIndex: a.questionIndex,
+        score: Math.min(5, Math.max(0, Number(a.score) || 0)),
+        response: String(a.response || ''),
+      })),
+      updatedAt: new Date(),
+    };
+
+    if (type === 'student') {
+      session.studentInterview = interviewData;
+    } else {
+      session.parentInterview = interviewData;
+    }
+
+    await session.save();
+
+    res.json({ success: true, message: `${type} interview data saved successfully` });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || 'Failed to save interview data' });
+  }
+};
+
+/* ══════════════════════════════════════════════════════════════════════
+   GET /api/super-admin/ivy-league/interview/:userId
+   Returns stored interview data (both student & parent) for a user
+   ══════════════════════════════════════════════════════════════════════ */
+export const getInterviewData = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+
+    const session = await IvyTestSession.findOne({ studentId: userId })
+      .select('studentInterview parentInterview')
+      .lean();
+
+    res.json({
+      success: true,
+      studentInterview: session?.studentInterview || null,
+      parentInterview: session?.parentInterview || null,
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || 'Failed to get interview data' });
+  }
+};

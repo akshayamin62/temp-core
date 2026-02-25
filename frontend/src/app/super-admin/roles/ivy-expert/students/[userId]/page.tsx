@@ -189,6 +189,13 @@ export default function StudentDetailPage() {
   const [parentScores, setParentScores] = useState<number[][]>(() =>
     PARENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(0))
   );
+  const [studentResponses, setStudentResponses] = useState<string[][]>(() =>
+    STUDENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(''))
+  );
+  const [parentResponses, setParentResponses] = useState<string[][]>(() =>
+    PARENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(''))
+  );
+  const [savingInterview, setSavingInterview] = useState(false);
   const hasFetchedRef = useRef(false);
 
   useEffect(() => {
@@ -233,10 +240,69 @@ export default function StudentDetailPage() {
       if (testRes.data.success && testRes.data.session) {
         setTestResult(testRes.data.session);
       }
+
+      // Fetch interview data
+      try {
+        const interviewRes = await axios.get(`${API_URL}/super-admin/ivy-league/interview/${userId}`, { headers });
+        if (interviewRes.data.success) {
+          if (interviewRes.data.studentInterview?.answers) {
+            const newScores = STUDENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(0));
+            const newResponses = STUDENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(''));
+            for (const a of interviewRes.data.studentInterview.answers) {
+              if (newScores[a.sectionIndex] && a.questionIndex < newScores[a.sectionIndex].length) {
+                newScores[a.sectionIndex][a.questionIndex] = a.score;
+                newResponses[a.sectionIndex][a.questionIndex] = a.response || '';
+              }
+            }
+            setStudentScores(newScores);
+            setStudentResponses(newResponses);
+          }
+          if (interviewRes.data.parentInterview?.answers) {
+            const newScores = PARENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(0));
+            const newResponses = PARENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(''));
+            for (const a of interviewRes.data.parentInterview.answers) {
+              if (newScores[a.sectionIndex] && a.questionIndex < newScores[a.sectionIndex].length) {
+                newScores[a.sectionIndex][a.questionIndex] = a.score;
+                newResponses[a.sectionIndex][a.questionIndex] = a.response || '';
+              }
+            }
+            setParentScores(newScores);
+            setParentResponses(newResponses);
+          }
+        }
+      } catch {
+        // Interview data may not exist yet — not an error
+      }
     } catch {
       toast.error('Failed to fetch data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const saveInterview = async (type: 'student' | 'parent', scores: number[][], responses: string[][]) => {
+    try {
+      setSavingInterview(true);
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      const sections = type === 'student' ? STUDENT_INTERVIEW_SECTIONS : PARENT_INTERVIEW_SECTIONS;
+      const answers: { sectionIndex: number; questionIndex: number; score: number; response: string }[] = [];
+      sections.forEach((sec, sIdx) => {
+        sec.questions.forEach((_, qIdx) => {
+          answers.push({
+            sectionIndex: sIdx,
+            questionIndex: qIdx,
+            score: scores[sIdx][qIdx],
+            response: responses[sIdx][qIdx],
+          });
+        });
+      });
+      await axios.put(`${API_URL}/super-admin/ivy-league/interview/${userId}`, { type, answers }, { headers });
+      toast.success(`${type === 'student' ? 'Student' : 'Parent'} interview saved`);
+    } catch {
+      toast.error('Failed to save interview');
+    } finally {
+      setSavingInterview(false);
     }
   };
 
@@ -613,12 +679,21 @@ export default function StudentDetailPage() {
                           <p className="text-sm text-gray-500">Rate each question 1–5 ★. Section score = average of question scores.</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Overall Score</p>
-                        <p className="text-3xl font-extrabold text-green-700">
-                          {overallScore ?? '—'}
-                          {overallScore && <span className="text-base font-semibold text-gray-400"> / 20</span>}
-                        </p>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Overall Score</p>
+                          <p className="text-3xl font-extrabold text-green-700">
+                            {overallScore ?? '—'}
+                            {overallScore && <span className="text-base font-semibold text-gray-400"> / 20</span>}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => saveInterview('student', studentScores, studentResponses)}
+                          disabled={savingInterview}
+                          className="px-5 py-2.5 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 shadow-sm"
+                        >
+                          {savingInterview ? 'Saving...' : 'Save'}
+                        </button>
                       </div>
                     </div>
 
@@ -694,6 +769,12 @@ export default function StudentDetailPage() {
                                     <textarea
                                       placeholder="Record student's response..."
                                       rows={2}
+                                      value={studentResponses[sIdx][qIdx]}
+                                      onChange={(e) => {
+                                        const next = studentResponses.map((row) => [...row]);
+                                        next[sIdx][qIdx] = e.target.value;
+                                        setStudentResponses(next);
+                                      }}
                                       className={`w-full border border-gray-300 rounded-lg px-3 py-2 text-sm ${cl.ring} text-gray-700 resize-none`}
                                     />
                                   </div>
@@ -742,12 +823,21 @@ export default function StudentDetailPage() {
                           {student && <p className="text-xs text-gray-400 mt-1">Parent: {getParentName(student)}</p>}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Overall Score</p>
-                        <p className="text-3xl font-extrabold text-purple-700">
-                          {overallScore ?? '—'}
-                          {overallScore && <span className="text-base font-semibold text-gray-400"> / 20</span>}
-                        </p>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Overall Score</p>
+                          <p className="text-3xl font-extrabold text-purple-700">
+                            {overallScore ?? '—'}
+                            {overallScore && <span className="text-base font-semibold text-gray-400"> / 20</span>}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => saveInterview('parent', parentScores, parentResponses)}
+                          disabled={savingInterview}
+                          className="px-5 py-2.5 bg-purple-600 text-white text-sm font-bold rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 shadow-sm"
+                        >
+                          {savingInterview ? 'Saving...' : 'Save'}
+                        </button>
                       </div>
                     </div>
 
@@ -823,6 +913,12 @@ export default function StudentDetailPage() {
                                     <textarea
                                       placeholder="Record parent's response..."
                                       rows={2}
+                                      value={parentResponses[sIdx][qIdx]}
+                                      onChange={(e) => {
+                                        const next = parentResponses.map((row) => [...row]);
+                                        next[sIdx][qIdx] = e.target.value;
+                                        setParentResponses(next);
+                                      }}
                                       className={`w-full border border-gray-300 rounded-lg px-3 py-2 text-sm ${cl.ring} text-gray-700 resize-none`}
                                     />
                                   </div>

@@ -6,6 +6,8 @@ import {
   getStudentTestResult,
   getIvyExperts,
   convertCandidateToStudent,
+  saveInterviewData,
+  getInterviewData,
 } from '../controllers/ivyLeagueAdmin.controller';
 
 const router = express.Router();
@@ -24,6 +26,12 @@ router.get('/ivy-experts', getIvyExperts);
 
 // GET /api/super-admin/ivy-league/test-result/:userId — Full test result for a student
 router.get('/test-result/:userId', getStudentTestResult);
+
+// GET /api/super-admin/ivy-league/interview/:userId — Get interview data
+router.get('/interview/:userId', getInterviewData);
+
+// PUT /api/super-admin/ivy-league/interview/:userId — Save interview data
+router.put('/interview/:userId', saveInterviewData);
 
 // POST /api/super-admin/ivy-league/convert-to-student — Convert candidate to student
 router.post('/convert-to-student', convertCandidateToStudent);

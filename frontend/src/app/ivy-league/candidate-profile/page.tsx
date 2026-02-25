@@ -183,6 +183,18 @@ function CandidateProfileContent() {
   const [hasData, setHasData] = useState(false);
   const [activeTab, setActiveTab] = useState<'test' | 'student-interview' | 'parent-interview'>('test');
   const [activeSectionIdx, setActiveSectionIdx] = useState(0);
+  const [studentScores, setStudentScores] = useState<number[][]>(() =>
+    STUDENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(0))
+  );
+  const [studentResponses, setStudentResponses] = useState<string[][]>(() =>
+    STUDENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(''))
+  );
+  const [parentScores, setParentScores] = useState<number[][]>(() =>
+    PARENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(0))
+  );
+  const [parentResponses, setParentResponses] = useState<string[][]>(() =>
+    PARENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(''))
+  );
   const hasFetchedRef = useRef(false);
 
   useEffect(() => {
@@ -224,6 +236,41 @@ function CandidateProfileContent() {
         }
       } catch {
         // Test may not exist
+      }
+
+      // Fetch interview data
+      try {
+        const interviewRes = await axios.get(`${API_URL}/super-admin/ivy-league/interview/${uid}`, { headers });
+        if (interviewRes.data.success) {
+          if (interviewRes.data.studentInterview?.answers) {
+            const newScores = STUDENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(0));
+            const newResponses = STUDENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(''));
+            for (const a of interviewRes.data.studentInterview.answers) {
+              if (newScores[a.sectionIndex] && a.questionIndex < newScores[a.sectionIndex].length) {
+                newScores[a.sectionIndex][a.questionIndex] = a.score;
+                newResponses[a.sectionIndex][a.questionIndex] = a.response || '';
+              }
+            }
+            setStudentScores(newScores);
+            setStudentResponses(newResponses);
+            setHasData(true);
+          }
+          if (interviewRes.data.parentInterview?.answers) {
+            const newScores = PARENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(0));
+            const newResponses = PARENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(''));
+            for (const a of interviewRes.data.parentInterview.answers) {
+              if (newScores[a.sectionIndex] && a.questionIndex < newScores[a.sectionIndex].length) {
+                newScores[a.sectionIndex][a.questionIndex] = a.score;
+                newResponses[a.sectionIndex][a.questionIndex] = a.response || '';
+              }
+            }
+            setParentScores(newScores);
+            setParentResponses(newResponses);
+            setHasData(true);
+          }
+        }
+      } catch {
+        // Interview data may not exist yet
       }
 
       if (student || testResult) setHasData(true);
@@ -481,70 +528,152 @@ function CandidateProfileContent() {
             )}
 
             {/* ── Student Interview Tab (read-only) ── */}
-            {activeTab === 'student-interview' && (
-              <div className="space-y-5">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900">Student Interview</h3>
-                    <p className="text-sm text-gray-500">Interview questions for the student — read-only view.</p>
-                  </div>
-                </div>
-                {STUDENT_INTERVIEW_SECTIONS.map((section, sIdx) => {
-                  const cl = sectionColorMap[section.color] ?? sectionColorMap['blue'];
-                  return (
-                    <div key={sIdx} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                      <div className={`flex items-center px-6 py-4 border-b ${cl.header}`}>
-                        <div><p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Section {sIdx + 1}</p><h4 className="text-base font-bold text-gray-900">{section.icon} {section.title}</h4></div>
+            {activeTab === 'student-interview' && (() => {
+              const sectionAverages = STUDENT_INTERVIEW_SECTIONS.map((_, sIdx) => {
+                const scores = studentScores[sIdx];
+                const rated = scores.filter((s) => s > 0);
+                return rated.length > 0 ? rated.reduce((a, b) => a + b, 0) / rated.length : 0;
+              });
+              const overallScore = sectionAverages.some((s) => s > 0) ? sectionAverages.reduce((a, b) => a + b, 0).toFixed(2) : null;
+
+              return (
+                <div className="space-y-5">
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                       </div>
-                      <div className="divide-y divide-gray-100">
-                        {section.questions.map((q, qIdx) => (
-                          <div key={qIdx} className="p-5 flex items-start gap-4">
-                            <span className={`shrink-0 w-7 h-7 rounded-full ${cl.dot} text-white flex items-center justify-center text-xs font-bold mt-0.5`}>{qIdx + 1}</span>
-                            <div className="flex-1"><p className="text-sm font-semibold text-gray-900 mb-3">{q}</p><ReadOnlyStars score={0} /></div>
-                          </div>
-                        ))}
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">Student Interview</h3>
+                        <p className="text-sm text-gray-500">Interview questions for the student — read-only view.</p>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Overall Score</p>
+                      <p className="text-3xl font-extrabold text-green-700">
+                        {overallScore ?? '—'}
+                        {overallScore && <span className="text-base font-semibold text-gray-400"> / 20</span>}
+                      </p>
+                    </div>
+                  </div>
+                  {STUDENT_INTERVIEW_SECTIONS.map((section, sIdx) => {
+                    const cl = sectionColorMap[section.color] ?? sectionColorMap['blue'];
+                    const scores = studentScores[sIdx];
+                    const rated = scores.filter((s) => s > 0);
+                    const sectionAvg = rated.length > 0 ? (rated.reduce((a, b) => a + b, 0) / rated.length).toFixed(2) : null;
+
+                    return (
+                      <div key={sIdx} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className={`flex items-center justify-between px-6 py-4 border-b ${cl.header}`}>
+                          <div><p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Section {sIdx + 1}</p><h4 className="text-base font-bold text-gray-900">{section.icon} {section.title}</h4></div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500 font-medium">Section Score</p>
+                            <p className="text-2xl font-extrabold text-gray-800">
+                              {sectionAvg ?? <span className="text-gray-400">—</span>}
+                              {sectionAvg && <span className="text-sm font-semibold text-gray-400"> / 5</span>}
+                            </p>
+                            <p className="text-xs text-gray-400">{rated.length}/{scores.length} rated</p>
+                          </div>
+                        </div>
+                        <div className="divide-y divide-gray-100">
+                          {section.questions.map((q, qIdx) => (
+                            <div key={qIdx} className="p-5 flex items-start gap-4">
+                              <span className={`shrink-0 w-7 h-7 rounded-full ${cl.dot} text-white flex items-center justify-center text-xs font-bold mt-0.5`}>{qIdx + 1}</span>
+                              <div className="flex-1">
+                                <p className="text-sm font-semibold text-gray-900 mb-3">{q}</p>
+                                <div className="flex items-center gap-1 mb-2">
+                                  <ReadOnlyStars score={studentScores[sIdx][qIdx]} />
+                                  {studentScores[sIdx][qIdx] > 0 && (
+                                    <span className="ml-2 text-sm font-bold text-amber-600">{studentScores[sIdx][qIdx]} / 5</span>
+                                  )}
+                                </div>
+                                {studentResponses[sIdx][qIdx] && (
+                                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700">{studentResponses[sIdx][qIdx]}</div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
             {/* ── Parent Interview Tab (read-only) ── */}
-            {activeTab === 'parent-interview' && (
-              <div className="space-y-5">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900">Parent Interview</h3>
-                    {student && <p className="text-sm text-gray-500">Parent: {getParentName(student)}</p>}
-                  </div>
-                </div>
-                {PARENT_INTERVIEW_SECTIONS.map((section, sIdx) => {
-                  const cl = sectionColorMap[section.color] ?? sectionColorMap['blue'];
-                  return (
-                    <div key={sIdx} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                      <div className={`flex items-center px-6 py-4 border-b ${cl.header}`}>
-                        <div><p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Section {sIdx + 1}</p><h4 className="text-base font-bold text-gray-900">{section.icon} {section.title}</h4></div>
+            {activeTab === 'parent-interview' && (() => {
+              const sectionAverages = PARENT_INTERVIEW_SECTIONS.map((_, sIdx) => {
+                const scores = parentScores[sIdx];
+                const rated = scores.filter((s) => s > 0);
+                return rated.length > 0 ? rated.reduce((a, b) => a + b, 0) / rated.length : 0;
+              });
+              const overallScore = sectionAverages.some((s) => s > 0) ? sectionAverages.reduce((a, b) => a + b, 0).toFixed(2) : null;
+
+              return (
+                <div className="space-y-5">
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                       </div>
-                      <div className="divide-y divide-gray-100">
-                        {section.questions.map((q, qIdx) => (
-                          <div key={qIdx} className="p-5 flex items-start gap-4">
-                            <span className={`shrink-0 w-7 h-7 rounded-full ${cl.dot} text-white flex items-center justify-center text-xs font-bold mt-0.5`}>{qIdx + 1}</span>
-                            <div className="flex-1"><p className="text-sm font-semibold text-gray-900 mb-3">{q}</p><ReadOnlyStars score={0} /></div>
-                          </div>
-                        ))}
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">Parent Interview</h3>
+                        {student && <p className="text-sm text-gray-500">Parent: {getParentName(student)}</p>}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Overall Score</p>
+                      <p className="text-3xl font-extrabold text-purple-700">
+                        {overallScore ?? '—'}
+                        {overallScore && <span className="text-base font-semibold text-gray-400"> / 20</span>}
+                      </p>
+                    </div>
+                  </div>
+                  {PARENT_INTERVIEW_SECTIONS.map((section, sIdx) => {
+                    const cl = sectionColorMap[section.color] ?? sectionColorMap['blue'];
+                    const scores = parentScores[sIdx];
+                    const rated = scores.filter((s) => s > 0);
+                    const sectionAvg = rated.length > 0 ? (rated.reduce((a, b) => a + b, 0) / rated.length).toFixed(2) : null;
+
+                    return (
+                      <div key={sIdx} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className={`flex items-center justify-between px-6 py-4 border-b ${cl.header}`}>
+                          <div><p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Section {sIdx + 1}</p><h4 className="text-base font-bold text-gray-900">{section.icon} {section.title}</h4></div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500 font-medium">Section Score</p>
+                            <p className="text-2xl font-extrabold text-gray-800">
+                              {sectionAvg ?? <span className="text-gray-400">—</span>}
+                              {sectionAvg && <span className="text-sm font-semibold text-gray-400"> / 5</span>}
+                            </p>
+                            <p className="text-xs text-gray-400">{rated.length}/{scores.length} rated</p>
+                          </div>
+                        </div>
+                        <div className="divide-y divide-gray-100">
+                          {section.questions.map((q, qIdx) => (
+                            <div key={qIdx} className="p-5 flex items-start gap-4">
+                              <span className={`shrink-0 w-7 h-7 rounded-full ${cl.dot} text-white flex items-center justify-center text-xs font-bold mt-0.5`}>{qIdx + 1}</span>
+                              <div className="flex-1">
+                                <p className="text-sm font-semibold text-gray-900 mb-3">{q}</p>
+                                <div className="flex items-center gap-1 mb-2">
+                                  <ReadOnlyStars score={parentScores[sIdx][qIdx]} />
+                                  {parentScores[sIdx][qIdx] > 0 && (
+                                    <span className="ml-2 text-sm font-bold text-amber-600">{parentScores[sIdx][qIdx]} / 5</span>
+                                  )}
+                                </div>
+                                {parentResponses[sIdx][qIdx] && (
+                                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700">{parentResponses[sIdx][qIdx]}</div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </>
         )}
       </div>

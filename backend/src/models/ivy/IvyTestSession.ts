@@ -21,6 +21,20 @@ export interface ISessionSection {
   score: number;                   // section score after grading
 }
 
+/* ── Interview question answer ─────────────────────────────────────── */
+export interface IInterviewAnswer {
+  sectionIndex: number;
+  questionIndex: number;
+  score: number;         // 0–5 star rating
+  response: string;      // free-text response note
+}
+
+/* ── Interview data (student or parent) ────────────────────────────── */
+export interface IInterviewData {
+  answers: IInterviewAnswer[];
+  updatedAt?: Date;
+}
+
 /* ── Full test session ─────────────────────────────────────────────── */
 export interface IIvyTestSession extends Document {
   studentId: Types.ObjectId;
@@ -29,6 +43,8 @@ export interface IIvyTestSession extends Document {
   maxScore: number;
   status: 'not-started' | 'in-progress' | 'completed';
   violations: number;
+  studentInterview?: IInterviewData;
+  parentInterview?: IInterviewData;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -60,6 +76,24 @@ const SessionSectionSchema = new Schema<ISessionSection>(
   { _id: false },
 );
 
+const InterviewAnswerSchema = new Schema(
+  {
+    sectionIndex: { type: Number, required: true },
+    questionIndex: { type: Number, required: true },
+    score: { type: Number, default: 0, min: 0, max: 5 },
+    response: { type: String, default: '' },
+  },
+  { _id: false },
+);
+
+const InterviewDataSchema = new Schema(
+  {
+    answers: { type: [InterviewAnswerSchema], default: [] },
+    updatedAt: { type: Date, default: Date.now },
+  },
+  { _id: false },
+);
+
 const IvyTestSessionSchema = new Schema<IIvyTestSession>(
   {
     studentId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
@@ -68,6 +102,8 @@ const IvyTestSessionSchema = new Schema<IIvyTestSession>(
     maxScore: { type: Number, default: 120 },
     status: { type: String, enum: ['not-started', 'in-progress', 'completed'], default: 'not-started' },
     violations: { type: Number, default: 0 },
+    studentInterview: { type: InterviewDataSchema, default: undefined },
+    parentInterview: { type: InterviewDataSchema, default: undefined },
   },
   { timestamps: true },
 );
