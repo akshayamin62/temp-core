@@ -23,6 +23,7 @@ import leadStudentConversionRoutes from "./routes/leadStudentConversionRoutes";
 import spDocumentRoutes from "./routes/spDocumentRoutes";
 import brainographyRoutes from "./routes/brainographyRoutes";
 import portfolioRoutes from "./routes/portfolioRoutes";
+import activityRoutes from "./routes/activityRoutes";
 import ivyLeagueRegistrationRoutes from "./routes/ivyLeagueRegistrationRoutes";
 import ivyLeagueAdminRoutes from "./routes/ivyLeagueAdmin.routes";
 
@@ -74,6 +75,8 @@ import "./models/LeadStudentConversion";
 import "./models/ServiceProviderDocument";
 import "./models/BrainographyData";
 import "./models/Portfolio";
+import "./models/MonthlyFocus";
+import "./models/DailyPlanner";
 import "./models/IvyLeagueRegistration";
 
 // Import Ivy League models to register them with Mongoose
@@ -139,6 +142,7 @@ app.use("/api/lead-conversions", leadStudentConversionRoutes); // Lead to Studen
 app.use("/api/sp-documents", spDocumentRoutes); // Service Provider document routes
 app.use("/api/brainography", brainographyRoutes); // Brainography report routes
 app.use("/api/portfolio", portfolioRoutes); // Portfolio generation routes
+app.use("/api/activity", activityRoutes); // Activity management routes
 app.use("/api/ivy-league-registration", ivyLeagueRegistrationRoutes); // Ivy League registration form routes
 app.use("/api", leadRoutes); // Lead routes (includes public, admin, counselor endpoints)
 
