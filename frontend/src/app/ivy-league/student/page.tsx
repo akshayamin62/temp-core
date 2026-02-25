@@ -277,8 +277,25 @@ function IvyScoreContent() {
 
             {/* Header */}
             <header className="mb-16">
-                <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4 leading-tight">Your Ivy League Readiness Score</h1>
-                <p className="text-xl text-gray-400 font-medium max-w-2xl leading-relaxed">Track your competitive trajectory across all core admission pillars. Your score is real-time and reflects current Ivy Expert evaluations.</p>
+                <div className="flex items-start justify-between gap-4">
+                    <div>
+                        <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4 leading-tight">Your Ivy League Readiness Score</h1>
+                        <p className="text-xl text-gray-400 font-medium max-w-2xl leading-relaxed">Track your competitive trajectory across all core admission pillars. Your score is real-time and reflects current Ivy Expert evaluations.</p>
+                    </div>
+                    <button
+                        onClick={() => {
+                            const uid = serviceData?.studentId?.userId || '';
+                            router.push(uid ? `/ivy-league/candidate-profile?userId=${uid}` : '/ivy-league/candidate-profile');
+                        }}
+                        className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-3 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                        </svg>
+                        View Ivy League Profile
+                    </button>
+                </div>
             </header>
 
             {/* Overall Score Card */}

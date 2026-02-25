@@ -173,6 +173,12 @@ export default function DashboardPage() {
     );
   }
 
+  // Check if student has Ivy League registration
+  const hasIvyLeagueRegistration = registrations.some((r) => {
+    const service = typeof r.serviceId === 'object' ? r.serviceId : null;
+    return service && (service.slug === 'ivy-league' || service.slug === 'ivy-league-admission' || service.name === 'Ivy League Preparation' || service.name === 'Ivy League Admission');
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
       <Toaster position="top-right" />
@@ -187,13 +193,16 @@ export default function DashboardPage() {
       <div className="relative max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
         <div className="px-4 sm:px-0">
           {/* Welcome Header */}
-          <div className="mb-8 animate-fade-in">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-              My Services
-            </h1>
-            <p className="text-gray-600 text-base mt-2">
-              Manage your registered services and track your progress.
-            </p>
+          <div className="mb-8 animate-fade-in flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+                My Services
+              </h1>
+              <p className="text-gray-600 text-base mt-2">
+                Manage your registered services and track your progress.
+              </p>
+            </div>
+
           </div>
 
           {/* My Services Section */}

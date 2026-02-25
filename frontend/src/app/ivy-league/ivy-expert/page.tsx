@@ -9,7 +9,8 @@ import { IVY_API_URL } from '@/lib/ivyApi';
 interface StudentService {
     _id: string; // The Service ID
     studentId: {
-        _id: string;
+        _id: string;      // Student document _id
+        userId?: string;  // User document _id
         firstName: string; // Populated
         lastName: string; // Populated
         email: string; // Populated
@@ -82,6 +83,7 @@ function IvyExpertDashboard() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const selectedStudentId = searchParams.get('studentId');
+    const userIdForProfile = searchParams.get('userId'); // User._id for candidate-profile
     const studentIvyServiceId = searchParams.get('studentIvyServiceId');
 
     const [students, setStudents] = useState<StudentService[]>([]);
@@ -275,12 +277,28 @@ function IvyExpertDashboard() {
             <div className="p-8 md:p-12 max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-1000">
                 {/* Header */}
                 <header className="mb-16">
-                    <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4 leading-tight">
-                        {selectedStudent?.studentId.firstName ? `${selectedStudent.studentId.firstName} ${selectedStudent.studentId.lastName}` : 'Student'}'s Ivy League Readiness
-                    </h1>
-                    <p className="text-xl text-gray-400 font-medium max-w-2xl leading-relaxed">
-                        Track competitive trajectory across all core admission pillars. Scores are real-time and reflect current evaluations.
-                    </p>
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                            <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4 leading-tight">
+                                {selectedStudent?.studentId.firstName ? `${selectedStudent.studentId.firstName} ${selectedStudent.studentId.lastName}` : 'Student'}'s Ivy League Readiness
+                            </h1>
+                            <p className="text-xl text-gray-400 font-medium max-w-2xl leading-relaxed">
+                                Track competitive trajectory across all core admission pillars. Scores are real-time and reflect current evaluations.
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => {
+                                const resolvedUserId = userIdForProfile || selectedStudent?.studentId.userId || selectedStudentId;
+                                router.push(`/ivy-league/candidate-profile?userId=${resolvedUserId}`);
+                            }}
+                            className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-3 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg"
+                        >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            View Candidate Profile
+                        </button>
+                    </div>
                 </header>
 
                 {/* Overall Score Card */}
@@ -431,7 +449,7 @@ function IvyExpertDashboard() {
                         ) : (
                             students.map((service) => (
                                 <li key={service._id}>
-                                    <Link href={`/ivy-league/ivy-expert?studentId=${service.studentId._id}&studentIvyServiceId=${service._id}`} className="block hover:bg-gray-50 transition-colors">
+                                    <Link href={`/ivy-league/ivy-expert?studentId=${service.studentId._id}&userId=${service.studentId.userId || ''}&studentIvyServiceId=${service._id}`} className="block hover:bg-gray-50 transition-colors">
                                         <div className="px-6 py-5 flex items-center justify-between">
                                             <div className="flex items-center">
                                                 <div className="flex-shrink-0 h-12 w-12">

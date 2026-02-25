@@ -14,7 +14,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 interface StudentService {
   _id: string;
   studentId: {
-    _id: string;
+    _id: string;      // Student document _id
+    userId?: string;  // User document _id
     firstName: string;
     lastName: string;
     email: string;
@@ -109,6 +110,7 @@ export default function IvyExpertStudentsPage() {
     const queryParams = new URLSearchParams({
       studentId: service.studentId._id,
       studentIvyServiceId: service._id,
+      ...(service.studentId.userId ? { userId: service.studentId.userId } : {}),
       ...(ivyExpertId ? { ivyExpertId } : {}),
     });
     router.push(`/ivy-league/ivy-expert?${queryParams.toString()}`);
