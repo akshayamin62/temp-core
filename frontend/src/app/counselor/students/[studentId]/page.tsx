@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useEffect, useState, useRef, Suspense } from 'react';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { authAPI, adminStudentAPI } from '@/lib/api';
 import { User, USER_ROLE } from '@/types';
 import toast, { Toaster } from 'react-hot-toast';
@@ -76,10 +76,12 @@ interface Registration {
   createdAt: string;
 }
 
-export default function CounselorStudentDetailPage() {
+function CounselorStudentDetailContent() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const studentId = params.studentId as string;
+  const fromLeadId = searchParams.get('leadId');
 
   const [user, setUser] = useState<User | null>(null);
   const [student, setStudent] = useState<StudentDetails | null>(null);
@@ -169,13 +171,13 @@ export default function CounselorStudentDetailPage() {
         <div className="p-8">
           {/* Back Button */}
           <button
-            onClick={() => router.push('/counselor/students')}
+            onClick={() => router.push(fromLeadId ? `/counselor/leads/${fromLeadId}` : '/counselor/students')}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-6 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Back to Students
+            {fromLeadId ? 'Back to Lead' : 'Back to Students'}
           </button>
 
           {loading ? (
@@ -384,5 +386,17 @@ export default function CounselorStudentDetailPage() {
           )}
         </div>
     </>
+  );
+}
+
+export default function CounselorStudentDetailPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    }>
+      <CounselorStudentDetailContent />
+    </Suspense>
   );
 }
