@@ -512,7 +512,7 @@ export default function CandidateDetailPage() {
                                         <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
                                       ))}
                                     </Bar>
-                                    <Bar dataKey="Max Marks" fill="#e5e7eb" radius={[6, 6, 0, 0]} />
+                                    <Bar dataKey="Max Marks" fill="#ef4444" radius={[6, 6, 0, 0]} />
                                   </BarChart>
                                 </ResponsiveContainer>
                               </div>
