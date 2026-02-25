@@ -8,6 +8,11 @@ import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 import { BACKEND_URL } from '@/lib/ivyApi';
+import {
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell,
+  PieChart, Pie,
+} from 'recharts';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -352,7 +357,144 @@ export default function StudentDetailPage() {
                         )}
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                      {/* ── Performance Analysis Charts ── */}
+                      {(() => {
+                        const CHART_COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f97316'];
+                        const totalCorrect = testResult.sections.reduce((s, sec) => s + sec.correct, 0);
+                        const totalIncorrect = testResult.sections.reduce((s, sec) => s + sec.incorrect, 0);
+                        const totalSkipped = testResult.sections.reduce((s, sec) => s + sec.unanswered, 0);
+                        const totalQ = totalCorrect + totalIncorrect + totalSkipped;
+
+                        const radarData = testResult.sections.map((sec) => ({
+                          subject: sec.sectionName.split(' ').slice(0, 2).join(' '),
+                          score: sec.questionCount > 0 ? Math.round((sec.score / (sec.questionCount * 2)) * 100) : 0,
+                          fullMark: 100,
+                        }));
+
+                        const barData = testResult.sections.map((sec, i) => ({
+                          name: sec.sectionName.split(' ').slice(0, 2).join(' '),
+                          'Your Score': sec.score,
+                          'Max Marks': sec.questionCount * 2,
+                          fill: CHART_COLORS[i % CHART_COLORS.length],
+                        }));
+
+                        const donutData = [
+                          { name: 'Correct', value: totalCorrect, color: '#22c55e' },
+                          { name: 'Incorrect', value: totalIncorrect, color: '#ef4444' },
+                          { name: 'Skipped', value: totalSkipped, color: '#9ca3af' },
+                        ];
+
+                        const accuracyData = testResult.sections.map((sec, i) => {
+                          const attempted = sec.correct + sec.incorrect;
+                          return {
+                            name: sec.sectionName.split(' ').slice(0, 2).join(' '),
+                            accuracy: attempted > 0 ? Math.round((sec.correct / attempted) * 100) : 0,
+                            fill: CHART_COLORS[i % CHART_COLORS.length],
+                          };
+                        });
+
+                        return (
+                          <div className="mb-6">
+                            <div className="flex items-center gap-2 mb-4">
+                              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                              </div>
+                              <h3 className="text-lg font-bold text-gray-900">Performance Analysis</h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                              {/* 1. Radar Chart */}
+                              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                                <h4 className="text-xs font-bold text-gray-700 mb-0.5 uppercase tracking-wide">Strengths Profile</h4>
+                                <p className="text-[11px] text-gray-400 mb-3">Percentage scored in each section</p>
+                                <ResponsiveContainer width="100%" height={260}>
+                                  <RadarChart data={radarData} outerRadius="75%">
+                                    <PolarGrid stroke="#e5e7eb" />
+                                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: '#6b7280', fontWeight: 600 }} />
+                                    <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                                    <Radar name="Score %" dataKey="score" stroke="#6366f1" fill="#6366f1" fillOpacity={0.25} strokeWidth={2} dot={{ r: 4, fill: '#6366f1' }} />
+                                  </RadarChart>
+                                </ResponsiveContainer>
+                              </div>
+
+                              {/* 2. Donut */}
+                              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                                <h4 className="text-xs font-bold text-gray-700 mb-0.5 uppercase tracking-wide">Overall Accuracy</h4>
+                                <p className="text-[11px] text-gray-400 mb-3">Distribution of {totalQ} questions</p>
+                                <div className="relative">
+                                  <ResponsiveContainer width="100%" height={260}>
+                                    <PieChart>
+                                      <Pie data={donutData} cx="50%" cy="50%" innerRadius={65} outerRadius={100} paddingAngle={3} dataKey="value" strokeWidth={2} stroke="#fff">
+                                        {donutData.map((entry, idx) => (
+                                          <Cell key={idx} fill={entry.color} />
+                                        ))}
+                                      </Pie>
+                                      <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb', fontSize: 12 }} formatter={(value: any, name: any) => [`${value} questions`, name]} />
+                                    </PieChart>
+                                  </ResponsiveContainer>
+                                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                    <span className="text-3xl font-black text-gray-900">{totalQ > 0 ? Math.round((totalCorrect / totalQ) * 100) : 0}%</span>
+                                    <span className="text-xs font-semibold text-gray-400">Accuracy</span>
+                                  </div>
+                                </div>
+                                <div className="flex justify-center gap-5 mt-1">
+                                  {donutData.map((d) => (
+                                    <div key={d.name} className="flex items-center gap-1.5">
+                                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color }} />
+                                      <span className="text-xs font-semibold text-gray-600">{d.name} ({d.value})</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* 3. Bar Chart */}
+                              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                                <h4 className="text-xs font-bold text-gray-700 mb-0.5 uppercase tracking-wide">Section Scores</h4>
+                                <p className="text-[11px] text-gray-400 mb-3">Score compared to maximum marks</p>
+                                <ResponsiveContainer width="100%" height={260}>
+                                  <BarChart data={barData} barGap={4}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#6b7280', fontWeight: 600 }} />
+                                    <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} />
+                                    <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb', fontSize: 12 }} />
+                                    <Legend iconType="circle" wrapperStyle={{ fontSize: 12, fontWeight: 600 }} />
+                                    <Bar dataKey="Your Score" radius={[6, 6, 0, 0]}>
+                                      {barData.map((_, idx) => (
+                                        <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
+                                      ))}
+                                    </Bar>
+                                    <Bar dataKey="Max Marks" fill="#e5e7eb" radius={[6, 6, 0, 0]} />
+                                  </BarChart>
+                                </ResponsiveContainer>
+                              </div>
+
+                              {/* 4. Section Accuracy */}
+                              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                                <h4 className="text-xs font-bold text-gray-700 mb-0.5 uppercase tracking-wide">Section Accuracy</h4>
+                                <p className="text-[11px] text-gray-400 mb-3">Percentage of attempted questions answered correctly</p>
+                                <div className="space-y-5 mt-2">
+                                  {accuracyData.map((sec, idx) => (
+                                    <div key={idx}>
+                                      <div className="flex items-center justify-between mb-1.5">
+                                        <span className="text-sm font-semibold text-gray-700">{SECTION_ICONS[idx] || '📝'} {sec.name}</span>
+                                        <span className="text-sm font-bold" style={{ color: sec.fill }}>{sec.accuracy}%</span>
+                                      </div>
+                                      <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden">
+                                        <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${sec.accuracy}%`, backgroundColor: sec.fill }} />
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Section Cards */}
+                      <div className="grid grid-cols-3 gap-4 mb-6">
                         {testResult.sections.map((sec, idx) => (
                           <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 cursor-pointer hover:shadow-md transition-all" style={{ borderLeftWidth: 4, borderLeftColor: SECTION_COLORS[idx] || '#6b7280' }} onClick={() => setActiveSectionIdx(idx)}>
                             <div className="flex items-center justify-between mb-3">
