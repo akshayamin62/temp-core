@@ -198,6 +198,10 @@ function ActivityContent() {
   const [activeTab, setActiveTab] = useState(0);
   const [sectionAttempted, setSectionAttempted] = useState<Set<number>>(new Set());
 
+  /* ── Past-date guard: today's date in YYYY-MM-DD ── */
+  const todayYMD = toYMD(new Date());
+  const isPastDate = !!selectedDate && selectedDate < todayYMD;
+
   const currentMonth = toYM(calDate);
 
   /* ── Close calendar on outside click ── */
@@ -326,6 +330,7 @@ function ActivityContent() {
   /* ── Section-level save functions ── */
   const saveMorningLog = async () => {
     if (!selectedDate) return;
+    if (isPastDate) { toast.error('Cannot edit past dates. Only today\'s data can be modified.', { duration: 4000 }); return; }
     setSectionAttempted(prev => new Set(prev).add(0));
     // Validation: feeling text + rating required (compulsory)
     if (!hasContent(planner.feeling) || !planner.feelingRating) {
@@ -345,6 +350,7 @@ function ActivityContent() {
 
   const saveTodaysPlan = async () => {
     if (!selectedDate) return;
+    if (isPastDate) { toast.error('Cannot edit past dates. Only today\'s data can be modified.', { duration: 4000 }); return; }
     setSectionAttempted(prev => new Set(prev).add(1));
     // Validation: any partial row (some but not all of time/activity/type) is an error
     for (const session of planner.plans) {
@@ -369,6 +375,7 @@ function ActivityContent() {
 
   const saveAccomplishments = async () => {
     if (!selectedDate) return;
+    if (isPastDate) { toast.error('Cannot edit past dates. Only today\'s data can be modified.', { duration: 4000 }); return; }
     setSectionAttempted(prev => new Set(prev).add(2));
     // Validate blessings + happyMoment pairs
     const pairs = [
@@ -388,6 +395,7 @@ function ActivityContent() {
 
   const saveNightLog = async () => {
     if (!selectedDate) return;
+    if (isPastDate) { toast.error('Cannot edit past dates. Only today\'s data can be modified.', { duration: 4000 }); return; }
     setSectionAttempted(prev => new Set(prev).add(3));
     // Validation: all time fields must be > 0 or intentionally filled, and all 5 words required
     const nl = planner.nightLog;
@@ -409,6 +417,7 @@ function ActivityContent() {
 
   const saveSelfCare = async () => {
     if (!selectedDate) return;
+    if (isPastDate) { toast.error('Cannot edit past dates. Only today\'s data can be modified.', { duration: 4000 }); return; }
     setSectionAttempted(prev => new Set(prev).add(4));
     // Validate text+rating pairs
     const pairs = [
@@ -690,9 +699,20 @@ function ActivityContent() {
               ))}
             </div>
 
+            {/* Past-date read-only banner */}
+            {isPastDate && (
+              <div className="flex items-center gap-2.5 px-5 py-2.5 bg-amber-50 border-b border-amber-200">
+                <span className="text-lg">🔒</span>
+                <div>
+                  <p className="text-sm font-semibold text-amber-800">View only — past date</p>
+                  <p className="text-xs text-amber-600">You can only edit today&apos;s planner. Past entries are read-only.</p>
+                </div>
+              </div>
+            )}
+
             {/* Tab Content */}
             {plannerLoaded ? (
-              <div className="p-5">
+              <div className={`p-5 ${isPastDate ? 'pointer-events-none select-none opacity-90' : ''}`}>
 
                 {/* ──── TAB 0: Morning Log ──── */}
                 {activeTab === 0 && (
