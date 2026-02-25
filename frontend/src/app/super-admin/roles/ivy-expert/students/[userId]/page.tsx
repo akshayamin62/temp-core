@@ -408,7 +408,7 @@ export default function StudentDetailPage() {
                               {/* 1. Radar Chart */}
                               <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                                 <h4 className="text-xs font-bold text-gray-700 mb-0.5 uppercase tracking-wide">Strengths Profile</h4>
-                                <p className="text-[11px] text-gray-400 mb-3">Percentage scored in each section</p>
+                                <p className="text-[11px] text-gray-400 mb-3 font-bold">Percentage scored in each section</p>
                                 <ResponsiveContainer width="100%" height={260}>
                                   <RadarChart data={radarData} outerRadius="75%">
                                     <PolarGrid stroke="#e5e7eb" />
@@ -422,7 +422,7 @@ export default function StudentDetailPage() {
                               {/* 2. Donut */}
                               <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                                 <h4 className="text-xs font-bold text-gray-700 mb-0.5 uppercase tracking-wide">Overall Accuracy</h4>
-                                <p className="text-[11px] text-gray-400 mb-3">Distribution of {totalQ} questions</p>
+                                <p className="text-[11px] text-gray-400 mb-3 font-bold">Distribution of {totalQ} questions</p>
                                 <div className="relative">
                                   <ResponsiveContainer width="100%" height={260}>
                                     <PieChart>
@@ -436,14 +436,14 @@ export default function StudentDetailPage() {
                                   </ResponsiveContainer>
                                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                     <span className="text-3xl font-black text-gray-900">{totalQ > 0 ? Math.round((totalCorrect / totalQ) * 100) : 0}%</span>
-                                    <span className="text-xs font-semibold text-gray-400">Accuracy</span>
+                                    <span className="text-xs font-bold text-gray-400">Accuracy</span>
                                   </div>
                                 </div>
                                 <div className="flex justify-center gap-5 mt-1">
                                   {donutData.map((d) => (
                                     <div key={d.name} className="flex items-center gap-1.5">
                                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color }} />
-                                      <span className="text-xs font-semibold text-gray-600">{d.name} ({d.value})</span>
+                                      <span className="text-xs font-bold text-gray-600">{d.name} ({d.value})</span>
                                     </div>
                                   ))}
                                 </div>
@@ -452,7 +452,7 @@ export default function StudentDetailPage() {
                               {/* 3. Bar Chart */}
                               <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                                 <h4 className="text-xs font-bold text-gray-700 mb-0.5 uppercase tracking-wide">Section Scores</h4>
-                                <p className="text-[11px] text-gray-400 mb-3">Score compared to maximum marks</p>
+                                <p className="text-[11px] text-gray-400 mb-3 font-bold">Score compared to maximum marks</p>
                                 <ResponsiveContainer width="100%" height={260}>
                                   <BarChart data={barData} barGap={4}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
@@ -473,12 +473,12 @@ export default function StudentDetailPage() {
                               {/* 4. Section Accuracy */}
                               <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                                 <h4 className="text-xs font-bold text-gray-700 mb-0.5 uppercase tracking-wide">Section Accuracy</h4>
-                                <p className="text-[11px] text-gray-400 mb-3">Percentage of attempted questions answered correctly</p>
+                                <p className="text-[11px] text-gray-400 mb-3 font-bold">Percentage of attempted questions answered correctly</p>
                                 <div className="space-y-5 mt-2">
                                   {accuracyData.map((sec, idx) => (
                                     <div key={idx}>
                                       <div className="flex items-center justify-between mb-1.5">
-                                        <span className="text-sm font-semibold text-gray-700">{SECTION_ICONS[idx] || '📝'} {sec.name}</span>
+                                        <span className="text-sm font-bold text-gray-700">{SECTION_ICONS[idx] || '📝'} {sec.name}</span>
                                         <span className="text-sm font-bold" style={{ color: sec.fill }}>{sec.accuracy}%</span>
                                       </div>
                                       <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden">
@@ -494,9 +494,9 @@ export default function StudentDetailPage() {
                       })()}
 
                       {/* Section Cards */}
-                      <div className="grid grid-cols-3 gap-4 mb-6">
+                      <div className="flex gap-4 mb-6">
                         {testResult.sections.map((sec, idx) => (
-                          <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 cursor-pointer hover:shadow-md transition-all" style={{ borderLeftWidth: 4, borderLeftColor: SECTION_COLORS[idx] || '#6b7280' }} onClick={() => setActiveSectionIdx(idx)}>
+                          <div key={idx} className="flex-1 min-w-0 bg-white rounded-xl shadow-sm border border-gray-200 p-5 cursor-pointer hover:shadow-md transition-all" style={{ borderLeftWidth: 4, borderLeftColor: SECTION_COLORS[idx] || '#6b7280' }} onClick={() => setActiveSectionIdx(idx)}>
                             <div className="flex items-center justify-between mb-3">
                               <p className="text-lg font-bold text-gray-900">{SECTION_ICONS[idx]} {sec.sectionName}</p>
                               <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${sec.status === 'submitted' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
