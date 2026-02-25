@@ -313,24 +313,22 @@ export const getActivityAnalytics = async (req: AuthRequest, res: Response) => {
       if (p.date.startsWith(currentMonthStr)) thisMonthWords += words.length;
     }
 
-    // --- 7. HEATMAP (day fill status for all days) ---
+    // --- 7. HEATMAP (distinct goal domains completed each day) ---
+    // 6 domains: A=Academic, N=Non-Academic, H=Habit Focus, PS=Psychological, PH=Physical, RB=Reading Books
+    const DOMAIN_TYPES = ['A', 'N', 'H', 'PS', 'PH', 'RB'];
     const heatmap = planners.map((p: any) => {
-      let filled = 0;
-      if (p.feeling || p.affirmation || p.goalAcademic) filled++;
-      const hasPlans = p.plans?.some((s: any) => s.rows?.some((r: any) => r.activity?.trim()));
-      if (hasPlans) filled++;
-      const hasAccomp = p.plans?.some((s: any) => s.rows?.some((r: any) => r.activity?.trim() && r.completed));
-      if (hasAccomp) filled++;
-      const nlKeys = ['mobileTime', 'socialMediaTime', 'studyTime', 'physicalExerciseTime', 'readingTime'];
-      const hasNight = p.nightLog && nlKeys.some((k: any) => (p.nightLog as any)[k] > 0);
-      if (hasNight) filled++;
-      const scKeys = ['sleepRating', 'exerciseRating', 'dietRating', 'studyTimeRating', 'productivityRating'];
-      const hasSC = p.selfCare && scKeys.some((k: any) => (p.selfCare as any)[k] > 0);
-      if (hasSC) filled++;
-
+      const completedDomains = new Set<string>();
+      for (const session of (p.plans || [])) {
+        for (const row of (session.rows || [])) {
+          if (row.completed === 'Completed' && row.type && DOMAIN_TYPES.includes(row.type)) {
+            completedDomains.add(row.type);
+          }
+        }
+      }
+      const filled = completedDomains.size;
       return {
         date: p.date,
-        status: filled >= 5 ? 'complete' : filled > 0 ? 'partial' : 'empty',
+        status: filled >= 6 ? 'complete' : filled > 0 ? 'partial' : 'empty',
         filled,
       };
     }).sort((a: any, b: any) => a.date.localeCompare(b.date));

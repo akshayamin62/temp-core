@@ -341,7 +341,7 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
 
       {/* ─── Row 4: Activity Heatmap ─── */}
       {data.heatmap.length > 0 && (
-        <ChartCard title="Activity Heatmap" icon="🗓️">
+        <ChartCard title="Goals Completed Heatmap" icon="🗓️">
           <HeatmapGrid heatmap={data.heatmap} />
         </ChartCard>
       )}
@@ -488,6 +488,7 @@ function HeatmapGrid({ heatmap }: { heatmap: { date: string; status: string; fil
   const cellColor = (status: string, filled: number) => {
     if (status === 'pad')   return 'transparent';
     if (status === 'empty') return '#ebedf0';
+    if (filled >= 6)        return '#1e3fa8';
     if (filled >= 5)        return '#2959ba';
     if (filled >= 4)        return '#3a6ec5';
     if (filled >= 3)        return '#5b8ad4';
@@ -501,8 +502,8 @@ function HeatmapGrid({ heatmap }: { heatmap: { date: string; status: string; fil
     const dt = new Date(day.date + 'T00:00:00');
     const label = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     return day.status === 'empty'
-      ? `${label}: No activity`
-      : `${label}: ${day.filled}/6 sections filled`;
+      ? `${label}: No goals completed`
+      : `${label}: ${day.filled}/6 goals completed`;
   };
 
   const activeDays = days.filter(d => d.status !== 'empty').length;
@@ -600,15 +601,16 @@ function HeatmapGrid({ heatmap }: { heatmap: { date: string; status: string; fil
         </div>
       </div>
 
-      {/* Legend — 6 activity levels */}
+      {/* Legend — 7 activity levels */}
       <div className="flex flex-wrap items-center gap-3 mt-4 text-xs">
         {[
-          { color: '#ebedf0', label: 'No activity' },
-          { color: '#c4d5f0', label: '1 completed' },
-          { color: '#93b4e4', label: '2 completed' },
-          { color: '#5b8ad4', label: '3 completed' },
-          { color: '#3a6ec5', label: '4 completed' },
-          { color: '#2959ba', label: '5+ completed' },
+          { color: '#ebedf0', label: '0 goals' },
+          { color: '#c4d5f0', label: '1 goal' },
+          { color: '#93b4e4', label: '2 goals' },
+          { color: '#5b8ad4', label: '3 goals' },
+          { color: '#3a6ec5', label: '4 goals' },
+          { color: '#2959ba', label: '5 goals' },
+          { color: '#1e3fa8', label: '6 goals' },
         ].map(({ color, label }) => (
           <span key={color} className="flex items-center gap-1.5">
             <span style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: color, display: 'inline-block', flexShrink: 0 }} />
