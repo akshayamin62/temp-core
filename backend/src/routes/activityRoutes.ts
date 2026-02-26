@@ -7,6 +7,9 @@ import {
   upsertDailyPlanner,
   getMonthSummary,
   getActivityAnalytics,
+  upsertFeedback,
+  getFeedback,
+  deleteFeedback,
 } from '../controllers/activityController';
 
 const router = Router();
@@ -27,5 +30,10 @@ router.get('/:registrationId/month-summary', getMonthSummary);
 
 // Analytics
 router.get('/:registrationId/analytics', getActivityAnalytics);
+
+// Feedback
+router.get('/:registrationId/feedback', getFeedback);
+router.put('/:registrationId/feedback', upsertFeedback);
+router.delete('/:registrationId/feedback/:feedbackId', deleteFeedback);
 
 export default router;

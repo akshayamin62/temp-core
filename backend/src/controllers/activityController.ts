@@ -2,8 +2,10 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { MonthlyFocus } from '../models/MonthlyFocus';
 import { DailyPlanner } from '../models/DailyPlanner';
+import { ActivityFeedback } from '../models/ActivityFeedback';
 import Student from '../models/Student';
 import StudentServiceRegistration from '../models/StudentServiceRegistration';
+import User from '../models/User';
 
 /* ─────────── helpers ─────────── */
 
@@ -371,6 +373,108 @@ export const getActivityAnalytics = async (req: AuthRequest, res: Response) => {
         selfCareAvg,
       },
     });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/* ═══════════════════════════════
+   ACTIVITY FEEDBACK
+   ═══════════════════════════════ */
+
+const FEEDBACK_ROLES = ['SUPER_ADMIN', 'EDUPLAN_COACH'];
+
+/** PUT  /api/activity/:registrationId/feedback
+ *  Upsert feedback for monthly focus or weekly planner.
+ *  Body: { type: 'monthly'|'weekly', period: string, periodEnd?: string, feedback: string }
+ */
+export const upsertFeedback = async (req: AuthRequest, res: Response) => {
+  try {
+    const userRole = req.user!.role;
+    if (!FEEDBACK_ROLES.includes(userRole)) {
+      return res.status(403).json({ success: false, message: 'Only Super Admin and EduPlan Coach can give feedback' });
+    }
+
+    const { registrationId } = req.params;
+    const studentId = await getStudentId(req.user!.userId, registrationId);
+    if (!studentId) return res.status(404).json({ success: false, message: 'Student not found' });
+
+    const { type, period, periodEnd, feedback } = req.body;
+    if (!type || !period || !feedback?.trim()) {
+      return res.status(400).json({ success: false, message: 'type, period, and feedback are required' });
+    }
+    if (!['monthly', 'weekly'].includes(type)) {
+      return res.status(400).json({ success: false, message: 'type must be monthly or weekly' });
+    }
+
+    // Get the user's display name
+    const userDoc = await User.findById(req.user!.userId).select('firstName lastName email').lean();
+    const givenByName = userDoc ? `${userDoc.firstName} ${userDoc.lastName}`.trim() : 'Staff';
+
+    const result = await ActivityFeedback.findOneAndUpdate(
+      { registrationId, type, period, givenBy: req.user!.userId },
+      {
+        studentId,
+        registrationId,
+        type,
+        period,
+        periodEnd: type === 'weekly' ? periodEnd : undefined,
+        feedback: feedback.trim(),
+        givenBy: req.user!.userId,
+        givenByName,
+        givenByRole: userRole,
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    return res.json({ success: true, data: result });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/** GET  /api/activity/:registrationId/feedback?type=monthly&period=YYYY-MM
+ *  OR   /api/activity/:registrationId/feedback?type=weekly&period=YYYY-MM-DD
+ *  Returns all feedback entries for the given type+period.
+ */
+export const getFeedback = async (req: AuthRequest, res: Response) => {
+  try {
+    const { registrationId } = req.params;
+    const { type, period } = req.query;
+
+    const filter: Record<string, any> = { registrationId };
+    if (type) filter.type = type;
+    if (period) filter.period = period;
+
+    const feedbacks = await ActivityFeedback.find(filter)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.json({ success: true, data: feedbacks });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/** DELETE  /api/activity/:registrationId/feedback/:feedbackId */
+export const deleteFeedback = async (req: AuthRequest, res: Response) => {
+  try {
+    const userRole = req.user!.role;
+    if (!FEEDBACK_ROLES.includes(userRole)) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    const { feedbackId } = req.params;
+    const fb = await ActivityFeedback.findById(feedbackId);
+    if (!fb) return res.status(404).json({ success: false, message: 'Feedback not found' });
+
+    // Only the author or SUPER_ADMIN can delete
+    if (fb.givenBy.toString() !== req.user!.userId && userRole !== 'SUPER_ADMIN' && userRole !== 'OPS') {
+      return res.status(403).json({ success: false, message: 'You can only delete your own feedback' });
+    }
+
+    await ActivityFeedback.findByIdAndDelete(feedbackId);
+    return res.json({ success: true, message: 'Feedback deleted' });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
   }

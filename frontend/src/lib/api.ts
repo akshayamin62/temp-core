@@ -663,6 +663,14 @@ export const activityAPI = {
   // Analytics
   getActivityAnalytics: (registrationId: string, months?: number) =>
     api.get(`/activity/${registrationId}/analytics`, { params: { months: months || 3 } }),
+
+  // Feedback
+  getFeedback: (registrationId: string, type?: string, period?: string) =>
+    api.get(`/activity/${registrationId}/feedback`, { params: { type, period } }),
+  upsertFeedback: (registrationId: string, data: { type: 'monthly' | 'weekly'; period: string; periodEnd?: string; feedback: string }) =>
+    api.put(`/activity/${registrationId}/feedback`, data),
+  deleteFeedback: (registrationId: string, feedbackId: string) =>
+    api.delete(`/activity/${registrationId}/feedback/${feedbackId}`),
 };
 
 export default api;

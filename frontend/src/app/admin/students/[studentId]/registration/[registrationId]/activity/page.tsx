@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { authAPI, activityAPI } from '@/lib/api';
-import { USER_ROLE } from '@/types';
+import { User, USER_ROLE } from '@/types';
 import AdminLayout from '@/components/AdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
@@ -55,6 +55,7 @@ interface DailyPlannerData {
 }
 interface DaySummary { date: string; status: 'empty' | 'partial' | 'complete'; }
 interface CalendarEvent { id: string; title: string; start: Date; end: Date; status: 'partial' | 'complete'; }
+interface FeedbackEntry { _id: string; type: 'monthly' | 'weekly'; period: string; periodEnd?: string; feedback: string; givenBy: string; givenByName: string; givenByRole: string; createdAt: string; }
 
 /* ─────────── Constants ─────────── */
 const DOMAINS = ['Academic', 'Non-Academic', 'Habit Focus', 'Psychological', 'Physical', 'Reading Books'] as const;
@@ -152,6 +153,7 @@ function ActivityContent() {
 
   /* ── auth ── */
   const [authorized, setAuthorized] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
   /* ── state ── */
   const [calDate, setCalDate] = useState(new Date());
@@ -168,6 +170,14 @@ function ActivityContent() {
   const [planner, setPlanner] = useState<DailyPlannerData>(JSON.parse(JSON.stringify(emptyPlanner)));
   const [plannerLoaded, setPlannerLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+
+  /* ── feedback ── */
+  const [monthlyFeedbacks, setMonthlyFeedbacks] = useState<FeedbackEntry[]>([]);
+  const [weeklyFeedbacks, setWeeklyFeedbacks] = useState<FeedbackEntry[]>([]);
+  const [monthlyFbText, setMonthlyFbText] = useState('');
+  const [weeklyFbText, setWeeklyFbText] = useState('');
+  const [fbSaving, setFbSaving] = useState(false);
+  const canGiveFeedback = user?.role === USER_ROLE.SUPER_ADMIN || user?.role === 'OPS' || user?.role === USER_ROLE.EDUPLAN_COACH;
 
   const currentMonth = toYM(calDate);
 
@@ -186,6 +196,7 @@ function ActivityContent() {
           return;
         }
         setAuthorized(true);
+        setUser(userData);
       } catch {
         toast.error('Please login to continue');
         router.push('/login');
@@ -222,9 +233,10 @@ function ActivityContent() {
   /* ── Load month data ── */
   const loadMonth = useCallback(async () => {
     try {
-      const [fRes, sRes] = await Promise.all([
+      const [fRes, sRes, fbRes] = await Promise.all([
         activityAPI.getMonthlyFocus(registrationId, currentMonth),
         activityAPI.getMonthSummary(registrationId, currentMonth),
+        activityAPI.getFeedback(registrationId, 'monthly', currentMonth),
       ]);
       if (fRes.data.data) {
         const d = fRes.data.data;
@@ -238,6 +250,7 @@ function ActivityContent() {
       }
       setFocusLoaded(true);
       setSummaries(sRes.data.data || []);
+      setMonthlyFeedbacks(fbRes.data.data || []);
     } catch { /* silent */ }
   }, [registrationId, currentMonth]);
 
@@ -274,9 +287,62 @@ function ActivityContent() {
     setPlannerLoaded(true);
   }, [registrationId]);
 
+  /* ── Compute week Monday from selected date ── */
+  const getWeekMonday = useCallback((dateStr: string) => {
+    const d = new Date(dateStr + 'T12:00:00');
+    const day = d.getDay(); // 0=Sun
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const mon = new Date(d);
+    mon.setDate(diff);
+    return toYMD(mon);
+  }, []);
+
+  const getWeekSunday = useCallback((mondayStr: string) => {
+    const d = new Date(mondayStr + 'T12:00:00');
+    d.setDate(d.getDate() + 6);
+    return toYMD(d);
+  }, []);
+
+  /* ── Load weekly feedback ── */
+  const loadWeeklyFeedback = useCallback(async (dateStr: string) => {
+    try {
+      const monday = getWeekMonday(dateStr);
+      const res = await activityAPI.getFeedback(registrationId, 'weekly', monday);
+      setWeeklyFeedbacks(res.data.data || []);
+    } catch { setWeeklyFeedbacks([]); }
+  }, [registrationId, getWeekMonday]);
+
+  /* ── Save monthly feedback ── */
+  const saveMonthlyFeedback = async () => {
+    if (!monthlyFbText.trim()) return;
+    setFbSaving(true);
+    try {
+      await activityAPI.upsertFeedback(registrationId, { type: 'monthly', period: currentMonth, feedback: monthlyFbText.trim() });
+      toast.success('Monthly feedback saved');
+      setMonthlyFbText('');
+      loadMonth();
+    } catch { toast.error('Failed to save feedback'); }
+    setFbSaving(false);
+  };
+
+  /* ── Save weekly feedback ── */
+  const saveWeeklyFeedback = async () => {
+    if (!weeklyFbText.trim() || !selectedDate) return;
+    setFbSaving(true);
+    try {
+      const monday = getWeekMonday(selectedDate);
+      const sunday = getWeekSunday(monday);
+      await activityAPI.upsertFeedback(registrationId, { type: 'weekly', period: monday, periodEnd: sunday, feedback: weeklyFbText.trim() });
+      toast.success('Weekly feedback saved');
+      setWeeklyFbText('');
+      loadWeeklyFeedback(selectedDate);
+    } catch { toast.error('Failed to save feedback'); }
+    setFbSaving(false);
+  };
+
   /* ── Effects ── */
   useEffect(() => { if (authorized) loadMonth(); }, [authorized, loadMonth]);
-  useEffect(() => { if (authorized && selectedDate) loadDay(selectedDate); }, [authorized, selectedDate, loadDay]);
+  useEffect(() => { if (authorized && selectedDate) { loadDay(selectedDate); loadWeeklyFeedback(selectedDate); } }, [authorized, selectedDate, loadDay, loadWeeklyFeedback]);
 
   /* ── Calendar navigation helpers ── */
   const handleNavigate = useCallback((newDate: Date) => setCalDate(newDate), []);
@@ -390,18 +456,18 @@ function ActivityContent() {
         {/* Main Content */}
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Monthly Focus (Left Panel) */}
-          <section className="lg:w-[35%] lg:sticky lg:top-4 lg:self-start">
+          <section className="lg:w-[40%] lg:sticky lg:top-4 lg:self-start">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <button onClick={() => setFocusOpen(!focusOpen)}
-                className="w-full px-4 py-3 flex items-center justify-between bg-gradient-to-r from-blue-50 to-white hover:from-blue-100 transition-colors">
+                className="w-full px-4 py-3 flex items-center justify-between bg-blue-600 hover:bg-blue-700 transition-colors">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">🎯</span>
                   <div className="text-left">
-                    <h2 className="text-sm font-bold text-gray-800">Monthly Focus</h2>
-                    <p className="text-[10px] text-gray-400">{format(calDate, 'MMMM yyyy')}</p>
+                    <h2 className="text-sm font-bold text-white">Monthly Focus</h2>
+                    <p className="text-[10px] text-blue-100">{format(calDate, 'MMMM yyyy')}</p>
                   </div>
                 </div>
-                <svg className={`w-4 h-4 text-gray-400 transition-transform ${focusOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-4 h-4 text-blue-200 transition-transform ${focusOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
@@ -409,7 +475,8 @@ function ActivityContent() {
               {focusOpen && (
                 <div className="p-4 border-t border-gray-100 animate-fadeIn">
                   {focusLoaded ? (
-                    <div className="space-y-2.5">
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {[
                         { key: 'academicActivities', label: 'Academic Activities', icon: '📚' },
                         { key: 'nonAcademicActivities', label: 'Non-Academic Activities', icon: '🎨' },
@@ -425,7 +492,48 @@ function ActivityContent() {
                           </p>
                         </div>
                       ))}
-                    </div>
+                      </div>
+
+                      {/* Monthly Feedback Section */}
+                      <div className="mt-4 pt-3 border-t border-gray-100">
+                        <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                          <span>💬</span> Monthly Feedback
+                        </h4>
+                        {monthlyFeedbacks.length > 0 ? (
+                          <div className="space-y-2 mb-3">
+                            {monthlyFeedbacks.map((fb) => (
+                              <div key={fb._id} className="rounded-lg border border-blue-100 bg-blue-50/50 p-3">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-xs font-semibold text-blue-700">{fb.givenByName}</span>
+                                  <span className="text-[10px] text-gray-400">{format(new Date(fb.createdAt), 'MMM d, yyyy h:mm a')}</span>
+                                </div>
+                                <p className="text-sm text-gray-700 whitespace-pre-wrap">{fb.feedback}</p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-400 italic mb-3">No feedback yet for this month.</p>
+                        )}
+                        {canGiveFeedback && (
+                          <div className="space-y-2">
+                            <textarea
+                              value={monthlyFbText}
+                              onChange={(e) => setMonthlyFbText(e.target.value)}
+                              placeholder="Write monthly feedback..."
+                              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 outline-none resize-none"
+                              rows={3}
+                            />
+                            <button
+                              onClick={saveMonthlyFeedback}
+                              disabled={fbSaving || !monthlyFbText.trim()}
+                              className="px-4 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {fbSaving ? 'Saving...' : 'Submit Feedback'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </>
                   ) : (
                     <div className="flex justify-center py-4"><div className="w-5 h-5 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" /></div>
                   )}
@@ -435,15 +543,15 @@ function ActivityContent() {
           </section>
 
           {/* Daily Planner (Right Panel) */}
-          <section className="lg:w-[65%]">
+          <section className="lg:w-[60%]">
             {selectedDate ? (
               plannerLoaded ? (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden animate-fadeIn">
-                  <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white">
+                  <div className="px-4 py-3 border-b border-gray-100 bg-blue-600">
                     <div className="flex items-center justify-between">
-                      <h2 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                      <h2 className="text-sm font-bold text-white flex items-center gap-2">
                         <span>📅</span> Daily Planner
-                        <span className="text-xs font-normal text-gray-400">({format(new Date(selectedDate + 'T12:00:00'), 'MMM d, yyyy')})</span>
+                        <span className="text-xs font-normal text-blue-100">({format(new Date(selectedDate + 'T12:00:00'), 'MMM d, yyyy')})</span>
                       </h2>
                     </div>
                   </div>
@@ -703,6 +811,60 @@ function ActivityContent() {
                         </div>
                       </div>
                     )}
+
+                    {/* ──── Weekly Feedback Section ──── */}
+                    {selectedDate && (() => {
+                      const monday = getWeekMonday(selectedDate);
+                      const sunday = getWeekSunday(monday);
+                      return (
+                        <div className="mt-5 pt-4 border-t-2 border-blue-100">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-base">📝</span>
+                            <div>
+                              <h3 className="text-sm font-bold text-gray-800">Weekly Feedback</h3>
+                              <p className="text-[10px] text-gray-400">
+                                {format(new Date(monday + 'T12:00:00'), 'MMM d')} – {format(new Date(sunday + 'T12:00:00'), 'MMM d, yyyy')}
+                              </p>
+                            </div>
+                          </div>
+
+                          {weeklyFeedbacks.length > 0 ? (
+                            <div className="space-y-2 mb-3">
+                              {weeklyFeedbacks.map((fb) => (
+                                <div key={fb._id} className="rounded-lg border border-blue-100 bg-blue-50/50 p-3">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs font-semibold text-blue-700">{fb.givenByName}</span>
+                                    <span className="text-[10px] text-gray-400">{format(new Date(fb.createdAt), 'MMM d, yyyy h:mm a')}</span>
+                                  </div>
+                                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{fb.feedback}</p>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-400 italic mb-3">No weekly feedback yet.</p>
+                          )}
+
+                          {canGiveFeedback && (
+                            <div className="space-y-2">
+                              <textarea
+                                value={weeklyFbText}
+                                onChange={(e) => setWeeklyFbText(e.target.value)}
+                                placeholder="Write weekly feedback for this week..."
+                                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-400 outline-none resize-none"
+                                rows={3}
+                              />
+                              <button
+                                onClick={saveWeeklyFeedback}
+                                disabled={fbSaving || !weeklyFbText.trim()}
+                                className="px-4 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              >
+                                {fbSaving ? 'Saving...' : 'Submit Weekly Feedback'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                   </div>
                 </div>
