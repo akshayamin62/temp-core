@@ -53,7 +53,7 @@ export default function EduplanCoachLayout({ children, user }: EduplanCoachLayou
         <div className="h-16 border-b border-gray-200 flex items-center justify-between px-4">
           {sidebarOpen && (
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">E</span>
               </div>
               <span className="font-semibold text-gray-900">Eduplan Coach</span>
@@ -88,7 +88,7 @@ export default function EduplanCoachLayout({ children, user }: EduplanCoachLayou
                 onClick={() => router.push(item.path)}
                 className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
                   isActive
-                    ? 'bg-teal-50 text-teal-600'
+                    ? 'bg-blue-50 text-blue-600'
                     : 'text-gray-700 hover:bg-gray-100'
                 } ${!sidebarOpen && 'justify-center'}`}
                 title={!sidebarOpen ? item.name : undefined}
@@ -113,8 +113,8 @@ export default function EduplanCoachLayout({ children, user }: EduplanCoachLayou
             </div>
           ) : (
             <div className="mb-3 flex justify-center">
-              <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
-                <span className="text-teal-600 font-semibold text-sm">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-blue-600 font-semibold text-sm">
                   {getInitials(user)}
                 </span>
               </div>

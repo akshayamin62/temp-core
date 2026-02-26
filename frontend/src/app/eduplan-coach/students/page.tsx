@@ -66,7 +66,7 @@ export default function EduplanCoachStudentsPage() {
       case SERVICE_TYPE.IVY_LEAGUE_ADMISSION:
         return 'bg-amber-100 text-amber-800';
       case SERVICE_TYPE.EDUCATION_PLANNING:
-        return 'bg-teal-100 text-teal-800';
+        return 'bg-blue-100 text-blue-800';
       case SERVICE_TYPE.IELTS_GRE_LANGUAGE_COACHING:
         return 'bg-rose-100 text-rose-800';
       default:
@@ -162,7 +162,7 @@ export default function EduplanCoachStudentsPage() {
                 placeholder="Search by name, email, or mobile..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <svg
                 className="w-5 h-5 text-gray-400 absolute left-4 top-4"
@@ -212,8 +212,8 @@ export default function EduplanCoachStudentsPage() {
                       <tr key={student._id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center mr-3">
-                              <span className="text-teal-600 font-semibold text-sm">
+                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-blue-600 font-semibold text-sm">
                                 {getInitials(student.user)}
                               </span>
                             </div>
@@ -250,7 +250,7 @@ export default function EduplanCoachStudentsPage() {
                           <span
                             className={`px-3 py-1 text-xs font-medium rounded-full ${
                               student.user.isActive
-                                ? 'bg-green-100 text-green-800'
+                                ? 'bg-blue-100 text-blue-800'
                                 : 'bg-red-100 text-red-800'
                             }`}
                           >
@@ -260,7 +260,7 @@ export default function EduplanCoachStudentsPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <button
                             onClick={() => handleViewStudent(student._id)}
-                            className="px-3 py-1.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium text-xs"
+                            className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-xs"
                           >
                             View Details
                           </button>

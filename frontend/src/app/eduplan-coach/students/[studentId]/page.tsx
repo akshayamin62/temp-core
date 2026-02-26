@@ -141,7 +141,7 @@ export default function EduplanCoachStudentDetailPage() {
           <p className="text-red-600">Student not found</p>
           <button
             onClick={() => router.back()}
-            className="mt-4 text-teal-600 hover:underline"
+            className="mt-4 text-blue-600 hover:underline"
           >
             Go Back
           </button>
@@ -172,8 +172,8 @@ export default function EduplanCoachStudentDetailPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
             <div className="flex items-start justify-between mb-6">
               <div className="flex items-center">
-                <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mr-4">
-                  <span className="text-teal-600 font-bold text-xl">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                  <span className="text-blue-600 font-bold text-xl">
                     {getInitials(student.userId)}
                   </span>
                 </div>
@@ -186,7 +186,7 @@ export default function EduplanCoachStudentDetailPage() {
                 <span
                   className={`px-3 py-1 text-xs font-medium rounded-full ${
                     student.userId.isVerified
-                      ? 'bg-green-100 text-green-800'
+                      ? 'bg-blue-100 text-blue-800'
                       : 'bg-yellow-100 text-yellow-800'
                   }`}
                 >
@@ -195,7 +195,7 @@ export default function EduplanCoachStudentDetailPage() {
                 <span
                   className={`px-3 py-1 text-xs font-medium rounded-full ${
                     student.userId.isActive
-                      ? 'bg-green-100 text-green-800'
+                      ? 'bg-blue-100 text-blue-800'
                       : 'bg-red-100 text-red-800'
                   }`}
                 >
@@ -246,13 +246,13 @@ export default function EduplanCoachStudentDetailPage() {
                   {student.intake && (
                     <div className="mb-2">
                       <p className="text-sm text-gray-600 mb-1">Intake</p>
-                      <p className="font-medium text-teal-600">{student.intake}</p>
+                      <p className="font-medium text-blue-600">{student.intake}</p>
                     </div>
                   )}
                   {student.year && (
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Year</p>
-                      <p className="font-medium text-teal-600">{student.year}</p>
+                      <p className="font-medium text-blue-600">{student.year}</p>
                     </div>
                   )}
                 </div>
@@ -283,14 +283,14 @@ export default function EduplanCoachStudentDetailPage() {
                         </p>
                         <div className="flex items-center gap-4 text-sm text-gray-500">
                           <span>Registered: {new Date(registration.createdAt).toLocaleDateString('en-GB')}</span>
-                          <span className="px-2 py-1 bg-teal-100 text-teal-800 rounded text-xs font-medium">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
                             {registration.status}
                           </span>
                         </div>
                       </div>
                       <button
                         onClick={() => handleViewFormData(registration._id)}
-                        className="ml-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium"
+                        className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                       >
                         View/Edit Form
                       </button>

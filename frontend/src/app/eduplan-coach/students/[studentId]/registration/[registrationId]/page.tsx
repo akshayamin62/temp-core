@@ -489,11 +489,11 @@ export default function EduplanCoachStudentFormEditPage() {
           )}
 
           {/* Brainography Report Section */}
-          <div className="bg-white rounded-xl shadow-sm border border-teal-200 p-6 mb-6">
+          <div className="bg-white rounded-xl shadow-sm border border-blue-200 p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
@@ -508,8 +508,8 @@ export default function EduplanCoachStudentFormEditPage() {
               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
                     </div>
@@ -531,7 +531,7 @@ export default function EduplanCoachStudentFormEditPage() {
                     </button>
                     <button
                       onClick={handleBrainographyDownload}
-                      className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium"
+                      className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium"
                     >
                       Download
                     </button>
@@ -541,7 +541,7 @@ export default function EduplanCoachStudentFormEditPage() {
                     >
                       Delete
                     </button>
-                    <label className="px-3 py-1.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-xs font-medium cursor-pointer">
+                    <label className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium cursor-pointer">
                       Re-upload
                       <input
                         ref={fileInputRef}
@@ -560,7 +560,7 @@ export default function EduplanCoachStudentFormEditPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
                 <p className="text-gray-600 mb-3">No brainography report uploaded yet</p>
-                <label className={`inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium cursor-pointer ${uploadingBrainography ? 'opacity-50 pointer-events-none' : ''}`}>
+                <label className={`inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium cursor-pointer ${uploadingBrainography ? 'opacity-50 pointer-events-none' : ''}`}>
                   {uploadingBrainography ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -613,12 +613,12 @@ export default function EduplanCoachStudentFormEditPage() {
                   {extractProgress && (
                     <div className="mb-4 max-w-md mx-auto">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-medium text-teal-800">{extractProgress.step}</span>
-                        <span className="text-xs font-bold text-teal-700">{extractProgress.pct}%</span>
+                        <span className="text-xs font-medium text-blue-800">{extractProgress.step}</span>
+                        <span className="text-xs font-bold text-blue-700">{extractProgress.pct}%</span>
                       </div>
-                      <div className="w-full bg-teal-100 rounded-full h-2.5 overflow-hidden">
+                      <div className="w-full bg-blue-100 rounded-full h-2.5 overflow-hidden">
                         <div
-                          className="bg-gradient-to-r from-teal-500 to-emerald-500 h-2.5 rounded-full transition-all duration-1000 ease-out"
+                          className="bg-gradient-to-r from-blue-500 to-blue-500 h-2.5 rounded-full transition-all duration-1000 ease-out"
                           style={{ width: `${extractProgress.pct}%` }}
                         />
                       </div>
@@ -630,7 +630,7 @@ export default function EduplanCoachStudentFormEditPage() {
                     className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm transition-all ${
                       extracting
                         ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'bg-teal-600 text-white hover:bg-teal-700 shadow-md'
+                        : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
                     }`}
                   >
                     {extracting ? (
@@ -660,12 +660,12 @@ export default function EduplanCoachStudentFormEditPage() {
               {extractProgress && (
                 <div className="mb-3">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-medium text-teal-800">{extractProgress.step}</span>
-                    <span className="text-xs font-bold text-teal-700">{extractProgress.pct}%</span>
+                    <span className="text-xs font-medium text-blue-800">{extractProgress.step}</span>
+                    <span className="text-xs font-bold text-blue-700">{extractProgress.pct}%</span>
                   </div>
-                  <div className="w-full bg-teal-100 rounded-full h-2.5 overflow-hidden">
+                  <div className="w-full bg-blue-100 rounded-full h-2.5 overflow-hidden">
                     <div
-                      className="bg-gradient-to-r from-teal-500 to-emerald-500 h-2.5 rounded-full transition-all duration-1000 ease-out"
+                      className="bg-gradient-to-r from-blue-500 to-blue-500 h-2.5 rounded-full transition-all duration-1000 ease-out"
                       style={{ width: `${extractProgress.pct}%` }}
                     />
                   </div>
@@ -675,11 +675,11 @@ export default function EduplanCoachStudentFormEditPage() {
               <button
                 onClick={handleExtractData}
                 disabled={extracting}
-                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium text-teal-700 bg-teal-50 border border-teal-200 rounded-lg hover:bg-teal-100 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
               >
                 {extracting ? (
                   <>
-                    <div className="w-3 h-3 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                     Re-extracting...
                   </>
                 ) : (
@@ -733,10 +733,10 @@ export default function EduplanCoachStudentFormEditPage() {
               {currentPart.key === 'APPLICATION' && 
                (currentSection.title === 'Apply to Program' || currentSection.title === 'Applied Program') ? (
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <div className="bg-teal-600 px-6 py-4 -mx-6 -mt-6 mb-6 border-b border-teal-700">
+                  <div className="bg-blue-600 px-6 py-4 -mx-6 -mt-6 mb-6 border-b border-blue-700">
                     <h3 className="text-xl font-semibold text-white">{currentSection.title}</h3>
                     {currentSection.description && (
-                      <p className="text-teal-100 text-sm mt-1">{currentSection.description}</p>
+                      <p className="text-blue-100 text-sm mt-1">{currentSection.description}</p>
                     )}
                   </div>
                   <ProgramSection
