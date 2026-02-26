@@ -329,18 +329,18 @@ export default function SuperAdminStudentFormEditPage() {
               <div className="px-4 py-3 flex flex-wrap items-center gap-2">
                 {navButtons.map((btn) => (
                   <button key={btn.key} onClick={() => setActiveView(btn.key)}
-                    className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${activeView === btn.key ? 'bg-purple-600 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'}`}>
+                    className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${activeView === btn.key ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'}`}>
                     <span>{btn.icon}</span> {btn.label}
                   </button>
                 ))}
                 {formStructure.length > 0 && (
                   <button onClick={() => setActiveView('form')}
-                    className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${activeView === 'form' ? 'bg-purple-600 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'}`}>
+                    className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${activeView === 'form' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'}`}>
                     <span>📋</span> Form
                   </button>
                 )}
                 <button onClick={() => router.push(`/super-admin/roles/student/${studentId}/registration/${registrationId}/activity`)}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition-all duration-200 ml-auto">
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-all duration-200 ml-auto">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
                   Student Activity
                 </button>
@@ -356,10 +356,10 @@ export default function SuperAdminStudentFormEditPage() {
           {/* Brainography (read-only) */}
           {isEducationPlanning && activeView === 'brainography' && (
             <>
-              <div className="bg-white rounded-xl shadow-sm border border-purple-200 p-6 mb-6">
+              <div className="bg-white rounded-xl shadow-sm border border-blue-200 p-6 mb-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
@@ -376,8 +376,8 @@ export default function SuperAdminStudentFormEditPage() {
                   <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                          <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                           </svg>
                         </div>
@@ -387,8 +387,8 @@ export default function SuperAdminStudentFormEditPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button onClick={handleBrainographyView} className="px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-xs font-medium">View</button>
-                        <button onClick={handleBrainographyDownload} className="px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-xs font-medium">Download</button>
+                        <button onClick={handleBrainographyView} className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium">View</button>
+                        <button onClick={handleBrainographyDownload} className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium">Download</button>
                       </div>
                     </div>
                   </div>
@@ -418,7 +418,7 @@ export default function SuperAdminStudentFormEditPage() {
                 <div className="text-center py-16"><p className="text-sm text-gray-500">Brainography data not yet available.</p></div>
               )}
               {portfolios.length > 0 && (
-                <div className="mt-4 border border-purple-200 rounded-xl p-5 bg-purple-50/50">
+                <div className="mt-4 border border-blue-200 rounded-xl p-5 bg-blue-50/50">
                   <h3 className="text-sm font-semibold text-gray-900 mb-4">Generated Reports</h3>
                   <div className="flex flex-wrap gap-3">
                     {portfolios.map((p) => (<div key={p._id} className="flex-1 min-w-[260px]"><PortfolioRow portfolio={p} onDownload={handlePortfolioDownload} /></div>))}
@@ -439,9 +439,9 @@ export default function SuperAdminStudentFormEditPage() {
                 <div className="mb-6">
                   {currentPart.key === 'APPLICATION' && (currentSection.title === 'Apply to Program' || currentSection.title === 'Applied Program') ? (
                     <div className="bg-white rounded-lg border border-gray-200 p-6">
-                      <div className="bg-blue-600 px-6 py-4 -mx-6 -mt-6 mb-6 border-b border-purple-700">
+                      <div className="bg-blue-600 px-6 py-4 -mx-6 -mt-6 mb-6 border-b border-blue-700">
                         <h3 className="text-xl font-semibold text-white">{currentSection.title}</h3>
-                        {currentSection.description && <p className="text-purple-100 text-sm mt-1">{currentSection.description}</p>}
+                        {currentSection.description && <p className="text-blue-100 text-sm mt-1">{currentSection.description}</p>}
                       </div>
                       <ProgramSection studentId={studentId} sectionType={currentSection.title === 'Apply to Program' ? 'available' : 'applied'} registrationId={registrationId} userRole="SUPER_ADMIN" />
                     </div>

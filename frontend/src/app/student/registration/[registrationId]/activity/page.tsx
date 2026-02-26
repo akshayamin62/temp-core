@@ -53,6 +53,7 @@ interface DailyPlannerData {
 }
 interface DaySummary { date: string; status: 'empty' | 'partial' | 'complete'; }
 interface CalendarEvent { id: string; title: string; start: Date; end: Date; status: 'partial' | 'complete'; }
+interface FeedbackEntry { _id: string; type: 'monthly' | 'weekly'; period: string; periodEnd?: string; feedback: string; givenBy: string; givenByName: string; givenByRole: string; createdAt: string; }
 
 /* ─────────── Constants ─────────── */
 const DOMAINS = ['Academic', 'Non-Academic', 'Habit Focus', 'Psychological', 'Physical', 'Reading Books'] as const;
@@ -198,6 +199,10 @@ function ActivityContent() {
   const [activeTab, setActiveTab] = useState(0);
   const [sectionAttempted, setSectionAttempted] = useState<Set<number>>(new Set());
 
+  /* ── feedback (read-only for student) ── */
+  const [monthlyFeedbacks, setMonthlyFeedbacks] = useState<FeedbackEntry[]>([]);
+  const [weeklyFeedbacks, setWeeklyFeedbacks] = useState<FeedbackEntry[]>([]);
+
   /* ── Past-date guard: today's date in YYYY-MM-DD ── */
   const todayYMD = toYMD(new Date());
   const isPastDate = !!selectedDate && selectedDate < todayYMD;
@@ -230,12 +235,38 @@ function ActivityContent() {
     },
   }), []);
 
+  /* ── Compute week Monday from selected date ── */
+  const getWeekMonday = useCallback((dateStr: string) => {
+    const d = new Date(dateStr + 'T12:00:00');
+    const day = d.getDay(); // 0=Sun
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const mon = new Date(d);
+    mon.setDate(diff);
+    return toYMD(mon);
+  }, []);
+
+  const getWeekSunday = useCallback((mondayStr: string) => {
+    const d = new Date(mondayStr + 'T12:00:00');
+    d.setDate(d.getDate() + 6);
+    return toYMD(d);
+  }, []);
+
+  /* ── Load weekly feedback ── */
+  const loadWeeklyFeedback = useCallback(async (dateStr: string) => {
+    try {
+      const monday = getWeekMonday(dateStr);
+      const res = await activityAPI.getFeedback(registrationId, 'weekly', monday);
+      setWeeklyFeedbacks(res.data.data || []);
+    } catch { setWeeklyFeedbacks([]); }
+  }, [registrationId, getWeekMonday]);
+
   /* ── Load month data ── */
   const loadMonth = useCallback(async () => {
     try {
-      const [fRes, sRes] = await Promise.all([
+      const [fRes, sRes, fbRes] = await Promise.all([
         activityAPI.getMonthlyFocus(registrationId, currentMonth),
         activityAPI.getMonthSummary(registrationId, currentMonth),
+        activityAPI.getFeedback(registrationId, 'monthly', currentMonth),
       ]);
       if (fRes.data.data) {
         const d = fRes.data.data;
@@ -251,10 +282,12 @@ function ActivityContent() {
       }
       setFocusLoaded(true);
       setSummaries(sRes.data.data || []);
+      setMonthlyFeedbacks(fbRes.data.data || []);
     } catch { toast.error('Failed to load activity data'); }
   }, [registrationId, currentMonth]);
 
   useEffect(() => { loadMonth(); }, [loadMonth]);
+  useEffect(() => { if (selectedDate) loadWeeklyFeedback(selectedDate); }, [selectedDate, loadWeeklyFeedback]);
 
   /* ── Load day planner ── */
   const loadDay = useCallback(async (date: string) => {
@@ -665,6 +698,28 @@ function ActivityContent() {
                       ))}
                     </div>
                   )}
+
+                  {/* Monthly Feedback (read-only for student) */}
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <span>💬</span> Monthly Feedback
+                    </h4>
+                    {monthlyFeedbacks.length > 0 ? (
+                      <div className="space-y-2">
+                        {monthlyFeedbacks.map((fb) => (
+                          <div key={fb._id} className="rounded-lg border border-blue-100 bg-blue-50/50 p-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-semibold text-blue-700">{fb.givenByName}</span>
+                              <span className="text-[10px] text-gray-400">{format(new Date(fb.createdAt), 'MMM d, yyyy h:mm a')}</span>
+                            </div>
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{fb.feedback}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400 italic">No feedback yet for this month.</p>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -1088,6 +1143,41 @@ function ActivityContent() {
                     </div>
                   </div>
                 )}
+
+                {/* ──── Weekly Feedback (read-only for student) ──── */}
+                {selectedDate && (() => {
+                  const monday = getWeekMonday(selectedDate);
+                  const sunday = getWeekSunday(monday);
+                  return (
+                    <div className="mt-5 pt-4 border-t-2 border-blue-100">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-base">📝</span>
+                        <div>
+                          <h3 className="text-sm font-bold text-gray-800">Weekly Feedback</h3>
+                          <p className="text-[10px] text-gray-400">
+                            {format(new Date(monday + 'T12:00:00'), 'MMM d')} – {format(new Date(sunday + 'T12:00:00'), 'MMM d, yyyy')}
+                          </p>
+                        </div>
+                      </div>
+
+                      {weeklyFeedbacks.length > 0 ? (
+                        <div className="space-y-2">
+                          {weeklyFeedbacks.map((fb) => (
+                            <div key={fb._id} className="rounded-lg border border-blue-100 bg-blue-50/50 p-3">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs font-semibold text-blue-700">{fb.givenByName}</span>
+                                <span className="text-[10px] text-gray-400">{format(new Date(fb.createdAt), 'MMM d, yyyy h:mm a')}</span>
+                              </div>
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap">{fb.feedback}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-gray-400 italic">No weekly feedback yet.</p>
+                      )}
+                    </div>
+                  );
+                })()}
 
               </div>
             ) : (

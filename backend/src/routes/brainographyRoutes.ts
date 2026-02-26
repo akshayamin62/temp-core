@@ -15,17 +15,17 @@ const router = express.Router();
 // All routes require authentication
 router.use(authenticate);
 
-// Get brainography report for a registration (student, eduplan coach, super admin only)
+// Get brainography report for a registration
 router.get(
   '/:registrationId',
-  authorize([USER_ROLE.STUDENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN]),
+  authorize([USER_ROLE.STUDENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]),
   getBrainography
 );
 
 // Download brainography report
 router.get(
   '/:registrationId/download',
-  authorize([USER_ROLE.STUDENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN]),
+  authorize([USER_ROLE.STUDENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]),
   downloadBrainography
 );
 

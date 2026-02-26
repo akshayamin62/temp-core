@@ -64,7 +64,7 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <div className="w-8 h-8 border-3 border-brand-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm text-gray-500">Loading analytics...</p>
+          <p className="text-base text-gray-500">Loading analytics...</p>
         </div>
       </div>
     );
@@ -73,7 +73,7 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
   if (!data) {
     return (
       <div className="text-center py-16">
-        <p className="text-gray-500 text-sm">No activity data available yet. Start filling your daily planner!</p>
+        <p className="text-gray-500 text-base">No activity data available yet. Start filling your daily planner!</p>
       </div>
     );
   }
@@ -203,8 +203,8 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
     <div className="space-y-6">
       {/* Header + Period Selector */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-          <span className="text-xl">📊</span> Activity Analysis
+        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <span className="text-2xl">📊</span> Activity Analysis
         </h2>
         <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 border border-gray-200">
           {[
@@ -219,7 +219,7 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
             <button
               key={m}
               onClick={() => setMonths(m)}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+              className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-all ${
                 months === m ? 'bg-brand-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -252,10 +252,10 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={completionData} barSize={completionData.length > 30 ? 8 : completionData.length > 15 ? 12 : 16} barGap={1}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#000', fontWeight: 700 }} interval={completionData.length > 20 ? Math.floor(completionData.length / 12) : 0} angle={completionData.length > 15 ? -45 : 0} textAnchor={completionData.length > 15 ? 'end' : 'middle'} height={completionData.length > 15 ? 50 : 30} />
-                <YAxis tick={{ fontSize: 10, fill: '#000', fontWeight: 700 }} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb', color: '#000', fontWeight: 600 }} />
-                <Legend wrapperStyle={{ fontSize: 11, fontWeight: 700, color: '#000' }} />
+                <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#000', fontWeight: 700 }} interval={completionData.length > 20 ? Math.floor(completionData.length / 12) : 0} angle={completionData.length > 15 ? -45 : 0} textAnchor={completionData.length > 15 ? 'end' : 'middle'} height={completionData.length > 15 ? 50 : 30} />
+                <YAxis tick={{ fontSize: 12, fill: '#000', fontWeight: 700 }} />
+                <Tooltip contentStyle={{ fontSize: 14, borderRadius: 8, border: '1px solid #e5e7eb', color: '#000', fontWeight: 600 }} />
+                <Legend wrapperStyle={{ fontSize: 13, fontWeight: 700, color: '#000' }} />
                 <Bar dataKey="planned" fill={BRAND_LIGHT} name="Planned" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="completed" fill={ACCENT} name="Completed" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="partial" fill={ACCENT2} name="Partial" radius={[4, 4, 0, 0]} />
@@ -270,12 +270,12 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
             <ResponsiveContainer width="100%" height={260}>
               <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">
                 <PolarGrid stroke="#e5e7eb" />
-                <PolarAngleAxis dataKey="domain" tick={{ fontSize: 10, fill: '#000', fontWeight: 700 }} />
-                <PolarRadiusAxis tick={{ fontSize: 9, fill: '#000', fontWeight: 600 }} />
+                <PolarAngleAxis dataKey="domain" tick={{ fontSize: 12, fill: '#000', fontWeight: 700 }} />
+                <PolarRadiusAxis tick={{ fontSize: 11, fill: '#000', fontWeight: 600 }} />
                 <Radar name="Planned" dataKey="planned" stroke={BRAND} fill={BRAND} fillOpacity={0.15} />
                 <Radar name="Completed" dataKey="completed" stroke={ACCENT} fill={ACCENT} fillOpacity={0.25} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb', color: '#000', fontWeight: 600 }} />
-                <Legend wrapperStyle={{ fontSize: 11, fontWeight: 700, color: '#000' }} />
+                <Tooltip contentStyle={{ fontSize: 14, borderRadius: 8, border: '1px solid #e5e7eb', color: '#000', fontWeight: 600 }} />
+                <Legend wrapperStyle={{ fontSize: 13, fontWeight: 700, color: '#000' }} />
               </RadarChart>
             </ResponsiveContainer>
           ) : <EmptyChart />}
@@ -290,10 +290,10 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={moodData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#000', fontWeight: 700 }} />
-                <YAxis domain={[0, 5]} tick={{ fontSize: 10, fill: '#000', fontWeight: 700 }} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb', color: '#000', fontWeight: 600 }} />
-                <Legend wrapperStyle={{ fontSize: 11, fontWeight: 700, color: '#000' }} />
+                <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#000', fontWeight: 700 }} />
+                <YAxis domain={[0, 5]} tick={{ fontSize: 12, fill: '#000', fontWeight: 700 }} />
+                <Tooltip contentStyle={{ fontSize: 14, borderRadius: 8, border: '1px solid #e5e7eb', color: '#000', fontWeight: 600 }} />
+                <Legend wrapperStyle={{ fontSize: 13, fontWeight: 700, color: '#000' }} />
                 <Line type="monotone" dataKey="feeling" stroke={WARN} name="Feeling" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="sleep" stroke={BRAND} name="Sleep" strokeWidth={1.5} dot={false} />
                 <Line type="monotone" dataKey="exercise" stroke={ACCENT} name="Exercise" strokeWidth={1.5} dot={false} />
@@ -309,10 +309,10 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
             <ResponsiveContainer width="100%" height={260}>
               <RadarChart data={selfCareRadar} cx="50%" cy="50%" outerRadius="70%">
                 <PolarGrid stroke="#e5e7eb" />
-                <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11, fill: '#000', fontWeight: 700 }} />
-                <PolarRadiusAxis domain={[0, 5]} tick={{ fontSize: 9, fill: '#000', fontWeight: 600 }} />
+                <PolarAngleAxis dataKey="metric" tick={{ fontSize: 13, fill: '#000', fontWeight: 700 }} />
+                <PolarRadiusAxis domain={[0, 5]} tick={{ fontSize: 11, fill: '#000', fontWeight: 600 }} />
                 <Radar name="Average Rating" dataKey="value" stroke={BRAND} fill={BRAND} fillOpacity={0.3} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb', color: '#000', fontWeight: 600 }} />
+                <Tooltip contentStyle={{ fontSize: 14, borderRadius: 8, border: '1px solid #e5e7eb', color: '#000', fontWeight: 600 }} />
               </RadarChart>
             </ResponsiveContainer>
           ) : <EmptyChart />}
@@ -325,10 +325,10 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
           <ResponsiveContainer width="100%" height={280}>
             <AreaChart data={timeData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#000', fontWeight: 700 }} />
-              <YAxis tick={{ fontSize: 10, fill: '#000', fontWeight: 700 }} />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb', color: '#000', fontWeight: 600 }} />
-              <Legend wrapperStyle={{ fontSize: 11, fontWeight: 700, color: '#000' }} />
+              <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#000', fontWeight: 700 }} />
+              <YAxis tick={{ fontSize: 12, fill: '#000', fontWeight: 700 }} />
+              <Tooltip contentStyle={{ fontSize: 14, borderRadius: 8, border: '1px solid #e5e7eb', color: '#000', fontWeight: 600 }} />
+              <Legend wrapperStyle={{ fontSize: 13, fontWeight: 700, color: '#000' }} />
               <Area type="monotone" dataKey="study" stroke={BRAND} fill={BRAND} fillOpacity={0.15} name="Study" />
               <Area type="monotone" dataKey="reading" stroke={ACCENT} fill={ACCENT} fillOpacity={0.15} name="Reading" />
               <Area type="monotone" dataKey="exercise" stroke={ACCENT2} fill={ACCENT2} fillOpacity={0.15} name="Exercise" />
@@ -350,7 +350,7 @@ export default function ActivityAnalyticsDashboard({ registrationId }: Props) {
       {radarData.some(d => d.planned > 0) && (
         <ChartCard title="Domain Breakdown" icon="📋">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-base">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-2 pr-4 font-semibold text-gray-700">Domain</th>
@@ -404,9 +404,9 @@ function StatCard({ icon, label, value, sub, accent }: { icon: string; label: st
   return (
     <div className={`rounded-xl border p-4 ${bg}`}>
       <span className="text-2xl">{icon}</span>
-      <p className="text-xs text-gray-500 mt-1">{label}</p>
-      <p className="text-lg font-bold text-gray-900">{value}</p>
-      {sub && <p className="text-xs text-gray-500">{sub}</p>}
+      <p className="text-sm text-gray-500 mt-1">{label}</p>
+      <p className="text-xl font-bold text-gray-900">{value}</p>
+      {sub && <p className="text-sm text-gray-500">{sub}</p>}
     </div>
   );
 }
@@ -414,7 +414,7 @@ function StatCard({ icon, label, value, sub, accent }: { icon: string; label: st
 function ChartCard({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+      <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
         <span>{icon}</span> {title}
       </h3>
       {children}
@@ -425,7 +425,7 @@ function ChartCard({ title, icon, children }: { title: string; icon: string; chi
 function EmptyChart() {
   return (
     <div className="flex items-center justify-center h-[260px]">
-      <p className="text-sm text-gray-400">Not enough data yet</p>
+      <p className="text-base text-gray-400">Not enough data yet</p>
     </div>
   );
 }
@@ -462,7 +462,7 @@ function HeatmapGrid({ heatmap }: { heatmap: { date: string; status: string; fil
   }
 
   if (days.length === 0) {
-    return <p className="text-sm text-gray-400 text-center py-4">No data for {selectedYear}</p>;
+    return <p className="text-base text-gray-400 text-center py-4">No data for {selectedYear}</p>;
   }
 
   // Pad to Sunday-aligned start
@@ -518,7 +518,7 @@ function HeatmapGrid({ heatmap }: { heatmap: { date: string; status: string; fil
             <button
               key={y}
               onClick={() => setSelectedYear(y)}
-              className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+              className={`px-3 py-1 rounded-full text-sm font-semibold border transition-all ${
                 selectedYear === y
                   ? 'bg-brand-600 text-white border-brand-600 shadow-sm'
                   : 'text-gray-500 bg-white border-gray-200 hover:border-brand-400 hover:text-brand-600'
@@ -528,7 +528,7 @@ function HeatmapGrid({ heatmap }: { heatmap: { date: string; status: string; fil
             </button>
           ))}
         </div>
-        <span className="text-xs text-gray-500">
+        <span className="text-sm text-gray-500">
           <span className="font-semibold text-gray-800">{activeDays}</span> active {activeDays === 1 ? 'day' : 'days'} in {selectedYear}
         </span>
       </div>
@@ -544,7 +544,7 @@ function HeatmapGrid({ heatmap }: { heatmap: { date: string; status: string; fil
               return (
                 <div key={wi} style={{ width: CELL + GAP, flexShrink: 0 }}>
                   {mp && (
-                    <span style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: 13, color: '#6b7280', fontWeight: 600, whiteSpace: 'nowrap' }}>
                       {mp.label}
                     </span>
                   )}
@@ -566,7 +566,7 @@ function HeatmapGrid({ heatmap }: { heatmap: { date: string; status: string; fil
                     alignItems: 'center',
                     justifyContent: 'flex-end',
                     paddingRight: 6,
-                    fontSize: 10,
+                    fontSize: 12,
                     color: '#9ca3af',
                     fontWeight: 600,
                   }}
@@ -602,7 +602,7 @@ function HeatmapGrid({ heatmap }: { heatmap: { date: string; status: string; fil
       </div>
 
       {/* Legend — 7 activity levels */}
-      <div className="flex flex-wrap items-center gap-3 mt-4 text-xs">
+      <div className="flex flex-wrap items-center gap-3 mt-4 text-sm">
         {[
           { color: '#ebedf0', label: '0 goals' },
           { color: '#c4d5f0', label: '1 goal' },
