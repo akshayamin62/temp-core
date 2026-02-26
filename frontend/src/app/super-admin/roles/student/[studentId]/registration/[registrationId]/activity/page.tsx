@@ -398,52 +398,70 @@ function ActivityContent() {
             </span>
             <div className="relative" ref={calRef}>
               <button onClick={() => setCalOpen(!calOpen)}
-                className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all text-sm font-medium text-gray-700 hover:shadow-sm">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${calOpen ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 Calendar
-                <svg className={`w-3 h-3 transition-transform ${calOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </button>
 
               {calOpen && (
-                <div className="absolute right-0 top-full mt-2 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 w-[340px] md:w-[400px] animate-fadeIn">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
+                <div className="absolute right-0 top-full mt-2 w-[420px] bg-white rounded-xl shadow-2xl border border-gray-200 z-50 animate-fadeIn overflow-hidden">
+                  {/* Cal nav */}
+                  <div className="px-3 py-2.5 border-b border-gray-100 bg-gray-50">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <button onClick={() => handleCalNav('PREV')}
+                          className="w-7 h-7 flex items-center justify-center text-gray-600 bg-white border border-gray-200 rounded hover:bg-gray-50 text-sm font-bold">‹</button>
+                        <span className="text-sm font-bold text-gray-800 min-w-[120px] text-center">{MONTHS[getMonth(calDate)]} {getYear(calDate)}</span>
+                        <button onClick={() => handleCalNav('NEXT')}
+                          className="w-7 h-7 flex items-center justify-center text-gray-600 bg-white border border-gray-200 rounded hover:bg-gray-50 text-sm font-bold">›</button>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {(['month', 'week', 'day'] as View[]).map((v) => (
+                          <button key={v} onClick={() => setCalView(v)}
+                            className={`px-2 py-0.5 text-[11px] font-medium rounded transition-colors ${calView === v ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
+                            {v.charAt(0).toUpperCase() + v.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
                       <select value={getMonth(calDate)} onChange={(e) => handleMonthChange(Number(e.target.value))}
-                        className="px-2 py-1 border border-gray-200 rounded text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-300 outline-none">
+                        className="flex-1 px-1.5 py-0.5 text-xs border border-gray-200 rounded bg-white">
                         {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
                       </select>
                       <select value={getYear(calDate)} onChange={(e) => handleYearChange(Number(e.target.value))}
-                        className="px-2 py-1 border border-gray-200 rounded text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-300 outline-none">
+                        className="w-16 px-1.5 py-0.5 text-xs border border-gray-200 rounded bg-white">
                         {years.map((y) => <option key={y} value={y}>{y}</option>)}
                       </select>
-                    </div>
-                    <div className="flex gap-1">
-                      {(['PREV', 'TODAY', 'NEXT'] as const).map((dir) => (
-                        <button key={dir} onClick={() => handleCalNav(dir)}
-                          className="px-2 py-1 text-xs border border-gray-200 rounded hover:bg-gray-100 transition-colors font-medium">
-                          {dir === 'PREV' ? '◀' : dir === 'NEXT' ? '▶' : '●'}
-                        </button>
-                      ))}
+                      <button onClick={() => handleCalNav('TODAY')}
+                        className="px-2 py-0.5 text-[11px] font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100">Today</button>
                     </div>
                   </div>
-                  <Calendar
-                    localizer={localizer}
-                    events={calEvents}
-                    date={calDate}
-                    view={calView}
-                    onNavigate={handleNavigate}
-                    onView={(v) => setCalView(v)}
-                    onSelectSlot={({ start }) => { setSelectedDate(toYMD(start)); setCalOpen(false); }}
-                    onSelectEvent={(event) => { setSelectedDate(event.id); setCalOpen(false); }}
-                    selectable
-                    style={{ height: calView === 'month' ? 280 : 350 }}
-                    eventPropGetter={eventStyleGetter}
-                    views={['month', 'week', 'day']}
-                    toolbar={false}
-                  />
-                  <div className="flex gap-3 mt-2 pt-2 border-t border-gray-100 text-[10px] text-gray-400">
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400" /> Complete</span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> Partial</span>
+                  {/* Cal body */}
+                  <div className="p-2" style={{ height: calView === 'month' ? 340 : 380 }}>
+                    <Calendar
+                      localizer={localizer} events={calEvents}
+                      startAccessor="start" endAccessor="end"
+                      view={calView} date={calDate}
+                      onNavigate={handleNavigate} onView={(v) => setCalView(v)}
+                      onSelectEvent={(event) => { setSelectedDate(event.id); setCalOpen(false); }}
+                      onSelectSlot={({ start }) => { setSelectedDate(toYMD(start)); setCalOpen(false); }}
+                      selectable
+                      eventPropGetter={eventStyleGetter}
+                      views={['month', 'week', 'day']} defaultView="month" popup
+                      style={{ height: '100%' }} toolbar={false}
+                      formats={{
+                        timeGutterFormat: (date: Date) => format(date, 'HH:mm'),
+                        eventTimeRangeFormat: ({ start: s, end: e }: { start: Date; end: Date }) =>
+                          `${format(s, 'HH:mm')} - ${format(e, 'HH:mm')}`,
+                      }}
+                    />
+                  </div>
+                  {/* Legend */}
+                  <div className="flex items-center justify-center gap-4 px-3 py-2 border-t border-gray-100 text-[11px] text-gray-500">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />Completed</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" />In Progress</span>
                   </div>
                 </div>
               )}
