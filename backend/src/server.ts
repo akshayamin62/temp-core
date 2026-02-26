@@ -45,6 +45,7 @@ import ivyTaskConversationRoutes from "./routes/taskConversation.routes";
 import ivyUserRoutes from "./routes/user.routes";
 import ivyTestQuestionRoutes from "./routes/ivyTestQuestion.routes";
 import ivyTestSessionRoutes from "./routes/ivyTestSession.routes";
+import ivyExpertCandidateRoutes from "./routes/ivyExpertCandidate.routes";
 
 import { authenticate } from "./middleware/auth";
 
@@ -164,6 +165,7 @@ app.use("/api/ivy/task", authenticate, ivyTaskConversationRoutes);
 app.use("/api/ivy/users", authenticate, ivyUserRoutes);
 app.use("/api/ivy/test-questions", authenticate, ivyTestQuestionRoutes);
 app.use("/api/ivy/test-session", authenticate, ivyTestSessionRoutes);
+app.use("/api/ivy/ivy-expert-candidates", authenticate, ivyExpertCandidateRoutes);
 
 // Basic test route
 app.get('/', (_req, res) => {

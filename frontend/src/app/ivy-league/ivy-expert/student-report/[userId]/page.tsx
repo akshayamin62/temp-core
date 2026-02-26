@@ -2,19 +2,14 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { authAPI } from '@/lib/api';
-import { User, USER_ROLE } from '@/types';
-import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
-import { BACKEND_URL } from '@/lib/ivyApi';
+import { IVY_API_URL, BACKEND_URL } from '@/lib/ivyApi';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell,
   PieChart, Pie,
 } from 'recharts';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 const SECTION_COLORS = ['#2959ba', '#059669', '#d97706'];
 const SECTION_ICONS = ['🌍', '🧠', '📚'];
@@ -54,8 +49,6 @@ interface TestResult {
 }
 
 interface StudentInfo {
-  _id: string;
-  userId: string;
   firstName: string;
   middleName?: string;
   lastName: string;
@@ -68,6 +61,13 @@ interface StudentInfo {
   parentLastName: string;
   parentEmail: string;
   parentMobile: string;
+}
+
+interface InterviewAnswer {
+  sectionIndex: number;
+  questionIndex: number;
+  score: number;
+  response: string;
 }
 
 const STUDENT_INTERVIEW_SECTIONS = [
@@ -139,7 +139,7 @@ const PARENT_INTERVIEW_SECTIONS = [
     color: 'emerald',
     icon: '👨‍👩‍👧',
     questions: [
-      'Why do you want your child to study at an Ivy League school? (Social reasons, financial reasons, professional reasons, social status, etc.)',
+      'Why do you want your child to study at an Ivy League school?',
       'How have you prepared (or plan to prepare) for this journey?',
       'What are your hopes and concerns about Ivy League life?',
       'Are you aligned with your child\'s long-term career goals?',
@@ -172,12 +172,11 @@ const PARENT_INTERVIEW_SECTIONS = [
   },
 ];
 
-export default function StudentDetailPage() {
+export default function IvyExpertStudentReportPage() {
   const router = useRouter();
   const params = useParams();
   const userId = params?.userId as string;
 
-  const [user, setUser] = useState<User | null>(null);
   const [student, setStudent] = useState<StudentInfo | null>(null);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -195,136 +194,94 @@ export default function StudentDetailPage() {
   const [parentResponses, setParentResponses] = useState<string[][]>(() =>
     PARENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(''))
   );
-  const [savingInterview, setSavingInterview] = useState(false);
   const hasFetchedRef = useRef(false);
 
   useEffect(() => {
     if (hasFetchedRef.current) return;
     hasFetchedRef.current = true;
-    checkAuth();
+    fetchData();
   }, []);
-
-  const checkAuth = async () => {
-    try {
-      const response = await authAPI.getProfile();
-      const userData = response.data.data.user;
-      if (userData.role !== USER_ROLE.SUPER_ADMIN) {
-        toast.error('Access denied.');
-        router.push('/');
-        return;
-      }
-      setUser(userData);
-      fetchData();
-    } catch {
-      toast.error('Please login to continue');
-      router.push('/login');
-    }
-  };
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-
-      const studentsRes = await axios.get(`${API_URL}/super-admin/ivy-league/students`, { headers });
-      let found = studentsRes.data.students?.find((s: any) => s.userId === userId || s.userId?.toString() === userId);
-
-      if (!found) {
-        const candidatesRes = await axios.get(`${API_URL}/super-admin/ivy-league/candidates`, { headers });
-        found = candidatesRes.data.candidates?.find((c: any) => c.userId === userId || c.userId?.toString() === userId);
+      // Fetch student info from my-ivy-students
+      const studentsRes = await axios.get(`${IVY_API_URL}/ivy-expert-candidates/my-ivy-students`);
+      const found = studentsRes.data.students?.find((s: any) =>
+        s.userId === userId || s.userId?.toString() === userId
+      );
+      if (found) {
+        setStudent(found);
       }
 
-      if (found) setStudent(found);
-
-      const testRes = await axios.get(`${API_URL}/super-admin/ivy-league/test-result/${userId}`, { headers });
+      // Fetch test result
+      const testRes = await axios.get(`${IVY_API_URL}/ivy-expert-candidates/test-result/${userId}`);
       if (testRes.data.success && testRes.data.session) {
         setTestResult(testRes.data.session);
       }
 
-      // Fetch interview data
-      try {
-        const interviewRes = await axios.get(`${API_URL}/super-admin/ivy-league/interview/${userId}`, { headers });
-        if (interviewRes.data.success) {
-          if (interviewRes.data.studentInterview?.answers) {
-            const newScores = STUDENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(0));
-            const newResponses = STUDENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(''));
-            for (const a of interviewRes.data.studentInterview.answers) {
-              if (newScores[a.sectionIndex] && a.questionIndex < newScores[a.sectionIndex].length) {
-                newScores[a.sectionIndex][a.questionIndex] = a.score;
-                newResponses[a.sectionIndex][a.questionIndex] = a.response || '';
-              }
+      // Fetch existing interview data
+      const interviewRes = await axios.get(`${IVY_API_URL}/ivy-expert-candidates/interview/${userId}`);
+      if (interviewRes.data.success) {
+        if (interviewRes.data.studentInterview?.answers) {
+          const newScores = STUDENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(0));
+          const newResponses = STUDENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(''));
+          interviewRes.data.studentInterview.answers.forEach((a: InterviewAnswer) => {
+            if (newScores[a.sectionIndex] && newScores[a.sectionIndex][a.questionIndex] !== undefined) {
+              newScores[a.sectionIndex][a.questionIndex] = a.score;
+              newResponses[a.sectionIndex][a.questionIndex] = a.response || '';
             }
-            setStudentScores(newScores);
-            setStudentResponses(newResponses);
-          }
-          if (interviewRes.data.parentInterview?.answers) {
-            const newScores = PARENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(0));
-            const newResponses = PARENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(''));
-            for (const a of interviewRes.data.parentInterview.answers) {
-              if (newScores[a.sectionIndex] && a.questionIndex < newScores[a.sectionIndex].length) {
-                newScores[a.sectionIndex][a.questionIndex] = a.score;
-                newResponses[a.sectionIndex][a.questionIndex] = a.response || '';
-              }
-            }
-            setParentScores(newScores);
-            setParentResponses(newResponses);
-          }
+          });
+          setStudentScores(newScores);
+          setStudentResponses(newResponses);
         }
-      } catch {
-        // Interview data may not exist yet — not an error
+        if (interviewRes.data.parentInterview?.answers) {
+          const newScores = PARENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(0));
+          const newResponses = PARENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(''));
+          interviewRes.data.parentInterview.answers.forEach((a: InterviewAnswer) => {
+            if (newScores[a.sectionIndex] && newScores[a.sectionIndex][a.questionIndex] !== undefined) {
+              newScores[a.sectionIndex][a.questionIndex] = a.score;
+              newResponses[a.sectionIndex][a.questionIndex] = a.response || '';
+            }
+          });
+          setParentScores(newScores);
+          setParentResponses(newResponses);
+        }
       }
     } catch {
-      toast.error('Failed to fetch data');
+      toast.error('Failed to fetch report data');
     } finally {
       setLoading(false);
     }
   };
 
-  const saveInterview = async (type: 'student' | 'parent', scores: number[][], responses: string[][]) => {
-    try {
-      setSavingInterview(true);
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-      const sections = type === 'student' ? STUDENT_INTERVIEW_SECTIONS : PARENT_INTERVIEW_SECTIONS;
-      const answers: { sectionIndex: number; questionIndex: number; score: number; response: string }[] = [];
-      sections.forEach((sec, sIdx) => {
-        sec.questions.forEach((_, qIdx) => {
-          answers.push({
-            sectionIndex: sIdx,
-            questionIndex: qIdx,
-            score: scores[sIdx][qIdx],
-            response: responses[sIdx][qIdx],
-          });
-        });
-      });
-      await axios.put(`${API_URL}/super-admin/ivy-league/interview/${userId}`, { type, answers }, { headers });
-      toast.success(`${type === 'student' ? 'Student' : 'Parent'} interview saved`);
-    } catch {
-      toast.error('Failed to save interview');
-    } finally {
-      setSavingInterview(false);
-    }
-  };
+  const getFullName = (s: StudentInfo) =>
+    [s.firstName, s.middleName, s.lastName].filter(Boolean).join(' ');
 
-  const getFullName = (s: StudentInfo) => [s.firstName, s.middleName, s.lastName].filter(Boolean).join(' ');
-  const getParentName = (s: StudentInfo) => [s.parentFirstName, s.parentMiddleName, s.parentLastName].filter(Boolean).join(' ');
-
-  if (!user) return null;
+  const getParentName = (s: StudentInfo) =>
+    [s.parentFirstName, s.parentMiddleName, s.parentLastName].filter(Boolean).join(' ');
 
   return (
     <>
       <Toaster position="top-right" />
-      <SuperAdminLayout user={user}>
-        <div className="p-8">
+      <div className="min-h-screen bg-gray-50">
+        <div className="p-8 max-w-7xl mx-auto">
+          {/* Header */}
           <div className="flex items-center gap-3 mb-6">
-            <button onClick={() => router.push('/super-admin/roles/ivy-expert/students')} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <button
+              onClick={() => router.push('/ivy-league/ivy-expert')}
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            >
               <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{student ? getFullName(student) : 'Student Details'}</h1>
-              <p className="text-gray-600 mt-1">{student ? `${student.schoolName} • Grade ${student.currentGrade} • ${student.curriculum}` : ''}</p>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {student ? `${getFullName(student)} — Report` : 'Student Report'}
+              </h1>
+              <p className="text-gray-600 mt-1">
+                {student ? `${student.schoolName} • Grade ${student.currentGrade} • ${student.curriculum}` : ''}
+              </p>
             </div>
           </div>
 
@@ -334,6 +291,7 @@ export default function StudentDetailPage() {
             </div>
           ) : (
             <>
+              {/* Student Info Card */}
               {student && (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -358,6 +316,7 @@ export default function StudentDetailPage() {
                 </div>
               )}
 
+              {/* Tab Navigation */}
               <div className="flex gap-2 mb-6">
                 {[
                   { key: 'test', label: '📝 Test Score', color: 'blue' },
@@ -369,7 +328,11 @@ export default function StudentDetailPage() {
                     onClick={() => setActiveTab(tab.key as any)}
                     className={`px-5 py-2.5 rounded-lg font-semibold text-sm transition-colors ${
                       activeTab === tab.key
-                        ? tab.color === 'blue' ? 'bg-blue-600 text-white' : tab.color === 'green' ? 'bg-green-600 text-white' : 'bg-purple-600 text-white'
+                        ? tab.color === 'blue'
+                          ? 'bg-blue-600 text-white'
+                          : tab.color === 'green'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-purple-600 text-white'
                         : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
                     }`}
                   >
@@ -378,6 +341,7 @@ export default function StudentDetailPage() {
                 ))}
               </div>
 
+              {/* Test Score Tab */}
               {activeTab === 'test' && (
                 <div>
                   {!testResult ? (
@@ -385,10 +349,11 @@ export default function StudentDetailPage() {
                       <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                       </svg>
-                      <p className="text-lg font-medium text-gray-500">Student has not started the test yet</p>
+                      <p className="text-lg font-medium text-gray-500">No test data available</p>
                     </div>
                   ) : (
                     <>
+                      {/* Score Summary */}
                       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
                         <h3 className="text-lg font-bold text-gray-900 mb-4">Score Summary</h3>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -423,7 +388,7 @@ export default function StudentDetailPage() {
                         )}
                       </div>
 
-                      {/* ── Performance Analysis Charts ── */}
+                      {/* Performance Charts */}
                       {(() => {
                         const CHART_COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f97316'];
                         const totalCorrect = testResult.sections.reduce((s, sec) => s + sec.correct, 0);
@@ -469,9 +434,7 @@ export default function StudentDetailPage() {
                               </div>
                               <h3 className="text-lg font-bold text-gray-900">Performance Analysis</h3>
                             </div>
-
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                              {/* 1. Radar Chart */}
                               <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                                 <h4 className="text-xs font-bold text-gray-700 mb-0.5 uppercase tracking-wide">Strengths Profile</h4>
                                 <p className="text-xs text-gray-900 mb-3 font-bold">Percentage scored in each section</p>
@@ -484,8 +447,6 @@ export default function StudentDetailPage() {
                                   </RadarChart>
                                 </ResponsiveContainer>
                               </div>
-
-                              {/* 2. Donut */}
                               <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                                 <h4 className="text-xs font-bold text-gray-700 mb-0.5 uppercase tracking-wide">Overall Accuracy</h4>
                                 <p className="text-xs text-gray-900 mb-3 font-bold">Distribution of {totalQ} questions</p>
@@ -493,9 +454,7 @@ export default function StudentDetailPage() {
                                   <ResponsiveContainer width="100%" height={260}>
                                     <PieChart>
                                       <Pie data={donutData} cx="50%" cy="50%" innerRadius={65} outerRadius={100} paddingAngle={3} dataKey="value" strokeWidth={2} stroke="#fff">
-                                        {donutData.map((entry, idx) => (
-                                          <Cell key={idx} fill={entry.color} />
-                                        ))}
+                                        {donutData.map((entry, idx) => (<Cell key={idx} fill={entry.color} />))}
                                       </Pie>
                                       <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb', fontSize: 12 }} formatter={(value: any, name: any) => [`${value} questions`, name]} />
                                     </PieChart>
@@ -514,8 +473,6 @@ export default function StudentDetailPage() {
                                   ))}
                                 </div>
                               </div>
-
-                              {/* 3. Bar Chart */}
                               <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                                 <h4 className="text-xs font-bold text-gray-700 mb-0.5 uppercase tracking-wide">Section Scores</h4>
                                 <p className="text-xs text-gray-900 mb-3 font-bold">Score compared to maximum marks</p>
@@ -527,16 +484,12 @@ export default function StudentDetailPage() {
                                     <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb', fontSize: 12 }} />
                                     <Legend iconType="circle" wrapperStyle={{ fontSize: 12, fontWeight: 600 }} />
                                     <Bar dataKey="Your Score" radius={[6, 6, 0, 0]}>
-                                      {barData.map((_, idx) => (
-                                        <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
-                                      ))}
+                                      {barData.map((_, idx) => (<Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />))}
                                     </Bar>
                                     <Bar dataKey="Max Marks" fill="#ef4444" radius={[6, 6, 0, 0]} />
                                   </BarChart>
                                 </ResponsiveContainer>
                               </div>
-
-                              {/* 4. Section Accuracy */}
                               <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                                 <h4 className="text-xs font-bold text-gray-700 mb-0.5 uppercase tracking-wide">Section Accuracy</h4>
                                 <p className="text-xs text-gray-900 mb-3 font-bold">Percentage of attempted questions answered correctly</p>
@@ -562,7 +515,12 @@ export default function StudentDetailPage() {
                       {/* Section Cards */}
                       <div className="flex gap-4 mb-6">
                         {testResult.sections.map((sec, idx) => (
-                          <div key={idx} className="flex-1 min-w-0 bg-white rounded-xl shadow-sm border border-gray-200 p-5 cursor-pointer hover:shadow-md transition-all" style={{ borderLeftWidth: 4, borderLeftColor: SECTION_COLORS[idx] || '#6b7280' }} onClick={() => setActiveSectionIdx(idx)}>
+                          <div
+                            key={idx}
+                            className="flex-1 min-w-0 bg-white rounded-xl shadow-sm border border-gray-200 p-5 cursor-pointer hover:shadow-md transition-all"
+                            style={{ borderLeftWidth: 4, borderLeftColor: SECTION_COLORS[idx] || '#6b7280' }}
+                            onClick={() => setActiveSectionIdx(idx)}
+                          >
                             <div className="flex items-center justify-between mb-3">
                               <p className="text-lg font-bold text-gray-900">{SECTION_ICONS[idx]} {sec.sectionName}</p>
                               <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${sec.status === 'submitted' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
@@ -571,35 +529,29 @@ export default function StudentDetailPage() {
                             </div>
                             {sec.status === 'submitted' && (
                               <div className="grid grid-cols-4 gap-2 text-center">
-                                <div>
-                                  <p className="text-lg font-bold" style={{ color: SECTION_COLORS[idx] }}>{sec.score}</p>
-                                  <p className="text-[10px] text-gray-500 font-semibold">Score</p>
-                                </div>
-                                <div>
-                                  <p className="text-lg font-bold text-green-600">{sec.correct}</p>
-                                  <p className="text-[10px] text-gray-500 font-semibold">Correct</p>
-                                </div>
-                                <div>
-                                  <p className="text-lg font-bold text-red-600">{sec.incorrect}</p>
-                                  <p className="text-[10px] text-gray-500 font-semibold">Wrong</p>
-                                </div>
-                                <div>
-                                  <p className="text-lg font-bold text-gray-500">{sec.unanswered}</p>
-                                  <p className="text-[10px] text-gray-500 font-semibold">Skipped</p>
-                                </div>
+                                <div><p className="text-lg font-bold" style={{ color: SECTION_COLORS[idx] }}>{sec.score}</p><p className="text-[10px] text-gray-500 font-semibold">Score</p></div>
+                                <div><p className="text-lg font-bold text-green-600">{sec.correct}</p><p className="text-[10px] text-gray-500 font-semibold">Correct</p></div>
+                                <div><p className="text-lg font-bold text-red-600">{sec.incorrect}</p><p className="text-[10px] text-gray-500 font-semibold">Wrong</p></div>
+                                <div><p className="text-lg font-bold text-gray-500">{sec.unanswered}</p><p className="text-[10px] text-gray-500 font-semibold">Skipped</p></div>
                               </div>
                             )}
                           </div>
                         ))}
                       </div>
 
-                      {testResult.sections[activeSectionIdx]?.status === 'submitted' && testResult.sections[activeSectionIdx].questions.length > 0 && (
+                      {/* Question-level Review */}
+                      {testResult.sections[activeSectionIdx]?.status === 'submitted' &&
+                       testResult.sections[activeSectionIdx].questions.length > 0 && (
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                          <h3 className="text-lg font-bold text-gray-900 mb-4">{SECTION_ICONS[activeSectionIdx]} {testResult.sections[activeSectionIdx].sectionName} — Questions</h3>
+                          <h3 className="text-lg font-bold text-gray-900 mb-4">
+                            {SECTION_ICONS[activeSectionIdx]} {testResult.sections[activeSectionIdx].sectionName} — Questions
+                          </h3>
                           <div className="space-y-5">
                             {testResult.sections[activeSectionIdx].questions.map((q) => (
                               <div key={q.questionNumber} className="border border-gray-200 rounded-lg overflow-hidden">
-                                <div className={`px-4 py-2 flex items-center justify-between text-sm font-semibold ${q.isCorrect === true ? 'bg-green-50 text-green-700' : q.isCorrect === false ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-600'}`}>
+                                <div className={`px-4 py-2 flex items-center justify-between text-sm font-semibold ${
+                                  q.isCorrect === true ? 'bg-green-50 text-green-700' : q.isCorrect === false ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-600'
+                                }`}>
                                   <span>Q{q.questionNumber}.</span>
                                   <span>{q.isCorrect === true ? '✅ Correct (+2)' : q.isCorrect === false ? '❌ Incorrect (−0.5)' : '⬜ Skipped (0)'}</span>
                                 </div>
@@ -646,12 +598,13 @@ export default function StudentDetailPage() {
                 </div>
               )}
 
+              {/* Student Interview Tab (Read-only) */}
               {activeTab === 'student-interview' && (() => {
-                const sectionColorMap: Record<string, { header: string; badge: string; dot: string; ring: string }> = {
-                  blue:    { header: 'bg-blue-600',    badge: 'bg-blue-100 text-blue-700',    dot: 'bg-blue-600',    ring: 'focus:ring-blue-500 focus:border-blue-500' },
-                  emerald: { header: 'bg-blue-600', badge: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-600', ring: 'focus:ring-emerald-500 focus:border-emerald-500' },
-                  violet:  { header: 'bg-blue-600',  badge: 'bg-violet-100 text-violet-700',  dot: 'bg-violet-600',  ring: 'focus:ring-violet-500 focus:border-violet-500' },
-                  amber:   { header: 'bg-blue-600',   badge: 'bg-amber-100 text-amber-700',   dot: 'bg-amber-600',   ring: 'focus:ring-amber-500 focus:border-amber-500' },
+                const sectionColorMap: Record<string, { header: string; dot: string }> = {
+                  blue:    { header: 'bg-blue-600',    dot: 'bg-blue-600' },
+                  emerald: { header: 'bg-blue-600', dot: 'bg-emerald-600' },
+                  violet:  { header: 'bg-blue-600',  dot: 'bg-violet-600' },
+                  amber:   { header: 'bg-blue-600',   dot: 'bg-amber-600' },
                 };
 
                 const sectionAverages = STUDENT_INTERVIEW_SECTIONS.map((_, sIdx) => {
@@ -659,14 +612,12 @@ export default function StudentDetailPage() {
                   const rated = scores.filter((s) => s > 0);
                   return rated.length > 0 ? rated.reduce((a, b) => a + b, 0) / rated.length : 0;
                 });
-                const overallScore =
-                  sectionAverages.some((s) => s > 0)
-                    ? sectionAverages.reduce((a, b) => a + b, 0).toFixed(2)
-                    : null;
+                const overallScore = sectionAverages.some((s) => s > 0)
+                  ? sectionAverages.reduce((a, b) => a + b, 0).toFixed(2)
+                  : null;
 
                 return (
                   <div className="space-y-5">
-                    {/* Overall header */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
@@ -675,41 +626,27 @@ export default function StudentDetailPage() {
                           </svg>
                         </div>
                         <div>
-                          <h3 className="text-lg font-bold text-gray-900">Student Interview</h3>
-                          <p className="text-sm text-gray-500">Rate each question 1–5 ★. Section score = average of question scores.</p>
+                          <h3 className="text-lg font-bold text-gray-900">Student Interview Report</h3>
+                          <p className="text-sm text-gray-500">Evaluation scores and recorded responses</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Overall Score</p>
-                          <p className="text-3xl font-extrabold text-green-700">
-                            {overallScore ?? '—'}
-                            {overallScore && <span className="text-base font-semibold text-gray-400"> / 20</span>}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => saveInterview('student', studentScores, studentResponses)}
-                          disabled={savingInterview}
-                          className="px-5 py-2.5 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 shadow-sm"
-                        >
-                          {savingInterview ? 'Saving...' : 'Save'}
-                        </button>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Overall Score</p>
+                        <p className="text-3xl font-extrabold text-green-700">
+                          {overallScore ?? '—'}
+                          {overallScore && <span className="text-base font-semibold text-gray-400"> / 20</span>}
+                        </p>
                       </div>
                     </div>
 
-                    {/* Sections */}
                     {STUDENT_INTERVIEW_SECTIONS.map((section, sIdx) => {
                       const cl = sectionColorMap[section.color] ?? sectionColorMap['blue'];
                       const scores = studentScores[sIdx];
                       const rated = scores.filter((s) => s > 0);
-                      const sectionAvg =
-                        rated.length > 0
-                          ? (rated.reduce((a, b) => a + b, 0) / rated.length).toFixed(2)
-                          : null;
+                      const sectionAvg = rated.length > 0 ? (rated.reduce((a, b) => a + b, 0) / rated.length).toFixed(2) : null;
 
                       return (
                         <div key={sIdx} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                          {/* Section header */}
                           <div className={`flex items-center justify-between px-6 py-4 border-b border-blue-500 ${cl.header}`}>
                             <div>
                               <p className="text-xs font-semibold text-blue-100 uppercase tracking-wide mb-0.5">Section {sIdx + 1}</p>
@@ -721,62 +658,28 @@ export default function StudentDetailPage() {
                                 {sectionAvg ?? <span className="text-blue-200">—</span>}
                                 {sectionAvg && <span className="text-sm font-semibold text-blue-200"> / 5</span>}
                               </p>
-                              <p className="text-xs text-blue-200">{rated.length}/{scores.length} rated</p>
                             </div>
                           </div>
-
-                          {/* Questions */}
                           <div className="divide-y divide-gray-100">
                             {section.questions.map((q, qIdx) => (
                               <div key={qIdx} className="p-5">
                                 <div className="flex items-start gap-4">
-                                  <span className={`shrink-0 w-7 h-7 rounded-full ${cl.dot} text-white flex items-center justify-center text-xs font-bold mt-0.5`}>
-                                    {qIdx + 1}
-                                  </span>
+                                  <span className={`shrink-0 w-7 h-7 rounded-full ${cl.dot} text-white flex items-center justify-center text-xs font-bold mt-0.5`}>{qIdx + 1}</span>
                                   <div className="flex-1">
-                                    <p className="text-sm font-semibold text-gray-900 mb-3">{q}</p>
-                                    {/* Star Rating */}
-                                    <div className="flex items-center gap-1 mb-3">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">{q}</p>
+                                    <div className="flex items-center gap-1 mb-2">
                                       {[1, 2, 3, 4, 5].map((star) => (
-                                        <button
-                                          key={star}
-                                          onClick={() => {
-                                            const next = studentScores.map((row) => [...row]);
-                                            next[sIdx][qIdx] = next[sIdx][qIdx] === star ? 0 : star;
-                                            setStudentScores(next);
-                                          }}
-                                          title={`Rate ${star}`}
-                                          className="focus:outline-none transition-transform hover:scale-110 active:scale-95"
-                                        >
-                                          <svg
-                                            className={`w-7 h-7 transition-colors ${
-                                              star <= scores[qIdx] ? 'text-amber-400' : 'text-gray-200'
-                                            }`}
-                                            fill="currentColor"
-                                            viewBox="0 0 20 20"
-                                          >
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                          </svg>
-                                        </button>
+                                        <svg key={star} className={`w-6 h-6 ${star <= scores[qIdx] ? 'text-amber-400' : 'text-gray-200'}`} fill="currentColor" viewBox="0 0 20 20">
+                                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                        </svg>
                                       ))}
-                                      {scores[qIdx] > 0 && (
-                                        <span className="ml-2 text-sm font-bold text-amber-600">
-                                          {scores[qIdx]} / 5
-                                        </span>
-                                      )}
+                                      {scores[qIdx] > 0 && <span className="ml-2 text-sm font-bold text-amber-600">{scores[qIdx]} / 5</span>}
                                     </div>
-                                    {/* Response note */}
-                                    <textarea
-                                      placeholder="Record student's response..."
-                                      rows={2}
-                                      value={studentResponses[sIdx][qIdx]}
-                                      onChange={(e) => {
-                                        const next = studentResponses.map((row) => [...row]);
-                                        next[sIdx][qIdx] = e.target.value;
-                                        setStudentResponses(next);
-                                      }}
-                                      className={`w-full border border-gray-300 rounded-lg px-3 py-2 text-sm ${cl.ring} text-gray-700 resize-none`}
-                                    />
+                                    {studentResponses[sIdx][qIdx] && (
+                                      <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-700 border border-gray-200">
+                                        {studentResponses[sIdx][qIdx]}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -789,12 +692,13 @@ export default function StudentDetailPage() {
                 );
               })()}
 
+              {/* Parent Interview Tab (Read-only) */}
               {activeTab === 'parent-interview' && (() => {
-                const sectionColorMap: Record<string, { header: string; badge: string; dot: string; ring: string }> = {
-                  blue:    { header: 'bg-blue-600',    badge: 'bg-blue-100 text-blue-700',    dot: 'bg-blue-600',    ring: 'focus:ring-blue-500 focus:border-blue-500' },
-                  emerald: { header: 'bg-blue-600', badge: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-600', ring: 'focus:ring-emerald-500 focus:border-emerald-500' },
-                  violet:  { header: 'bg-blue-600',  badge: 'bg-violet-100 text-violet-700',  dot: 'bg-violet-600',  ring: 'focus:ring-violet-500 focus:border-violet-500' },
-                  amber:   { header: 'bg-blue-600',   badge: 'bg-amber-100 text-amber-700',   dot: 'bg-amber-600',   ring: 'focus:ring-amber-500 focus:border-amber-500' },
+                const sectionColorMap: Record<string, { header: string; dot: string }> = {
+                  blue:    { header: 'bg-blue-600',    dot: 'bg-blue-600' },
+                  emerald: { header: 'bg-blue-600', dot: 'bg-emerald-600' },
+                  violet:  { header: 'bg-blue-600',  dot: 'bg-violet-600' },
+                  amber:   { header: 'bg-blue-600',   dot: 'bg-amber-600' },
                 };
 
                 const sectionAverages = PARENT_INTERVIEW_SECTIONS.map((_, sIdx) => {
@@ -802,14 +706,12 @@ export default function StudentDetailPage() {
                   const rated = scores.filter((s) => s > 0);
                   return rated.length > 0 ? rated.reduce((a, b) => a + b, 0) / rated.length : 0;
                 });
-                const overallScore =
-                  sectionAverages.some((s) => s > 0)
-                    ? sectionAverages.reduce((a, b) => a + b, 0).toFixed(2)
-                    : null;
+                const overallScore = sectionAverages.some((s) => s > 0)
+                  ? sectionAverages.reduce((a, b) => a + b, 0).toFixed(2)
+                  : null;
 
                 return (
                   <div className="space-y-5">
-                    {/* Overall header */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
@@ -818,42 +720,28 @@ export default function StudentDetailPage() {
                           </svg>
                         </div>
                         <div>
-                          <h3 className="text-lg font-bold text-gray-900">Parent Interview</h3>
-                          <p className="text-sm text-gray-500">Rate each question 1–5 ★. Section score = average of question scores.</p>
+                          <h3 className="text-lg font-bold text-gray-900">Parent Interview Report</h3>
+                          <p className="text-sm text-gray-500">Evaluation scores and recorded responses</p>
                           {student && <p className="text-xs text-gray-400 mt-1">Parent: {getParentName(student)}</p>}
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Overall Score</p>
-                          <p className="text-3xl font-extrabold text-purple-700">
-                            {overallScore ?? '—'}
-                            {overallScore && <span className="text-base font-semibold text-gray-400"> / 20</span>}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => saveInterview('parent', parentScores, parentResponses)}
-                          disabled={savingInterview}
-                          className="px-5 py-2.5 bg-purple-600 text-white text-sm font-bold rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 shadow-sm"
-                        >
-                          {savingInterview ? 'Saving...' : 'Save'}
-                        </button>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Overall Score</p>
+                        <p className="text-3xl font-extrabold text-purple-700">
+                          {overallScore ?? '—'}
+                          {overallScore && <span className="text-base font-semibold text-gray-400"> / 20</span>}
+                        </p>
                       </div>
                     </div>
 
-                    {/* Sections */}
                     {PARENT_INTERVIEW_SECTIONS.map((section, sIdx) => {
                       const cl = sectionColorMap[section.color] ?? sectionColorMap['blue'];
                       const scores = parentScores[sIdx];
                       const rated = scores.filter((s) => s > 0);
-                      const sectionAvg =
-                        rated.length > 0
-                          ? (rated.reduce((a, b) => a + b, 0) / rated.length).toFixed(2)
-                          : null;
+                      const sectionAvg = rated.length > 0 ? (rated.reduce((a, b) => a + b, 0) / rated.length).toFixed(2) : null;
 
                       return (
                         <div key={sIdx} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                          {/* Section header */}
                           <div className={`flex items-center justify-between px-6 py-4 border-b border-blue-500 ${cl.header}`}>
                             <div>
                               <p className="text-xs font-semibold text-blue-100 uppercase tracking-wide mb-0.5">Section {sIdx + 1}</p>
@@ -865,62 +753,28 @@ export default function StudentDetailPage() {
                                 {sectionAvg ?? <span className="text-blue-200">—</span>}
                                 {sectionAvg && <span className="text-sm font-semibold text-blue-200"> / 5</span>}
                               </p>
-                              <p className="text-xs text-blue-200">{rated.length}/{scores.length} rated</p>
                             </div>
                           </div>
-
-                          {/* Questions */}
                           <div className="divide-y divide-gray-100">
                             {section.questions.map((q, qIdx) => (
                               <div key={qIdx} className="p-5">
                                 <div className="flex items-start gap-4">
-                                  <span className={`shrink-0 w-7 h-7 rounded-full ${cl.dot} text-white flex items-center justify-center text-xs font-bold mt-0.5`}>
-                                    {qIdx + 1}
-                                  </span>
+                                  <span className={`shrink-0 w-7 h-7 rounded-full ${cl.dot} text-white flex items-center justify-center text-xs font-bold mt-0.5`}>{qIdx + 1}</span>
                                   <div className="flex-1">
-                                    <p className="text-sm font-semibold text-gray-900 mb-3">{q}</p>
-                                    {/* Star Rating */}
-                                    <div className="flex items-center gap-1 mb-3">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">{q}</p>
+                                    <div className="flex items-center gap-1 mb-2">
                                       {[1, 2, 3, 4, 5].map((star) => (
-                                        <button
-                                          key={star}
-                                          onClick={() => {
-                                            const next = parentScores.map((row) => [...row]);
-                                            next[sIdx][qIdx] = next[sIdx][qIdx] === star ? 0 : star;
-                                            setParentScores(next);
-                                          }}
-                                          title={`Rate ${star}`}
-                                          className="focus:outline-none transition-transform hover:scale-110 active:scale-95"
-                                        >
-                                          <svg
-                                            className={`w-7 h-7 transition-colors ${
-                                              star <= scores[qIdx] ? 'text-amber-400' : 'text-gray-200'
-                                            }`}
-                                            fill="currentColor"
-                                            viewBox="0 0 20 20"
-                                          >
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                          </svg>
-                                        </button>
+                                        <svg key={star} className={`w-6 h-6 ${star <= scores[qIdx] ? 'text-amber-400' : 'text-gray-200'}`} fill="currentColor" viewBox="0 0 20 20">
+                                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                        </svg>
                                       ))}
-                                      {scores[qIdx] > 0 && (
-                                        <span className="ml-2 text-sm font-bold text-amber-600">
-                                          {scores[qIdx]} / 5
-                                        </span>
-                                      )}
+                                      {scores[qIdx] > 0 && <span className="ml-2 text-sm font-bold text-amber-600">{scores[qIdx]} / 5</span>}
                                     </div>
-                                    {/* Response note */}
-                                    <textarea
-                                      placeholder="Record parent's response..."
-                                      rows={2}
-                                      value={parentResponses[sIdx][qIdx]}
-                                      onChange={(e) => {
-                                        const next = parentResponses.map((row) => [...row]);
-                                        next[sIdx][qIdx] = e.target.value;
-                                        setParentResponses(next);
-                                      }}
-                                      className={`w-full border border-gray-300 rounded-lg px-3 py-2 text-sm ${cl.ring} text-gray-700 resize-none`}
-                                    />
+                                    {parentResponses[sIdx][qIdx] && (
+                                      <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-700 border border-gray-200">
+                                        {parentResponses[sIdx][qIdx]}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -935,7 +789,7 @@ export default function StudentDetailPage() {
             </>
           )}
         </div>
-      </SuperAdminLayout>
+      </div>
     </>
   );
 }

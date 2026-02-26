@@ -24,6 +24,16 @@ interface Project {
     feedback?: string;
 }
 
+interface InformalFile {
+    _id?: string;
+    originalName: string;
+    fileName: string;
+    filePath: string;
+    fileSize: number;
+    mimeType: string;
+    uploadedAt: string;
+}
+
 interface SubSection {
     _id?: string;
     testType: 'weekly' | 'month-wise' | 'term-wise' | 'final-term' | 'olympiad' | 'test' | 'project';
@@ -33,6 +43,7 @@ interface SubSection {
     projects?: Project[];
     overallFeedback?: string;
     score?: number;
+    files?: InformalFile[];
 }
 
 interface Section {
@@ -56,6 +67,7 @@ function IvyExpertPointer1Content() {
     const [showAddSection, setShowAddSection] = useState(false);
     const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set());
     const [loading, setLoading] = useState(true);
+    const [previewFileIds, setPreviewFileIds] = useState<Set<string>>(new Set());
     const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
     const activeTabRef = useRef(activeTab);
     activeTabRef.current = activeTab;
@@ -387,6 +399,36 @@ function IvyExpertPointer1Content() {
         }
     };
 
+    const uploadFileHandler = async (sectionId: string, subSectionId: string, file: File) => {
+        if (!studentId || !studentIvyServiceId) return;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('studentId', studentId);
+        formData.append('studentIvyServiceId', studentIvyServiceId);
+        formData.append('sectionId', sectionId);
+        formData.append('subSectionId', subSectionId);
+        try {
+            await axios.post(`${IVY_API_URL}/pointer1/academic/subsection/file`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            fetchAcademicData();
+        } catch (error) {
+            console.error('Error uploading file:', error);
+        }
+    };
+
+    const deleteFileHandler = async (sectionId: string, subSectionId: string, fileId: string) => {
+        if (!confirm('Are you sure you want to delete this file?')) return;
+        try {
+            await axios.delete(`${IVY_API_URL}/pointer1/academic/subsection/file`, {
+                data: { studentId, studentIvyServiceId, sectionId, subSectionId, fileId }
+            });
+            fetchAcademicData();
+        } catch (error) {
+            console.error('Error deleting file:', error);
+        }
+    };
+
     const toggleSection = (index: number) => {
         const newExpanded = new Set(expandedSections);
         if (newExpanded.has(index)) {
@@ -529,7 +571,7 @@ function IvyExpertPointer1Content() {
                             <div className="flex gap-4">
                                 <input
                                     type="text"
-                                    placeholder="Exam Name (e.g., Mid-Term, Final Exam)"
+                                    placeholder={activeTab === 'informal' ? 'Enter Exam or Project (e.g. Olympiad, JEE, etc.)' : 'Exam Name (e.g., Mid-Term, Final Exam)'}
                                     value={newSectionName}
                                     onChange={(e) => setNewSectionName(e.target.value)}
                                     className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:border-brand-500 outline-none text-black placeholder:text-gray-400"
@@ -820,6 +862,92 @@ function IvyExpertPointer1Content() {
                                                     </div>
                                                 )}
                                                 
+                                                {/* File Attachments - Informal tab only */}
+                                                {activeTab === 'informal' && (
+                                                    <div className="mt-4 pt-4 border-t border-gray-200">
+                                                        <label className="block text-sm font-bold text-gray-700 mb-3">📎 Attachments</label>
+                                                        <label className="flex items-center gap-3 p-3 mb-3 border-2 border-dashed border-brand-200 rounded-xl bg-brand-50 cursor-pointer hover:bg-brand-100 transition-colors">
+                                                            <svg className="w-5 h-5 text-brand-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                                            </svg>
+                                                            <span className="text-sm font-bold text-brand-700">Click to attach a file</span>
+                                                            <input
+                                                                type="file"
+                                                                className="hidden"
+                                                                onChange={(e) => {
+                                                                    const file = e.target.files?.[0];
+                                                                    if (file) {
+                                                                        uploadFileHandler(section._id!, subSection._id!, file);
+                                                                        e.target.value = '';
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </label>
+                                                        {subSection.files && subSection.files.length > 0 ? (
+                                                            <div className="space-y-2">
+                                                                {subSection.files.map((file) => {
+                                                                    const fileUrl = `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:5000'}${file.filePath}`;
+                                                                    const isPreviewing = previewFileIds.has(file._id!);
+                                                                    return (
+                                                                        <div key={file._id} className="rounded-lg border border-gray-200 overflow-hidden">
+                                                                            <div className="flex items-center justify-between p-3 bg-gray-50">
+                                                                                <div className="flex items-center gap-3 min-w-0">
+                                                                                    <div className="w-8 h-8 rounded-lg bg-brand-100 text-brand-600 flex items-center justify-center flex-shrink-0">
+                                                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                                                                        </svg>
+                                                                                    </div>
+                                                                                    <div className="min-w-0">
+                                                                                        <p className="text-sm font-bold text-gray-900 truncate">{file.originalName}</p>
+                                                                                        <p className="text-xs text-gray-500">{(file.fileSize / 1024).toFixed(1)} KB</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                                                    <button
+                                                                                        onClick={() => setPreviewFileIds(prev => { const next = new Set(prev); isPreviewing ? next.delete(file._id!) : next.add(file._id!); return next; })}
+                                                                                        className={`p-2 rounded-lg transition-colors ${isPreviewing ? 'bg-blue-200 text-blue-700' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'}`}
+                                                                                        title={isPreviewing ? 'Hide Preview' : 'Preview'}
+                                                                                    >
+                                                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                                        </svg>
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => deleteFileHandler(section._id!, subSection._id!, file._id!)}
+                                                                                        className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
+                                                                                        title="Delete File"
+                                                                                    >
+                                                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                                        </svg>
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                            {isPreviewing && (
+                                                                                <div className="border-t border-gray-200 bg-white p-2">
+                                                                                    {file.mimeType.startsWith('image/') ? (
+                                                                                        <img src={fileUrl} alt={file.originalName} className="max-w-full h-auto max-h-[500px] object-contain mx-auto block rounded" />
+                                                                                    ) : file.mimeType === 'application/pdf' ? (
+                                                                                        <iframe src={fileUrl} className="w-full h-[600px] rounded" title={file.originalName} />
+                                                                                    ) : (
+                                                                                        <div className="py-6 text-center">
+                                                                                            <p className="text-gray-500 text-sm mb-3">Preview not available for this file type.</p>
+                                                                                            <a href={fileUrl} download className="px-4 py-2 bg-brand-600 text-white text-sm font-bold rounded-lg hover:bg-brand-700">Download File</a>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-gray-400 text-sm italic">No files attached yet</p>
+                                                        )}
+                                                    </div>
+                                                )}
+
                                                 {/* Overall Feedback and Score - Editable for Ivy Expert */}
                                                 <div className="mt-4 pt-4 border-t border-gray-200">
                                                     <div className="flex items-center justify-between mb-2">

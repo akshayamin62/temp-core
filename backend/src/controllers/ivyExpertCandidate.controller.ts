@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import IvyLeagueRegistration from '../models/IvyLeagueRegistration';
 import IvyTestSession from '../models/ivy/IvyTestSession';
@@ -7,6 +7,7 @@ import Service from '../models/Service';
 import User from '../models/ivy/User';
 import IvyExpert from '../models/IvyExpert';
 import Student from '../models/Student';
+import { resolveIvyExpertId } from '../utils/resolveRole';
 
 /* ── Helper: get Ivy League service ID ─────────────────────────────── */
 let _ivyServiceId: any = null;
@@ -18,57 +19,61 @@ const getIvyServiceId = async () => {
 };
 
 /* ══════════════════════════════════════════════════════════════════════
-   GET /api/super-admin/ivy-league/stats
-   Returns counts of ivy candidates and ivy students
+   Super-admin: Assign ivy expert to a candidate (at candidate stage)
+   POST /api/super-admin/ivy-league/assign-expert
+   Body: { userId, ivyExpertId }
    ══════════════════════════════════════════════════════════════════════ */
-export const getIvyLeagueStats = async (req: AuthRequest, res: Response): Promise<void> => {
+export const assignExpertToCandidate = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const serviceId = await getIvyServiceId();
+    const { userId, ivyExpertId } = req.body;
 
-    // All IvyLeagueRegistrations
-    const allRegistrations = await IvyLeagueRegistration.find().lean();
-    const registeredUserIds = allRegistrations.map((r: any) => r.userId.toString());
-
-    // Find which of these have a StudentServiceRegistration with an active ivy expert
-    let assignedUserIds: string[] = [];
-    if (serviceId && registeredUserIds.length > 0) {
-      const ssrs = await StudentServiceRegistration.find({
-        serviceId,
-        activeIvyExpertId: { $ne: null },
-      }).populate('studentId', 'userId').lean();
-
-      // Get user IDs from the SSR's student records
-      for (const ssr of ssrs) {
-        const student = ssr.studentId as any;
-        if (student && student.userId) {
-          assignedUserIds.push(student.userId.toString());
-        }
-      }
+    if (!userId || !ivyExpertId) {
+      res.status(400).json({ success: false, message: 'userId and ivyExpertId are required' });
+      return;
     }
 
-    const candidateCount = registeredUserIds.filter((id: string) => !assignedUserIds.includes(id)).length;
-    const studentCount = assignedUserIds.length;
+    const expert = await IvyExpert.findById(ivyExpertId);
+    if (!expert) {
+      res.status(404).json({ success: false, message: 'Ivy Expert not found' });
+      return;
+    }
 
-    res.json({
-      success: true,
-      candidates: candidateCount,
-      students: studentCount,
-    });
+    const registration = await IvyLeagueRegistration.findOne({ userId });
+    if (!registration) {
+      res.status(404).json({ success: false, message: 'Ivy League registration not found' });
+      return;
+    }
+
+    registration.assignedIvyExpertId = ivyExpertId;
+    await registration.save();
+
+    res.json({ success: true, message: 'Ivy Expert assigned to candidate successfully' });
   } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message || 'Failed to get stats' });
+    res.status(500).json({ success: false, message: err.message || 'Failed to assign expert' });
   }
 };
 
 /* ══════════════════════════════════════════════════════════════════════
-   GET /api/super-admin/ivy-league/candidates
-   Returns ivy league registrations without an assigned ivy expert
+   Ivy Expert: Get MY candidates (assigned to me but not yet converted)
+   GET /api/ivy/ivy-expert-candidates/my-candidates
    ══════════════════════════════════════════════════════════════════════ */
-export const getIvyCandidates = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getMyIvyCandidates = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const ivyExpertId = await resolveIvyExpertId(req.user!.userId);
     const serviceId = await getIvyServiceId();
 
-    // Get all assigned student user IDs
-    let assignedUserIds: string[] = [];
+    // Get all registrations assigned to this expert
+    const registrations = await IvyLeagueRegistration.find({
+      assignedIvyExpertId: ivyExpertId,
+    }).lean();
+
+    if (registrations.length === 0) {
+      res.json({ success: true, candidates: [] });
+      return;
+    }
+
+    // Find which of these have already been converted (have SSR with activeIvyExpertId)
+    let convertedUserIds: string[] = [];
     if (serviceId) {
       const ssrs = await StudentServiceRegistration.find({
         serviceId,
@@ -78,40 +83,23 @@ export const getIvyCandidates = async (req: AuthRequest, res: Response): Promise
       for (const ssr of ssrs) {
         const student = ssr.studentId as any;
         if (student && student.userId) {
-          assignedUserIds.push(student.userId.toString());
+          convertedUserIds.push(student.userId.toString());
         }
       }
     }
 
-    // All registrations
-    const registrations = await IvyLeagueRegistration.find().lean();
-
-    // Filter to those NOT assigned
+    // Candidates = assigned to this expert BUT not yet converted
     const candidates = registrations.filter(
-      (r: any) => !assignedUserIds.includes(r.userId.toString())
+      (r: any) => !convertedUserIds.includes(r.userId.toString())
     );
 
-    // Get test session status for each candidate
     const candidatesWithStatus = await Promise.all(
       candidates.map(async (reg: any) => {
         const testSession = await IvyTestSession.findOne({ studentId: reg.userId }).lean();
         const user = await User.findById(reg.userId).select('email').lean();
-
-        // Resolve assigned expert name if present
-        let assignedExpertName: string | null = null;
-        if (reg.assignedIvyExpertId) {
-          const IvyExpert = require('../models/IvyExpert').default;
-          const expert = await IvyExpert.findById(reg.assignedIvyExpertId).lean();
-          if (expert) {
-            assignedExpertName = [expert.firstName, expert.middleName, expert.lastName].filter(Boolean).join(' ');
-          }
-        }
-
         return {
           ...reg,
           email: (user as any)?.email || '',
-          assignedIvyExpertId: reg.assignedIvyExpertId || null,
-          assignedExpertName,
           testStatus: testSession ? testSession.status : 'not-started',
           totalScore: testSession?.totalScore ?? null,
           maxScore: testSession?.maxScore ?? 120,
@@ -129,25 +117,33 @@ export const getIvyCandidates = async (req: AuthRequest, res: Response): Promise
 };
 
 /* ══════════════════════════════════════════════════════════════════════
-   GET /api/super-admin/ivy-league/students
-   Returns ivy league registrations WITH an assigned ivy expert
+   Ivy Expert: Get MY students (converted from candidate, have SSR)
+   GET /api/ivy/ivy-expert-candidates/my-ivy-students
    ══════════════════════════════════════════════════════════════════════ */
-export const getIvyStudents = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getMyIvyStudents = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const ivyExpertId = await resolveIvyExpertId(req.user!.userId);
     const serviceId = await getIvyServiceId();
+
     if (!serviceId) {
       res.json({ success: true, students: [] });
       return;
     }
 
+    // Find SSRs where this expert is assigned
     const ssrs = await StudentServiceRegistration.find({
       serviceId,
-      activeIvyExpertId: { $ne: null },
+      activeIvyExpertId: ivyExpertId,
     }).populate('studentId', 'userId').lean();
 
     const assignedUserIds = ssrs
       .map((ssr: any) => ssr.studentId?.userId?.toString())
       .filter(Boolean);
+
+    if (assignedUserIds.length === 0) {
+      res.json({ success: true, students: [] });
+      return;
+    }
 
     const registrations = await IvyLeagueRegistration.find({
       userId: { $in: assignedUserIds },
@@ -157,6 +153,13 @@ export const getIvyStudents = async (req: AuthRequest, res: Response): Promise<v
       registrations.map(async (reg: any) => {
         const testSession = await IvyTestSession.findOne({ studentId: reg.userId }).lean();
         const user = await User.findById(reg.userId).select('email').lean();
+        // Find SSR for this student to get service ID
+        const student = await Student.findOne({ userId: reg.userId }).lean();
+        const ssr = student ? ssrs.find((s: any) => 
+          s.studentId?._id?.toString() === (student as any)._id.toString() ||
+          s.studentId?.userId?.toString() === reg.userId.toString()
+        ) : null;
+
         return {
           ...reg,
           email: (user as any)?.email || '',
@@ -166,6 +169,8 @@ export const getIvyStudents = async (req: AuthRequest, res: Response): Promise<v
           completedSections: testSession
             ? testSession.sections.filter((s: any) => s.status === 'submitted').length
             : 0,
+          studentId: student ? (student as any)._id.toString() : null,
+          studentIvyServiceId: ssr ? (ssr as any)._id.toString() : null,
         };
       })
     );
@@ -177,10 +182,73 @@ export const getIvyStudents = async (req: AuthRequest, res: Response): Promise<v
 };
 
 /* ══════════════════════════════════════════════════════════════════════
-   GET /api/super-admin/ivy-league/test-result/:userId
-   Returns full test result for a specific student (for admin viewing)
+   Ivy Expert: Convert candidate to student (assign expert via SSR)
+   POST /api/ivy/ivy-expert-candidates/convert-to-student
+   Body: { userId }
    ══════════════════════════════════════════════════════════════════════ */
-export const getStudentTestResult = async (req: AuthRequest, res: Response): Promise<void> => {
+export const ivyExpertConvertToStudent = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const ivyExpertId = await resolveIvyExpertId(req.user!.userId);
+    const { userId } = req.body;
+
+    if (!userId) {
+      res.status(400).json({ success: false, message: 'userId is required' });
+      return;
+    }
+
+    // Verify this candidate is assigned to this expert
+    const registration = await IvyLeagueRegistration.findOne({
+      userId,
+      assignedIvyExpertId: ivyExpertId,
+    });
+    if (!registration) {
+      res.status(403).json({ success: false, message: 'This candidate is not assigned to you' });
+      return;
+    }
+
+    const serviceId = await getIvyServiceId();
+    if (!serviceId) {
+      res.status(500).json({ success: false, message: 'Ivy League service not found' });
+      return;
+    }
+
+    const student = await Student.findOne({ userId });
+    if (!student) {
+      res.status(404).json({ success: false, message: 'Student record not found' });
+      return;
+    }
+
+    let ssr = await StudentServiceRegistration.findOne({
+      studentId: student._id,
+      serviceId,
+    });
+
+    if (ssr) {
+      ssr.primaryIvyExpertId = ivyExpertId as any;
+      ssr.activeIvyExpertId = ivyExpertId as any;
+      await ssr.save();
+    } else {
+      ssr = await StudentServiceRegistration.create({
+        studentId: student._id,
+        serviceId,
+        primaryIvyExpertId: ivyExpertId,
+        activeIvyExpertId: ivyExpertId,
+        status: 'REGISTERED',
+        registeredAt: new Date(),
+      });
+    }
+
+    res.json({ success: true, message: 'Candidate converted to student successfully' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || 'Failed to convert candidate' });
+  }
+};
+
+/* ══════════════════════════════════════════════════════════════════════
+   Ivy Expert: Get test result for a student/candidate
+   GET /api/ivy/ivy-expert-candidates/test-result/:userId
+   ══════════════════════════════════════════════════════════════════════ */
+export const getTestResultForExpert = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { userId } = req.params;
     const IvyTestQuestion = (await import('../models/ivy/IvyTestQuestion')).default;
@@ -191,7 +259,6 @@ export const getStudentTestResult = async (req: AuthRequest, res: Response): Pro
       return;
     }
 
-    // Build section-level results
     const sections = [];
     for (let i = 0; i < session.sections.length; i++) {
       const sec = session.sections[i];
@@ -251,110 +318,11 @@ export const getStudentTestResult = async (req: AuthRequest, res: Response): Pro
 };
 
 /* ══════════════════════════════════════════════════════════════════════
-   GET /api/super-admin/ivy-league/ivy-experts
-   Returns list of ivy experts for assignment dropdown
+   Ivy Expert: Save interview data
+   PUT /api/ivy/ivy-expert-candidates/interview/:userId
+   Body: { type: 'student' | 'parent', answers: [...] }
    ══════════════════════════════════════════════════════════════════════ */
-export const getIvyExperts = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const experts = await IvyExpert.find().lean();
-    const expertUsers = await Promise.all(
-      experts.map(async (exp: any) => {
-        const user = await User.findById(exp.userId).select('firstName middleName lastName email').lean();
-        return {
-          _id: exp._id,
-          userId: exp.userId,
-          firstName: (user as any)?.firstName || '',
-          middleName: (user as any)?.middleName || '',
-          lastName: (user as any)?.lastName || '',
-          email: (user as any)?.email || exp.email,
-        };
-      })
-    );
-    res.json({ success: true, experts: expertUsers });
-  } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message || 'Failed to get ivy experts' });
-  }
-};
-
-/* ══════════════════════════════════════════════════════════════════════
-   POST /api/super-admin/ivy-league/convert-to-student
-   Converts an ivy candidate into an ivy student by assigning an expert
-   ══════════════════════════════════════════════════════════════════════ */
-export const convertCandidateToStudent = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const { userId, ivyExpertId } = req.body;
-
-    if (!userId || !ivyExpertId) {
-      res.status(400).json({ success: false, message: 'userId and ivyExpertId are required' });
-      return;
-    }
-
-    // Validate ivy expert exists
-    const ivyExpert = await IvyExpert.findById(ivyExpertId);
-    if (!ivyExpert) {
-      res.status(404).json({ success: false, message: 'Ivy Expert not found' });
-      return;
-    }
-
-    // Validate registration exists
-    const registration = await IvyLeagueRegistration.findOne({ userId });
-    if (!registration) {
-      res.status(404).json({ success: false, message: 'Ivy League registration not found for this user' });
-      return;
-    }
-
-    // Get ivy league service
-    const serviceId = await getIvyServiceId();
-    if (!serviceId) {
-      res.status(500).json({ success: false, message: 'Ivy League service not found' });
-      return;
-    }
-
-    // Find the student record
-    const student = await Student.findOne({ userId });
-    if (!student) {
-      res.status(404).json({ success: false, message: 'Student record not found' });
-      return;
-    }
-
-    // Find or create StudentServiceRegistration
-    let ssr = await StudentServiceRegistration.findOne({
-      studentId: student._id,
-      serviceId,
-    });
-
-    if (ssr) {
-      // Already has SSR — just assign the expert
-      ssr.primaryIvyExpertId = ivyExpertId;
-      ssr.activeIvyExpertId = ivyExpertId;
-      await ssr.save();
-    } else {
-      // Create new SSR
-      ssr = await StudentServiceRegistration.create({
-        studentId: student._id,
-        serviceId,
-        primaryIvyExpertId: ivyExpertId,
-        activeIvyExpertId: ivyExpertId,
-        status: 'REGISTERED',
-        registeredAt: new Date(),
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Candidate converted to student successfully',
-    });
-  } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message || 'Failed to convert candidate' });
-  }
-};
-
-/* ══════════════════════════════════════════════════════════════════════
-   PUT /api/super-admin/ivy-league/interview/:userId
-   Save student or parent interview data (scores + responses)
-   Body: { type: 'student' | 'parent', answers: [{ sectionIndex, questionIndex, score, response }] }
-   ══════════════════════════════════════════════════════════════════════ */
-export const saveInterviewData = async (req: AuthRequest, res: Response): Promise<void> => {
+export const saveInterviewForExpert = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { userId } = req.params;
     const { type, answers } = req.body;
@@ -368,7 +336,6 @@ export const saveInterviewData = async (req: AuthRequest, res: Response): Promis
       return;
     }
 
-    // Find existing session or create a minimal one to hold interview data
     let session = await IvyTestSession.findOne({ studentId: userId });
     if (!session) {
       session = await IvyTestSession.create({
@@ -403,10 +370,10 @@ export const saveInterviewData = async (req: AuthRequest, res: Response): Promis
 };
 
 /* ══════════════════════════════════════════════════════════════════════
-   GET /api/super-admin/ivy-league/interview/:userId
-   Returns stored interview data (both student & parent) for a user
+   Ivy Expert: Get interview data
+   GET /api/ivy/ivy-expert-candidates/interview/:userId
    ══════════════════════════════════════════════════════════════════════ */
-export const getInterviewData = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getInterviewForExpert = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { userId } = req.params;
 

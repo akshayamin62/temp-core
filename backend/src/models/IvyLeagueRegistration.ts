@@ -12,6 +12,7 @@ export enum CurriculumType {
 export interface IIvyLeagueRegistration extends Document {
   studentId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
+  assignedIvyExpertId?: mongoose.Types.ObjectId;
   firstName: string;
   middleName?: string;
   lastName: string;
@@ -38,6 +39,12 @@ const ivyLeagueRegistrationSchema = new Schema<IIvyLeagueRegistration>(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+    assignedIvyExpertId: {
+      type: Schema.Types.ObjectId,
+      ref: "IvyExpert",
+      required: false,
+      default: null,
     },
     firstName: {
       type: String,

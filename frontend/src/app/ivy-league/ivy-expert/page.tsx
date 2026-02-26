@@ -19,6 +19,41 @@ interface StudentService {
     createdAt: string;
 }
 
+interface IvyCandidate {
+    _id: string;
+    userId: string;
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    email: string;
+    schoolName: string;
+    curriculum: string;
+    currentGrade: string;
+    parentFirstName: string;
+    parentLastName: string;
+    parentEmail: string;
+    parentMobile: string;
+    testStatus: string;
+    totalScore: number | null;
+    maxScore: number;
+    completedSections: number;
+    createdAt: string;
+}
+
+interface IvyStudentItem {
+    userId: string;
+    studentId: string;
+    studentIvyServiceId: string;
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    email: string;
+    schoolName: string;
+    curriculum: string;
+    currentGrade: string;
+    createdAt: string;
+}
+
 interface PointerScore {
     pointerNo: number;
     score: number;
@@ -87,6 +122,8 @@ function IvyExpertDashboard() {
     const studentIvyServiceId = searchParams.get('studentIvyServiceId');
 
     const [students, setStudents] = useState<StudentService[]>([]);
+    const [myCandidates, setMyCandidates] = useState<IvyCandidate[]>([]);
+    const [myStudents, setMyStudents] = useState<IvyStudentItem[]>([]);
     const [scoreData, setScoreData] = useState<IvyScoreData | null>(null);
     const [academicScore, setAcademicScore] = useState<AcademicExcellenceScore | null>(null);
     const [pointer5Score, setPointer5Score] = useState<number | null>(null);
@@ -94,6 +131,8 @@ function IvyExpertDashboard() {
     const [scoreLoading, setScoreLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [scoreError, setScoreError] = useState<string | null>(null);
+    const [candidateSearch, setCandidateSearch] = useState('');
+    const [studentSearch, setStudentSearch] = useState('');
 
     // TODO: Replace with logged-in user context
     // ivyExpertId is no longer needed — backend resolves it from JWT
@@ -106,22 +145,34 @@ function IvyExpertDashboard() {
             return;
         }
 
-        const fetchStudents = async () => {
+        const fetchDashboardData = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get(`${IVY_API_URL}/ivy-service/my-students`);
-                if (response.data.success) {
-                    setStudents(response.data.data);
+                // Fetch both candidates and students assigned to this ivy expert
+                const [candidatesRes, studentsRes, serviceStudentsRes] = await Promise.all([
+                    axios.get(`${IVY_API_URL}/ivy-expert-candidates/my-candidates`),
+                    axios.get(`${IVY_API_URL}/ivy-expert-candidates/my-ivy-students`),
+                    axios.get(`${IVY_API_URL}/ivy-service/my-students`),
+                ]);
+
+                if (candidatesRes.data.success) {
+                    setMyCandidates(candidatesRes.data.candidates);
+                }
+                if (studentsRes.data.success) {
+                    setMyStudents(studentsRes.data.students);
+                }
+                if (serviceStudentsRes.data.success) {
+                    setStudents(serviceStudentsRes.data.data);
                 }
             } catch (err: any) {
-                console.error('Error fetching students:', err);
-                setError('Failed to load students');
+                console.error('Error fetching dashboard data:', err);
+                setError('Failed to load dashboard data');
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchStudents();
+        fetchDashboardData();
     }, [selectedStudentId]);
 
     useEffect(() => {
@@ -289,14 +340,14 @@ function IvyExpertDashboard() {
                         <button
                             onClick={() => {
                                 const resolvedUserId = userIdForProfile || selectedStudent?.studentId.userId || selectedStudentId;
-                                router.push(`/ivy-league/candidate-profile?userId=${resolvedUserId}`);
+                                router.push(`/ivy-league/ivy-expert/student-report/${resolvedUserId}`);
                             }}
                             className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-3 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg"
                         >
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            View Candidate Profile
+                            View Candidate Report
                         </button>
                     </div>
                 </header>
@@ -434,52 +485,273 @@ function IvyExpertDashboard() {
         );
     }
 
-    // Show student list when no student is selected
+    // Show two-section dashboard when no student is selected
+
+    const getCandidateName = (c: IvyCandidate) =>
+        [c.firstName, c.middleName, c.lastName].filter(Boolean).join(' ');
+
+    const getStudentName = (s: IvyStudentItem) =>
+        [s.firstName, s.middleName, s.lastName].filter(Boolean).join(' ');
+
+    const getTestStatusBadge = (status: string) => {
+        const map: Record<string, { label: string; className: string }> = {
+            'not-started': { label: 'Not Started', className: 'bg-gray-100 text-gray-800' },
+            'in-progress': { label: 'In Progress', className: 'bg-yellow-100 text-yellow-800' },
+            completed: { label: 'Completed', className: 'bg-green-100 text-green-800' },
+        };
+        const s = map[status] || map['not-started'];
+        return (
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${s.className}`}>
+                {s.label}
+            </span>
+        );
+    };
+
+    const filteredCandidates = myCandidates.filter((c) => {
+        if (!candidateSearch) return true;
+        const q = candidateSearch.toLowerCase();
+        return getCandidateName(c).toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.schoolName.toLowerCase().includes(q);
+    });
+
+    const filteredStudents = myStudents.filter((s) => {
+        if (!studentSearch) return true;
+        const q = studentSearch.toLowerCase();
+        return getStudentName(s).toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || (s.schoolName || '').toLowerCase().includes(q);
+    });
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-5xl mx-auto">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Student Selection</h1>
-                <p className="text-gray-600 mb-8">Select a student to manage their Ivy League journey.</p>
+        <div className="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto">
+                {/* Header */}
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-1">Ivy Expert Dashboard</h1>
+                    <p className="text-gray-600">Manage your assigned Ivy League candidates and students</p>
+                </div>
 
-                <div className="bg-white shadow-sm overflow-hidden sm:rounded-xl border border-gray-200">
-                    <ul className="divide-y divide-gray-200">
-                        {students.length === 0 ? (
-                            <li className="px-6 py-8 text-center text-gray-500">No students assigned yet.</li>
+                {/* Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-gray-600 mb-1">Ivy Candidates</p>
+                                <p className="text-3xl font-bold text-gray-900">{myCandidates.length}</p>
+                            </div>
+                            <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-amber-100 text-amber-600">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-gray-600 mb-1">Ivy Students</p>
+                                <p className="text-3xl font-bold text-gray-900">{myStudents.length}</p>
+                            </div>
+                            <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-green-100 text-green-600">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Section 1: Ivy Candidates ── */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
+                    <div className="p-6 border-b border-gray-200">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-900">Ivy Candidates</h2>
+                                    <p className="text-sm text-gray-500">Candidates assigned to you for evaluation</p>
+                                </div>
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Search candidates..."
+                                value={candidateSearch}
+                                onChange={(e) => setCandidateSearch(e.target.value)}
+                                className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent w-64 text-gray-900"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        {filteredCandidates.length === 0 ? (
+                            <div className="text-center py-12">
+                                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                </svg>
+                                <p className="mt-2 text-gray-500 font-medium">No candidates assigned yet</p>
+                            </div>
                         ) : (
-                            students.map((service) => (
-                                <li key={service._id}>
-                                    <Link href={`/ivy-league/ivy-expert?studentId=${service.studentId._id}&userId=${service.studentId.userId || ''}&studentIvyServiceId=${service._id}`} className="block hover:bg-gray-50 transition-colors">
-                                        <div className="px-6 py-5 flex items-center justify-between">
-                                            <div className="flex items-center">
-                                                <div className="flex-shrink-0 h-12 w-12">
-                                                    <div className="h-12 w-12 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 font-bold text-lg">
-                                                        {service.studentId.firstName ? service.studentId.firstName.charAt(0).toUpperCase() : '?'}
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Candidate</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">School</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Grade</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Test Status</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Score</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {filteredCandidates.map((c) => (
+                                        <tr key={c._id} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center">
+                                                    <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                                                        <span className="text-amber-600 font-semibold text-sm">
+                                                            {c.firstName?.charAt(0)?.toUpperCase() || ''}{c.lastName?.charAt(0)?.toUpperCase() || ''}
+                                                        </span>
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <div className="text-sm font-medium text-gray-900">{getCandidateName(c)}</div>
+                                                        <div className="text-sm text-gray-500">{c.email}</div>
                                                     </div>
                                                 </div>
-                                                <div className="ml-4">
-                                                    <div className="text-base font-semibold text-gray-900">{service.studentId.firstName ? `${service.studentId.firstName} ${service.studentId.lastName}` : 'Unknown Student'}</div>
-                                                    <div className="text-sm text-gray-500">{service.studentId.email}</div>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                {/* <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${service.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                                                    }`}>
-                                                    {service.status}
-                                                </span> */}
-                                                <span className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white pointer-events-none">
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-900">{c.schoolName}</div>
+                                                <div className="text-sm text-gray-500">{c.curriculum}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{c.currentGrade}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap">{getTestStatusBadge(c.testStatus)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                                                {c.testStatus === 'completed' && c.totalScore !== null
+                                                    ? `${c.totalScore} / ${c.maxScore}`
+                                                    : '—'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
+                                                <button
+                                                    onClick={() => router.push(`/ivy-league/ivy-expert/candidates/${c.userId}`)}
+                                                    className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white hover:bg-blue-700"
+                                                >
                                                     View Details
-                                                </span>
-                                                <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                                                </svg>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                </li>
-                            ))
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         )}
-                    </ul>
+                    </div>
+
+                    {filteredCandidates.length > 0 && (
+                        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                            <p className="text-sm text-gray-600">
+                                Showing {filteredCandidates.length} candidate{filteredCandidates.length !== 1 ? 's' : ''}
+                            </p>
+                        </div>
+                    )}
+                </div>
+
+                {/* ── Section 2: Ivy Students ── */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                    <div className="p-6 border-b border-gray-200">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-900">Ivy Students</h2>
+                                    <p className="text-sm text-gray-500">Candidates converted to students under your guidance</p>
+                                </div>
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Search students..."
+                                value={studentSearch}
+                                onChange={(e) => setStudentSearch(e.target.value)}
+                                className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent w-64 text-gray-900"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        {filteredStudents.length === 0 ? (
+                            <div className="text-center py-12">
+                                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                </svg>
+                                <p className="mt-2 text-gray-500 font-medium">No students converted yet</p>
+                            </div>
+                        ) : (
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Student</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">School</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Grade</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Joined</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {filteredStudents.map((s) => (
+                                        <tr key={s.userId} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center">
+                                                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                                        <span className="text-green-600 font-semibold text-sm">
+                                                            {s.firstName?.charAt(0)?.toUpperCase() || ''}{s.lastName?.charAt(0)?.toUpperCase() || ''}
+                                                        </span>
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <div className="text-sm font-medium text-gray-900">{getStudentName(s)}</div>
+                                                        <div className="text-sm text-gray-500">{s.email}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-900">{s.schoolName || '—'}</div>
+                                                <div className="text-sm text-gray-500">{s.curriculum || ''}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{s.currentGrade || '—'}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                {s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-GB') : 'N/A'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => router.push(`/ivy-league/ivy-expert?studentId=${s.studentId}&userId=${s.userId}&studentIvyServiceId=${s.studentIvyServiceId}`)}
+                                                        className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white hover:bg-blue-700"
+                                                    >
+                                                        View Details
+                                                    </button>
+                                                    <button
+                                                        onClick={() => router.push(`/ivy-league/ivy-expert/student-report/${s.userId}`)}
+                                                        className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-purple-600 text-white hover:bg-purple-700"
+                                                    >
+                                                        View Report
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+
+                    {filteredStudents.length > 0 && (
+                        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                            <p className="text-sm text-gray-600">
+                                Showing {filteredStudents.length} student{filteredStudents.length !== 1 ? 's' : ''}
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

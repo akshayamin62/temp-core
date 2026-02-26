@@ -18,6 +18,9 @@ import {
     deleteProjectHandler,
     updateWeightagesHandler,
     getAcademicExcellenceScoreHandler,
+    subSectionFileUploadMiddleware,
+    uploadSubSectionFileHandler,
+    deleteSubSectionFileHandler,
 } from '../controllers/pointer1.controller';
 import { authorize } from '../middleware/authorize';
 import { USER_ROLE } from '../types/roles';
@@ -78,5 +81,11 @@ router.put('/academic/weightages', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.ST
 
 // GET /api/pointer1/academic/score/:studentId - Get academic excellence score
 router.get('/academic/score/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), getAcademicExcellenceScoreHandler);
+
+// POST /api/pointer1/academic/subsection/file - Upload file to informal sub-section
+router.post('/academic/subsection/file', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), subSectionFileUploadMiddleware, uploadSubSectionFileHandler);
+
+// DELETE /api/pointer1/academic/subsection/file - Delete file from informal sub-section
+router.delete('/academic/subsection/file', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), deleteSubSectionFileHandler);
 
 export default router;

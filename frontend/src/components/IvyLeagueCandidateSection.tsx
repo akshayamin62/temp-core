@@ -155,10 +155,10 @@ const PARENT_INTERVIEW_SECTIONS = [
 ];
 
 const SECTION_COLOR_MAP: Record<string, { header: string; dot: string; ring: string }> = {
-  blue:    { header: 'bg-blue-50 border-blue-200',    dot: 'bg-blue-600',    ring: 'focus:ring-blue-500 focus:border-blue-500' },
-  emerald: { header: 'bg-emerald-50 border-emerald-200', dot: 'bg-emerald-600', ring: 'focus:ring-emerald-500 focus:border-emerald-500' },
-  violet:  { header: 'bg-violet-50 border-violet-200',  dot: 'bg-violet-600',  ring: 'focus:ring-violet-500 focus:border-violet-500' },
-  amber:   { header: 'bg-amber-50 border-amber-200',   dot: 'bg-amber-600',   ring: 'focus:ring-amber-500 focus:border-amber-500' },
+  blue:    { header: 'bg-blue-600',    dot: 'bg-blue-600',    ring: 'focus:ring-blue-500 focus:border-blue-500' },
+  emerald: { header: 'bg-blue-600', dot: 'bg-emerald-600', ring: 'focus:ring-emerald-500 focus:border-emerald-500' },
+  violet:  { header: 'bg-blue-600',  dot: 'bg-violet-600',  ring: 'focus:ring-violet-500 focus:border-violet-500' },
+  amber:   { header: 'bg-blue-600',   dot: 'bg-amber-600',   ring: 'focus:ring-amber-500 focus:border-amber-500' },
 };
 
 /* ─── Props ─── */
@@ -426,7 +426,7 @@ export default function IvyLeagueCandidateSection({
                       {/* Radar Chart */}
                       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                         <h4 className="text-xs font-bold text-gray-700 mb-0.5 uppercase tracking-wide">Strengths Profile</h4>
-                        <p className="text-[11px] text-gray-400 mb-3 font-bold">Percentage scored in each section</p>
+                        <p className="text-xs text-gray-900 mb-3 font-bold">Percentage scored in each section</p>
                         <ResponsiveContainer width="100%" height={260}>
                           <RadarChart data={radarData} outerRadius="75%">
                             <PolarGrid stroke="#e5e7eb" />
@@ -440,7 +440,7 @@ export default function IvyLeagueCandidateSection({
                       {/* Donut Chart */}
                       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                         <h4 className="text-xs font-bold text-gray-700 mb-0.5 uppercase tracking-wide">Overall Accuracy</h4>
-                        <p className="text-[11px] text-gray-400 mb-3 font-bold">Distribution of {totalQ} questions</p>
+                        <p className="text-xs text-gray-900 mb-3 font-bold">Distribution of {totalQ} questions</p>
                         <div className="relative">
                           <ResponsiveContainer width="100%" height={260}>
                             <PieChart>
@@ -470,7 +470,7 @@ export default function IvyLeagueCandidateSection({
                       {/* Bar Chart */}
                       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                         <h4 className="text-xs font-bold text-gray-700 mb-0.5 uppercase tracking-wide">Section Scores</h4>
-                        <p className="text-[11px] text-gray-400 mb-3 font-bold">Score compared to maximum marks</p>
+                        <p className="text-xs text-gray-900 mb-3 font-bold">Score compared to maximum marks</p>
                         <ResponsiveContainer width="100%" height={260}>
                           <BarChart data={barData} barGap={4}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
@@ -491,7 +491,7 @@ export default function IvyLeagueCandidateSection({
                       {/* Section Accuracy */}
                       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                         <h4 className="text-xs font-bold text-gray-700 mb-0.5 uppercase tracking-wide">Section Accuracy</h4>
-                        <p className="text-[11px] text-gray-400 mb-3 font-bold">Percentage of attempted questions answered correctly</p>
+                        <p className="text-xs text-gray-900 mb-3 font-bold">Percentage of attempted questions answered correctly</p>
                         <div className="space-y-5 mt-2">
                           {accuracyData.map((sec, idx) => (
                             <div key={idx}>
@@ -674,18 +674,18 @@ function renderInterviewTab(
 
         return (
           <div key={sIdx} className="border border-gray-200 rounded-xl overflow-hidden">
-            <div className={`flex items-center justify-between px-6 py-4 border-b ${cl.header}`}>
+            <div className={`flex items-center justify-between px-6 py-4 border-b border-blue-500 ${cl.header}`}>
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Section {sIdx + 1}</p>
-                <h4 className="text-base font-bold text-gray-900">{section.icon} {section.title}</h4>
+                <p className="text-xs font-semibold text-blue-100 uppercase tracking-wide mb-0.5">Section {sIdx + 1}</p>
+                <h4 className="text-base font-bold text-white">{section.icon} {section.title}</h4>
               </div>
               <div className="text-right">
-                <p className="text-xs text-gray-500 font-medium">Section Score</p>
-                <p className="text-2xl font-extrabold text-gray-800">
-                  {sectionAvg ?? <span className="text-gray-400">—</span>}
-                  {sectionAvg && <span className="text-sm font-semibold text-gray-400"> / 5</span>}
+                <p className="text-xs text-blue-100 font-medium">Section Score</p>
+                <p className="text-2xl font-extrabold text-white">
+                  {sectionAvg ?? <span className="text-blue-200">—</span>}
+                  {sectionAvg && <span className="text-sm font-semibold text-blue-200"> / 5</span>}
                 </p>
-                <p className="text-xs text-gray-400">{rated.length}/{sScores.length} rated</p>
+                <p className="text-xs text-blue-200">{rated.length}/{sScores.length} rated</p>
               </div>
             </div>
             <div className="divide-y divide-gray-100">

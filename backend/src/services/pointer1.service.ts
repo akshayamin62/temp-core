@@ -914,3 +914,86 @@ export const getAcademicExcellenceScore = async (
         informalSectionsWithScores
     };
 };
+
+/** Upload a file to an informal sub-section */
+export const uploadSubSectionFile = async (
+    studentId: string,
+    studentIvyServiceId: string,
+    sectionId: string,
+    subSectionId: string,
+    file: Express.Multer.File
+) => {
+    const data = await getAcademicData(studentId, studentIvyServiceId);
+
+    const section = data.informal.sections.find(
+        (s: any) => s._id.toString() === sectionId
+    );
+    if (!section) throw new Error('Section not found in informal tab');
+
+    const subSection = section.subSections.find(
+        (ss: any) => ss._id.toString() === subSectionId
+    );
+    if (!subSection) throw new Error('Sub-section not found');
+
+    // Save file to disk
+    const subfolder = `informal/${studentId}`;
+    const folderPath = path.join(UPLOAD_DIR_P1, subfolder);
+    ensureDir(folderPath);
+
+    const fileName = `${Date.now()}-${file.originalname}`;
+    const diskPath = path.join(folderPath, fileName);
+    fs.writeFileSync(diskPath, file.buffer);
+
+    const filePath = `/uploads/pointer1/${subfolder}/${fileName}`;
+
+    // Push into sub-section files array
+    (subSection as any).files = (subSection as any).files || [];
+    (subSection as any).files.push({
+        originalName: file.originalname,
+        fileName,
+        filePath,
+        fileSize: file.size,
+        mimeType: file.mimetype,
+        uploadedAt: new Date(),
+    });
+
+    await data.save();
+    return data;
+};
+
+/** Delete a file from an informal sub-section */
+export const deleteSubSectionFile = async (
+    studentId: string,
+    studentIvyServiceId: string,
+    sectionId: string,
+    subSectionId: string,
+    fileId: string
+) => {
+    const data = await getAcademicData(studentId, studentIvyServiceId);
+
+    const section = data.informal.sections.find(
+        (s: any) => s._id.toString() === sectionId
+    );
+    if (!section) throw new Error('Section not found in informal tab');
+
+    const subSection = section.subSections.find(
+        (ss: any) => ss._id.toString() === subSectionId
+    );
+    if (!subSection) throw new Error('Sub-section not found');
+
+    const files: any[] = (subSection as any).files || [];
+    const fileIndex = files.findIndex((f: any) => f._id.toString() === fileId);
+    if (fileIndex === -1) throw new Error('File not found');
+
+    const fileRecord = files[fileIndex];
+
+    // Delete file from disk
+    const diskPath = path.join(process.cwd(), fileRecord.filePath);
+    if (fs.existsSync(diskPath)) {
+        try { fs.unlinkSync(diskPath); } catch (e) { /* ignore */ }
+    }
+
+    files.splice(fileIndex, 1);
+    await data.save();
+    return data;
+};

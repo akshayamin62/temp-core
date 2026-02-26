@@ -9,6 +9,7 @@ import {
   saveInterviewData,
   getInterviewData,
 } from '../controllers/ivyLeagueAdmin.controller';
+import { assignExpertToCandidate } from '../controllers/ivyExpertCandidate.controller';
 
 const router = express.Router();
 
@@ -35,5 +36,8 @@ router.put('/interview/:userId', saveInterviewData);
 
 // POST /api/super-admin/ivy-league/convert-to-student — Convert candidate to student
 router.post('/convert-to-student', convertCandidateToStudent);
+
+// POST /api/super-admin/ivy-league/assign-expert — Assign ivy expert to candidate
+router.post('/assign-expert', assignExpertToCandidate);
 
 export default router;

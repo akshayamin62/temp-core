@@ -21,6 +21,8 @@ import {
     deleteProject,
     updateWeightages,
     getAcademicExcellenceScore,
+    uploadSubSectionFile,
+    deleteSubSectionFile,
 } from '../services/pointer1.service';
 import { AcademicDocumentType } from '../types/AcademicDocumentType';
 
@@ -446,6 +448,60 @@ export const getAcademicExcellenceScoreHandler = async (req: Request, res: Respo
         res.status(200).json({
             success: true,
             data: scoreData,
+        });
+    } catch (error: any) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+// ========================
+// Sub-section File Upload Handlers
+// ========================
+
+export const subSectionFileUploadMiddleware = upload.single('file');
+
+export const uploadSubSectionFileHandler = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { studentId, studentIvyServiceId, sectionId, subSectionId } = req.body;
+        const file = req.file;
+
+        if (!file) {
+            res.status(400).json({ success: false, message: 'No file uploaded' });
+            return;
+        }
+
+        if (!studentId || !studentIvyServiceId || !sectionId || !subSectionId) {
+            res.status(400).json({ success: false, message: 'All fields are required' });
+            return;
+        }
+
+        const data = await uploadSubSectionFile(studentId, studentIvyServiceId, sectionId, subSectionId, file);
+
+        res.status(200).json({
+            success: true,
+            message: 'File uploaded successfully',
+            data,
+        });
+    } catch (error: any) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const deleteSubSectionFileHandler = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { studentId, studentIvyServiceId, sectionId, subSectionId, fileId } = req.body;
+
+        if (!studentId || !studentIvyServiceId || !sectionId || !subSectionId || !fileId) {
+            res.status(400).json({ success: false, message: 'All fields are required' });
+            return;
+        }
+
+        const data = await deleteSubSectionFile(studentId, studentIvyServiceId, sectionId, subSectionId, fileId);
+
+        res.status(200).json({
+            success: true,
+            message: 'File deleted successfully',
+            data,
         });
     } catch (error: any) {
         res.status(400).json({ success: false, message: error.message });

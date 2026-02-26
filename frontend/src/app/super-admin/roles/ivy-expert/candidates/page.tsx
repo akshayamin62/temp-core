@@ -29,6 +29,8 @@ interface IvyCandidate {
   maxScore: number;
   completedSections: number;
   createdAt: string;
+  assignedIvyExpertId?: string | null;
+  assignedExpertName?: string | null;
 }
 
 interface IvyExpertOption {
@@ -55,6 +57,12 @@ export default function IvyCandidatesPage() {
   const [ivyExperts, setIvyExperts] = useState<IvyExpertOption[]>([]);
   const [selectedExpertId, setSelectedExpertId] = useState('');
   const [converting, setConverting] = useState(false);
+
+  // Assign Expert modal state
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assignTarget, setAssignTarget] = useState<IvyCandidate | null>(null);
+  const [assignExpertId, setAssignExpertId] = useState('');
+  const [assigning, setAssigning] = useState(false);
 
   useEffect(() => {
     if (hasFetchedRef.current) return;
@@ -140,6 +148,40 @@ export default function IvyCandidatesPage() {
       toast.error(err.response?.data?.message || 'Failed to convert candidate');
     } finally {
       setConverting(false);
+    }
+  };
+
+  const handleOpenAssign = (candidate: IvyCandidate) => {
+    setAssignTarget(candidate);
+    setAssignExpertId(candidate.assignedIvyExpertId || '');
+    setShowAssignModal(true);
+    if (ivyExperts.length === 0) fetchIvyExperts();
+  };
+
+  const handleAssignExpert = async () => {
+    if (!assignTarget || !assignExpertId) {
+      toast.error('Please select an Ivy Expert');
+      return;
+    }
+    setAssigning(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(
+        `${API_URL}/super-admin/ivy-league/assign-expert`,
+        { userId: assignTarget.userId, ivyExpertId: assignExpertId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        toast.success('Ivy Expert assigned successfully!');
+        setShowAssignModal(false);
+        setAssignTarget(null);
+        setLoading(true);
+        fetchCandidates();
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to assign expert');
+    } finally {
+      setAssigning(false);
     }
   };
 
@@ -305,6 +347,7 @@ export default function IvyCandidatesPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Grade</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Test Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Score</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Assigned Expert</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Joined</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -337,6 +380,15 @@ export default function IvyCandidatesPage() {
                             : '—'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {c.assignedExpertName ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                              {c.assignedExpertName}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">Not Assigned</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-GB') : 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
@@ -346,6 +398,12 @@ export default function IvyCandidatesPage() {
                               className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white hover:bg-blue-700"
                             >
                               View Details
+                            </button>
+                            <button
+                              onClick={() => handleOpenAssign(c)}
+                              className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-purple-600 text-white hover:bg-purple-700"
+                            >
+                              {c.assignedIvyExpertId ? 'Change Expert' : 'Assign Expert'}
                             </button>
                             <button
                               onClick={() => handleOpenConvert(c)}
@@ -426,6 +484,70 @@ export default function IvyCandidatesPage() {
                   className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {converting ? 'Converting...' : 'Convert'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Assign Expert Modal */}
+        {showAssignModal && assignTarget && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">
+                  {assignTarget.assignedIvyExpertId ? 'Change Ivy Expert' : 'Assign Ivy Expert'}
+                </h2>
+                <button
+                  onClick={() => setShowAssignModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-500">Candidate</p>
+                <p className="text-base font-semibold text-gray-900">{getCandidateName(assignTarget)}</p>
+                <p className="text-sm text-gray-500">{assignTarget.email}</p>
+                {assignTarget.assignedExpertName && (
+                  <p className="text-sm text-purple-600 mt-1">Currently assigned to: {assignTarget.assignedExpertName}</p>
+                )}
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Ivy Expert <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={assignExpertId}
+                  onChange={(e) => setAssignExpertId(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                >
+                  <option value="">Select an Ivy Expert...</option>
+                  {ivyExperts.map((exp) => (
+                    <option key={exp._id} value={exp._id}>
+                      {getExpertName(exp)} ({exp.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowAssignModal(false)}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAssignExpert}
+                  disabled={!assignExpertId || assigning}
+                  className="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {assigning ? 'Assigning...' : 'Assign Expert'}
                 </button>
               </div>
             </div>

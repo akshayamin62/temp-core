@@ -27,6 +27,16 @@ interface IFormalSubSection {
     score?: number;
 }
 
+interface IInformalFile {
+    _id?: mongoose.Types.ObjectId;
+    originalName: string;
+    fileName: string;
+    filePath: string;
+    fileSize: number;
+    mimeType: string;
+    uploadedAt: Date;
+}
+
 interface IInformalSubSection {
     _id?: mongoose.Types.ObjectId;
     testType: 'olympiad' | 'test' | 'project';
@@ -36,6 +46,7 @@ interface IInformalSubSection {
     projects: IProject[];
     overallFeedback?: string;
     score?: number;
+    files: IInformalFile[];
 }
 
 interface IFormalSection {
@@ -92,6 +103,15 @@ const FormalSubSectionSchema = new Schema({
     score: { type: Number, min: 0, max: 10, default: 0 }
 });
 
+const InformalFileSchema = new Schema({
+    originalName: { type: String, required: true },
+    fileName: { type: String, required: true },
+    filePath: { type: String, required: true },
+    fileSize: { type: Number, default: 0 },
+    mimeType: { type: String, default: '' },
+    uploadedAt: { type: Date, default: Date.now }
+});
+
 const InformalSubSectionSchema = new Schema({
     testType: { 
         type: String, 
@@ -103,7 +123,8 @@ const InformalSubSectionSchema = new Schema({
     subjects: [SubjectSchema],
     projects: [ProjectSchema],
     overallFeedback: { type: String, default: '' },
-    score: { type: Number, min: 0, max: 10, default: 0 }
+    score: { type: Number, min: 0, max: 10, default: 0 },
+    files: [InformalFileSchema]
 });
 
 const FormalSectionSchema = new Schema({
