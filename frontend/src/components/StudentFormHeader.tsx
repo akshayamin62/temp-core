@@ -3,7 +3,7 @@
 interface StudentFormHeaderProps {
   studentName: string;
   serviceName: string;
-  editMode: 'admin' | 'OPS';
+  editMode: 'admin' | 'OPS' | 'SUPER_ADMIN' | 'EDUPLAN_COACH' | 'COUNSELOR' | 'VIEW';
 }
 
 export default function StudentFormHeader({

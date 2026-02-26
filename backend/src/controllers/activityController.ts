@@ -3,10 +3,20 @@ import { AuthRequest } from '../middleware/auth';
 import { MonthlyFocus } from '../models/MonthlyFocus';
 import { DailyPlanner } from '../models/DailyPlanner';
 import Student from '../models/Student';
+import StudentServiceRegistration from '../models/StudentServiceRegistration';
 
 /* ─────────── helpers ─────────── */
 
-const getStudentId = async (userId: string) => {
+/**
+ * Resolve studentId:
+ *  1. If a registrationId is provided, look up the registration → studentId
+ *  2. Otherwise fall back to the logged-in user's Student record
+ */
+const getStudentId = async (userId: string, registrationId?: string) => {
+  if (registrationId) {
+    const reg = await StudentServiceRegistration.findById(registrationId).select('studentId').lean();
+    if (reg?.studentId) return reg.studentId.toString();
+  }
   const student = await Student.findOne({ userId });
   return student?._id?.toString() ?? null;
 };
@@ -32,10 +42,9 @@ function typeToDomain(type: string): string {
 /** GET  /api/activity/:registrationId/monthly-focus?month=YYYY-MM */
 export const getMonthlyFocus = async (req: AuthRequest, res: Response) => {
   try {
-    const studentId = await getStudentId(req.user!.userId);
-    if (!studentId) return res.status(404).json({ success: false, message: 'Student not found' });
-
     const { registrationId } = req.params;
+    const studentId = await getStudentId(req.user!.userId, registrationId);
+    if (!studentId) return res.status(404).json({ success: false, message: 'Student not found' });
     const month = (req.query.month as string) || new Date().toISOString().slice(0, 7);
 
     const focus = await MonthlyFocus.findOne({ studentId, registrationId, month });
@@ -48,10 +57,9 @@ export const getMonthlyFocus = async (req: AuthRequest, res: Response) => {
 /** PUT  /api/activity/:registrationId/monthly-focus */
 export const upsertMonthlyFocus = async (req: AuthRequest, res: Response) => {
   try {
-    const studentId = await getStudentId(req.user!.userId);
-    if (!studentId) return res.status(404).json({ success: false, message: 'Student not found' });
-
     const { registrationId } = req.params;
+    const studentId = await getStudentId(req.user!.userId, registrationId);
+    if (!studentId) return res.status(404).json({ success: false, message: 'Student not found' });
     const { month, academicActivities, nonAcademicActivities, habitFocus, psychologicalGrooming, physicalGrooming, readingBooks } = req.body;
 
     if (!month || !/^\d{4}-\d{2}$/.test(month)) {
@@ -87,10 +95,9 @@ export const upsertMonthlyFocus = async (req: AuthRequest, res: Response) => {
 /** GET  /api/activity/:registrationId/planner?date=YYYY-MM-DD */
 export const getDailyPlanner = async (req: AuthRequest, res: Response) => {
   try {
-    const studentId = await getStudentId(req.user!.userId);
-    if (!studentId) return res.status(404).json({ success: false, message: 'Student not found' });
-
     const { registrationId } = req.params;
+    const studentId = await getStudentId(req.user!.userId, registrationId);
+    if (!studentId) return res.status(404).json({ success: false, message: 'Student not found' });
     const date = req.query.date as string;
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return res.status(400).json({ success: false, message: 'Invalid date (expected YYYY-MM-DD)' });
@@ -106,10 +113,9 @@ export const getDailyPlanner = async (req: AuthRequest, res: Response) => {
 /** PUT  /api/activity/:registrationId/planner */
 export const upsertDailyPlanner = async (req: AuthRequest, res: Response) => {
   try {
-    const studentId = await getStudentId(req.user!.userId);
-    if (!studentId) return res.status(404).json({ success: false, message: 'Student not found' });
-
     const { registrationId } = req.params;
+    const studentId = await getStudentId(req.user!.userId, registrationId);
+    if (!studentId) return res.status(404).json({ success: false, message: 'Student not found' });
     const { date, ...fields } = req.body;
 
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -133,10 +139,9 @@ export const upsertDailyPlanner = async (req: AuthRequest, res: Response) => {
  */
 export const getMonthSummary = async (req: AuthRequest, res: Response) => {
   try {
-    const studentId = await getStudentId(req.user!.userId);
-    if (!studentId) return res.status(404).json({ success: false, message: 'Student not found' });
-
     const { registrationId } = req.params;
+    const studentId = await getStudentId(req.user!.userId, registrationId);
+    if (!studentId) return res.status(404).json({ success: false, message: 'Student not found' });
     const month = (req.query.month as string) || new Date().toISOString().slice(0, 7);
 
     const regex = new RegExp(`^${month}-`);
@@ -182,10 +187,9 @@ export const getMonthSummary = async (req: AuthRequest, res: Response) => {
  */
 export const getActivityAnalytics = async (req: AuthRequest, res: Response) => {
   try {
-    const studentId = await getStudentId(req.user!.userId);
-    if (!studentId) return res.status(404).json({ success: false, message: 'Student not found' });
-
     const { registrationId } = req.params;
+    const studentId = await getStudentId(req.user!.userId, registrationId);
+    if (!studentId) return res.status(404).json({ success: false, message: 'Student not found' });
     const months = Math.min(parseInt(req.query.months as string) || 3, 60); // up to 5 years
 
     // Calculate date range
