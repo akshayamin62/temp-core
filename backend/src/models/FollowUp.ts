@@ -39,6 +39,8 @@ export interface IFollowUp extends Document {
   meetingType: MEETING_TYPE; // Online or Face to Face
   zohoMeetingKey?: string; // Zoho meeting session key
   zohoMeetingUrl?: string; // Zoho meeting join URL
+  zohoMeetingId?: string; // Zoho meeting ID
+  zohoMeetingPassword?: string; // Zoho meeting password
   status: FOLLOWUP_STATUS;
   stageAtFollowUp: LEAD_STAGE; // Stage of lead at the time of follow-up
   stageChangedTo?: LEAD_STAGE; // If stage was changed during this follow-up
@@ -94,6 +96,14 @@ const followUpSchema = new Schema<IFollowUp>(
       default: null,
     },
     zohoMeetingUrl: {
+      type: String,
+      default: null,
+    },
+    zohoMeetingId: {
+      type: String,
+      default: null,
+    },
+    zohoMeetingPassword: {
       type: String,
       default: null,
     },

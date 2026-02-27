@@ -21,6 +21,7 @@ export interface ZohoMeetingResult {
   meetingUrl: string; // join URL for all participants
   startUrl?: string; // host start URL (if returned)
   meetingNumber?: string;
+  meetingPassword?: string; // meeting password (e.g. "nsPd75")
   topic: string;
   startTime: string;
   duration: number;
@@ -305,6 +306,7 @@ export const createZohoMeeting = async (
       meetingUrl: session.joinLink || session.joinUrl || session.meetingURL || "",
       startUrl: session.startLink || session.startUrl || session.hostUrl || "",
       meetingNumber: session.meetingKey || session.meetingNumber || session.sessionId || "",
+      meetingPassword: session.pwd || "",
       topic: session.topic || topic,
       startTime: session.startTime || dateObj.toISOString(),
       duration: session.duration || duration,

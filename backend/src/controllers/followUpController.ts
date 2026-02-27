@@ -221,6 +221,8 @@ export const createFollowUp = async (
 
         followUp.zohoMeetingKey = zohoResult.meetingKey;
         followUp.zohoMeetingUrl = zohoResult.meetingUrl;
+        followUp.zohoMeetingId = zohoResult.meetingNumber || zohoResult.meetingKey;
+        followUp.zohoMeetingPassword = zohoResult.meetingPassword || "";
       } catch (zohoError) {
         console.error("⚠️  Zoho Meeting creation failed (follow-up saved without link):", zohoError);
         // Non-fatal: follow-up is still created, just without the meeting link
@@ -244,8 +246,10 @@ export const createFollowUp = async (
       duration,
       meetingType: effectiveMeetingType,
       meetingUrl: followUp.zohoMeetingUrl || undefined,
+      meetingId: followUp.zohoMeetingId || undefined,
+      meetingPassword: followUp.zohoMeetingPassword || undefined,
       otherPartyName: "",
-      notes: notes || undefined,
+      agenda: notes || undefined,
     };
 
     // Get counselor user info for email
@@ -657,13 +661,15 @@ export const updateFollowUp = async (
           ? FOLLOWUP_STATUS.CONVERTED_TO_STUDENT
           : FOLLOWUP_STATUS.SCHEDULED;
 
+      const nextEffectiveMeetingType = nextFollowUp.meetingType || MEETING_TYPE.ONLINE;
+
       newFollowUp = new FollowUp({
         leadId: followUp.leadId,
         counselorId,
         scheduledDate: nextDate,
         scheduledTime: nextFollowUp.scheduledTime,
         duration: nextFollowUp.duration || 30,
-        meetingType: nextFollowUp.meetingType || MEETING_TYPE.ONLINE,
+        meetingType: nextEffectiveMeetingType,
         status: nextStatus,
         stageAtFollowUp: effectiveStage,
         followUpNumber: nextFollowUpNumber,
@@ -671,8 +677,81 @@ export const updateFollowUp = async (
         createdBy: userId,
       });
 
+      // If meeting type is Online, create a Zoho Meeting for the next follow-up
+      if (nextEffectiveMeetingType === MEETING_TYPE.ONLINE) {
+        try {
+          const [nHours, nMins] = nextFollowUp.scheduledTime.split(":").map(Number);
+          const meetingStartTime = new Date(nextDate);
+          meetingStartTime.setHours(nHours, nMins, 0, 0);
+
+          const participantEmails: string[] = [];
+          if (lead?.email) participantEmails.push(lead.email);
+
+          // Get counselor's email
+          const counselorForMeeting = await Counselor.findById(counselorId).populate("userId", "email");
+          const counselorEmailForMeeting = (counselorForMeeting?.userId as any)?.email;
+          if (counselorEmailForMeeting) participantEmails.push(counselorEmailForMeeting);
+
+          const zohoResult = await createZohoMeeting({
+            topic: `Follow-up #${nextFollowUpNumber} - ${lead?.name || "Lead"}`,
+            startTime: meetingStartTime,
+            duration: nextFollowUp.duration || 30,
+            agenda: `Follow-up meeting with ${lead?.name || "Lead"}`,
+            participantEmails,
+          });
+
+          newFollowUp.zohoMeetingKey = zohoResult.meetingKey;
+          newFollowUp.zohoMeetingUrl = zohoResult.meetingUrl;
+          newFollowUp.zohoMeetingId = zohoResult.meetingNumber || zohoResult.meetingKey;
+          newFollowUp.zohoMeetingPassword = zohoResult.meetingPassword || "";
+        } catch (zohoError) {
+          console.error("⚠️  Zoho Meeting creation failed for next follow-up (saved without link):", zohoError);
+        }
+      }
+
       await newFollowUp.save();
       await newFollowUp.populate("leadId", "name email mobileNumber city serviceTypes stage conversionStatus");
+
+      // Send email notifications for the next follow-up (non-blocking)
+      const nextFormattedDate = nextDate.toLocaleDateString("en-US", {
+        weekday: "long", year: "numeric", month: "long", day: "numeric",
+      });
+
+      const nextMeetingEmailDetails = {
+        subject: `Follow-up #${nextFollowUpNumber} - ${lead?.name || "Lead"}`,
+        date: nextFormattedDate,
+        time: nextFollowUp.scheduledTime,
+        duration: nextFollowUp.duration || 30,
+        meetingType: nextEffectiveMeetingType,
+        meetingUrl: newFollowUp.zohoMeetingUrl || undefined,
+        meetingId: newFollowUp.zohoMeetingId || undefined,
+        meetingPassword: newFollowUp.zohoMeetingPassword || undefined,
+        otherPartyName: "",
+        agenda: undefined as string | undefined,
+      };
+
+      // Get counselor info for email
+      const counselorForNextEmail = await Counselor.findById(counselorId).populate("userId", "email firstName middleName lastName");
+      const counselorUserNext = counselorForNextEmail?.userId as any;
+      const counselorFullNameNext = counselorUserNext
+        ? [counselorUserNext.firstName, counselorUserNext.middleName, counselorUserNext.lastName].filter(Boolean).join(" ")
+        : "Your Counselor";
+
+      // Email to lead
+      if (lead?.email) {
+        sendMeetingScheduledEmail(lead.email, lead.name, {
+          ...nextMeetingEmailDetails,
+          otherPartyName: counselorFullNameNext,
+        }).catch((err) => console.error("Failed to send next follow-up email to lead:", err));
+      }
+
+      // Email to counselor
+      if (counselorUserNext?.email) {
+        sendMeetingScheduledEmail(counselorUserNext.email, counselorFullNameNext, {
+          ...nextMeetingEmailDetails,
+          otherPartyName: lead?.name || "Lead",
+        }).catch((err) => console.error("Failed to send next follow-up email to counselor:", err));
+      }
     }
 
     // Populate and return updated follow-up

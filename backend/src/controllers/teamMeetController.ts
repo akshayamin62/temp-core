@@ -7,8 +7,8 @@ import Counselor from "../models/Counselor";
 import Admin from "../models/Admin";
 import mongoose from "mongoose";
 import { USER_ROLE } from "../types/roles";
-import { createZohoMeeting } from "../utils/zohoMeeting";
-import { sendMeetingScheduledEmail } from "../utils/email";
+import { createZohoMeeting, deleteZohoMeeting } from "../utils/zohoMeeting";
+import { sendMeetingPendingEmail, sendMeetingScheduledEmail, sendMeetingConfirmedEmail } from "../utils/email";
 
 /**
  * Helper: Get start and end of a day
@@ -260,35 +260,8 @@ export const createTeamMeet = async (
       status: TEAMMEET_STATUS.PENDING_CONFIRMATION,
     });
 
-    // If meeting type is Online, create a Zoho Meeting
-    const effectiveMeetingType = meetingType || TEAMMEET_TYPE.ONLINE;
-    if (effectiveMeetingType === TEAMMEET_TYPE.ONLINE) {
-      try {
-        // Build meeting start time from date + time
-        const [hours, mins] = scheduledTime.split(":").map(Number);
-        const meetingStartTime = new Date(scheduleDate);
-        meetingStartTime.setHours(hours, mins, 0, 0);
-
-        // Gather participant emails
-        const sender = await User.findById(userId).select("email");
-        const participantEmails: string[] = [];
-        if (sender?.email) participantEmails.push(sender.email);
-        if (recipient.email) participantEmails.push(recipient.email);
-
-        const zohoResult = await createZohoMeeting({
-          topic: subject,
-          startTime: meetingStartTime,
-          duration,
-          agenda: description || subject,
-          participantEmails,
-        });
-
-        teamMeet.zohoMeetingKey = zohoResult.meetingKey;
-        teamMeet.zohoMeetingUrl = zohoResult.meetingUrl;
-      } catch (zohoError) {
-        console.error("⚠️  Zoho Meeting creation failed (meeting saved without link):", zohoError);
-      }
-    }
+    // If meeting type is Online, Zoho Meeting will be created when status changes to CONFIRMED
+    // (see acceptTeamMeet handler)
 
     await teamMeet.save();
 
@@ -297,7 +270,7 @@ export const createTeamMeet = async (
       .populate("requestedBy", "firstName middleName lastName email role")
       .populate("requestedTo", "firstName middleName lastName email role");
 
-    // Send email notifications (non-blocking)
+    // Send email notification (non-blocking) — only to the receiver (pending confirmation)
     const formattedDate = scheduleDate.toLocaleDateString("en-US", {
       weekday: "long", year: "numeric", month: "long", day: "numeric",
     });
@@ -308,30 +281,19 @@ export const createTeamMeet = async (
       : "A team member";
     const recipientFullName = [recipient.firstName, recipient.middleName, recipient.lastName].filter(Boolean).join(" ");
 
-    const meetingEmailBase = {
-      subject,
-      date: formattedDate,
-      time: scheduledTime,
-      duration,
-      meetingType: effectiveMeetingType === TEAMMEET_TYPE.ONLINE ? "Online" : "Face to Face",
-      meetingUrl: teamMeet.zohoMeetingUrl || undefined,
-      notes: description || undefined,
-    };
+    const effectiveMeetingType = meetingType || TEAMMEET_TYPE.ONLINE;
 
-    // Email to recipient
+    // Email to recipient only (the person who needs to confirm)
     if (recipient.email) {
-      sendMeetingScheduledEmail(recipient.email, recipientFullName, {
-        ...meetingEmailBase,
+      sendMeetingPendingEmail(recipient.email, recipientFullName, {
+        subject,
+        date: formattedDate,
+        time: scheduledTime,
+        duration,
+        meetingType: effectiveMeetingType === TEAMMEET_TYPE.ONLINE ? "Online" : "Face to Face",
         otherPartyName: senderFullName,
-      }).catch((err) => console.error("Failed to send meeting email to recipient:", err));
-    }
-
-    // Email to sender
-    if (senderUser?.email) {
-      sendMeetingScheduledEmail(senderUser.email, senderFullName, {
-        ...meetingEmailBase,
-        otherPartyName: recipientFullName,
-      }).catch((err) => console.error("Failed to send meeting email to sender:", err));
+        agenda: description || undefined,
+      }).catch((err) => console.error("Failed to send pending meeting email to recipient:", err));
     }
 
     return res.status(201).json({
@@ -523,11 +485,84 @@ export const acceptTeamMeet = async (
     }
 
     teamMeet.status = TEAMMEET_STATUS.CONFIRMED;
+
+    // Create Zoho Meeting now that the meeting is confirmed
+    if (teamMeet.meetingType === TEAMMEET_TYPE.ONLINE) {
+      try {
+        const [hours, mins] = teamMeet.scheduledTime.split(":").map(Number);
+        const meetingStartTime = new Date(teamMeet.scheduledDate);
+        meetingStartTime.setHours(hours, mins, 0, 0);
+
+        const sender = await User.findById(teamMeet.requestedBy).select("email");
+        const recipient = await User.findById(teamMeet.requestedTo).select("email");
+        const participantEmails: string[] = [];
+        if (sender?.email) participantEmails.push(sender.email);
+        if (recipient?.email) participantEmails.push(recipient.email);
+
+        const zohoResult = await createZohoMeeting({
+          topic: teamMeet.subject,
+          startTime: meetingStartTime,
+          duration: teamMeet.duration,
+          agenda: teamMeet.description || teamMeet.subject,
+          participantEmails,
+        });
+
+        teamMeet.zohoMeetingKey = zohoResult.meetingKey;
+        teamMeet.zohoMeetingUrl = zohoResult.meetingUrl;
+        teamMeet.zohoMeetingId = zohoResult.meetingNumber || zohoResult.meetingKey;
+        teamMeet.zohoMeetingPassword = zohoResult.meetingPassword || "";
+      } catch (zohoError) {
+        console.error("⚠️  Zoho Meeting creation failed (meeting confirmed without link):", zohoError);
+      }
+    }
+
     await teamMeet.save();
 
     const populatedMeet = await TeamMeet.findById(teamMeetId)
       .populate("requestedBy", "firstName middleName lastName email role")
       .populate("requestedTo", "firstName middleName lastName email role");
+
+    // Send confirmation emails with meeting link to both parties
+    const senderUser = await User.findById(teamMeet.requestedBy).select("firstName middleName lastName email");
+    const recipientUser = await User.findById(teamMeet.requestedTo).select("firstName middleName lastName email");
+    const senderFullName = senderUser
+      ? [senderUser.firstName, senderUser.middleName, senderUser.lastName].filter(Boolean).join(" ")
+      : "A team member";
+    const recipientFullName = recipientUser
+      ? [recipientUser.firstName, recipientUser.middleName, recipientUser.lastName].filter(Boolean).join(" ")
+      : "A team member";
+
+    const formattedDate = teamMeet.scheduledDate.toLocaleDateString("en-US", {
+      weekday: "long", year: "numeric", month: "long", day: "numeric",
+    });
+
+    const confirmedEmailBase = {
+      subject: teamMeet.subject,
+      date: formattedDate,
+      time: teamMeet.scheduledTime,
+      duration: teamMeet.duration,
+      meetingType: teamMeet.meetingType === TEAMMEET_TYPE.ONLINE ? "Online" : "Face to Face",
+      meetingUrl: teamMeet.zohoMeetingUrl || undefined,
+      meetingId: teamMeet.zohoMeetingId || undefined,
+      meetingPassword: teamMeet.zohoMeetingPassword || undefined,
+      agenda: teamMeet.description || undefined,
+    };
+
+    // Email to meeting creator (requestedBy)
+    if (senderUser?.email) {
+      sendMeetingConfirmedEmail(senderUser.email, senderFullName, {
+        ...confirmedEmailBase,
+        otherPartyName: recipientFullName,
+      }).catch((err) => console.error("Failed to send confirmed email to sender:", err));
+    }
+
+    // Email to acceptor (requestedTo)
+    if (recipientUser?.email) {
+      sendMeetingConfirmedEmail(recipientUser.email, recipientFullName, {
+        ...confirmedEmailBase,
+        otherPartyName: senderFullName,
+      }).catch((err) => console.error("Failed to send confirmed email to recipient:", err));
+    }
 
     return res.status(200).json({
       success: true,
@@ -646,6 +681,18 @@ export const cancelTeamMeet = async (
     }
 
     teamMeet.status = TEAMMEET_STATUS.CANCELLED;
+
+    // Delete Zoho Meeting if it was created (for confirmed meetings that get cancelled)
+    if (teamMeet.zohoMeetingKey) {
+      deleteZohoMeeting(teamMeet.zohoMeetingKey).catch((err) =>
+        console.error("Failed to delete Zoho Meeting on cancel:", err)
+      );
+      teamMeet.zohoMeetingKey = undefined;
+      teamMeet.zohoMeetingUrl = undefined;
+      teamMeet.zohoMeetingId = undefined;
+      teamMeet.zohoMeetingPassword = undefined;
+    }
+
     await teamMeet.save();
 
     const populatedMeet = await TeamMeet.findById(teamMeetId)

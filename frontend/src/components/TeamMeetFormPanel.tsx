@@ -324,6 +324,12 @@ export default function TeamMeetFormPanel({
                 </svg>
                 <span className="text-sm font-medium text-green-700">Online Meeting</span>
               </div>
+              {teamMeet.zohoMeetingId && (
+                <p className="text-xs text-gray-600 mb-1"><span className="font-medium">Meeting ID:</span> {teamMeet.zohoMeetingId}</p>
+              )}
+              {teamMeet.zohoMeetingPassword && (
+                <p className="text-xs text-gray-600 mb-2"><span className="font-medium">Password:</span> {teamMeet.zohoMeetingPassword}</p>
+              )}
               <a
                 href={teamMeet.zohoMeetingUrl}
                 target="_blank"

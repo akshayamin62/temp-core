@@ -23,6 +23,8 @@ export interface ITeamMeet extends Document {
   meetingType: TEAMMEET_TYPE;
   zohoMeetingKey?: string; // Zoho meeting session key
   zohoMeetingUrl?: string; // Zoho meeting join URL
+  zohoMeetingId?: string; // Zoho meeting ID (e.g. "1036588582")
+  zohoMeetingPassword?: string; // Zoho meeting password (e.g. "nsPd75")
   description?: string;
   requestedBy: mongoose.Types.ObjectId; // User who created the meeting
   requestedTo: mongoose.Types.ObjectId; // User who receives the invitation
@@ -68,6 +70,14 @@ const teamMeetSchema = new Schema<ITeamMeet>(
       default: null,
     },
     zohoMeetingUrl: {
+      type: String,
+      default: null,
+    },
+    zohoMeetingId: {
+      type: String,
+      default: null,
+    },
+    zohoMeetingPassword: {
       type: String,
       default: null,
     },

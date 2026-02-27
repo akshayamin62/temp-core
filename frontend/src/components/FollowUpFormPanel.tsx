@@ -301,6 +301,12 @@ export default function FollowUpFormPanel({
                       </svg>
                       <span className="text-xs font-medium text-green-700">Online Meeting</span>
                     </div>
+                    {followUpData.zohoMeetingId && (
+                      <p className="text-[11px] text-gray-600 mb-0.5"><span className="font-medium">Meeting ID:</span> {followUpData.zohoMeetingId}</p>
+                    )}
+                    {followUpData.zohoMeetingPassword && (
+                      <p className="text-[11px] text-gray-600 mb-1.5"><span className="font-medium">Password:</span> {followUpData.zohoMeetingPassword}</p>
+                    )}
                     <a
                       href={followUpData.zohoMeetingUrl}
                       target="_blank"
