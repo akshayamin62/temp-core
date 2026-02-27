@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { authAPI, serviceAPI, adminStudentAPI } from '@/lib/api';
 import { User, USER_ROLE, FormStructure, FormSection, FormSubSection } from '@/types';
-import CounselorLayout from '@/components/CounselorLayout';
 import FormSectionRenderer from '@/components/FormSectionRenderer';
 import FormPartsNavigation from '@/components/FormPartsNavigation';
 import FormSectionsNavigation from '@/components/FormSectionsNavigation';
@@ -218,7 +217,7 @@ export default function CounselorStudentFormViewPage() {
   return (
     <>
       <Toaster position="top-right" />
-      <CounselorLayout user={user}>
+      <div className="min-h-screen bg-gray-50">
         <div className="p-8">
           <button onClick={() => router.back()} className="mb-6 flex items-center text-gray-600 hover:text-gray-900 transition-colors">
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,6 +231,7 @@ export default function CounselorStudentFormViewPage() {
               studentName={getFullName(studentInfo.userId) || 'Student'}
               serviceName={serviceInfo.name}
               editMode="VIEW"
+              studentId={studentId}
             />
           )}
 
@@ -389,7 +389,7 @@ export default function CounselorStudentFormViewPage() {
             </div>
           )}
         </div>
-      </CounselorLayout>
+      </div>
     </>
   );
 }

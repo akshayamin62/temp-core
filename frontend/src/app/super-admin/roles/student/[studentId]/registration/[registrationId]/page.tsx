@@ -320,6 +320,7 @@ export default function SuperAdminStudentFormEditPage() {
               studentName={getFullName(studentInfo.userId) || 'Student'}
               serviceName={serviceInfo.name}
               editMode="SUPER_ADMIN"
+              studentId={studentId}
             />
           )}
 

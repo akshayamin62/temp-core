@@ -620,3 +620,53 @@ export const sendMeetingConfirmedEmail = async (
     text,
   });
 };
+
+/**
+ * Send a custom message to a student from staff
+ */
+export const sendCustomMessageToStudent = async (
+  studentEmail: string,
+  studentName: string,
+  senderName: string,
+  senderRole: string,
+  message: string,
+  serviceName?: string
+): Promise<void> => {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Message from ${senderRole}</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9f9f9; margin: 0; padding: 0;">
+      <div style="max-width: 600px; margin: 20px auto; background-color: white; padding: 30px; border: 1px solid #ddd; border-radius: 8px;">
+        <h2 style="margin-bottom: 20px;">Message from Your ${senderRole}</h2>
+        <p>Hi ${studentName},</p>
+        ${serviceName ? `<p style="color: #555; font-size: 14px;">Service: <strong>${serviceName}</strong></p>` : ''}
+        <p>You have received a message from <strong>${senderName}</strong> (${senderRole}):</p>
+        
+        <div style="margin: 20px 0; padding: 16px; background-color: #f5f5f5; border-radius: 8px; border-left: 4px solid #333;">
+          <p style="margin: 0; white-space: pre-wrap;">${message}</p>
+        </div>
+
+        <p>If you have any questions, please reach out to your ${senderRole.toLowerCase()} directly.</p>
+
+        <p style="font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px;">
+          This is an automated notification from CORE-Community Platform.
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `Message from Your ${senderRole}\n\nHi ${studentName},${serviceName ? `\nService: ${serviceName}` : ''}\n\nYou have received a message from ${senderName} (${senderRole}):\n\n${message}\n\nIf you have any questions, please reach out to your ${senderRole.toLowerCase()} directly.`;
+
+  await sendEmail({
+    to: studentEmail,
+    subject: `Message from ${senderName} - CORE Platform`,
+    html,
+    text,
+  });
+};

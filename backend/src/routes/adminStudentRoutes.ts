@@ -8,6 +8,7 @@ import {
   getAdminStudentFormAnswers,
   getStudentByLeadId,
 } from '../controllers/adminStudentController';
+import { sendMessageToStudent } from '../controllers/superAdminStudentController';
 
 const router = express.Router();
 
@@ -26,5 +27,8 @@ router.get('/:studentId', getAdminStudentDetails);
 
 // Get student form answers for a registration (read-only)
 router.get('/:studentId/registrations/:registrationId/answers', getAdminStudentFormAnswers);
+
+// Send message to student
+router.post('/:studentId/send-message', sendMessageToStudent);
 
 export default router;

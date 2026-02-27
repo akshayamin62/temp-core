@@ -5,6 +5,7 @@ import User from '../models/User';
 import Ops from '../models/Ops';
 import IvyExpert from '../models/IvyExpert';
 import EduplanCoach from '../models/EduplanCoach';
+import { sendCustomMessageToStudent } from '../utils/email';
 // import Service from '../models/Service';
 // import Admin from '../models/Admin';
 // import Counselor from '../models/Counselor';
@@ -828,6 +829,84 @@ export const switchActiveOps = async (req: AuthRequest, res: Response): Promise<
     return res.status(500).json({
       success: false,
       message: 'Failed to switch active role',
+    });
+  }
+};
+
+/**
+ * Send a custom message email to a student
+ */
+export const sendMessageToStudent = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const userId = req.user?.userId;
+    const { studentId } = req.params;
+    const { message, serviceName } = req.body;
+
+    if (!message || !message.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message is required',
+      });
+    }
+
+    // Get sender info
+    const sender = await User.findById(userId).select('firstName middleName lastName role');
+    if (!sender) {
+      return res.status(404).json({
+        success: false,
+        message: 'Sender not found',
+      });
+    }
+
+    // Get student info with user details
+    const student = await Student.findById(studentId)
+      .populate('userId', 'firstName middleName lastName email');
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found',
+      });
+    }
+
+    const studentUser = student.userId as any;
+    if (!studentUser?.email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Student email not found',
+      });
+    }
+
+    const senderName = [sender.firstName, sender.middleName, sender.lastName].filter(Boolean).join(' ');
+    const studentName = [studentUser.firstName, studentUser.middleName, studentUser.lastName].filter(Boolean).join(' ') || 'Student';
+
+    // Map role to display name
+    const roleDisplayMap: Record<string, string> = {
+      SUPER_ADMIN: 'Super Admin',
+      ADMIN: 'Admin',
+      COUNSELOR: 'Counselor',
+      OPS: 'OPS',
+      EDUPLAN_COACH: 'Education Planning Coach',
+    };
+    const senderRole = roleDisplayMap[sender.role] || sender.role;
+
+    await sendCustomMessageToStudent(
+      studentUser.email,
+      studentName,
+      senderName,
+      senderRole,
+      message.trim(),
+      serviceName
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Message sent successfully',
+    });
+  } catch (error: any) {
+    console.error('Send message to student error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to send message',
     });
   }
 };

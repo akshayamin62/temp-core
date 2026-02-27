@@ -441,6 +441,7 @@ export default function EduplanCoachStudentFormEditPage() {
               studentName={getFullName(studentInfo.userId) || 'Student'}
               serviceName={serviceInfo.name}
               editMode="OPS"
+              studentId={studentId}
             />
           )}
 

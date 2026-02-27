@@ -232,6 +232,7 @@ export default function AdminStudentFormViewPage() {
               studentName={getFullName(studentInfo.userId) || 'Student'}
               serviceName={serviceInfo.name}
               editMode="VIEW"
+              studentId={studentId}
             />
           )}
 
