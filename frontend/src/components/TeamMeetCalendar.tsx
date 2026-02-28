@@ -244,7 +244,7 @@ export default function TeamMeetCalendar({
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded bg-red-800"></span>
-                    <span className="text-xs text-gray-600">Rejected</span>
+                    <span className="text-xs text-gray-600">Reschedule Requested</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded bg-slate-400"></span>

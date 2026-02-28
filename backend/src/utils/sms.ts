@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const SMS_API_URL = 'https://unify.smsgateway.center/SMSApi/send';
+// const SMS_API_URL = 'https://unify.smsgateway.center/SMSApi/send';
+const SMS_API_URL = 'https://unify.smsgateway.center/S';
 
 // Credentials loaded from environment
 const SMS_USER_ID = process.env.SMS_USER_ID || '';

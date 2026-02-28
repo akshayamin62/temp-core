@@ -1,5 +1,7 @@
 import { Response } from "express";
 import { AuthRequest } from "../types/auth";
+import path from "path";
+import fs from "fs";
 import TeamMeet, { TEAMMEET_STATUS, TEAMMEET_TYPE } from "../models/TeamMeet";
 import FollowUp, { } from "../models/FollowUp";
 import User from "../models/User";
@@ -10,6 +12,7 @@ import { USER_ROLE } from "../types/roles";
 import { createZohoMeeting, deleteZohoMeeting } from "../utils/zohoMeeting";
 import { sendMeetingPendingEmail, sendMeetingScheduledEmail, sendMeetingConfirmedEmail } from "../utils/email";
 import { sendMeetingRequestSms } from "../utils/sms";
+import { getUploadBaseDir, ensureDir } from "../utils/uploadDir";
 
 /**
  * Helper: Get start and end of a day
@@ -164,8 +167,11 @@ export const createTeamMeet = async (
       });
     }
 
+    // Parse duration as integer (may arrive as string when sent via multipart/form-data)
+    const parsedDuration = parseInt(duration as any, 10);
+
     // Validate duration
-    if (![15, 30, 45, 60].includes(duration)) {
+    if (![15, 30, 45, 60].includes(parsedDuration)) {
       return res.status(400).json({
         success: false,
         message: "Duration must be 15, 30, 45, or 60 minutes",
@@ -221,7 +227,7 @@ export const createTeamMeet = async (
       userRole!,
       scheduleDate,
       scheduledTime,
-      duration
+      parsedDuration
     );
 
     if (!senderAvailability.isAvailable) {
@@ -237,7 +243,7 @@ export const createTeamMeet = async (
       recipient.role,
       scheduleDate,
       scheduledTime,
-      duration
+      parsedDuration
     );
 
     if (!recipientAvailability.isAvailable) {
@@ -248,13 +254,33 @@ export const createTeamMeet = async (
     }
 
     // Create the team meeting
+    let attachmentUrl: string | undefined;
+    let attachmentName: string | undefined;
+    let attachmentSize: number | undefined;
+
+    if (req.file) {
+      const teamMeetDir = path.join(getUploadBaseDir(), 'team-meets');
+      ensureDir(teamMeetDir);
+      const ext = path.extname(req.file.originalname);
+      const sanitizedName = path.basename(req.file.originalname, ext).replace(/[^a-zA-Z0-9]/g, '_');
+      const finalFilename = `${sanitizedName}_${Date.now()}${ext}`;
+      const finalPath = path.join(teamMeetDir, finalFilename);
+      fs.renameSync(req.file.path, finalPath);
+      attachmentUrl = `uploads/team-meets/${finalFilename}`;
+      attachmentName = req.file.originalname;
+      attachmentSize = req.file.size;
+    }
+
     const teamMeet = new TeamMeet({
       subject,
       scheduledDate: scheduleDate,
       scheduledTime,
-      duration,
+      duration: parsedDuration,
       meetingType: meetingType || TEAMMEET_TYPE.ONLINE,
       description,
+      attachmentUrl,
+      attachmentName,
+      attachmentSize,
       requestedBy: userId,
       requestedTo,
       adminId,
@@ -290,7 +316,7 @@ export const createTeamMeet = async (
         subject,
         date: formattedDate,
         time: scheduledTime,
-        duration,
+        duration: parsedDuration,
         meetingType: effectiveMeetingType === TEAMMEET_TYPE.ONLINE ? "Online" : "Face to Face",
         otherPartyName: senderFullName,
         agenda: description || undefined,
@@ -864,14 +890,11 @@ export const completeTeamMeet = async (
       });
     }
 
-    // Either participant can mark as completed
-    if (
-      teamMeet.requestedBy.toString() !== userId &&
-      teamMeet.requestedTo.toString() !== userId
-    ) {
+    // Only the creator (requestedBy) can mark as completed
+    if (teamMeet.requestedBy.toString() !== userId) {
       return res.status(403).json({
         success: false,
-        message: "Only participants can mark this meeting as completed",
+        message: "Only the meeting creator can mark this meeting as completed",
       });
     }
 
@@ -883,9 +906,9 @@ export const completeTeamMeet = async (
       });
     }
 
-    // Update description if provided
-    if (req.body?.description !== undefined) {
-      teamMeet.description = req.body.description;
+    // Store notes if provided
+    if (req.body?.notes !== undefined) {
+      teamMeet.notes = req.body.notes;
     }
 
     teamMeet.status = TEAMMEET_STATUS.COMPLETED;
@@ -1117,5 +1140,34 @@ export const getTeamMeetsForCounselor = async (
       success: false,
       message: "Failed to fetch counselor TeamMeets",
     });
+  }
+};
+
+/**
+ * Download the attachment for a team meeting
+ */
+export const downloadTeamMeetAttachment = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { teamMeetId } = req.params;
+    const teamMeet = await TeamMeet.findById(teamMeetId);
+
+    if (!teamMeet || !teamMeet.attachmentUrl) {
+      res.status(404).json({ success: false, message: "Attachment not found" });
+      return;
+    }
+
+    const filePath = path.join(process.cwd(), teamMeet.attachmentUrl);
+    if (!fs.existsSync(filePath)) {
+      res.status(404).json({ success: false, message: "File not found on server" });
+      return;
+    }
+
+    res.download(filePath, teamMeet.attachmentName || "attachment");
+  } catch (error) {
+    console.error("Error downloading team meet attachment:", error);
+    res.status(500).json({ success: false, message: "Failed to download attachment" });
   }
 };

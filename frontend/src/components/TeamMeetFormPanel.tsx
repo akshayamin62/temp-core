@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { TeamMeet, TEAMMEET_STATUS, TEAMMEET_TYPE, TeamMeetParticipant, TeamMeetAvailability } from '@/types';
 import { teamMeetAPI } from '@/lib/api';
+import { fetchBlobUrl } from '@/lib/useBlobUrl';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { getFullName } from '@/utils/nameHelpers';
@@ -27,6 +28,11 @@ const TEAMMEET_COLORS = {
   COMPLETED: { bg: 'bg-teal-100', text: 'text-teal-700', border: 'border-teal-500' },
 };
 
+const getStatusLabel = (status: TEAMMEET_STATUS): string => {
+  if (status === TEAMMEET_STATUS.REJECTED) return 'RESCHEDULE REQUESTED';
+  return status.replace(/_/g, ' ');
+};
+
 export default function TeamMeetFormPanel({
   teamMeet,
   isOpen,
@@ -46,6 +52,28 @@ export default function TeamMeetFormPanel({
   const [description, setDescription] = useState('');
   const [requestedTo, setRequestedTo] = useState('');
   const [rejectionMessage, setRejectionMessage] = useState('');
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [notes, setNotes] = useState('');
+  const [downloadingAttachment, setDownloadingAttachment] = useState(false);
+
+  const handleDownloadAttachment = async () => {
+    if (!teamMeet?.attachmentUrl) return;
+    setDownloadingAttachment(true);
+    try {
+      const blobUrl = await fetchBlobUrl(`/api/team-meets/${teamMeet._id}/attachment`);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = teamMeet.attachmentName || 'attachment';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      toast.error('Failed to download attachment');
+    } finally {
+      setDownloadingAttachment(false);
+    }
+  };
   
   // UI state
   const [participants, setParticipants] = useState<TeamMeetParticipant[]>([]);
@@ -72,6 +100,7 @@ export default function TeamMeetFormPanel({
         setDuration(teamMeet.duration);
         setMeetingType(teamMeet.meetingType);
         setDescription(teamMeet.description || '');
+        setNotes(teamMeet.notes || '');
         setRequestedTo(teamMeet.requestedTo._id);
       } else if (mode === 'create') {
         // Reset form for create mode
@@ -82,6 +111,7 @@ export default function TeamMeetFormPanel({
         setMeetingType(TEAMMEET_TYPE.ONLINE);
         setDescription('');
         setRequestedTo('');
+        setNotes('');
         setRejectionMessage('');
         setAvailability(null);
         setShowRejectInput(false);
@@ -155,6 +185,7 @@ export default function TeamMeetFormPanel({
         meetingType,
         description: description.trim() || undefined,
         requestedTo,
+        attachmentFile: attachmentFile || undefined,
       });
       toast.success('Meeting request sent!');
       onSave();
@@ -184,17 +215,17 @@ export default function TeamMeetFormPanel({
     if (!teamMeet) return;
 
     if (!rejectionMessage.trim()) {
-      toast.error('Please provide a reason for rejection');
+      toast.error('Please provide a reason for the reschedule request');
       return;
     }
 
     setSaving(true);
     try {
       await teamMeetAPI.rejectTeamMeet(teamMeet._id, rejectionMessage.trim());
-      toast.success('Meeting rejected');
+      toast.success('Reschedule request sent');
       onSave();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to reject meeting');
+      toast.error(error.response?.data?.message || 'Failed to send reschedule request');
     } finally {
       setSaving(false);
     }
@@ -246,7 +277,7 @@ export default function TeamMeetFormPanel({
 
     setSaving(true);
     try {
-      await teamMeetAPI.completeTeamMeet(teamMeet._id, { description: description.trim() || undefined });
+      await teamMeetAPI.completeTeamMeet(teamMeet._id, { notes: notes.trim() || undefined });
       toast.success('Meeting marked as completed');
       onSave();
     } catch (error: any) {
@@ -297,7 +328,7 @@ export default function TeamMeetFormPanel({
           {/* Status Badge (for view/respond modes) */}
           {teamMeet && statusColors && (
             <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mb-4 ${statusColors.bg} ${statusColors.text}`}>
-              {teamMeet.status.replace('_', ' ')}
+              {getStatusLabel(teamMeet.status)}
             </div>
           )}
 
@@ -347,7 +378,7 @@ export default function TeamMeetFormPanel({
           {/* Rejection Message Display */}
           {teamMeet && teamMeet.status === TEAMMEET_STATUS.REJECTED && teamMeet.rejectionMessage && (
             <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 mb-4">
-              <p className="text-sm font-medium text-rose-700 mb-1">Rejection Reason:</p>
+              <p className="text-sm font-medium text-rose-700 mb-1">Reschedule Reason:</p>
               <p className="text-sm text-rose-600">{teamMeet.rejectionMessage}</p>
             </div>
           )}
@@ -473,12 +504,85 @@ export default function TeamMeetFormPanel({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              disabled={mode !== 'create' && teamMeet?.status !== TEAMMEET_STATUS.REJECTED && teamMeet?.status !== TEAMMEET_STATUS.CONFIRMED}
+              disabled={mode !== 'create'}
               placeholder="Add meeting details..."
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent disabled:bg-gray-100 resize-none"
             />
           </div>
+
+          {/* Attachment — upload in create mode, download in view/respond */}
+          {mode === 'create' ? (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Attachment <span className="font-normal text-gray-500">(optional)</span></label>
+              {attachmentFile ? (
+                <div className="flex items-center gap-2 p-2 bg-violet-50 border border-violet-200 rounded-lg">
+                  <svg className="w-4 h-4 text-violet-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                  <span className="text-sm text-violet-700 truncate flex-1">{attachmentFile.name}</span>
+                  <button type="button" onClick={() => setAttachmentFile(null)} className="text-violet-500 hover:text-violet-700 shrink-0">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-violet-400 hover:bg-violet-50 transition-colors">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                  <span className="text-sm text-gray-500">Click to attach a document...</span>
+                  <input type="file" className="hidden" onChange={(e) => setAttachmentFile(e.target.files?.[0] || null)} />
+                </label>
+              )}
+            </div>
+          ) : teamMeet?.attachmentUrl ? (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Attachment</label>
+              <button
+                type="button"
+                onClick={handleDownloadAttachment}
+                disabled={downloadingAttachment}
+                className="w-full flex items-center gap-2 p-2 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 transition-colors disabled:opacity-60"
+              >
+                <svg className="w-4 h-4 text-violet-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+                <span className="text-sm text-violet-700 truncate flex-1 text-left">
+                  {downloadingAttachment ? 'Downloading...' : (teamMeet.attachmentName || 'Download attachment')}
+                </span>
+                <svg className="w-4 h-4 text-violet-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              </button>
+            </div>
+          ) : null}
+
+          {/* Notes — visible to creator for confirmed/completed meetings */}
+          {mode !== 'create' && isSender && (teamMeet?.status === TEAMMEET_STATUS.CONFIRMED || teamMeet?.status === TEAMMEET_STATUS.COMPLETED) && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                disabled={teamMeet?.status === TEAMMEET_STATUS.COMPLETED}
+                placeholder="Add meeting notes before marking as complete..."
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent disabled:bg-gray-100 resize-none"
+              />
+            </div>
+          )}
+
+          {/* Notes — visible to recipient (read-only) for completed meetings */}
+          {mode !== 'create' && !isSender && teamMeet?.status === TEAMMEET_STATUS.COMPLETED && teamMeet?.notes && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+              <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-100 text-sm text-gray-700 whitespace-pre-wrap">
+                {teamMeet.notes}
+              </div>
+            </div>
+          )}
 
           {/* Availability Status (for create mode) */}
           {mode === 'create' && (
@@ -523,7 +627,7 @@ export default function TeamMeetFormPanel({
           {/* Rejection Input (for respond mode) */}
           {mode === 'respond' && showRejectInput && (
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Rejection</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Reschedule Request</label>
               <textarea
                 value={rejectionMessage}
                 onChange={(e) => setRejectionMessage(e.target.value)}
@@ -572,7 +676,7 @@ export default function TeamMeetFormPanel({
                     disabled={saving}
                     className="flex-1 px-4 py-2 text-white bg-rose-600 rounded-lg hover:bg-rose-700 disabled:bg-rose-300 transition-colors"
                   >
-                    {saving ? 'Rejecting...' : 'Confirm Reject'}
+                    {saving ? 'Submitting...' : 'Submit Request'}
                   </button>
                 </>
               ) : (
@@ -581,7 +685,7 @@ export default function TeamMeetFormPanel({
                     onClick={() => setShowRejectInput(true)}
                     className="flex-1 px-4 py-2 text-rose-700 bg-rose-50 border border-rose-200 rounded-lg hover:bg-rose-100 transition-colors"
                   >
-                    Reject
+                    Request for Reschedule
                   </button>
                   <button
                     onClick={handleAccept}
@@ -633,8 +737,8 @@ export default function TeamMeetFormPanel({
             </div>
           )}
 
-          {/* Complete Action (for confirmed meetings) */}
-          {!readOnly && mode === 'view' && teamMeet?.status === TEAMMEET_STATUS.CONFIRMED && (
+          {/* Complete Action (for confirmed meetings — creator only) */}
+          {!readOnly && mode === 'view' && isSender && teamMeet?.status === TEAMMEET_STATUS.CONFIRMED && (
             <div className="flex gap-2">
               <button
                 onClick={onClose}

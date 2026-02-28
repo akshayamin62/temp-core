@@ -12,10 +12,12 @@ import {
   getParticipants,
   completeTeamMeet,
   getTeamMeetsForCounselor,
+  downloadTeamMeetAttachment,
 } from "../controllers/teamMeetController";
 import { authenticate } from "../middleware/auth";
 import { authorize } from "../middleware/authorize";
 import { USER_ROLE } from "../types/roles";
+import { upload, handleMulterError } from "../middleware/upload";
 
 const router = Router();
 
@@ -30,8 +32,9 @@ router.use(authorize([USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMI
  * @desc    Create a new team meeting request
  * @access  Admin, Counselor
  * @body    subject, scheduledDate, scheduledTime, duration, meetingType, description, requestedTo
+ * @file    attachment (optional, multipart/form-data)
  */
-router.post("/", createTeamMeet);
+router.post("/", upload.single('attachment'), handleMulterError, createTeamMeet);
 
 /**
  * @route   GET /api/team-meets
@@ -63,6 +66,13 @@ router.get("/check-availability", checkTeamMeetAvailability);
  * @access  Admin, Counselor
  */
 router.get("/participants", getParticipants);
+
+/**
+ * @route   GET /api/team-meets/:teamMeetId/attachment
+ * @desc    Download the attachment file for a team meeting
+ * @access  Admin, Counselor (only if participant)
+ */
+router.get("/:teamMeetId/attachment", downloadTeamMeetAttachment);
 
 /**
  * @route   GET /api/team-meets/:teamMeetId

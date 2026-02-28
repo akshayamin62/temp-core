@@ -395,7 +395,7 @@ export const sendMeetingPendingEmail = async (
           </tr>` : ''}
         </table>
 
-        <p>Please log in to your account to confirm or decline this meeting.</p>
+        <p>Please log in to your account to confirm your availability for this meeting.</p>
 
         <p style="font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px;">
           This is an automated notification from CORE-Community Platform.
@@ -405,7 +405,7 @@ export const sendMeetingPendingEmail = async (
     </html>
   `;
 
-  const text = `Meeting Request\n\nHi ${recipientName},\n\nA meeting has been scheduled for you by ${otherPartyName}. Please review the details below and confirm your availability.\n\nSubject: ${subject}\nDate: ${date}\nTime: ${time}\nDuration: ${duration} minutes\nType: ${meetingType}\nScheduled By: ${otherPartyName}\n${agenda ? `Meeting Agenda: ${agenda}\n` : ''}\nPlease log in to your account to confirm or decline this meeting.`;
+  const text = `Meeting Request\n\nHi ${recipientName},\n\nA meeting has been scheduled for you by ${otherPartyName}. Please review the details below and confirm your availability.\n\nSubject: ${subject}\nDate: ${date}\nTime: ${time}\nDuration: ${duration} minutes\nType: ${meetingType}\nScheduled By: ${otherPartyName}\n${agenda ? `Meeting Agenda: ${agenda}\n` : ''}\nPlease log in to your account to confirm your availability for this meeting.`;
 
   await sendEmail({
     to: recipientEmail,

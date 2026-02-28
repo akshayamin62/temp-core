@@ -505,7 +505,7 @@ export const chatAPI = {
 
 // TeamMeet API
 export const teamMeetAPI = {
-  // Create a new team meeting request
+  // Create a new team meeting request (supports optional file attachment via FormData)
   createTeamMeet: (data: {
     subject: string;
     scheduledDate: string;
@@ -514,7 +514,23 @@ export const teamMeetAPI = {
     meetingType: string;
     description?: string;
     requestedTo: string;
-  }) => api.post('/team-meets', data),
+    attachmentFile?: File;
+  }) => {
+    if (data.attachmentFile) {
+      const formData = new FormData();
+      formData.append('subject', data.subject);
+      formData.append('scheduledDate', data.scheduledDate);
+      formData.append('scheduledTime', data.scheduledTime);
+      formData.append('duration', String(data.duration));
+      formData.append('meetingType', data.meetingType);
+      if (data.description) formData.append('description', data.description);
+      formData.append('requestedTo', data.requestedTo);
+      formData.append('attachment', data.attachmentFile);
+      return api.post('/team-meets', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+    }
+    const { attachmentFile, ...rest } = data;
+    return api.post('/team-meets', rest);
+  },
 
   // Get all team meetings for current user
   getTeamMeets: (params?: {
@@ -552,7 +568,7 @@ export const teamMeetAPI = {
   }) => api.patch(`/team-meets/${teamMeetId}/reschedule`, data),
 
   // Mark meeting as completed
-  completeTeamMeet: (teamMeetId: string, data?: { description?: string }) => api.patch(`/team-meets/${teamMeetId}/complete`, data),
+  completeTeamMeet: (teamMeetId: string, data?: { notes?: string }) => api.patch(`/team-meets/${teamMeetId}/complete`, data),
 
   // Check availability for a time slot
   checkAvailability: (params: {

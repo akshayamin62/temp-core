@@ -66,6 +66,11 @@ const getTeamMeetStatusBadgeColor = (status: TEAMMEET_STATUS) => {
   }
 };
 
+const getTeamMeetStatusLabel = (status: TEAMMEET_STATUS): string => {
+  if (status === TEAMMEET_STATUS.REJECTED) return 'RESCHEDULE REQUESTED';
+  return status.replace(/_/g, ' ');
+};
+
 // FollowUp Item Component
 interface FollowUpItemProps {
   followUp: FollowUp;
@@ -191,7 +196,7 @@ function TeamMeetItem({ teamMeet, onClick, showDate = false, currentUserId, isAc
               </span>
             )}
             <span className={`px-1.5 py-0.5 text-xs rounded ${getTeamMeetStatusBadgeColor(teamMeet.status)}`}>
-              {teamMeet.status.replace('_', ' ')}
+              {getTeamMeetStatusLabel(teamMeet.status)}
             </span>
           </div>
           <p className="text-xs text-gray-500 mt-1 truncate">

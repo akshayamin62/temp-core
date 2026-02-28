@@ -35,6 +35,11 @@ const getStatusBadgeColor = (status: TEAMMEET_STATUS) => {
   }
 };
 
+const getStatusLabel = (status: TEAMMEET_STATUS): string => {
+  if (status === TEAMMEET_STATUS.REJECTED) return 'RESCHEDULE REQUESTED';
+  return status.replace(/_/g, ' ');
+};
+
 interface TeamMeetItemProps {
   teamMeet: TeamMeet;
   onClick: () => void;
@@ -71,7 +76,7 @@ function TeamMeetItem({ teamMeet, onClick, showDate = false, currentUserId, isAc
               </span>
             )}
             <span className={`px-1.5 py-0.5 text-xs rounded ${getStatusBadgeColor(teamMeet.status)}`}>
-              {teamMeet.status.replace('_', ' ')}
+              {getStatusLabel(teamMeet.status)}
             </span>
           </div>
           <p className="text-xs text-gray-500 mt-1 truncate">
