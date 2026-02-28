@@ -22,6 +22,7 @@ export default function StudentFormHeader({
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [open, setOpen] = useState(false);
+  const [sendVia, setSendVia] = useState<'email' | 'sms' | 'both'>('email');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -52,7 +53,7 @@ export default function StudentFormHeader({
       const token = localStorage.getItem('token');
       await axios.post(
         `${getApiBase()}/${studentId}/send-message`,
-        { message: message.trim(), serviceName },
+        { message: message.trim(), serviceName, sendVia },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success('Message sent successfully');
@@ -67,6 +68,7 @@ export default function StudentFormHeader({
 
   const handleCancel = () => {
     setMessage('');
+    setSendVia('email');
     setOpen(false);
   };
 
@@ -97,9 +99,28 @@ export default function StudentFormHeader({
       {/* Compose panel — slides in below */}
       {studentId && open && (
         <div className="mt-5 border-t border-gray-100 pt-5">
-          <p className="text-sm font-medium text-gray-700 mb-2">
-            Message to <span className="text-gray-900">{studentName}</span>
-          </p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-medium text-gray-700">
+              Message to <span className="text-gray-900">{studentName}</span>
+            </p>
+            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+              {(['email', 'sms', 'both'] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setSendVia(option)}
+                  disabled={sending}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                    sendVia === option
+                      ? 'bg-white text-blue-700 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  {option === 'email' ? 'Email' : option === 'sms' ? 'SMS' : 'Both'}
+                </button>
+              ))}
+            </div>
+          </div>
           <textarea
             ref={textareaRef}
             value={message}

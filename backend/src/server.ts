@@ -1,7 +1,9 @@
+import dotenv from 'dotenv';
+dotenv.config(); // MUST be first — loads .env before any other module reads process.env
+
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import path from 'path';
 import authRoutes from "./routes/authRoutes";
 import superAdminRoutes from "./routes/superAdminRoutes";
@@ -109,7 +111,7 @@ import "./models/ivy/TaskConversation";
 import "./models/ivy/IvyTestQuestion";
 import "./models/ivy/IvyTestSession";
 
-dotenv.config();
+dotenv.config(); // already called at top — this line is now redundant, kept for safety
 
 const app = express();
 const PORT = process.env.PORT || 5000;

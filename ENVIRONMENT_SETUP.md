@@ -22,6 +22,11 @@ EMAIL_PASSWORD=
 # Frontend URLs for Email Links
 EMAIL_VERIFICATION_URL=http://localhost:3000/verify-email
 PASSWORD_RESET_URL=http://localhost:3000/reset-password
+
+# SMS Gateway Center (smsgateway.center)
+SMS_USER_ID=kareerstudio
+SMS_PASSWORD=your_sms_password
+SMS_SENDER_ID=KARERR
 ```
 
 ### Important Notes:

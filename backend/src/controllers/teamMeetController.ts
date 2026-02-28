@@ -9,6 +9,7 @@ import mongoose from "mongoose";
 import { USER_ROLE } from "../types/roles";
 import { createZohoMeeting, deleteZohoMeeting } from "../utils/zohoMeeting";
 import { sendMeetingPendingEmail, sendMeetingScheduledEmail, sendMeetingConfirmedEmail } from "../utils/email";
+import { sendMeetingRequestSms } from "../utils/sms";
 
 /**
  * Helper: Get start and end of a day
@@ -294,6 +295,24 @@ export const createTeamMeet = async (
         otherPartyName: senderFullName,
         agenda: description || undefined,
       }).catch((err) => console.error("Failed to send pending meeting email to recipient:", err));
+    }
+
+    // SMS to recipient (non-blocking) — look up mobile from Admin or Counselor profile
+    try {
+      let recipientMobile: string | undefined;
+      if (recipient.role === USER_ROLE.ADMIN) {
+        const adminProfile = await Admin.findOne({ userId: recipient._id }).select('mobileNumber');
+        recipientMobile = adminProfile?.mobileNumber;
+      } else if (recipient.role === USER_ROLE.COUNSELOR) {
+        const counselorProfile = await Counselor.findOne({ userId: recipient._id }).select('mobileNumber');
+        recipientMobile = counselorProfile?.mobileNumber;
+      }
+      if (recipientMobile) {
+        sendMeetingRequestSms({ mobile: recipientMobile, senderName: senderFullName })
+          .catch((err) => console.error('Failed to send meeting request SMS:', err));
+      }
+    } catch (smsLookupErr) {
+      console.error('SMS lookup error (non-fatal):', smsLookupErr);
     }
 
     return res.status(201).json({

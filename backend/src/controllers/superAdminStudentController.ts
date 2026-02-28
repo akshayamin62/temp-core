@@ -6,6 +6,7 @@ import Ops from '../models/Ops';
 import IvyExpert from '../models/IvyExpert';
 import EduplanCoach from '../models/EduplanCoach';
 import { sendCustomMessageToStudent } from '../utils/email';
+import { sendStaffMessageSms } from '../utils/sms';
 // import Service from '../models/Service';
 // import Admin from '../models/Admin';
 // import Counselor from '../models/Counselor';
@@ -840,7 +841,9 @@ export const sendMessageToStudent = async (req: AuthRequest, res: Response): Pro
   try {
     const userId = req.user?.userId;
     const { studentId } = req.params;
-    const { message, serviceName } = req.body;
+    const { message, serviceName, sendVia } = req.body;
+    // sendVia: 'email' | 'sms' | 'both' (default: 'email')
+    const channel: string = sendVia || 'email';
 
     if (!message || !message.trim()) {
       return res.status(400).json({
@@ -869,7 +872,7 @@ export const sendMessageToStudent = async (req: AuthRequest, res: Response): Pro
     }
 
     const studentUser = student.userId as any;
-    if (!studentUser?.email) {
+    if (!studentUser?.email && (channel === 'email' || channel === 'both')) {
       return res.status(400).json({
         success: false,
         message: 'Student email not found',
@@ -889,18 +892,53 @@ export const sendMessageToStudent = async (req: AuthRequest, res: Response): Pro
     };
     const senderRole = roleDisplayMap[sender.role] || sender.role;
 
-    await sendCustomMessageToStudent(
-      studentUser.email,
-      studentName,
-      senderName,
-      senderRole,
-      message.trim(),
-      serviceName
-    );
+    const results: string[] = [];
+
+    // Send Email
+    if (channel === 'email' || channel === 'both') {
+      await sendCustomMessageToStudent(
+        studentUser.email,
+        studentName,
+        senderName,
+        senderRole,
+        message.trim(),
+        serviceName
+      );
+      results.push('Email sent');
+    }
+
+    // Send SMS
+    if (channel === 'sms' || channel === 'both') {
+      const mobile = student.mobileNumber;
+      if (!mobile) {
+        if (channel === 'sms') {
+          return res.status(400).json({
+            success: false,
+            message: 'Student mobile number not found',
+          });
+        }
+        // If 'both', email already sent, just note SMS was skipped
+        results.push('SMS skipped (no mobile number)');
+      } else {
+        try {
+          await sendStaffMessageSms({ mobile, senderName, senderRole, serviceName: serviceName || 'CORE Platform' });
+          results.push('SMS sent');
+        } catch (smsErr: any) {
+          console.error('SMS send error:', smsErr?.message || smsErr);
+          if (channel === 'sms') {
+            return res.status(500).json({
+              success: false,
+              message: 'Failed to send SMS',
+            });
+          }
+          results.push('SMS failed');
+        }
+      }
+    }
 
     return res.status(200).json({
       success: true,
-      message: 'Message sent successfully',
+      message: results.join(', '),
     });
   } catch (error: any) {
     console.error('Send message to student error:', error);
