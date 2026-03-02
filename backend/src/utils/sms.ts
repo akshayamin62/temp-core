@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-// const SMS_API_URL = 'https://unify.smsgateway.center/SMSApi/send';
-const SMS_API_URL = 'https://unify.smsgateway.center/S';
+const SMS_API_URL = 'https://unify.smsgateway.center/SMSApi/send';
+// const SMS_API_URL = 'https://unify.smsgateway.center/S';
+const url = 'https://core.admitra.io/'
 
 // Credentials loaded from environment
 const SMS_USER_ID = process.env.SMS_USER_ID || '';
@@ -21,7 +22,7 @@ const SMS_TMPL_ID_MEETING_REQUEST = process.env.SMS_TMPL_ID_MEETING_REQUEST || '
  * Variable {#var#} is replaced with a URL at send time.
  * This text must match EXACTLY what was submitted during DLT registration.
  */
-const TMPL_PROFILE_UPDATE = 'There is a recent update to your profile on CORE platform. Kindly check and take required action https://kareerstudio.com. Team CORE';
+const TMPL_PROFILE_UPDATE = 'There is a recent update to your profile on CORE platform. Kindly check and take required action https://core.admitra.io/. Team CORE';
 
 /**
  * Template: STAFF_MESSAGE
@@ -31,8 +32,8 @@ const TMPL_PROFILE_UPDATE = 'There is a recent update to your profile on CORE pl
  * Variable 2 = service name               (e.g. "MBA Abroad 2026")
  */
 const TMPL_STAFF_MESSAGE = (senderNameRole: string, serviceName: string) =>
-  `You have a message from ${senderNameRole} for ${serviceName} on CORE platform. Kindly check your registered email for details. \n-Team CORE`;
-
+  // `You have a message from ${senderNameRole} for ${serviceName} on CORE platform. Kindly check your registered email for details. \n-Team CORE`;
+  `There is a recent update to your profile. Kindly check and take required action ${url}. KAREER Studio`
 /**
  * Template: MEETING_REQUEST
  * Registered text (submit EXACTLY this to DLT):
@@ -41,7 +42,9 @@ const TMPL_STAFF_MESSAGE = (senderNameRole: string, serviceName: string) =>
  * Variable 1 = sender full name (e.g. "Rahul Sharma")
  */
 const TMPL_MEETING_REQUEST = (senderName: string) =>
-  `You have a meeting request from ${senderName} on CORE platform. Kindly login and confirm your availability.\n-Team CORE`;
+  // `You have a meeting request from ${senderName} on CORE platform. Kindly login and confirm your availability.\n-Team CORE`;
+  `There is a recent update to your profile. Kindly check and take required action ${url}. KAREER Studio`;
+
 
 interface SendMeetingRequestSmsParams {
   mobile: string;
