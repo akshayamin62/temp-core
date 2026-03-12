@@ -52,6 +52,13 @@ export default function RoleUserListPage({
   const [statusFilter, setStatusFilter] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
 
+  // Edit user state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editUserId, setEditUserId] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState<Record<string, any>>({});
+  const [editLoading, setEditLoading] = useState(false);
+  const [editFetching, setEditFetching] = useState(false);
+
   // Admin list for counselor creation
   const [admins, setAdmins] = useState<AdminOption[]>([]);
   const [selectedAdminId, setSelectedAdminId] = useState('');
@@ -198,6 +205,96 @@ export default function RoleUserListPage({
     }
   };
 
+  const handleOpenEdit = async (userId: string) => {
+    setEditUserId(userId);
+    setEditFetching(true);
+    setShowEditModal(true);
+    try {
+      const res = await superAdminAPI.getUserWithProfile(userId);
+      const { user, profile } = res.data.data;
+      const base: Record<string, any> = {
+        firstName: user.firstName || '',
+        middleName: user.middleName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        mobileNumber: profile?.mobileNumber || '',
+      };
+      // Admin extra fields
+      if (roleEnum === USER_ROLE.ADMIN) {
+        base.companyName = profile?.companyName || '';
+        base.address = profile?.address || '';
+        base.enquiryFormSlug = profile?.enquiryFormSlug || '';
+      }
+      // Service Provider extra fields
+      if (roleEnum === USER_ROLE.SERVICE_PROVIDER) {
+        base.companyName = profile?.companyName || '';
+        base.businessType = profile?.businessType || '';
+        base.registrationNumber = profile?.registrationNumber || '';
+        base.gstNumber = profile?.gstNumber || '';
+        base.address = profile?.address || '';
+        base.city = profile?.city || '';
+        base.state = profile?.state || '';
+        base.country = profile?.country || '';
+        base.pincode = profile?.pincode || '';
+        base.website = profile?.website || '';
+      }
+      setEditFormData(base);
+    } catch (error: any) {
+      toast.error('Failed to load user data');
+      setShowEditModal(false);
+    } finally {
+      setEditFetching(false);
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editUserId) return;
+    if (!editFormData.firstName?.trim() || !editFormData.lastName?.trim() || !editFormData.email?.trim()) {
+      toast.error('First name, last name, and email are required');
+      return;
+    }
+    setEditLoading(true);
+    try {
+      // Build payload with trimmed values
+      const payload: Record<string, any> = {
+        firstName: editFormData.firstName.trim(),
+        middleName: editFormData.middleName?.trim() || undefined,
+        lastName: editFormData.lastName.trim(),
+        email: editFormData.email.trim(),
+        mobileNumber: editFormData.mobileNumber?.trim() || undefined,
+      };
+      // Admin extra fields
+      if (roleEnum === USER_ROLE.ADMIN) {
+        if (editFormData.companyName !== undefined) payload.companyName = editFormData.companyName.trim();
+        if (editFormData.address !== undefined) payload.address = editFormData.address.trim();
+        if (editFormData.enquiryFormSlug !== undefined) payload.enquiryFormSlug = editFormData.enquiryFormSlug.trim();
+      }
+      // Service Provider extra fields
+      if (roleEnum === USER_ROLE.SERVICE_PROVIDER) {
+        if (editFormData.companyName !== undefined) payload.companyName = editFormData.companyName.trim();
+        if (editFormData.businessType !== undefined) payload.businessType = editFormData.businessType;
+        if (editFormData.registrationNumber !== undefined) payload.registrationNumber = editFormData.registrationNumber.trim();
+        if (editFormData.gstNumber !== undefined) payload.gstNumber = editFormData.gstNumber.trim();
+        if (editFormData.address !== undefined) payload.address = editFormData.address.trim();
+        if (editFormData.city !== undefined) payload.city = editFormData.city.trim();
+        if (editFormData.state !== undefined) payload.state = editFormData.state.trim();
+        if (editFormData.country !== undefined) payload.country = editFormData.country.trim();
+        if (editFormData.pincode !== undefined) payload.pincode = editFormData.pincode.trim();
+        if (editFormData.website !== undefined) payload.website = editFormData.website.trim();
+      }
+      await superAdminAPI.editUserByRole(editUserId, payload);
+      toast.success('User updated successfully');
+      setShowEditModal(false);
+      setEditUserId(null);
+      await fetchUsers();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update user');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim()) {
@@ -311,6 +408,8 @@ export default function RoleUserListPage({
     };
     return colors[userRole] || 'bg-gray-100 text-gray-800';
   };
+  console.log(roleDisplayName);
+  const pluralSuffix = roleDisplayName.toLowerCase() === 'eduplan coach' ? 'es' : 's';
 
   if (loading && !currentUser) {
     return (
@@ -333,7 +432,7 @@ export default function RoleUserListPage({
           {/* Header with Add Button */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{roleDisplayName}s</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{roleDisplayName}{pluralSuffix}</h1>
               <p className="text-gray-600 mt-1">Manage all {roleDisplayName.toLowerCase()} accounts</p>
             </div>
             {canAddUser && (
@@ -354,7 +453,7 @@ export default function RoleUserListPage({
 
           {/* Stats Cards */}
           <div className={`grid grid-cols-1 ${extraStats ? 'md:grid-cols-3' : showVerifiedStats ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6 mb-6`}>
-            <StatCard title={`Total ${roleDisplayName}s`} value={stats.total.toString()} color="blue" />
+            <StatCard title={`Total ${roleDisplayName}${pluralSuffix}`} value={stats.total.toString()} color="blue" />
             {!hideActiveUsers && (
               <StatCard title="Active Users" value={stats.active.toString()} color="green" />
             )}
@@ -407,7 +506,7 @@ export default function RoleUserListPage({
                   <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                   </svg>
-                  <p className="mt-2 text-gray-900 font-medium">No {roleDisplayName.toLowerCase()}s found</p>
+                  <p className="mt-2 text-gray-900 font-medium">No {roleDisplayName.toLowerCase()}{pluralSuffix} found</p>
                   {canAddUser && (
                     <button
                       onClick={() => setShowAddModal(true)}
@@ -424,6 +523,9 @@ export default function RoleUserListPage({
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">User</th>
                       {roleEnum === USER_ROLE.COUNSELOR && (
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Admin</th>
+                      )}
+                      {roleEnum === USER_ROLE.PARENT && (
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Students</th>
                       )}
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Role</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Status</th>
@@ -473,6 +575,25 @@ export default function RoleUserListPage({
                             <div className="text-sm font-medium text-gray-900">
                               {user.companyName || 'N/A'}
                             </div>
+                          </td>
+                        )}
+                        {roleEnum === USER_ROLE.PARENT && (
+                          <td className="px-6 py-4">
+                            {user.students && user.students.length > 0 ? (
+                              <div className="flex flex-col gap-1">
+                                {user.students.map((s: { studentId: string; firstName: string; lastName: string }) => (
+                                  <button
+                                    key={s.studentId}
+                                    onClick={() => router.push(`/super-admin/roles/student/${s.studentId}`)}
+                                    className="text-sm text-blue-600 hover:text-blue-800 hover:underline text-left"
+                                  >
+                                    {`${s.firstName} ${s.lastName}`.trim() || 'N/A'}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-400">No students linked</span>
+                            )}
                           </td>
                         )}
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -539,6 +660,14 @@ export default function RoleUserListPage({
                                 View Details
                               </button>
                             )}
+                            {roleEnum === USER_ROLE.EDUPLAN_COACH && (
+                              <button
+                                onClick={() => router.push(`/super-admin/roles/eduplan-coach/${user._id || user.id}`)}
+                                className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white hover:bg-blue-700"
+                              >
+                                View Details
+                              </button>
+                            )}
                             {roleEnum === USER_ROLE.SERVICE_PROVIDER && (
                               <button
                                 onClick={() => router.push(`/super-admin/roles/service-provider/${user._id || user.id}`)}
@@ -547,6 +676,12 @@ export default function RoleUserListPage({
                                 View Details
                               </button>
                             )}
+                            <button
+                              onClick={() => handleOpenEdit(user._id || user.id!)}
+                              className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-brand-600 text-white hover:bg-brand-700"
+                            >
+                              Edit
+                            </button>
                             <button
                               onClick={() => handleToggleStatus(user._id || user.id!)}
                               disabled={actionLoading === (user._id || user.id)}
@@ -571,7 +706,7 @@ export default function RoleUserListPage({
             {users.length > 0 && (
               <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
                 <p className="text-sm text-gray-600">
-                  Showing {users.length} {roleDisplayName.toLowerCase()}{users.length !== 1 ? 's' : ''}
+                  Showing {users.length} {roleDisplayName.toLowerCase()}{users.length !== 1 ? pluralSuffix : ''}
                 </p>
               </div>
             )}
@@ -815,6 +950,283 @@ export default function RoleUserListPage({
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Edit User Modal */}
+        {showEditModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 p-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Edit {roleDisplayName}</h2>
+                <button
+                  onClick={() => { setShowEditModal(false); setEditUserId(null); }}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {editFetching ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+                </div>
+              ) : (
+                <form onSubmit={handleEditSubmit} className="space-y-4">
+                  {/* User Information */}
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">User Information</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        First Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.firstName || ''}
+                        onChange={(e) => setEditFormData({ ...editFormData, firstName: e.target.value })}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                        required
+                        disabled
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Middle Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.middleName || ''}
+                        onChange={(e) => setEditFormData({ ...editFormData, middleName: e.target.value })}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                        disabled
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Last Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.lastName || ''}
+                        onChange={(e) => setEditFormData({ ...editFormData, lastName: e.target.value })}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                        required
+                        disabled
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email Address <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        value={editFormData.email || ''}
+                        onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        value={editFormData.mobileNumber || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || /^[+()\-\s.0-9]*$/.test(value)) {
+                            setEditFormData({ ...editFormData, mobileNumber: value });
+                          }
+                        }}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                        placeholder="+1234567890"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Admin Extra Fields */}
+                  {roleEnum === USER_ROLE.ADMIN && (
+                    <>
+                      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider pt-2">Company Information</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Company Name <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={editFormData.companyName || ''}
+                            onChange={(e) => setEditFormData({ ...editFormData, companyName: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                            required
+                            disabled
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Enquiry Form Slug
+                          </label>
+                          <input
+                            type="text"
+                            value={editFormData.enquiryFormSlug || ''}
+                            onChange={(e) => setEditFormData({ ...editFormData, enquiryFormSlug: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                            disabled
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Address
+                          </label>
+                          <input
+                            type="text"
+                            value={editFormData.address || ''}
+                            onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Service Provider Extra Fields */}
+                  {roleEnum === USER_ROLE.SERVICE_PROVIDER && (
+                    <>
+                      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider pt-2">Business Information</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                          <input
+                            type="text"
+                            value={editFormData.companyName || ''}
+                            onChange={(e) => setEditFormData({ ...editFormData, companyName: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                            disabled
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Business Type</label>
+                          <select
+                            value={editFormData.businessType || ''}
+                            onChange={(e) => setEditFormData({ ...editFormData, businessType: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                            disabled
+                          >
+                            <option value="">Select</option>
+                            <option value="Individual">Individual</option>
+                            <option value="Sole Proprietors">Sole Proprietors</option>
+                            <option value="Partnership Firm">Partnership Firm</option>
+                            <option value="Private Ltd. Company">Private Ltd. Company</option>
+                            <option value="Public Ltd. Company">Public Ltd. Company</option>
+                            <option value="Limited Liability Partnership (LLP)">Limited Liability Partnership (LLP)</option>
+                            <option value="Trust, Association, Society, Club">Trust, Association, Society, Club</option>
+                            <option value="Government Entity">Government Entity</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Registration Number</label>
+                          <input
+                            type="text"
+                            value={editFormData.registrationNumber || ''}
+                            onChange={(e) => setEditFormData({ ...editFormData, registrationNumber: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                            disabled
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">GST Number</label>
+                          <input
+                            type="text"
+                            value={editFormData.gstNumber || ''}
+                            onChange={(e) => setEditFormData({ ...editFormData, gstNumber: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                            disabled
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                          <input
+                            type="text"
+                            value={editFormData.address || ''}
+                            onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                          <input
+                            type="text"
+                            value={editFormData.city || ''}
+                            onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                            disabled
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                          <input
+                            type="text"
+                            value={editFormData.state || ''}
+                            onChange={(e) => setEditFormData({ ...editFormData, state: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                            disabled
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                          <input
+                            type="text"
+                            value={editFormData.country || ''}
+                            onChange={(e) => setEditFormData({ ...editFormData, country: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                            disabled
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Pincode</label>
+                          <input
+                            type="text"
+                            value={editFormData.pincode || ''}
+                            onChange={(e) => setEditFormData({ ...editFormData, pincode: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                            disabled
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                          <input
+                            type="text"
+                            value={editFormData.website || ''}
+                            onChange={(e) => setEditFormData({ ...editFormData, website: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => { setShowEditModal(false); setEditUserId(null); }}
+                      className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={editLoading}
+                      className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors font-medium"
+                    >
+                      {editLoading ? 'Saving...' : 'Save Changes'}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         )}

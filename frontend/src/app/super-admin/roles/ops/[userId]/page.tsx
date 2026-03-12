@@ -3,11 +3,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { authAPI, superAdminOpsAPI } from '@/lib/api';
-import { User, USER_ROLE, OpsSchedule, OpsScheduleSummary, OpsScheduleStudent } from '@/types';
+import { User, USER_ROLE, OpsSchedule, OpsScheduleSummary, OpsScheduleStudent, TeamMeet } from '@/types';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
 import OpsScheduleCalendar from '@/components/OpsScheduleCalendar';
-import OpsScheduleSidebar from '@/components/OpsScheduleSidebar';
+import OpsScheduleOverview from '@/components/OpsScheduleOverview';
 import OpsScheduleFormPanel from '@/components/OpsScheduleFormPanel';
+import TeamMeetFormPanel from '@/components/TeamMeetFormPanel';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName } from '@/utils/nameHelpers';
 
@@ -27,6 +28,11 @@ export default function SuperAdminOpsDashboardPage() {
   const [selectedSchedule, setSelectedSchedule] = useState<OpsSchedule | null>(null);
   const [showFormPanel, setShowFormPanel] = useState(false);
 
+  // TeamMeet states
+  const [teamMeets, setTeamMeets] = useState<TeamMeet[]>([]);
+  const [selectedTeamMeet, setSelectedTeamMeet] = useState<TeamMeet | null>(null);
+  const [showTeamMeetPanel, setShowTeamMeetPanel] = useState(false);
+
   useEffect(() => {
     checkAuth();
   }, []);
@@ -34,15 +40,17 @@ export default function SuperAdminOpsDashboardPage() {
   // Fetch schedule data for this ops user
   const fetchScheduleData = useCallback(async () => {
     try {
-      const [schedulesRes, summaryRes, studentsRes] = await Promise.all([
+      const [schedulesRes, summaryRes, studentsRes, teamMeetsRes] = await Promise.all([
         superAdminOpsAPI.getOpsSchedules(opsUserId),
         superAdminOpsAPI.getOpsSummary(opsUserId),
         superAdminOpsAPI.getOpsStudents(opsUserId),
+        superAdminOpsAPI.getOpsTeamMeets(opsUserId),
       ]);
 
       setSchedules(schedulesRes.data.data.schedules || []);
       setSummary(summaryRes.data.data || { today: [], missed: [], tomorrow: [], counts: { today: 0, missed: 0, tomorrow: 0, total: 0 } });
       setStudents(studentsRes.data.data.students || []);
+      setTeamMeets(teamMeetsRes.data.data.teamMeets || []);
     } catch (error) {
       console.error('Error fetching schedule data:', error);
       toast.error('Failed to fetch ops schedule data');
@@ -90,6 +98,14 @@ export default function SuperAdminOpsDashboardPage() {
   const handleScheduleSelect = (schedule: OpsSchedule) => {
     setSelectedSchedule(schedule);
     setShowFormPanel(true);
+    setShowTeamMeetPanel(false);
+  };
+
+  // TeamMeet select handler
+  const handleTeamMeetSelect = (teamMeet: TeamMeet) => {
+    setSelectedTeamMeet(teamMeet);
+    setShowTeamMeetPanel(true);
+    setShowFormPanel(false);
   };
 
   if (loading) {
@@ -173,15 +189,20 @@ export default function SuperAdminOpsDashboardPage() {
               <OpsScheduleCalendar
                 schedules={schedules}
                 onScheduleSelect={handleScheduleSelect}
+                teamMeets={teamMeets}
+                onTeamMeetSelect={handleTeamMeetSelect}
+                currentUserId={opsUserId}
               />
             </div>
 
-            {/* Sidebar - Takes 1 column on right */}
+            {/* Overview - Takes 1 column on right */}
             <div className="lg:col-span-1">
-              <OpsScheduleSidebar
-                summary={summary}
-                onScheduleClick={handleScheduleSelect}
-                studentLinkPrefix="/super-admin/roles/student"
+              <OpsScheduleOverview
+                opsTasks={schedules}
+                teamMeets={teamMeets}
+                onTaskClick={handleScheduleSelect}
+                onTeamMeetClick={handleTeamMeetSelect}
+                currentUserId={opsUserId}
               />
             </div>
           </div>
@@ -227,6 +248,25 @@ export default function SuperAdminOpsDashboardPage() {
             }}
             onSubmit={async () => {}}
             readOnly={true}
+            onSwitchToTeamMeet={selectedSchedule ? undefined : undefined}
+          />
+
+          {/* Read-Only TeamMeet Form Panel */}
+          <TeamMeetFormPanel
+            teamMeet={selectedTeamMeet}
+            isOpen={showTeamMeetPanel}
+            onClose={() => {
+              setShowTeamMeetPanel(false);
+              setSelectedTeamMeet(null);
+            }}
+            onSave={() => {}}
+            mode="view"
+            currentUserId={opsUserId}
+            readOnly={true}
+            onSwitchToTask={() => {
+              setShowTeamMeetPanel(false);
+              setSelectedTeamMeet(null);
+            }}
           />
         </div>
       </SuperAdminLayout>

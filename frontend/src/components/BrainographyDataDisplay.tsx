@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 
 interface SkillWithPercentage {
   name: string;
@@ -26,6 +26,8 @@ export interface BrainographyDataType {
 
 interface Props {
   data: BrainographyDataType;
+  canEdit?: boolean;
+  onUpdate?: (field: 'standard' | 'board', value: string) => void;
 }
 
 /** Format a percentage value for display — prevents double "%%" */
@@ -76,7 +78,7 @@ function PercentageBar({ name, percentage, rawPercentage, color }: { name: strin
 
 function InfoCard({ icon, label, value, accentColor }: { icon: React.ReactNode; label: string; value: string; accentColor?: string }) {
   return (
-    <div className={`bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow`}>
+    <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center gap-2 mb-1.5">
         {icon}
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{label}</p>
@@ -86,7 +88,86 @@ function InfoCard({ icon, label, value, accentColor }: { icon: React.ReactNode; 
   );
 }
 
-export default function BrainographyDataDisplay({ data }: Props) {
+function EditableInfoCard({
+  icon, label, value, accentColor, canEdit, onSave,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  accentColor?: string;
+  canEdit?: boolean;
+  onSave?: (newValue: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+
+  function handleSave() {
+    onSave?.(draft.trim());
+    setEditing(false);
+  }
+  function handleCancel() {
+    setDraft(value);
+    setEditing(false);
+  }
+
+  // Keep draft in sync when value changes from parent (e.g. after save)
+  React.useEffect(() => {
+    if (!editing) setDraft(value);
+  }, [value, editing]);
+
+  return (
+    <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-2">
+          {icon}
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{label}</p>
+        </div>
+        {canEdit && !editing && (
+          <button
+            onClick={() => { setDraft(value); setEditing(true); }}
+            className="p-1 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            title={`Edit ${label}`}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+          </button>
+        )}
+      </div>
+      {editing ? (
+        <div className="mt-1">
+          <input
+            type="text"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            className="w-full text-sm border border-gray-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder={`Enter ${label.toLowerCase()}...`}
+            autoFocus
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') handleCancel(); }}
+          />
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={handleSave}
+              className="flex-1 text-xs font-semibold bg-blue-600 text-white rounded-md py-1 hover:bg-blue-700 transition-colors"
+            >
+              Save
+            </button>
+            <button
+              onClick={handleCancel}
+              className="flex-1 text-xs font-semibold bg-gray-100 text-gray-600 rounded-md py-1 hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className={`text-base font-bold ${accentColor || 'text-gray-900'}`}>{value || 'N/A'}</p>
+      )}
+    </div>
+  );
+}
+
+export default function BrainographyDataDisplay({ data, canEdit, onUpdate }: Props) {
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
       {/* Header */}
@@ -121,18 +202,22 @@ export default function BrainographyDataDisplay({ data }: Props) {
             value={data.studentName}
             accentColor="text-blue-700"
           />
-          <InfoCard
+          <EditableInfoCard
             icon={<svg className="w-4 h-4 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>}
             label="Standard"
-            value={data.standard}
+            value={data.standard || ''}
             accentColor="text-violet-700"
+            canEdit={canEdit}
+            onSave={(v) => onUpdate?.('standard', v)}
           />
-          {data.board && (
-            <InfoCard
+          {(canEdit || data.board) && (
+            <EditableInfoCard
               icon={<svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>}
               label="Board"
-              value={data.board}
+              value={data.board || ''}
               accentColor="text-emerald-700"
+              canEdit={canEdit}
+              onSave={(v) => onUpdate?.('board', v)}
             />
           )}
           <InfoCard

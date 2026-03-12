@@ -8,6 +8,7 @@ export interface IServiceProvider extends Document {
   businessType?: string;
   registrationNumber?: string;
   gstNumber?: string;
+  businessPan?: string;
   address?: string;
   city?: string;
   state?: string;
@@ -16,6 +17,12 @@ export interface IServiceProvider extends Document {
   website?: string;
   companyLogo?: string;
   servicesOffered?: string[];
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankIfscCode?: string;
+  bankAccountType?: string;
+  bankSwiftCode?: string;
+  bankUpiId?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -70,6 +77,12 @@ const serviceProviderSchema = new Schema<IServiceProvider>(
       required: false,
       trim: true,
     },
+    businessPan: {
+      type: String,
+      required: false,
+      trim: true,
+      uppercase: true,
+    },
     address: {
       type: String,
       required: false,
@@ -104,6 +117,39 @@ const serviceProviderSchema = new Schema<IServiceProvider>(
       type: String,
       required: false,
       default: "",
+    },
+    bankName: {
+      type: String,
+      required: false,
+      trim: true,
+    },
+    bankAccountNumber: {
+      type: String,
+      required: false,
+      trim: true,
+    },
+    bankIfscCode: {
+      type: String,
+      required: false,
+      trim: true,
+      uppercase: true,
+    },
+    bankAccountType: {
+      type: String,
+      required: false,
+      enum: ['Savings', 'Current'],
+      trim: true,
+    },
+    bankSwiftCode: {
+      type: String,
+      required: false,
+      trim: true,
+      uppercase: true,
+    },
+    bankUpiId: {
+      type: String,
+      required: false,
+      trim: true,
     },
     servicesOffered: {
       type: [String],

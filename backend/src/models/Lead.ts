@@ -16,6 +16,17 @@ export enum LEAD_STAGE {
   CLOSED = "Closed",
 }
 
+export interface ILeadParentDetail {
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  relationship: string;
+  mobileNumber: string;
+  email: string;
+  qualification: string;
+  occupation: string;
+}
+
 export interface ILead extends Document {
   name: string;
   email: string;
@@ -24,6 +35,7 @@ export interface ILead extends Document {
   serviceTypes: SERVICE_TYPE[];
   intake?: string;
   year?: string;
+  parentDetail?: ILeadParentDetail;
   adminId: mongoose.Types.ObjectId;
   assignedCounselorId?: mongoose.Types.ObjectId;
   stage: LEAD_STAGE;
@@ -66,6 +78,16 @@ const leadSchema = new Schema<ILead>(
       type: String,
       trim: true,
       required: false,
+    },
+    parentDetail: {
+      firstName: { type: String, trim: true },
+      middleName: { type: String, trim: true },
+      lastName: { type: String, trim: true },
+      relationship: { type: String, trim: true },
+      mobileNumber: { type: String, trim: true },
+      email: { type: String, trim: true, lowercase: true },
+      qualification: { type: String, trim: true },
+      occupation: { type: String, trim: true },
     },
     serviceTypes: {
       type: [String],

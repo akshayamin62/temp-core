@@ -56,6 +56,7 @@ export const authAPI = {
     businessType?: string;
     registrationNumber?: string;
     gstNumber?: string;
+    businessPan?: string;
     address?: string;
     city?: string;
     state?: string;
@@ -75,6 +76,9 @@ export const authAPI = {
   
   getProfile: () =>
     api.get('/auth/profile'),
+
+  updateSPProfile: (data: Record<string, string>) =>
+    api.put('/auth/sp-profile', data),
 };
 
 export const superAdminAPI = {
@@ -97,6 +101,12 @@ export const superAdminAPI = {
   toggleUserStatus: (userId: string) => 
     api.patch(`/super-admin/users/${userId}/toggle-status`),
   
+  getUserWithProfile: (userId: string) =>
+    api.get(`/super-admin/users/${userId}/profile`),
+
+  editUserByRole: (userId: string, data: Record<string, any>) =>
+    api.put(`/super-admin/users/${userId}/edit`, data),
+
   deleteUser: (userId: string) => api.delete(`/super-admin/users/${userId}`),
   
   createOps: (data: {
@@ -200,6 +210,14 @@ export const adminStudentAPI = {
     api.get(`/admin/students/${studentId}/registrations/${registrationId}/answers`),
 };
 
+// Parent Dashboard API (read-only access to linked students for parent)
+export const parentAPI = {
+  getMyStudents: () => api.get('/parents/my-students'),
+  getStudentDetails: (studentId: string) => api.get(`/parents/my-students/${studentId}`),
+  getStudentFormAnswers: (studentId: string, registrationId: string) =>
+    api.get(`/parents/my-students/${studentId}/registrations/${registrationId}/answers`),
+};
+
 // Service API
 export const serviceAPI = {
   getAllServices: () => api.get('/services/services'),
@@ -257,6 +275,21 @@ export const formAnswerAPI = {
   
   deleteFormAnswers: (answerId: string) => 
     api.delete(`/forms/answers/${answerId}`),
+
+  // Student profile (no registrationId needed)
+  getStudentProfile: () =>
+    api.get('/forms/student-profile'),
+  
+  saveStudentProfile: (answers: any) =>
+    api.put('/forms/student-profile', { answers }),
+
+  // View student profile data (for other roles)
+  getStudentProfileById: (studentId: string) =>
+    api.get(`/forms/student-profile/${studentId}`),
+
+  // Save student profile data (for staff roles)
+  saveStudentProfileById: (studentId: string, answers: any) =>
+    api.put(`/forms/student-profile/${studentId}`, { answers }),
 };
 
 // Student API
@@ -298,6 +331,15 @@ export const programAPI = {
     if (registrationId) params.registrationId = registrationId;
     return api.get(`/programs/ops/student/${studentId}/programs`, { params });
   },
+  // Fetch both available + applied programs for dashboard stats (works for all admin-like roles)
+  getStudentProgramStats: (studentId: string, registrationId?: string) => {
+    const baseParams: any = {};
+    if (registrationId) baseParams.registrationId = registrationId;
+    return Promise.all([
+      api.get(`/programs/ops/student/${studentId}/programs`, { params: { ...baseParams } }),
+      api.get(`/programs/ops/student/${studentId}/programs`, { params: { ...baseParams, section: 'applied' } }),
+    ]);
+  },
   createOpsStudentProgram: (studentId: string, data: any) => api.post(`/programs/ops/student/${studentId}/programs`, data),
   uploadOpsStudentProgramsExcel: (studentId: string, file: File) => {
     const formData = new FormData();
@@ -329,6 +371,15 @@ export const programAPI = {
     formData.append('file', file);
     formData.append('studentId', studentId);
     return api.post('/programs/super-admin/programs/upload-excel', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  uploadQsRankingExcel: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/programs/super-admin/upload-qs-ranking', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -384,6 +435,18 @@ export const leadAPI = {
     mobileNumber: string;
     city: string;
     serviceTypes: string[];
+    intake?: string;
+    year?: string;
+    parentDetail?: {
+      firstName: string;
+      middleName?: string;
+      lastName: string;
+      relationship: string;
+      mobileNumber: string;
+      email: string;
+      qualification: string;
+      occupation: string;
+    };
   }) => api.post(`/public/enquiry/${adminSlug}/submit`, data),
   
   // Admin endpoints
@@ -583,6 +646,17 @@ export const teamMeetAPI = {
 
   // Admin-only: Get counselor's TeamMeets (read-only)
   getCounselorTeamMeets: (counselorId: string) => api.get(`/team-meets/counselor/${counselorId}`),
+
+  // Get team meets for a specific student (for admin/counselor/super-admin/ops dashboard)
+  getStudentTeamMeets: (studentId: string) => api.get(`/team-meets/student/${studentId}`),
+
+  // Invite users to a team meeting
+  inviteToTeamMeet: (teamMeetId: string, userIds: string[]) =>
+    api.patch(`/team-meets/${teamMeetId}/invite`, { userIds }),
+
+  // Remove an invited user from a team meeting
+  removeInviteFromTeamMeet: (teamMeetId: string, invitedUserId: string) =>
+    api.patch(`/team-meets/${teamMeetId}/remove-invite`, { invitedUserId }),
 };
 
 // OPS Schedule API
@@ -619,6 +693,12 @@ export const opsScheduleAPI = {
   
   // Delete schedule
   deleteSchedule: (scheduleId: string) => api.delete(`/ops-schedules/${scheduleId}`),
+
+  // Student: get OPS tasks assigned to me
+  getMyTasksAsStudent: () => api.get('/ops-schedules/my-tasks'),
+
+  // Get OPS tasks for a specific student (for admin/counselor/super-admin/ops dashboard)
+  getStudentTasks: (studentId: string) => api.get(`/ops-schedules/student/${studentId}`),
 };
 
 // Super Admin - OPS Dashboard API (read-only)
@@ -634,6 +714,23 @@ export const superAdminOpsAPI = {
 
   // Get students assigned to an ops user
   getOpsStudents: (opsUserId: string) => api.get(`/super-admin/ops/${opsUserId}/students`),
+
+  // Get team meets for an ops user
+  getOpsTeamMeets: (opsUserId: string, params?: { month?: number; year?: number }) => 
+    api.get(`/super-admin/ops/${opsUserId}/team-meets`, { params }),
+};
+
+// Super Admin Eduplan Coach API (read-only dashboard)
+export const superAdminEduplanCoachAPI = {
+  // Get eduplan coach user details
+  getCoachDetail: (coachUserId: string) => api.get(`/super-admin/eduplan-coaches/${coachUserId}/detail`),
+
+  // Get students assigned to an eduplan coach
+  getCoachStudents: (coachUserId: string) => api.get(`/super-admin/eduplan-coaches/${coachUserId}/students`),
+
+  // Get team meets for an eduplan coach
+  getCoachTeamMeets: (coachUserId: string, params?: { month?: number; year?: number }) => 
+    api.get(`/super-admin/eduplan-coaches/${coachUserId}/team-meets`, { params }),
 };
 
 // Lead Student Conversion API
@@ -687,6 +784,29 @@ export const activityAPI = {
     api.put(`/activity/${registrationId}/feedback`, data),
   deleteFeedback: (registrationId: string, feedbackId: string) =>
     api.delete(`/activity/${registrationId}/feedback/${feedbackId}`),
+};
+
+// SP Service & Enquiry API
+export const spServiceAPI = {
+  // SP-facing
+  createService: (data: any) => api.post('/sp-services/my-services', data),
+  getMyServices: () => api.get('/sp-services/my-services'),
+  updateService: (serviceId: string, data: any) => api.put(`/sp-services/my-services/${serviceId}`, data),
+  deleteService: (serviceId: string) => api.delete(`/sp-services/my-services/${serviceId}`),
+  uploadThumbnail: (serviceId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('thumbnail', file);
+    return api.post(`/sp-services/my-services/${serviceId}/thumbnail`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  getMyEnquiries: () => api.get('/sp-services/my-enquiries'),
+  updateEnquiryStatus: (enquiryId: string, status: string) => api.patch(`/sp-services/my-enquiries/${enquiryId}/status`, { status }),
+
+  // Student-facing
+  browseServices: (params?: { category?: string; search?: string }) => api.get('/sp-services/browse', { params }),
+  sendEnquiry: (data: { spServiceId: string; serviceProviderId: string; message: string }) => api.post('/sp-services/enquiry', data),
+  getStudentEnquiries: () => api.get('/sp-services/student-enquiries'),
 };
 
 export default api;

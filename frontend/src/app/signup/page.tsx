@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { authAPI } from '@/lib/api';
 import { USER_ROLE } from '@/types';
 import toast, { Toaster } from 'react-hot-toast';
+import { Country, State, City, ICountry, IState, ICity } from 'country-state-city';
 
 // Generate random captcha
 const generateCaptcha = (length: number = 6): string => {
@@ -40,6 +41,7 @@ export default function SignupPage() {
     businessType: '',
     registrationNumber: '',
     gstNumber: '',
+    businessPan: '',
     address: '',
     city: '',
     state: '',
@@ -49,6 +51,9 @@ export default function SignupPage() {
     servicesOffered: '',
     coachingTests: [] as string[],
   });
+  const [selectedCountry, setSelectedCountry] = useState<ICountry | null>(null);
+  const [selectedState, setSelectedState] = useState<IState | null>(null);
+  const [selectedCity, setSelectedCity] = useState<ICity | null>(null);
   const [otp, setOtp] = useState('');
   const [captcha, setCaptcha] = useState('');
   const [captchaInput, setCaptchaInput] = useState('');
@@ -62,6 +67,7 @@ export default function SignupPage() {
     businessType: string;
     registrationNumber: string;
     gstNumber: string;
+    businessPan: string;
     address: string;
     city: string;
     state: string;
@@ -135,6 +141,7 @@ export default function SignupPage() {
           businessType: formData.businessType,
           registrationNumber: formData.registrationNumber,
           gstNumber: formData.gstNumber,
+          businessPan: formData.businessPan,
           address: formData.address,
           city: formData.city,
           state: formData.state,
@@ -430,7 +437,7 @@ export default function SignupPage() {
                   </div>
                 </div>
 
-                {/* Registration Number and GST Number */}
+                {/* Registration Number and Website */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label htmlFor="registrationNumber" className="block text-sm font-bold text-gray-900 mb-2">
@@ -449,6 +456,24 @@ export default function SignupPage() {
                   </div>
                 
                   <div>
+                    <label htmlFor="website" className="block text-sm font-bold text-gray-900 mb-2">
+                      Website <span className="text-gray-500">(Optional)</span>
+                    </label>
+                    <input
+                      id="website"
+                      name="website"
+                      type="url"
+                      value={formData.website}
+                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white"
+                      placeholder="https://example.com"
+                    />
+                  </div>
+                </div>
+
+                {/* GST Number and Business PAN */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
                     <label htmlFor="gstNumber" className="block text-sm font-bold text-gray-900 mb-2">
                       GST Number <span className="text-gray-500">(Optional)</span>
                     </label>
@@ -462,22 +487,23 @@ export default function SignupPage() {
                       placeholder="Enter GST number"
                     />
                   </div>
-                </div>
 
-                {/* Website */}
-                <div>
-                  <label htmlFor="website" className="block text-sm font-bold text-gray-900 mb-2">
-                    Website <span className="text-gray-500">(Optional)</span>
-                  </label>
-                  <input
-                    id="website"
-                    name="website"
-                    type="url"
-                    value={formData.website}
-                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                    className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white"
-                    placeholder="https://example.com"
-                  />
+                  <div>
+                    <label htmlFor="businessPan" className="block text-sm font-bold text-gray-900 mb-2">
+                      Business PAN <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="businessPan"
+                      name="businessPan"
+                      type="text"
+                      required
+                      value={formData.businessPan}
+                      onChange={(e) => setFormData({ ...formData, businessPan: e.target.value.toUpperCase() })}
+                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white"
+                      placeholder="e.g. ABCDE1234F"
+                      maxLength={10}
+                    />
+                  </div>
                 </div>
 
                 {/* Address */}
@@ -497,57 +523,85 @@ export default function SignupPage() {
                   />
                 </div>
 
-                {/* City and State */}
+                {/* Country and State */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label htmlFor="city" className="block text-sm font-bold text-gray-900 mb-2">
-                      City <span className="text-red-500">*</span>
+                    <label htmlFor="country" className="block text-sm font-bold text-gray-900 mb-2">
+                      Country <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      id="city"
-                      name="city"
-                      type="text"
+                    <select
+                      id="country"
+                      name="country"
                       required
-                      value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white"
-                      placeholder="Enter city"
-                    />
+                      value={selectedCountry?.isoCode || ''}
+                      onChange={(e) => {
+                        const country = Country.getAllCountries().find(c => c.isoCode === e.target.value) || null;
+                        setSelectedCountry(country);
+                        setSelectedState(null);
+                        setSelectedCity(null);
+                        setFormData({ ...formData, country: country?.name || '', state: '', city: '' });
+                      }}
+                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 bg-white"
+                    >
+                      <option value="">Select country</option>
+                      {Country.getAllCountries().map((c) => (
+                        <option key={c.isoCode} value={c.isoCode}>{c.name}</option>
+                      ))}
+                    </select>
                   </div>
                   
                   <div>
                     <label htmlFor="state" className="block text-sm font-bold text-gray-900 mb-2">
                       State <span className="text-red-500">*</span>
                     </label>
-                    <input
+                    <select
                       id="state"
                       name="state"
-                      type="text"
                       required
-                      value={formData.state}
-                      onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white"
-                      placeholder="Enter state"
-                    />
+                      value={selectedState?.isoCode || ''}
+                      onChange={(e) => {
+                        const states = selectedCountry ? State.getStatesOfCountry(selectedCountry.isoCode) : [];
+                        const state = states.find(s => s.isoCode === e.target.value) || null;
+                        setSelectedState(state);
+                        setSelectedCity(null);
+                        setFormData({ ...formData, state: state?.name || '', city: '' });
+                      }}
+                      disabled={!selectedCountry}
+                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    >
+                      <option value="">Select state</option>
+                      {selectedCountry && State.getStatesOfCountry(selectedCountry.isoCode).map((s) => (
+                        <option key={s.isoCode} value={s.isoCode}>{s.name}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
-                {/* Country and Pincode */}
+                {/* City and Pincode */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label htmlFor="country" className="block text-sm font-bold text-gray-900 mb-2">
-                      Country <span className="text-red-500">*</span>
+                    <label htmlFor="city" className="block text-sm font-bold text-gray-900 mb-2">
+                      City <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      id="country"
-                      name="country"
-                      type="text"
+                    <select
+                      id="city"
+                      name="city"
                       required
-                      value={formData.country}
-                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white"
-                      placeholder="Enter country"
-                    />
+                      value={selectedCity?.name || ''}
+                      onChange={(e) => {
+                        const cities = selectedCountry && selectedState ? City.getCitiesOfState(selectedCountry.isoCode, selectedState.isoCode) : [];
+                        const city = cities.find(c => c.name === e.target.value) || null;
+                        setSelectedCity(city);
+                        setFormData({ ...formData, city: city?.name || '' });
+                      }}
+                      disabled={!selectedState}
+                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    >
+                      <option value="">Select city</option>
+                      {selectedCountry && selectedState && City.getCitiesOfState(selectedCountry.isoCode, selectedState.isoCode).map((c) => (
+                        <option key={c.name} value={c.name}>{c.name}</option>
+                      ))}
+                    </select>
                   </div>
                   
                   <div>
@@ -585,14 +639,12 @@ export default function SignupPage() {
                     <option value="Coaching Classes">Coaching Classes</option>
                     <option value="Portfolio Designer">Portfolio Designer</option>
                     <option value="Student Education Loan">Student Education Loan</option>
-                    <option value="Visa Consultant">Visa Consultant</option>
-                    <option value="Forex">Forex</option>
-                    <option value="Insurance">Insurance</option>
-                    <option value="Air Ticket">Air Ticket</option>
-                    <option value="GIC/Blocked Account">GIC/Blocked Account</option>
-                    <option value="Stay Arrangement">Stay Arrangement</option>
-                    <option value="Medical checkup">Medical checkup</option>
-                    <option value="International Sim Card">International Sim Card</option>
+                    <option value="Travel and Visa Agent">Travel and Visa Agent</option>
+                    <option value="Forex/GIC/Blocked Account">Forex/GIC/Blocked Account</option>
+                    <option value="Travel and Medical Insurance">Travel and Medical Insurance</option>
+                    <option value="Housing">Housing</option>
+                    <option value="Medical Checkup">Medical Checkup</option>
+                    <option value="International SIM Card">International SIM Card</option>
                   </select>
                 </div>
 

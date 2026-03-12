@@ -15,6 +15,7 @@ import {
   updateProgramStatus,
   getStudentAppliedPrograms,
   getSuperAdminStudentPrograms,
+  uploadQsRankingExcel,
 } from '../controllers/programController';
 
 // Configure multer for file uploads
@@ -49,7 +50,7 @@ router.delete('/student/programs/:programId', authorize([USER_ROLE.STUDENT]), re
 
 // OPS routes
 router.get('/ops/programs', authorize([USER_ROLE.OPS]), getOpsPrograms);
-router.get('/ops/student/:studentId/programs', authorize([USER_ROLE.OPS, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), getOpsStudentPrograms);
+router.get('/ops/student/:studentId/programs', authorize([USER_ROLE.OPS, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN]), getOpsStudentPrograms);
 router.post('/ops/programs', authorize([USER_ROLE.OPS]), createProgram);
 router.post('/ops/student/:studentId/programs', authorize([USER_ROLE.OPS]), createProgram);
 router.post('/ops/programs/upload-excel', authorize([USER_ROLE.OPS]), upload.single('file'), uploadProgramsFromExcel);
@@ -63,6 +64,9 @@ router.post('/super-admin/programs/create', authorize([USER_ROLE.SUPER_ADMIN]), 
 router.post('/super-admin/programs/upload-excel', authorize([USER_ROLE.SUPER_ADMIN]), upload.single('file'), uploadProgramsFromExcel);
 router.put('/super-admin/programs/:programId/selection', authorize([USER_ROLE.SUPER_ADMIN]), updateProgramSelection);
 router.put('/super-admin/programs/:programId/status', authorize([USER_ROLE.SUPER_ADMIN]), updateProgramStatus);
+
+// Super Admin - QS ranking upload
+router.post('/super-admin/upload-qs-ranking', authorize([USER_ROLE.SUPER_ADMIN]), upload.single('file'), uploadQsRankingExcel);
 
 export default router;
 

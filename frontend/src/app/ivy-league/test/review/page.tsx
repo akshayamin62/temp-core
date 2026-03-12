@@ -69,7 +69,7 @@ export default function TestReviewPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center">
         <div className="flex items-center gap-3 text-gray-500">
           <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
           Loading review...
@@ -88,11 +88,11 @@ export default function TestReviewPage() {
   const totalSkipped = reviewData.sections.reduce((sum, s) => sum + s.questions.filter(q => q.selectedOption === null).length, 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-cyan-50">
       {/* Header */}
       <div className="sticky top-25 z-40 bg-white/95 backdrop-blur shadow-sm border-b border-gray-200 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#2959ba] to-[#1e3f8a] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-linear-to-br from-[#2959ba] to-[#1e3f8a] flex items-center justify-center">
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -115,7 +115,7 @@ export default function TestReviewPage() {
             <p className="text-gray-500 text-sm">Review your answers, correct answers, and explanations</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="bg-gradient-to-br from-[#2959ba]/10 to-[#1e3f8a]/10 border border-[#2959ba]/30 rounded-xl p-3 text-center">
+            <div className="bg-linear-to-br from-[#2959ba]/10 to-[#1e3f8a]/10 border border-[#2959ba]/30 rounded-xl p-3 text-center">
               <div className="text-2xl font-black text-[#2959ba]">{reviewData.totalScore}</div>
               <div className="text-xs font-semibold text-[#2959ba]/70">Total Score</div>
             </div>
@@ -235,7 +235,7 @@ export default function TestReviewPage() {
           return (
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
@@ -280,7 +280,7 @@ export default function TestReviewPage() {
                         </Pie>
                         <Tooltip
                           contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb', fontSize: 12 }}
-                          formatter={(value: number, name: string) => [`${value} questions`, name]}
+                          formatter={(value: number | undefined, name: string | undefined) => [`${value ?? 0} questions`, name ?? '']}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -444,7 +444,7 @@ export default function TestReviewPage() {
                           key={opt.label}
                           className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 ${optionStyle}`}
                         >
-                          <span className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm border-2 ${
+                          <span className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm border-2 ${
                             isCorrectAnswer
                               ? 'bg-green-500 border-green-500 text-white'
                               : isStudentAnswer
@@ -501,7 +501,7 @@ export default function TestReviewPage() {
           <button
             onClick={() => setActiveSection(Math.min(reviewData.sections.length - 1, activeSection + 1))}
             disabled={activeSection === reviewData.sections.length - 1}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#2959ba] to-[#1e3f8a] text-white rounded-xl text-sm font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-5 py-2.5 bg-linear-to-r from-[#2959ba] to-[#1e3f8a] text-white rounded-xl text-sm font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Next Section →
           </button>

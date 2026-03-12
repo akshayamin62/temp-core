@@ -13,6 +13,10 @@ import TeamMeet from "../models/TeamMeet";
 import LeadStudentConversion from "../models/LeadStudentConversion";
 import FollowUp, { FOLLOWUP_STATUS } from "../models/FollowUp";
 import ServiceProvider from "../models/ServiceProvider";
+import Parent from "../models/Parent";
+import StudentFormAnswer from "../models/StudentFormAnswer";
+import FormPart, { FormPartKey } from "../models/FormPart";
+import FormSection from "../models/FormSection";
 import { generateSlug, getUniqueSlug } from "./leadController";
 // import { sendEmail } from "../utils/email";
 
@@ -124,6 +128,35 @@ export const getAllUsers = async (req: Request, res: Response): Promise<Response
           (user.companyName && user.companyName.toLowerCase().includes(searchLower))
         );
       }
+    }
+
+    // If filtering by PARENT role, include linked student names
+    if (role && String(role).toUpperCase() === 'PARENT') {
+      enrichedUsers = await Promise.all(
+        users.map(async (user: any) => {
+          const userObj = user.toObject();
+          if (userObj.role === USER_ROLE.PARENT) {
+            const parentProfile = await Parent.findOne({ userId: user._id });
+            if (parentProfile && parentProfile.studentIds.length > 0) {
+              const students = await Student.find({ _id: { $in: parentProfile.studentIds } }).select('_id userId');
+              const studentUserIds = students.map((s: any) => s.userId);
+              const studentUsers = await User.find({ _id: { $in: studentUserIds } }).select('firstName lastName');
+              const studentUserMap = new Map(studentUsers.map((u: any) => [u._id.toString(), u]));
+              userObj.students = students.map((s: any) => {
+                const su = studentUserMap.get(s.userId.toString());
+                return {
+                  studentId: s._id,
+                  firstName: su?.firstName || '',
+                  lastName: su?.lastName || '',
+                };
+              });
+            } else {
+              userObj.students = [];
+            }
+          }
+          return userObj;
+        })
+      );
     }
 
     return res.json({
@@ -630,6 +663,51 @@ export const getAllIvyExperts = async (_req: Request, res: Response): Promise<Re
       message: 'Failed to fetch ivy experts',
       error: error.message,
     });
+  }
+};
+
+/**
+ * Get team meets for a specific Ivy Expert (for super admin dashboard)
+ */
+export const getIvyExpertTeamMeetsForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { ivyExpertUserId } = req.params;
+    const { month, year } = req.query;
+
+    const ivyUser = await User.findById(ivyExpertUserId);
+    if (!ivyUser || ivyUser.role !== USER_ROLE.IVY_EXPERT) {
+      return res.status(404).json({ success: false, message: 'Ivy Expert not found' });
+    }
+
+    let startDate: Date;
+    let endDate: Date;
+
+    if (month && year) {
+      const monthNum = parseInt(month as string);
+      const yearNum = parseInt(year as string);
+      startDate = new Date(yearNum, monthNum - 1, -6);
+      endDate = new Date(yearNum, monthNum, 7, 23, 59, 59, 999);
+    } else {
+      const now = new Date();
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59, 999);
+    }
+
+    const teamMeets = await TeamMeet.find({
+      $or: [{ requestedBy: ivyExpertUserId }, { requestedTo: ivyExpertUserId }],
+      scheduledDate: { $gte: startDate, $lte: endDate },
+    })
+      .populate('requestedBy', 'firstName middleName lastName email role')
+      .populate('requestedTo', 'firstName middleName lastName email role')
+      .sort({ scheduledDate: 1, scheduledTime: 1 });
+
+    return res.status(200).json({
+      success: true,
+      data: { teamMeets },
+    });
+  } catch (error: any) {
+    console.error('Get Ivy Expert team meets for super admin error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch Ivy Expert team meets', error: error.message });
   }
 };
 
@@ -1750,6 +1828,51 @@ export const getOpsStudentsForSuperAdmin = async (req: Request, res: Response): 
 };
 
 /**
+ * Get team meets for a specific OPS user (for super admin)
+ */
+export const getOpsTeamMeetsForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { opsUserId } = req.params;
+    const { month, year } = req.query;
+
+    const opsUser = await User.findById(opsUserId);
+    if (!opsUser || opsUser.role !== USER_ROLE.OPS) {
+      return res.status(404).json({ success: false, message: 'OPS user not found' });
+    }
+
+    let startDate: Date;
+    let endDate: Date;
+
+    if (month && year) {
+      const monthNum = parseInt(month as string);
+      const yearNum = parseInt(year as string);
+      startDate = new Date(yearNum, monthNum - 1, -6);
+      endDate = new Date(yearNum, monthNum, 7, 23, 59, 59, 999);
+    } else {
+      const now = new Date();
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59, 999);
+    }
+
+    const teamMeets = await TeamMeet.find({
+      $or: [{ requestedBy: opsUserId }, { requestedTo: opsUserId }],
+      scheduledDate: { $gte: startDate, $lte: endDate },
+    })
+      .populate('requestedBy', 'firstName middleName lastName email role')
+      .populate('requestedTo', 'firstName middleName lastName email role')
+      .sort({ scheduledDate: 1, scheduledTime: 1 });
+
+    return res.status(200).json({
+      success: true,
+      data: { teamMeets },
+    });
+  } catch (error: any) {
+    console.error('Get OPS team meets for super admin error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch OPS team meets', error: error.message });
+  }
+};
+
+/**
  * Get Service Provider Detail (for View Details page)
  */
 export const getServiceProviderDetail = async (req: Request, res: Response): Promise<Response> => {
@@ -1790,5 +1913,444 @@ export const getServiceProviderDetail = async (req: Request, res: Response): Pro
       message: "Failed to fetch service provider details",
       error: error.message,
     });
+  }
+};
+
+// ============= EDUPLAN COACH DASHBOARD ROUTES (Read-Only) =============
+
+/**
+ * Get eduplan coach details for super admin
+ */
+export const getEduplanCoachDetailForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { coachUserId } = req.params;
+
+    const coachUser = await User.findById(coachUserId).select('-password');
+    if (!coachUser || coachUser.role !== USER_ROLE.EDUPLAN_COACH) {
+      return res.status(404).json({ success: false, message: 'Eduplan Coach user not found' });
+    }
+
+    const coachRecord = await EduplanCoach.findOne({ userId: coachUserId });
+    if (!coachRecord) {
+      return res.status(404).json({ success: false, message: 'Eduplan Coach record not found' });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        user: coachUser,
+        coach: coachRecord,
+      },
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch eduplan coach details', error: error.message });
+  }
+};
+
+/**
+ * Get students assigned to a specific eduplan coach for super admin
+ */
+export const getEduplanCoachStudentsForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { coachUserId } = req.params;
+
+    const coachRecord = await EduplanCoach.findOne({ userId: coachUserId });
+    if (!coachRecord) {
+      return res.status(404).json({ success: false, message: 'Eduplan Coach record not found' });
+    }
+
+    const registrationDocs = await StudentServiceRegistration.find({
+      $or: [
+        { activeEduplanCoachId: coachRecord._id },
+        { activeEduplanCoachId: { $exists: false }, primaryEduplanCoachId: coachRecord._id },
+        { activeEduplanCoachId: null, primaryEduplanCoachId: coachRecord._id },
+      ],
+    });
+
+    const studentIds = [...new Set(registrationDocs.map(r => r.studentId.toString()))];
+
+    const students = await Student.find({
+      _id: { $in: studentIds },
+    })
+      .populate({
+        path: 'userId',
+        select: 'firstName middleName lastName email isActive isVerified createdAt',
+      })
+      .populate({
+        path: 'adminId',
+        select: 'companyName',
+        populate: {
+          path: 'userId',
+          select: 'firstName middleName lastName email',
+        },
+      });
+
+    // Enrich with service names
+    const studentsWithServices = await Promise.all(
+      students.map(async (student: any) => {
+        const regs = await StudentServiceRegistration.find({
+          studentId: student._id,
+        }).populate('serviceId', 'name');
+
+        const serviceNames = regs
+          .map((r: any) => r.serviceId?.name)
+          .filter(Boolean);
+
+        return {
+          _id: student._id,
+          userId: student.userId,
+          mobileNumber: student.mobileNumber,
+          adminId: student.adminId,
+          registrationCount: regs.length,
+          serviceNames,
+          createdAt: student.createdAt,
+        };
+      })
+    );
+
+    return res.json({
+      success: true,
+      data: { students: studentsWithServices },
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch eduplan coach students', error: error.message });
+  }
+};
+
+/**
+ * Get team meets for a specific eduplan coach for super admin
+ */
+export const getEduplanCoachTeamMeetsForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { coachUserId } = req.params;
+    const { month, year } = req.query;
+
+    const coachUser = await User.findById(coachUserId);
+    if (!coachUser || coachUser.role !== USER_ROLE.EDUPLAN_COACH) {
+      return res.status(404).json({ success: false, message: 'Eduplan Coach user not found' });
+    }
+
+    let startDate: Date;
+    let endDate: Date;
+
+    if (month && year) {
+      const monthNum = parseInt(month as string);
+      const yearNum = parseInt(year as string);
+      startDate = new Date(yearNum, monthNum - 1, -6);
+      endDate = new Date(yearNum, monthNum, 7, 23, 59, 59, 999);
+    } else {
+      const now = new Date();
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59, 999);
+    }
+
+    const teamMeets = await TeamMeet.find({
+      $or: [{ requestedBy: coachUserId }, { requestedTo: coachUserId }],
+      scheduledDate: { $gte: startDate, $lte: endDate },
+    })
+      .populate('requestedBy', 'firstName middleName lastName email role')
+      .populate('requestedTo', 'firstName middleName lastName email role')
+      .sort({ scheduledDate: 1, scheduledTime: 1 });
+
+    return res.status(200).json({
+      success: true,
+      data: { teamMeets },
+    });
+  } catch (error: any) {
+    console.error('Get eduplan coach team meets for super admin error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch eduplan coach team meets', error: error.message });
+  }
+};
+
+/**
+ * Edit a user's profile (User fields + role-specific profile fields)
+ * Super Admin can update: firstName, middleName, lastName, email, mobileNumber
+ * Also updates the email/mobileNumber on the role-specific profile (Ops, IvyExpert, EduplanCoach, Counselor, Student, Admin)
+ */
+export const editUserByRole = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { userId } = req.params;
+    const body = req.body;
+    const { firstName, middleName, lastName, email, mobileNumber } = body;
+
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'User ID is required' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // If email is changing, check for duplicates
+    if (email && email.toLowerCase().trim() !== user.email) {
+      const existingUser = await User.findOne({ email: email.toLowerCase().trim(), _id: { $ne: userId } });
+      if (existingUser) {
+        return res.status(400).json({ success: false, message: 'Another user with this email already exists' });
+      }
+    }
+
+    // Validate phone number if provided
+    if (mobileNumber && mobileNumber.trim()) {
+      const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,5}[-\s.]?[0-9]{1,5}$/;
+      if (!phoneRegex.test(mobileNumber.trim())) {
+        return res.status(400).json({ success: false, message: 'Invalid phone number format' });
+      }
+    }
+
+    // Build User update
+    const userUpdate: any = {};
+    if (firstName !== undefined) userUpdate.firstName = firstName.trim();
+    if (middleName !== undefined) userUpdate.middleName = middleName.trim(); // empty string is valid (clears middle name)
+    if (lastName !== undefined) userUpdate.lastName = lastName.trim();
+    if (email !== undefined) userUpdate.email = email.toLowerCase().trim();
+
+    // Update User document
+    if (Object.keys(userUpdate).length > 0) {
+      await User.findByIdAndUpdate(userId, userUpdate, { new: true, runValidators: false });
+    }
+
+    // Update role-specific profile
+    const role = user.role;
+    if (role === USER_ROLE.OPS) {
+      const profileUpdate: any = {};
+      if (email !== undefined) profileUpdate.email = email.toLowerCase().trim();
+      if (mobileNumber !== undefined) profileUpdate.mobileNumber = mobileNumber.trim();
+      if (Object.keys(profileUpdate).length > 0) {
+        await Ops.findOneAndUpdate({ userId }, profileUpdate, { new: true, runValidators: false });
+      }
+    } else if (role === USER_ROLE.IVY_EXPERT) {
+      const profileUpdate: any = {};
+      if (email !== undefined) profileUpdate.email = email.toLowerCase().trim();
+      if (mobileNumber !== undefined) profileUpdate.mobileNumber = mobileNumber.trim();
+      if (Object.keys(profileUpdate).length > 0) {
+        await IvyExpert.findOneAndUpdate({ userId }, profileUpdate, { new: true, runValidators: false });
+      }
+    } else if (role === USER_ROLE.EDUPLAN_COACH) {
+      const profileUpdate: any = {};
+      if (email !== undefined) profileUpdate.email = email.toLowerCase().trim();
+      if (mobileNumber !== undefined) profileUpdate.mobileNumber = mobileNumber.trim();
+      if (Object.keys(profileUpdate).length > 0) {
+        await EduplanCoach.findOneAndUpdate({ userId }, profileUpdate, { new: true, runValidators: false });
+      }
+    } else if (role === USER_ROLE.COUNSELOR) {
+      const profileUpdate: any = {};
+      if (email !== undefined) profileUpdate.email = email.toLowerCase().trim();
+      if (mobileNumber !== undefined) profileUpdate.mobileNumber = mobileNumber.trim();
+      if (Object.keys(profileUpdate).length > 0) {
+        await Counselor.findOneAndUpdate({ userId }, profileUpdate, { new: true, runValidators: false });
+      }
+    } else if (role === USER_ROLE.STUDENT) {
+      const studentUpdate: any = {};
+      if (mobileNumber !== undefined) studentUpdate.mobileNumber = mobileNumber.trim();
+      if (email !== undefined) studentUpdate.email = email.toLowerCase().trim();
+      if (body.intake !== undefined) studentUpdate.intake = body.intake.trim();
+      if (body.year !== undefined) studentUpdate.year = body.year.trim();
+      if (Object.keys(studentUpdate).length > 0) {
+        await Student.findOneAndUpdate({ userId }, studentUpdate, { new: true, runValidators: false });
+      }
+      // Also update lead if student was converted and lead fields provided
+      if (body.leadData) {
+        const student = await Student.findOne({ userId });
+        if (student?.convertedFromLeadId) {
+          const leadUpdate: any = {};
+          const ld = body.leadData;
+          if (ld.name !== undefined) leadUpdate.name = ld.name.trim();
+          if (ld.email !== undefined) leadUpdate.email = ld.email.toLowerCase().trim();
+          if (ld.mobileNumber !== undefined) leadUpdate.mobileNumber = ld.mobileNumber.trim();
+          if (ld.city !== undefined) leadUpdate.city = ld.city.trim();
+          if (ld.serviceTypes !== undefined && Array.isArray(ld.serviceTypes) && ld.serviceTypes.length > 0) {
+            leadUpdate.serviceTypes = ld.serviceTypes;
+          }
+          if (ld.intake !== undefined) leadUpdate.intake = ld.intake.trim();
+          if (ld.year !== undefined) leadUpdate.year = ld.year.trim();
+          if (ld.stage !== undefined) leadUpdate.stage = ld.stage;
+          if (ld.source !== undefined) leadUpdate.source = ld.source.trim();
+          if (Object.keys(leadUpdate).length > 0) {
+            await Lead.findByIdAndUpdate(student.convertedFromLeadId, leadUpdate, { new: true, runValidators: false });
+          }
+        }
+      }
+    } else if (role === USER_ROLE.ADMIN) {
+      const adminUpdate: any = {};
+      if (email !== undefined) adminUpdate.email = email.toLowerCase().trim();
+      if (mobileNumber !== undefined) adminUpdate.mobileNumber = mobileNumber.trim();
+      if (body.companyName !== undefined) adminUpdate.companyName = body.companyName.trim();
+      if (body.address !== undefined) adminUpdate.address = body.address.trim();
+      if (body.enquiryFormSlug !== undefined) adminUpdate.enquiryFormSlug = body.enquiryFormSlug.toLowerCase().trim();
+      if (Object.keys(adminUpdate).length > 0) {
+        await Admin.findOneAndUpdate({ userId }, adminUpdate, { new: true, runValidators: false });
+      }
+    } else if (role === USER_ROLE.SERVICE_PROVIDER) {
+      const spUpdate: any = {};
+      if (email !== undefined) spUpdate.email = email.toLowerCase().trim();
+      if (mobileNumber !== undefined) spUpdate.mobileNumber = mobileNumber.trim();
+      if (body.companyName !== undefined) spUpdate.companyName = body.companyName.trim();
+      if (body.businessType !== undefined) spUpdate.businessType = body.businessType;
+      if (body.registrationNumber !== undefined) spUpdate.registrationNumber = body.registrationNumber.trim();
+      if (body.gstNumber !== undefined) spUpdate.gstNumber = body.gstNumber.trim();
+      if (body.businessPan !== undefined) spUpdate.businessPan = body.businessPan.trim().toUpperCase();
+      if (body.address !== undefined) spUpdate.address = body.address.trim();
+      if (body.city !== undefined) spUpdate.city = body.city.trim();
+      if (body.state !== undefined) spUpdate.state = body.state.trim();
+      if (body.country !== undefined) spUpdate.country = body.country.trim();
+      if (body.pincode !== undefined) spUpdate.pincode = body.pincode.trim();
+      if (body.website !== undefined) spUpdate.website = body.website.trim();
+      if (body.bankName !== undefined) spUpdate.bankName = body.bankName.trim();
+      if (body.bankAccountNumber !== undefined) spUpdate.bankAccountNumber = body.bankAccountNumber.trim();
+      if (body.bankIfscCode !== undefined) spUpdate.bankIfscCode = body.bankIfscCode.trim().toUpperCase();
+      if (body.bankAccountType !== undefined) spUpdate.bankAccountType = body.bankAccountType;
+      if (body.bankSwiftCode !== undefined) spUpdate.bankSwiftCode = body.bankSwiftCode.trim().toUpperCase();
+      if (body.bankUpiId !== undefined) spUpdate.bankUpiId = body.bankUpiId.trim();
+      if (Object.keys(spUpdate).length > 0) {
+        await ServiceProvider.findOneAndUpdate({ userId }, spUpdate, { new: true, runValidators: false });
+      }
+    } else if (role === USER_ROLE.PARENT) {
+      // Update Parent profile fields
+      const parentUpdate: any = {};
+      if (mobileNumber !== undefined) parentUpdate.mobileNumber = mobileNumber.trim();
+      if (body.relationship !== undefined) parentUpdate.relationship = body.relationship.trim();
+      if (body.qualification !== undefined) parentUpdate.qualification = body.qualification.trim();
+      if (body.occupation !== undefined) parentUpdate.occupation = body.occupation.trim();
+      if (Object.keys(parentUpdate).length > 0) {
+        await Parent.findOneAndUpdate({ userId }, parentUpdate, { new: true, runValidators: false });
+      }
+
+      // Reverse sync to Lead and StudentFormAnswer
+      const parentDoc = await Parent.findOne({ userId });
+      if (parentDoc && parentDoc.studentIds.length > 0) {
+        const updatedParentUser = await User.findById(userId);
+        if (updatedParentUser) {
+
+        for (const sid of parentDoc.studentIds) {
+          const student = await Student.findById(sid);
+          if (!student) continue;
+
+          // Sync to Lead.parentDetail
+          if (student.convertedFromLeadId) {
+            const lead = await Lead.findById(student.convertedFromLeadId);
+            if (lead?.parentDetail?.email?.toLowerCase() === user.email.toLowerCase()) {
+              await Lead.findByIdAndUpdate(student.convertedFromLeadId, {
+                parentDetail: {
+                  firstName: updatedParentUser.firstName,
+                  middleName: updatedParentUser.middleName || "",
+                  lastName: updatedParentUser.lastName,
+                  relationship: parentDoc.relationship,
+                  mobileNumber: parentDoc.mobileNumber,
+                  email: updatedParentUser.email,
+                  qualification: parentDoc.qualification || "",
+                  occupation: parentDoc.occupation || "",
+                },
+              });
+            }
+          }
+
+          // Sync to StudentFormAnswer (parental details section)
+          try {
+            const profilePart = await FormPart.findOne({ key: FormPartKey.PROFILE });
+            if (profilePart) {
+              const parentalSection = await FormSection.findOne({
+                partId: profilePart._id,
+                title: "Parental Details",
+                isActive: true,
+              });
+              if (parentalSection) {
+                const sKey = parentalSection._id.toString();
+                const answerDoc = await StudentFormAnswer.findOne({
+                  studentId: student._id,
+                  partKey: "PROFILE",
+                });
+                if (answerDoc?.answers?.[sKey]) {
+                  let changed = false;
+                  for (const subKey of Object.keys(answerDoc.answers[sKey])) {
+                    const entries: any[] = answerDoc.answers[sKey][subKey];
+                    if (!Array.isArray(entries)) continue;
+                    for (const entry of entries) {
+                      if (entry.parentEmail?.trim().toLowerCase() === user.email.toLowerCase()) {
+                        entry.parentFirstName = updatedParentUser.firstName;
+                        entry.parentMiddleName = updatedParentUser.middleName || "";
+                        entry.parentLastName = updatedParentUser.lastName;
+                        entry.parentEmail = updatedParentUser.email;
+                        entry.parentMobile = parentDoc.mobileNumber || entry.parentMobile;
+                        entry.parentRelationship = parentDoc.relationship || entry.parentRelationship;
+                        entry.parentQualification = parentDoc.qualification || entry.parentQualification;
+                        entry.parentOccupation = parentDoc.occupation || entry.parentOccupation;
+                        changed = true;
+                      }
+                    }
+                  }
+                  if (changed) {
+                    answerDoc.markModified('answers');
+                    await answerDoc.save();
+                  }
+                }
+              }
+            }
+          } catch (syncErr) {
+            console.error("⚠️ Parent → StudentFormAnswer reverse sync failed:", syncErr);
+          }
+        }
+        }
+      }
+    }
+
+    // Fetch updated user
+    const updatedUser = await User.findById(userId).select('-otp -otpExpires');
+
+    return res.status(200).json({
+      success: true,
+      message: 'User updated successfully',
+      data: { user: updatedUser },
+    });
+  } catch (error: any) {
+    console.error('Edit user by role error:', error);
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: 'Email already exists in role profile' });
+    }
+    return res.status(500).json({ success: false, message: 'Failed to update user', error: error.message });
+  }
+};
+
+/**
+ * Get user details with role-specific profile for editing
+ */
+export const getUserWithProfile = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId).select('-otp -otpExpires');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    let profile: any = null;
+    let lead: any = null;
+    const role = user.role;
+    if (role === USER_ROLE.OPS) {
+      profile = await Ops.findOne({ userId });
+    } else if (role === USER_ROLE.IVY_EXPERT) {
+      profile = await IvyExpert.findOne({ userId });
+    } else if (role === USER_ROLE.EDUPLAN_COACH) {
+      profile = await EduplanCoach.findOne({ userId });
+    } else if (role === USER_ROLE.COUNSELOR) {
+      profile = await Counselor.findOne({ userId }).populate('adminId', 'firstName middleName lastName email');
+    } else if (role === USER_ROLE.STUDENT) {
+      profile = await Student.findOne({ userId });
+      // Also fetch associated lead if converted
+      if (profile?.convertedFromLeadId) {
+        lead = await Lead.findById(profile.convertedFromLeadId);
+      }
+    } else if (role === USER_ROLE.ADMIN) {
+      profile = await Admin.findOne({ userId });
+    } else if (role === USER_ROLE.SERVICE_PROVIDER) {
+      profile = await ServiceProvider.findOne({ userId });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: { user, profile, lead },
+    });
+  } catch (error: any) {
+    console.error('Get user with profile error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch user profile', error: error.message });
   }
 };

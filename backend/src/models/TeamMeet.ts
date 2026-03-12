@@ -34,6 +34,7 @@ export interface ITeamMeet extends Document {
   adminId: mongoose.Types.ObjectId; // Admin organization context
   status: TEAMMEET_STATUS;
   rejectionMessage?: string; // Required when status is REJECTED
+  invitedUsers: mongoose.Types.ObjectId[]; // Users invited to the meeting
   notes?: string; // Creator's notes (saved on mark complete)
   completedAt?: Date;
   createdAt?: Date;
@@ -127,6 +128,10 @@ const teamMeetSchema = new Schema<ITeamMeet>(
       trim: true,
       maxlength: 500,
     },
+    invitedUsers: [{
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    }],
     notes: {
       type: String,
       trim: true,
@@ -145,5 +150,6 @@ teamMeetSchema.index({ requestedTo: 1, scheduledDate: 1 });
 teamMeetSchema.index({ adminId: 1 });
 teamMeetSchema.index({ status: 1 });
 teamMeetSchema.index({ scheduledDate: 1, scheduledTime: 1 });
+teamMeetSchema.index({ invitedUsers: 1 });
 
 export default mongoose.model<ITeamMeet>("TeamMeet", teamMeetSchema);

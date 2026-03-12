@@ -202,7 +202,7 @@ export default function DashboardPage() {
                 Manage your registered services and track your progress.
               </p>
             </div>
-
+            {(() => { const t = new Date(); const d = Math.floor((t.getTime() - new Date(t.getFullYear(), 0, 0).getTime()) / 86400000); return (<div className="text-right"><p className="text-3xl font-extrabold text-gray-900">Day {d}</p><p className="text-sm text-gray-500">of {t.getFullYear()}</p></div>); })()}
           </div>
 
           {/* My Services Section */}

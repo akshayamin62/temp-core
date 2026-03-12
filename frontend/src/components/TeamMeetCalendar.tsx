@@ -94,9 +94,35 @@ export default function TeamMeetCalendar({
     });
   }, [teamMeets, currentUserId]);
 
+  // Check if user is an invited participant (not sender or receiver)
+  const isInvitedOnly = useCallback((teamMeet: TeamMeet) => {
+    if (!currentUserId) return false;
+    const isSender = teamMeet.requestedBy._id === currentUserId;
+    const isReceiver = teamMeet.requestedTo._id === currentUserId;
+    if (isSender || isReceiver) return false;
+    return teamMeet.invitedUsers?.some((u) => u._id === currentUserId) || false;
+  }, [currentUserId]);
+
   // Custom event styling based on status
   const eventStyleGetter = useCallback((event: CalendarEvent) => {
     const status = event.resource.status;
+
+    // If user is only an invited participant, show in light brown
+    if (isInvitedOnly(event.resource)) {
+      return {
+        style: {
+          backgroundColor: '#FDE8CD',
+          borderLeft: '4px solid #D97706',
+          color: '#92400E',
+          borderRadius: '4px',
+          padding: '2px 6px',
+          fontSize: '12px',
+          fontWeight: 500,
+          cursor: 'pointer',
+        },
+      };
+    }
+
     const colors = getStatusColor(status);
     
     return {
@@ -111,7 +137,7 @@ export default function TeamMeetCalendar({
         cursor: 'pointer',
       },
     };
-  }, []);
+  }, [isInvitedOnly]);
 
   const handleEventSelect = useCallback((event: CalendarEvent) => {
     onTeamMeetSelect(event.resource);
@@ -189,7 +215,7 @@ export default function TeamMeetCalendar({
               </svg>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">TeamMeet Calendar</h3>
+              <h3 className="font-semibold text-gray-900">Team Meet Calendar</h3>
               <p className="text-sm text-gray-500">Click to expand</p>
             </div>
           </div>
@@ -213,7 +239,7 @@ export default function TeamMeetCalendar({
               </svg>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">TeamMeet Calendar</h3>
+              <h3 className="font-semibold text-gray-900">Team Meet Calendar</h3>
               <p className="text-sm text-gray-500">{events.length} meetings scheduled</p>
             </div>
           </div>
@@ -228,11 +254,12 @@ export default function TeamMeetCalendar({
                 <span className="w-2 h-2 rounded bg-red-800"></span>
                 <span className="w-2 h-2 rounded bg-slate-400"></span>
                 <span className="w-2 h-2 rounded bg-teal-500"></span>
-                <span className="text-xs text-gray-500">Status</span>
+                <span className="w-2 h-2 rounded" style={{ backgroundColor: '#D97706' }}></span>
+                <span className="text-xs text-gray-500">Team Meet</span>
               </div>
               {/* Hover Tooltip */}
               <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                <p className="text-xs font-semibold text-gray-700 mb-2">TeamMeet Status Colors</p>
+                <p className="text-xs font-semibold text-gray-700 mb-2">Team Meet Status Colors</p>
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded bg-amber-400"></span>
@@ -253,6 +280,10 @@ export default function TeamMeetCalendar({
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded bg-teal-500"></span>
                     <span className="text-xs text-gray-600">Completed</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded" style={{ backgroundColor: '#D97706' }}></span>
+                    <span className="text-xs text-gray-600">Invited</span>
                   </div>
                 </div>
               </div>

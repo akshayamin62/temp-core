@@ -26,6 +26,8 @@ export interface User {
   // Admin-specific fields (populated when role is ADMIN)
   companyName?: string;
   companyLogo?: string;
+  // Parent-specific fields (populated when role is PARENT)
+  students?: { studentId: string; firstName: string; lastName: string }[];
 }
 
 export interface Student {
@@ -300,6 +302,7 @@ export interface ServiceProviderProfile {
   businessType?: string;
   registrationNumber?: string;
   gstNumber?: string;
+  businessPan?: string;
   address?: string;
   city?: string;
   state?: string;
@@ -308,6 +311,57 @@ export interface ServiceProviderProfile {
   website?: string;
   companyLogo?: string;
   servicesOffered?: string[];
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankIfscCode?: string;
+  bankAccountType?: string;
+  bankSwiftCode?: string;
+  bankUpiId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SPServiceListing {
+  _id: string;
+  serviceProviderId: string | {
+    _id: string;
+    companyName?: string;
+    companyLogo?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    servicesOffered?: string[];
+    website?: string;
+  };
+  title: string;
+  description: string;
+  category: string;
+  price?: number;
+  priceType: 'Fixed' | 'Starting From' | 'Contact for Price';
+  thumbnail?: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SPEnquiryItem {
+  _id: string;
+  studentId: string;
+  serviceProviderId: string | {
+    _id: string;
+    companyName?: string;
+    companyLogo?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    website?: string;
+  };
+  spServiceId: string | { _id: string; title: string; category: string; description?: string; price?: number; priceType?: string; thumbnail?: string };
+  studentName: string;
+  studentEmail: string;
+  studentMobile?: string;
+  message: string;
+  status: 'New' | 'Contacted' | 'Closed' | 'Converted';
   createdAt?: string;
   updatedAt?: string;
 }
@@ -327,6 +381,17 @@ export enum LEAD_STAGE {
   COLD = 'Cold',
   CONVERTED = 'Converted to Student',
   CLOSED = 'Closed',
+}
+
+export interface LeadParentDetail {
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  relationship: string;
+  mobileNumber: string;
+  email: string;
+  qualification: string;
+  occupation: string;
 }
 
 export interface Lead {
@@ -359,6 +424,7 @@ export interface Lead {
   serviceTypes: SERVICE_TYPE[];
   intake?: string;
   year?: string;
+  parentDetail?: LeadParentDetail;
   stage: LEAD_STAGE;
   conversionRequestId?: string;
   conversionStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -513,6 +579,14 @@ export interface TeamMeet {
     email: string;
     role: string;
   };
+  invitedUsers?: {
+    _id: string;
+    firstName?: string;
+    middleName?: string;
+    lastName?: string;
+    email: string;
+    role: string;
+  }[];
   status: TEAMMEET_STATUS;
   rejectionMessage?: string;
   notes?: string;
@@ -582,9 +656,19 @@ export interface OpsScheduleStudent {
   };
 }
 
+export interface OpsScheduleOps {
+  _id: string;
+  userId: {
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    email: string;
+  };
+}
+
 export interface OpsSchedule {
   _id: string;
-  opsId: string;
+  opsId: string | OpsScheduleOps;
   studentId?: OpsScheduleStudent | string | null; // Optional for "Me" tasks
   scheduledDate: string;
   scheduledTime: string;

@@ -2,15 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { authAPI } from '@/lib/api';
-import { User } from '@/types';
+import { authAPI, formAnswerAPI } from '@/lib/api';
+import { User, FormSection } from '@/types';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
+import FormSectionRenderer from '@/components/FormSectionRenderer';
 
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Student profile form state
+  const [formSections, setFormSections] = useState<FormSection[]>([]);
+  const [formValues, setFormValues] = useState<any>({});
+  const [selectedSectionIndex, setSelectedSectionIndex] = useState(0);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -19,12 +26,16 @@ export default function ProfilePage() {
   const fetchProfile = async () => {
     try {
       const response = await authAPI.getProfile();
-      setUser(response.data.data.user);
+      const userData = response.data.data.user;
+      setUser(userData);
+
+      // If student, also fetch profile form data
+      if (userData?.role === 'STUDENT') {
+        await fetchStudentProfileData();
+      }
     } catch (error: any) {
       const message = error.response?.data?.message || 'Failed to fetch profile';
       toast.error(message);
-      
-      // Redirect to login if unauthorized
       if (error.response?.status === 401 || error.response?.status === 403) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -32,6 +43,83 @@ export default function ProfilePage() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStudentProfileData = async () => {
+    try {
+      const res = await formAnswerAPI.getStudentProfile();
+      const { formStructure, answers } = res.data.data;
+      setFormSections(formStructure || []);
+
+      // Initialize form values from saved answers
+      const values: any = {};
+      formStructure?.forEach((section: FormSection) => {
+        if (!values[section._id]) values[section._id] = {};
+        const sectionAnswers = answers?.[section._id] || {};
+        section.subSections?.forEach((sub: any) => {
+          if (sectionAnswers[sub._id]) {
+            values[section._id][sub._id] = sectionAnswers[sub._id];
+          } else {
+            values[section._id][sub._id] = [{}];
+          }
+        });
+      });
+      setFormValues(values);
+    } catch (error: any) {
+      console.error('Failed to fetch student profile data:', error);
+    }
+  };
+
+  const handleFieldChange = (
+    sectionId: string,
+    subSectionId: string,
+    index: number,
+    key: string,
+    value: any
+  ) => {
+    setFormValues((prev: any) => {
+      const newValues = JSON.parse(JSON.stringify(prev));
+      if (!newValues[sectionId]) newValues[sectionId] = {};
+      if (!newValues[sectionId][subSectionId]) newValues[sectionId][subSectionId] = [{}];
+      if (!newValues[sectionId][subSectionId][index]) newValues[sectionId][subSectionId][index] = {};
+      newValues[sectionId][subSectionId][index][key] = value;
+      return newValues;
+    });
+  };
+
+  const handleAddInstance = (sectionId: string, subSectionId: string) => {
+    setFormValues((prev: any) => {
+      const newValues = JSON.parse(JSON.stringify(prev));
+      if (!newValues[sectionId]) newValues[sectionId] = {};
+      if (!newValues[sectionId][subSectionId]) newValues[sectionId][subSectionId] = [];
+      newValues[sectionId][subSectionId].push({});
+      return newValues;
+    });
+  };
+
+  const handleRemoveInstance = (sectionId: string, subSectionId: string, index: number) => {
+    setFormValues((prev: any) => {
+      const newValues = JSON.parse(JSON.stringify(prev));
+      if (newValues[sectionId]?.[subSectionId]) {
+        newValues[sectionId][subSectionId] = newValues[sectionId][subSectionId].filter(
+          (_: any, i: number) => i !== index
+        );
+      }
+      return newValues;
+    });
+  };
+
+  const handleSaveSection = async (sectionId: string) => {
+    try {
+      setSaving(true);
+      const sectionAnswers = formValues[sectionId] || {};
+      await formAnswerAPI.saveStudentProfile({ [sectionId]: sectionAnswers });
+      toast.success('Saved successfully!');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to save');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -52,6 +140,103 @@ export default function ProfilePage() {
         <div className="text-center animate-scale-in">
           <div className="spinner mx-auto mb-4"></div>
           <p className="text-gray-600 font-medium">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Student profile view with form sections
+  if (user?.role === 'STUDENT' && formSections.length > 0) {
+    const currentSection = formSections[selectedSectionIndex];
+
+    const isParentalSection = currentSection?.title === 'Parental Details';
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
+        <Toaster position="top-right" />
+
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 right-20 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl animate-float"></div>
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-cyan-400/10 rounded-full blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
+        </div>
+
+        <div className="relative max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-8 animate-fade-in">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">My Profile</h1>
+            <p className="text-gray-600 text-lg">View and manage your profile information</p>
+          </div>
+
+          {/* Profile Card Header */}
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 mb-6 animate-fade-in">
+            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-t-2xl p-6">
+              <div className="flex items-center">
+                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-2xl font-bold shadow-xl text-white`}>
+                  {getInitials(user)}
+                </div>
+                <div className="ml-5">
+                  <h2 className="text-2xl font-bold text-white mb-1">{getFullName(user)}</h2>
+                  <p className="text-blue-100">{user?.email}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section Tabs */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            {formSections.map((section, idx) => (
+              <button
+                key={section._id}
+                onClick={() => setSelectedSectionIndex(idx)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  idx === selectedSectionIndex
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                {section.title}
+              </button>
+            ))}
+          </div>
+
+          {/* Form Section */}
+          {currentSection && (
+            <div className="animate-fade-in">
+              <FormSectionRenderer
+                section={currentSection}
+                values={formValues[currentSection._id] || {}}
+                onChange={isParentalSection ? () => {} : (subSectionId, index, key, value) =>
+                  handleFieldChange(currentSection._id, subSectionId, index, key, value)
+                }
+                onAddInstance={isParentalSection ? () => {} : (subSectionId) =>
+                  handleAddInstance(currentSection._id, subSectionId)
+                }
+                onRemoveInstance={isParentalSection ? () => {} : (subSectionId, index) =>
+                  handleRemoveInstance(currentSection._id, subSectionId, index)
+                }
+                errors={{}}
+                readOnly={isParentalSection}
+                readOnlyKeys={['firstName', 'middleName', 'lastName']}
+                noDelete={isParentalSection}
+              />
+              {isParentalSection && (
+                <div className="mt-3 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+                  Parental details can only be edited by Super Admin
+                </div>
+              )}
+              {!isParentalSection && (
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={() => handleSaveSection(currentSection._id)}
+                    disabled={saving}
+                    className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
+                  >
+                    {saving ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );

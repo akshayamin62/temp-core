@@ -29,7 +29,14 @@ import {
   getOpsSchedulesForSuperAdmin,
   getOpsScheduleSummaryForSuperAdmin,
   getOpsStudentsForSuperAdmin,
+  getOpsTeamMeetsForSuperAdmin,
   getServiceProviderDetail,
+  getEduplanCoachDetailForSuperAdmin,
+  getEduplanCoachStudentsForSuperAdmin,
+  getEduplanCoachTeamMeetsForSuperAdmin,
+  getIvyExpertTeamMeetsForSuperAdmin,
+  editUserByRole,
+  getUserWithProfile,
 } from "../controllers/superAdminController";
 import { authenticate } from "../middleware/auth";
 import { authorize } from "../middleware/authorize";
@@ -87,6 +94,20 @@ router.post("/users/:userId/reject", rejectUser);
 router.patch("/users/:userId/toggle-status", toggleUserStatus);
 
 /**
+ * @route   GET /api/super-admin/users/:userId/profile
+ * @desc    Get user with role-specific profile for editing
+ * @access  Super Admin only
+ */
+router.get("/users/:userId/profile", getUserWithProfile);
+
+/**
+ * @route   PUT /api/super-admin/users/:userId/edit
+ * @desc    Edit user profile + role-specific fields
+ * @access  Super Admin only
+ */
+router.put("/users/:userId/edit", editUserByRole);
+
+/**
  * @route   DELETE /api/super-admin/users/:userId
  * @desc    Delete a user
  * @access  Super Admin only
@@ -114,6 +135,13 @@ router.get("/ops", getAllOps);
  * @access  Super Admin only
  */
 router.get("/ivy-experts", getAllIvyExperts);
+
+/**
+ * @route   GET /api/super-admin/ivy-experts/:ivyExpertUserId/team-meets
+ * @desc    Get team meets for a specific ivy expert
+ * @access  Super Admin only
+ */
+router.get("/ivy-experts/:ivyExpertUserId/team-meets", getIvyExpertTeamMeetsForSuperAdmin);
 
 /**
  * @route   GET /api/super-admin/eduplan-coaches
@@ -256,6 +284,13 @@ router.get("/ops/:opsUserId/schedule-summary", getOpsScheduleSummaryForSuperAdmi
  */
 router.get("/ops/:opsUserId/students", getOpsStudentsForSuperAdmin);
 
+/**
+ * @route   GET /api/super-admin/ops/:opsUserId/team-meets
+ * @desc    Get team meets for a specific ops user
+ * @access  Super Admin only
+ */
+router.get("/ops/:opsUserId/team-meets", getOpsTeamMeetsForSuperAdmin);
+
 // ============= SERVICE PROVIDER ROUTES =============
 
 /**
@@ -264,6 +299,29 @@ router.get("/ops/:opsUserId/students", getOpsStudentsForSuperAdmin);
  * @access  Super Admin only
  */
 router.get("/service-providers/:providerId", getServiceProviderDetail);
+
+// ============= EDUPLAN COACH DASHBOARD ROUTES (Read-Only) =============
+
+/**
+ * @route   GET /api/super-admin/eduplan-coaches/:coachUserId/detail
+ * @desc    Get eduplan coach user details
+ * @access  Super Admin only
+ */
+router.get("/eduplan-coaches/:coachUserId/detail", getEduplanCoachDetailForSuperAdmin);
+
+/**
+ * @route   GET /api/super-admin/eduplan-coaches/:coachUserId/students
+ * @desc    Get students assigned to a specific eduplan coach
+ * @access  Super Admin only
+ */
+router.get("/eduplan-coaches/:coachUserId/students", getEduplanCoachStudentsForSuperAdmin);
+
+/**
+ * @route   GET /api/super-admin/eduplan-coaches/:coachUserId/team-meets
+ * @desc    Get team meets for a specific eduplan coach
+ * @access  Super Admin only
+ */
+router.get("/eduplan-coaches/:coachUserId/team-meets", getEduplanCoachTeamMeetsForSuperAdmin);
 
 export default router;
 

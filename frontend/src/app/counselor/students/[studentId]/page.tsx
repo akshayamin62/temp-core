@@ -6,6 +6,8 @@ import { authAPI, adminStudentAPI } from '@/lib/api';
 import { User, USER_ROLE } from '@/types';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
+import CounselorLayout from '@/components/CounselorLayout';
+import StudentProfileModal from '@/components/StudentProfileModal';
 
 
 interface StudentDetails {
@@ -86,6 +88,7 @@ export default function CounselorStudentDetailPage() {
   const [student, setStudent] = useState<StudentDetails | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const hasFetchedRef = useRef(false);
 
@@ -167,6 +170,7 @@ export default function CounselorStudentDetailPage() {
   return (
     <>
       <Toaster position="top-right" />
+      <CounselorLayout user={user}>
         <div className="p-8">
           {/* Back Button */}
           <button
@@ -237,6 +241,12 @@ export default function CounselorStudentDetailPage() {
                     >
                       {student.userId.isActive ? 'Active' : 'Inactive'}
                     </span>
+                    <button
+                      onClick={() => setShowProfileModal(true)}
+                      className="px-3 py-1 text-xs font-medium rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                    >
+                      View Profile
+                    </button>
                   </div>
                 </div>
 
@@ -400,6 +410,10 @@ export default function CounselorStudentDetailPage() {
             </div>
           )}
         </div>
+      </CounselorLayout>
+      {showProfileModal && (
+        <StudentProfileModal studentId={studentId} onClose={() => setShowProfileModal(false)} viewerRole="COUNSELOR" />
+      )}
     </>
   );
 }

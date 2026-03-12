@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { authAPI, serviceAPI } from '@/lib/api';
-import { User, USER_ROLE, FormStructure, FormSection, FormSubSection } from '@/types';
+import { authAPI, serviceAPI, programAPI, teamMeetAPI, opsScheduleAPI, activityAPI } from '@/lib/api';
+import { User, USER_ROLE, FormStructure, FormSection, FormSubSection, TeamMeet, TEAMMEET_STATUS, OpsSchedule } from '@/types';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
 import FormSectionRenderer from '@/components/FormSectionRenderer';
 import FormPartsNavigation from '@/components/FormPartsNavigation';
@@ -17,6 +17,10 @@ import axios from 'axios';
 import BrainographyDataDisplay, { BrainographyDataType } from '@/components/BrainographyDataDisplay';
 import PortfolioSection, { PortfolioItem, PortfolioRow, usePortfolioDownload } from '@/components/PortfolioSection';
 import ActivityAnalyticsDashboard from '@/components/ActivityAnalyticsDashboard';
+import OpsScheduleCalendar from '@/components/OpsScheduleCalendar';
+import TeamMeetSidebar from '@/components/TeamMeetSidebar';
+import TeamMeetFormPanel from '@/components/TeamMeetFormPanel';
+import OpsScheduleFormPanel from '@/components/OpsScheduleFormPanel';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -31,7 +35,7 @@ interface BrainographyDoc {
   version: number;
 }
 
-type ActiveView = 'analytics' | 'brainography' | 'portfolio' | 'form';
+type ActiveView = 'dashboard' | 'analytics' | 'brainography' | 'portfolio' | 'form';
 
 export default function SuperAdminStudentFormEditPage() {
   const router = useRouter();
@@ -58,6 +62,56 @@ export default function SuperAdminStudentFormEditPage() {
   const handlePortfolioDownload = usePortfolioDownload();
   const [activeView, setActiveView] = useState<ActiveView>('analytics');
   const [isEducationPlanning, setIsEducationPlanning] = useState(false);
+  const [isStudyAbroad, setIsStudyAbroad] = useState(false);
+  const [programStats, setProgramStats] = useState({
+    suggested: 0, selected: 0, shortlisted: 0, inProgress: 0, applied: 0, offerReceived: 0, offerAccepted: 0, rejected: 0, closed: 0,
+  });
+
+  // Calendar / TeamMeet state (Study Abroad dashboard)
+  const [teamMeets, setTeamMeets] = useState<TeamMeet[]>([]);
+  const [opsTasks, setOpsTasks] = useState<OpsSchedule[]>([]);
+  const [selectedTeamMeet, setSelectedTeamMeet] = useState<TeamMeet | null>(null);
+  const [showTeamMeetPanel, setShowTeamMeetPanel] = useState(false);
+  const [teamMeetPanelMode, setTeamMeetPanelMode] = useState<'create' | 'view' | 'respond'>('view');
+  const [selectedOpsTask, setSelectedOpsTask] = useState<OpsSchedule | null>(null);
+  const [showOpsTaskPanel, setShowOpsTaskPanel] = useState(false);
+  const currentUserId = user?._id || '';
+
+  // Education Planning Dashboard stats
+  const [eduPlanStats, setEduPlanStats] = useState<{
+    streak: { current: number; longest: number; totalDays: number };
+    wordCount: { total: number; thisMonth: number };
+    domainBalance: Record<string, { planned: number; completed: number }>;
+  } | null>(null);
+
+  const fetchEduPlanStats = useCallback(async () => {
+    if (!registrationId) return;
+    try {
+      const res = await activityAPI.getActivityAnalytics(registrationId, 3);
+      const d = res.data.data;
+      if (d) setEduPlanStats({ streak: d.streak, wordCount: d.wordCount, domainBalance: d.domainBalance });
+    } catch { /* silent */ }
+  }, [registrationId]);
+
+  const fetchTeamMeetsForStudent = useCallback(async () => {
+    if (!studentId) return;
+    try {
+      const res = await teamMeetAPI.getStudentTeamMeets(studentId);
+      setTeamMeets(res.data.data.teamMeets || []);
+    } catch (error) {
+      console.error('Error fetching student team meets:', error);
+    }
+  }, [studentId]);
+
+  const fetchOpsTasksForStudent = useCallback(async () => {
+    if (!studentId) return;
+    try {
+      const res = await opsScheduleAPI.getStudentTasks(studentId);
+      setOpsTasks(res.data.data.schedules || []);
+    } catch (error) {
+      console.error('Error fetching student OPS tasks:', error);
+    }
+  }, [studentId]);
 
   const hasFetchedRef = useRef(false);
 
@@ -102,12 +156,43 @@ export default function SuperAdminStudentFormEditPage() {
     } catch { /* silently fail */ }
   };
 
+  const handleUpdateBrainographyMeta = async (field: 'standard' | 'board', value: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.patch(
+        `${API_URL}/portfolio/${registrationId}/data`,
+        { [field]: value },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      setBrainographyData(response.data.data.brainographyData || null);
+    } catch { /* silently fail */ }
+  };
+
   const fetchPortfolios = async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(`${API_URL}/portfolio/${registrationId}/portfolios`, { headers: { Authorization: `Bearer ${token}` } });
       setPortfolios(response.data.data.portfolios || []);
     } catch { /* silently fail */ }
+  };
+
+  const fetchProgramStats = async () => {
+    if (!registrationId || !studentId) return;
+    try {
+      const [availableRes, appliedRes] = await programAPI.getStudentProgramStats(studentId, registrationId);
+      const availablePrograms = availableRes.data.data.programs || [];
+      const appliedPrograms = appliedRes.data.data.programs || [];
+      const all = [...availablePrograms, ...appliedPrograms];
+      const count = (status: string) => all.filter((p: any) => p.status === status).length;
+      setProgramStats({
+        suggested: availablePrograms.length, selected: appliedPrograms.length,
+        shortlisted: count('Shortlisted'), inProgress: count('In Progress'), applied: count('Applied'),
+        offerReceived: count('Offer Received'), offerAccepted: count('Offer Accepted'),
+        rejected: count('Rejected / Declined'), closed: count('Closed'),
+      });
+    } catch (error: any) {
+      console.error('Error fetching program stats:', error);
+    }
   };
 
   const handleBrainographyView = () => {
@@ -154,7 +239,19 @@ export default function SuperAdminStudentFormEditPage() {
       const svcSlug = typeof regServiceId === 'object' ? regServiceId.slug : '';
       const isEduPlan = svcSlug === 'education-planning' || svcName === 'Education Planning';
       setIsEducationPlanning(isEduPlan);
-      if (!isEduPlan) setActiveView('form');
+      const studyAbroad = !isEduPlan;
+      setIsStudyAbroad(studyAbroad);
+      if (studyAbroad) {
+        setActiveView('dashboard');
+        fetchProgramStats();
+        fetchTeamMeetsForStudent();
+        fetchOpsTasksForStudent();
+      } else {
+        setActiveView('dashboard');
+        fetchTeamMeetsForStudent();
+        fetchOpsTasksForStudent();
+        fetchEduPlanStats();
+      }
 
       if (isEduPlan) {
         await fetchBrainography();
@@ -297,6 +394,7 @@ export default function SuperAdminStudentFormEditPage() {
 
   const navButtons: { key: ActiveView; label: string; icon: string }[] = isEducationPlanning
     ? [
+        { key: 'dashboard', label: 'Dashboard', icon: '🏠' },
         { key: 'analytics', label: 'Activity Analysis', icon: '📊' },
         { key: 'brainography', label: 'Brainography Analysis', icon: '🧠' },
         { key: 'portfolio', label: 'Education Portfolio Generator', icon: '📁' },
@@ -324,30 +422,152 @@ export default function SuperAdminStudentFormEditPage() {
             />
           )}
 
+          {/* Study Abroad: FormPartsNavigation with Dashboard tab */}
+          {isStudyAbroad && (
+            <FormPartsNavigation
+              formStructure={formStructure}
+              currentPartIndex={currentPartIndex}
+              onPartChange={(index) => { setActiveView('form'); setCurrentPartIndex(index); setCurrentSectionIndex(0); }}
+              showDashboard={true}
+              isDashboardActive={activeView === 'dashboard'}
+              onDashboardClick={() => setActiveView('dashboard')}
+            />
+          )}
+
+          {/* Study Abroad Dashboard (read-only, matching student side) */}
+          {isStudyAbroad && activeView === 'dashboard' && (() => {
+            const dashboardStatCards = [
+              { title: 'Suggested Program', value: programStats.suggested, color: 'blue' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> },
+              { title: 'Selected Program', value: programStats.selected, color: 'cyan' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
+              { title: 'Shortlisted Application', value: programStats.shortlisted, color: 'blue' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg> },
+              { title: 'In Progress', value: programStats.inProgress, color: 'orange' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
+              { title: 'Applied', value: programStats.applied, color: 'blue' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> },
+              { title: 'Offer Received', value: programStats.offerReceived, color: 'green' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg> },
+              { title: 'Offer Accepted', value: programStats.offerAccepted, color: 'green' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg> },
+              { title: 'Offer Rejected', value: programStats.rejected, color: 'red' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg> },
+              { title: 'Application Closed', value: programStats.closed, color: 'gray' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg> },
+            ];
+            const totalPrograms = programStats.suggested + programStats.selected;
+            const navigateToApplicationSection = (sectionTitle: 'Apply to Program' | 'Applied Program') => {
+              const appPartIndex = formStructure.findIndex((p: any) => p.part?.key === 'APPLICATION');
+              if (appPartIndex < 0) return;
+              const sections = formStructure[appPartIndex].sections || [];
+              const sectionIdx = sections.findIndex((s: any) => s.title === sectionTitle);
+              setCurrentPartIndex(appPartIndex);
+              setCurrentSectionIndex(sectionIdx >= 0 ? sectionIdx : 0);
+              setActiveView('form');
+            };
+            return (
+              <div className="mb-6 space-y-8">
+                {/* Application Stats */}
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Application Overview</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                    {dashboardStatCards.map((card) => {
+                      const colorMap: Record<string, string> = {
+                        blue: 'bg-blue-100 text-blue-600', cyan: 'bg-cyan-100 text-cyan-600',
+                        green: 'bg-green-100 text-green-600', orange: 'bg-orange-100 text-orange-600',
+                        red: 'bg-red-100 text-red-600', gray: 'bg-gray-200 text-gray-600',
+                      };
+                      const pct = totalPrograms > 0 ? (card.value / totalPrograms) * 100 : 0;
+                      const targetSection = card.title === 'Suggested Program' ? 'Apply to Program' : 'Applied Program';
+                      return (
+                        <div
+                          key={card.title}
+                          onClick={() => navigateToApplicationSection(targetSection)}
+                          className="bg-white rounded-xl shadow-sm border-2 border-gray-200 p-5 transition-all cursor-pointer hover:border-blue-400 hover:shadow-md"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className={`w-10 h-10 ${colorMap[card.color]} rounded-lg flex items-center justify-center`}>
+                              {card.icon}
+                            </div>
+                            <h3 className="text-3xl font-extrabold text-gray-900">{card.value}</h3>
+                          </div>
+                          <div className="flex items-center justify-between mt-3">
+                            <p className="text-sm font-semibold text-gray-700">{card.title}</p>
+                            <p className="text-sm font-semibold text-gray-900">{pct.toFixed(1)}%</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <div className="lg:col-span-3">
+                      <OpsScheduleCalendar
+                        schedules={opsTasks}
+                        onScheduleSelect={(schedule) => { setSelectedOpsTask(schedule); setShowOpsTaskPanel(true); }}
+                        onDateSelect={() => {}}
+                        teamMeets={teamMeets}
+                        onTeamMeetSelect={(tm) => { setSelectedTeamMeet(tm); setTeamMeetPanelMode('view'); setShowTeamMeetPanel(true); }}
+                        currentUserId={currentUserId}
+                      />
+                    </div>
+                    <div className="lg:col-span-1">
+                      <TeamMeetSidebar
+                        teamMeets={teamMeets}
+                        onTeamMeetClick={(tm) => { setSelectedTeamMeet(tm); setTeamMeetPanelMode('view'); setShowTeamMeetPanel(true); }}
+                        currentUserId={currentUserId}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Education Planning Navigation */}
           {isEducationPlanning && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
-              <div className="px-4 py-3 flex flex-wrap items-center gap-2">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
+              <div className="flex border-b border-gray-200">
                 {navButtons.map((btn) => (
                   <button key={btn.key} onClick={() => setActiveView(btn.key)}
-                    className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${activeView === btn.key ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'}`}>
-                    <span>{btn.icon}</span> {btn.label}
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-4 text-sm font-semibold transition-colors border-b-2 ${activeView === btn.key ? 'border-blue-600 text-blue-600 bg-blue-50' : 'border-transparent text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`}>
+                    {btn.label}
                   </button>
                 ))}
-                {formStructure.length > 0 && (
-                  <button onClick={() => setActiveView('form')}
-                    className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${activeView === 'form' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'}`}>
-                    <span>📋</span> Form
-                  </button>
-                )}
                 <button onClick={() => router.push(`/super-admin/roles/student/${studentId}/registration/${registrationId}/activity`)}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-all duration-200 ml-auto">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                  className="flex-1 flex items-center justify-center gap-1.5 px-4 py-4 text-sm font-semibold transition-colors border-b-2 border-transparent text-gray-700 hover:text-gray-900 hover:bg-gray-50">
                   Student Activity
                 </button>
               </div>
             </div>
           )}
+
+          {/* Education Planning Dashboard */}
+          {isEducationPlanning && activeView === 'dashboard' && (() => {
+            const stats = eduPlanStats;
+            const entries = stats ? Object.values(stats.domainBalance) : [];
+            const totalPlanned = entries.reduce((s, e) => s + e.planned, 0);
+            const totalCompleted = entries.reduce((s, e) => s + e.completed, 0);
+            const overall = totalPlanned > 0 ? Math.round((totalCompleted / totalPlanned) * 50) / 10 : 0;
+            return (
+              <div className="mb-6 space-y-8">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Activity Overview <span className="text-sm font-normal text-gray-500">(Last 3 Months)</span></h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <div className="bg-white rounded-xl shadow-sm border-2 border-gray-200 p-5"><div className="flex items-center justify-between"><div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center text-lg">🔥</div><h3 className="text-3xl font-extrabold text-gray-900">{stats?.streak.current ?? 0}</h3></div><p className="text-sm font-semibold text-gray-700 mt-3">Current Streak (days)</p></div>
+                    <div className="bg-white rounded-xl shadow-sm border-2 border-gray-200 p-5"><div className="flex items-center justify-between"><div className="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-lg flex items-center justify-center text-lg">🏆</div><h3 className="text-3xl font-extrabold text-gray-900">{stats?.streak.longest ?? 0}</h3></div><p className="text-sm font-semibold text-gray-700 mt-3">Longest Streak (days)</p></div>
+                    <div className="bg-white rounded-xl shadow-sm border-2 border-gray-200 p-5"><div className="flex items-center justify-between"><div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center text-lg">📅</div><h3 className="text-3xl font-extrabold text-gray-900">{stats?.streak.totalDays ?? 0}</h3></div><p className="text-sm font-semibold text-gray-700 mt-3">Total Days</p></div>
+                    <div className="bg-white rounded-xl shadow-sm border-2 border-gray-200 p-5"><div className="flex items-center justify-between"><div className="w-10 h-10 bg-green-100 text-green-600 rounded-lg flex items-center justify-center text-lg">📝</div><h3 className="text-3xl font-extrabold text-gray-900">{stats?.wordCount.total ?? 0}</h3></div><div className="flex items-center justify-between mt-3"><p className="text-sm font-semibold text-gray-700">New Words</p><p className="text-xs text-gray-500">{stats?.wordCount.thisMonth ?? 0} this month</p></div></div>
+                    <div className="bg-white rounded-xl shadow-sm border-2 border-gray-200 p-5"><div className="flex items-center justify-between"><div className="w-10 h-10 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center text-lg">⭐</div><h3 className="text-3xl font-extrabold text-gray-900">{overall} / 5</h3></div><div className="flex items-center justify-between mt-3"><p className="text-sm font-semibold text-gray-700">Overall Performance</p><p className="text-xs text-gray-500">{totalCompleted}/{totalPlanned}</p></div></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <div className="lg:col-span-3">
+                      <OpsScheduleCalendar schedules={opsTasks} onScheduleSelect={(schedule) => { setSelectedOpsTask(schedule); setShowOpsTaskPanel(true); }} onDateSelect={() => {}} teamMeets={teamMeets} onTeamMeetSelect={(tm) => { setSelectedTeamMeet(tm); setTeamMeetPanelMode('view'); setShowTeamMeetPanel(true); }} currentUserId={currentUserId} />
+                    </div>
+                    <div className="lg:col-span-1">
+                      <TeamMeetSidebar teamMeets={teamMeets} onTeamMeetClick={(tm) => { setSelectedTeamMeet(tm); setTeamMeetPanelMode('view'); setShowTeamMeetPanel(true); }} currentUserId={currentUserId} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Activity Analytics */}
           {isEducationPlanning && activeView === 'analytics' && (
@@ -399,7 +619,7 @@ export default function SuperAdminStudentFormEditPage() {
                   </div>
                 )}
               </div>
-              {brainographyData && <div className="mb-6"><BrainographyDataDisplay data={brainographyData} /></div>}
+              {brainographyData && <div className="mb-6"><BrainographyDataDisplay data={brainographyData} canEdit onUpdate={handleUpdateBrainographyMeta} /></div>}
             </>
           )}
 
@@ -432,7 +652,7 @@ export default function SuperAdminStudentFormEditPage() {
           {/* Form View */}
           {activeView === 'form' && (
             <>
-              <FormPartsNavigation formStructure={formStructure} currentPartIndex={currentPartIndex} onPartChange={(index) => { setCurrentPartIndex(index); setCurrentSectionIndex(0); }} />
+              {!isStudyAbroad && <FormPartsNavigation formStructure={formStructure} currentPartIndex={currentPartIndex} onPartChange={(index) => { setCurrentPartIndex(index); setCurrentSectionIndex(0); }} />}
               {currentFormStruct && (
                 <FormSectionsNavigation sections={currentFormStruct.sections} currentSectionIndex={currentSectionIndex} onSectionChange={setCurrentSectionIndex} />
               )}
@@ -474,6 +694,27 @@ export default function SuperAdminStudentFormEditPage() {
           )}
         </div>
       </SuperAdminLayout>
+
+      {/* TeamMeet Panel (read-only) */}
+      <TeamMeetFormPanel
+        teamMeet={selectedTeamMeet}
+        isOpen={showTeamMeetPanel}
+        onClose={() => { setShowTeamMeetPanel(false); setSelectedTeamMeet(null); }}
+        onSave={() => { setShowTeamMeetPanel(false); setSelectedTeamMeet(null); }}
+        mode={teamMeetPanelMode}
+        currentUserId={currentUserId}
+        readOnly={true}
+      />
+
+      {/* OPS Task Panel (read-only) */}
+      <OpsScheduleFormPanel
+        schedule={selectedOpsTask}
+        students={[]}
+        isOpen={showOpsTaskPanel}
+        onClose={() => { setShowOpsTaskPanel(false); setSelectedOpsTask(null); }}
+        onSubmit={async () => {}}
+        readOnly={true}
+      />
     </>
   );
 }

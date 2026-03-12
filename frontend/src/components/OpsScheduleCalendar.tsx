@@ -4,7 +4,7 @@ import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay, setMonth, setYear, getMonth, getYear, addMonths, addWeeks, addDays, isPast, isToday } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { OpsSchedule, OPS_SCHEDULE_STATUS, OpsScheduleStudent } from '@/types';
+import { OpsSchedule, OPS_SCHEDULE_STATUS, OpsScheduleStudent, TeamMeet, TEAMMEET_STATUS } from '@/types';
 import { useState, useCallback, useMemo } from 'react';
 import { getFullName } from '@/utils/nameHelpers';
 
@@ -25,7 +25,9 @@ interface CalendarEvent {
   title: string;
   start: Date;
   end: Date;
-  resource: OpsSchedule;
+  type: 'schedule' | 'teamMeet';
+  resource?: OpsSchedule;
+  teamMeetResource?: TeamMeet;
 }
 
 interface OpsScheduleCalendarProps {
@@ -36,6 +38,10 @@ interface OpsScheduleCalendarProps {
   onToggleMinimize?: () => void;
   hideHeader?: boolean;
   compact?: boolean;
+  // TeamMeet integration
+  teamMeets?: TeamMeet[];
+  onTeamMeetSelect?: (teamMeet: TeamMeet) => void;
+  currentUserId?: string;
 }
 
 // Status colors
@@ -56,6 +62,24 @@ const getStatusColor = (status: OPS_SCHEDULE_STATUS, isPastDate: boolean) => {
   }
 };
 
+// TeamMeet status colors
+const getTeamMeetStatusColor = (status: TEAMMEET_STATUS) => {
+  switch (status) {
+    case TEAMMEET_STATUS.PENDING_CONFIRMATION:
+      return { bg: '#FEF3C7', border: '#F59E0B', text: '#92400E' }; // Amber
+    case TEAMMEET_STATUS.CONFIRMED:
+      return { bg: '#FCE7F3', border: '#EC4899', text: '#9D174D' }; // Pink
+    case TEAMMEET_STATUS.REJECTED:
+      return { bg: '#FEE2E2', border: '#991B1B', text: '#7F1D1D' }; // Red
+    case TEAMMEET_STATUS.CANCELLED:
+      return { bg: '#F1F5F9', border: '#64748B', text: '#475569' }; // Slate
+    case TEAMMEET_STATUS.COMPLETED:
+      return { bg: '#CCFBF1', border: '#14B8A6', text: '#115E59' }; // Teal
+    default:
+      return { bg: '#F3F4F6', border: '#9CA3AF', text: '#374151' };
+  }
+};
+
 export default function OpsScheduleCalendar({
   schedules,
   onScheduleSelect,
@@ -64,13 +88,16 @@ export default function OpsScheduleCalendar({
   onToggleMinimize,
   hideHeader = false,
   compact = false,
+  teamMeets = [],
+  onTeamMeetSelect,
+  currentUserId,
 }: OpsScheduleCalendarProps) {
   const [view, setView] = useState<View>('month');
   const [date, setDate] = useState(new Date());
 
   // Convert schedules to calendar events
   const events: CalendarEvent[] = useMemo(() => {
-    return schedules.map((schedule) => {
+    const scheduleEvents: CalendarEvent[] = schedules.map((schedule) => {
       const student = schedule.studentId as OpsScheduleStudent;
       const displayName = getFullName(student?.userId) || 'Me';
       
@@ -87,16 +114,72 @@ export default function OpsScheduleCalendar({
         title: `📋 ${displayName} - ${schedule.scheduledTime}`,
         start: startDate,
         end: endDate,
+        type: 'schedule' as const,
         resource: schedule,
       };
     });
-  }, [schedules]);
+
+    // Convert team meets to calendar events
+    const teamMeetEvents: CalendarEvent[] = teamMeets.map((tm) => {
+      const otherPerson = currentUserId && (tm.requestedBy._id === currentUserId || (tm.requestedBy as any).id === currentUserId)
+        ? tm.requestedTo
+        : tm.requestedBy;
+      const displayName = getFullName(otherPerson) || 'Team Meet';
+      const tmDate = new Date(tm.scheduledDate);
+      const [h, m] = (tm.scheduledTime || '10:00').split(':').map(Number);
+      tmDate.setHours(h || 10, m || 0, 0, 0);
+      const tmEnd = new Date(tmDate);
+      tmEnd.setMinutes(tmEnd.getMinutes() + (tm.duration || 30));
+      return {
+        id: tm._id,
+        title: `👥 ${displayName} - ${tm.scheduledTime || '10:00'}`,
+        start: tmDate,
+        end: tmEnd,
+        type: 'teamMeet' as const,
+        teamMeetResource: tm,
+      };
+    });
+
+    return [...scheduleEvents, ...teamMeetEvents];
+  }, [schedules, teamMeets, currentUserId]);
 
   // Custom event styling based on status
   const eventStyleGetter = useCallback((event: CalendarEvent) => {
-    const schedule = event.resource;
-    const isPastDate = isPast(new Date(schedule.scheduledDate)) && !isToday(new Date(schedule.scheduledDate));
-    const colors = getStatusColor(schedule.status, isPastDate);
+    let colors;
+    if (event.type === 'teamMeet' && event.teamMeetResource) {
+      // If user is only an invited participant, show in light brown
+      const tm = event.teamMeetResource;
+      const isSender = tm.requestedBy._id === currentUserId || (tm.requestedBy as any).id === currentUserId;
+      const isReceiver = tm.requestedTo._id === currentUserId || (tm.requestedTo as any).id === currentUserId;
+      const isOnlyInvited = !isSender && !isReceiver && tm.invitedUsers?.some((u) => u._id === currentUserId);
+
+      if (isOnlyInvited) {
+        return {
+          style: {
+            backgroundColor: '#FDE8CD',
+            borderLeft: '4px solid #D97706',
+            color: '#92400E',
+            borderRadius: '4px',
+            padding: '4px 8px',
+            fontSize: '11px',
+            fontWeight: 500,
+            cursor: 'pointer',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap' as const,
+            minHeight: '22px',
+            lineHeight: '1.3',
+          },
+        };
+      }
+      colors = getTeamMeetStatusColor(tm.status);
+    } else if (event.resource) {
+      const schedule = event.resource;
+      const isPastDate = isPast(new Date(schedule.scheduledDate)) && !isToday(new Date(schedule.scheduledDate));
+      colors = getStatusColor(schedule.status, isPastDate);
+    } else {
+      colors = { bg: '#F3F4F6', border: '#9CA3AF', text: '#374151' };
+    }
     
     return {
       style: {
@@ -118,8 +201,12 @@ export default function OpsScheduleCalendar({
   }, []);
 
   const handleEventSelect = useCallback((event: CalendarEvent) => {
-    onScheduleSelect(event.resource);
-  }, [onScheduleSelect]);
+    if (event.type === 'teamMeet' && event.teamMeetResource && onTeamMeetSelect) {
+      onTeamMeetSelect(event.teamMeetResource);
+    } else if (event.type === 'schedule' && event.resource) {
+      onScheduleSelect(event.resource);
+    }
+  }, [onScheduleSelect, onTeamMeetSelect]);
 
   const handleNavigate = useCallback((newDate: Date) => {
     setDate(newDate);
@@ -216,8 +303,8 @@ export default function OpsScheduleCalendar({
               </svg>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Ops Schedule</h3>
-              <p className="text-sm text-gray-500">{events.length} schedules</p>
+              <h3 className="font-semibold text-gray-900">Schedule Calendar</h3>
+              <p className="text-sm text-gray-500">{events.length} events</p>
             </div>
           </div>
           
@@ -225,16 +312,17 @@ export default function OpsScheduleCalendar({
           <div className="flex items-center gap-4">
             <div className="relative group">
               <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg cursor-help hover:bg-indigo-50 transition-colors">
-                <span className="text-xs text-gray-500">📋</span>
+                <span className="text-xs text-gray-500">📋👥</span>
                 <span className="w-2 h-2 rounded bg-blue-500"></span>
                 <span className="w-2 h-2 rounded bg-green-500"></span>
-                <span className="w-2 h-2 rounded bg-purple-500"></span>
-                <span className="text-xs text-gray-500">Status</span>
+                <span className="w-2 h-2 rounded bg-pink-500"></span>
+                <span className="w-2 h-2 rounded bg-amber-500"></span>
+                <span className="text-xs text-gray-500">Team Meet</span>
               </div>
               {/* Hover Tooltip */}
-              <div className="absolute top-full right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                <p className="text-xs font-semibold text-gray-700 mb-2">Schedule Status</p>
-                <div className="space-y-1.5">
+              <div className="absolute top-full right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                <p className="text-xs font-semibold text-gray-700 mb-2">📋 Task</p>
+                <div className="space-y-1.5 mb-3">
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded bg-blue-500"></span>
                     <span className="text-xs text-gray-600">Scheduled</span>
@@ -246,6 +334,29 @@ export default function OpsScheduleCalendar({
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded bg-purple-500"></span>
                     <span className="text-xs text-gray-600">Missed</span>
+                  </div>
+                </div>
+                <p className="text-xs font-semibold text-gray-700 mb-2">👥 Team Meet</p>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded bg-amber-400"></span>
+                    <span className="text-xs text-gray-600">Pending Confirmation</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded bg-pink-500"></span>
+                    <span className="text-xs text-gray-600">Confirmed</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded bg-red-700"></span>
+                    <span className="text-xs text-gray-600">Reschedule Requested</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded bg-slate-400"></span>
+                    <span className="text-xs text-gray-600">Cancelled</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded bg-teal-500"></span>
+                    <span className="text-xs text-gray-600">Completed</span>
                   </div>
                 </div>
               </div>

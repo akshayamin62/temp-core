@@ -2,20 +2,22 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { authAPI, opsScheduleAPI } from '@/lib/api';
-import { User, USER_ROLE, OpsSchedule, OpsScheduleSummary, OpsScheduleStudent, CreateOpsScheduleData } from '@/types';
+import { authAPI, opsScheduleAPI, teamMeetAPI } from '@/lib/api';
+import { User, USER_ROLE, OpsSchedule, OpsScheduleSummary, OpsScheduleStudent, CreateOpsScheduleData, TeamMeet, TEAMMEET_STATUS } from '@/types';
 import OpsLayout from '@/components/OpsLayout';
 import OpsScheduleCalendar from '@/components/OpsScheduleCalendar';
 import OpsScheduleFormPanel from '@/components/OpsScheduleFormPanel';
-import OpsScheduleSidebar from '@/components/OpsScheduleSidebar';
+import OpsScheduleOverview from '@/components/OpsScheduleOverview';
+import TeamMeetFormPanel from '@/components/TeamMeetFormPanel';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName } from '@/utils/nameHelpers';
+import { format } from 'date-fns';
 
 export default function OpsDashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   // Schedule states
   const [schedules, setSchedules] = useState<OpsSchedule[]>([]);
   const [summary, setSummary] = useState<OpsScheduleSummary>({ today: [], missed: [], tomorrow: [], counts: { today: 0, missed: 0, tomorrow: 0, total: 0 } });
@@ -24,6 +26,16 @@ export default function OpsDashboardPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showFormPanel, setShowFormPanel] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+  
+  // TeamMeet states
+  const [teamMeets, setTeamMeets] = useState<TeamMeet[]>([]);
+  const [selectedTeamMeet, setSelectedTeamMeet] = useState<TeamMeet | null>(null);
+  const [showTeamMeetPanel, setShowTeamMeetPanel] = useState(false);
+  const [selectedTeamMeetDate, setSelectedTeamMeetDate] = useState<Date | undefined>(undefined);
+  const [teamMeetPanelMode, setTeamMeetPanelMode] = useState<'create' | 'view' | 'respond'>('create');
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+
+  // Date selection choice state — removed: now opens OPS schedule directly
 
   useEffect(() => {
     checkAuth();
@@ -46,11 +58,22 @@ export default function OpsDashboardPage() {
     }
   }, []);
 
+  // Fetch TeamMeet data
+  const fetchTeamMeetData = useCallback(async () => {
+    try {
+      const res = await teamMeetAPI.getTeamMeetsForCalendar();
+      setTeamMeets(res.data.data.teamMeets || []);
+    } catch (error) {
+      console.error('Error fetching team meets:', error);
+    }
+  }, []);
+
   useEffect(() => {
     if (user) {
       fetchScheduleData();
+      fetchTeamMeetData();
     }
-  }, [user, fetchScheduleData]);
+  }, [user, fetchScheduleData, fetchTeamMeetData]);
 
   const checkAuth = async () => {
     try {
@@ -64,6 +87,7 @@ export default function OpsDashboardPage() {
       }
 
       setUser(userData);
+      setCurrentUserId(userData._id);
     } catch (error) {
       toast.error('Please login to continue');
       router.push('/login');
@@ -79,10 +103,33 @@ export default function OpsDashboardPage() {
     setShowFormPanel(true);
   };
 
-  // Handle date selection from calendar
+  // Handle date selection from calendar — open OPS schedule form directly
   const handleDateSelect = (date: Date) => {
     setSelectedSchedule(null);
     setSelectedDate(date);
+    setShowFormPanel(true);
+  };
+
+  // Handle switching from OPS form to TeamMeet form (preserving date)
+  const handleSwitchToTeamMeet = () => {
+    const dateToUse = selectedDate || (selectedSchedule ? new Date(selectedSchedule.scheduledDate) : new Date());
+    setShowFormPanel(false);
+    setSelectedSchedule(null);
+    setSelectedDate(null);
+    setSelectedTeamMeet(null);
+    setSelectedTeamMeetDate(dateToUse);
+    setTeamMeetPanelMode('create');
+    setShowTeamMeetPanel(true);
+  };
+
+  // Handle switching from TeamMeet form to OPS form (preserving date)
+  const handleSwitchToTask = () => {
+    const dateToUse = selectedTeamMeetDate || (selectedTeamMeet ? new Date(selectedTeamMeet.scheduledDate) : new Date());
+    setShowTeamMeetPanel(false);
+    setSelectedTeamMeet(null);
+    setSelectedTeamMeetDate(undefined);
+    setSelectedSchedule(null);
+    setSelectedDate(dateToUse);
     setShowFormPanel(true);
   };
 
@@ -144,6 +191,35 @@ export default function OpsDashboardPage() {
     setSelectedDate(null);
   };
 
+  // ── TeamMeet handlers ──
+  const handleTeamMeetSelect = (teamMeet: TeamMeet) => {
+    setSelectedTeamMeet(teamMeet);
+    setSelectedTeamMeetDate(undefined);
+    const currentId = user?._id || currentUserId;
+    // Match counselor pattern: recipient with pending status → respond mode
+    if (
+      teamMeet.status === TEAMMEET_STATUS.PENDING_CONFIRMATION &&
+      (String(teamMeet.requestedTo._id) === String(currentId) ||
+        String((teamMeet.requestedTo as any).id) === String(currentId))
+    ) {
+      setTeamMeetPanelMode('respond');
+    } else {
+      setTeamMeetPanelMode('view');
+    }
+    setShowTeamMeetPanel(true);
+  };
+
+  const handleTeamMeetPanelClose = () => {
+    setShowTeamMeetPanel(false);
+    setSelectedTeamMeet(null);
+    setSelectedTeamMeetDate(undefined);
+  };
+
+  const handleTeamMeetSave = () => {
+    fetchTeamMeetData();
+    handleTeamMeetPanelClose();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -163,8 +239,11 @@ export default function OpsDashboardPage() {
       <OpsLayout user={user}>
         <div className="p-8">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">{getFullName(user)}</h1>
+          <div className="mb-8 flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">{getFullName(user)}</h1>
+            </div>
+            {(() => { const t = new Date(); const d = Math.floor((t.getTime() - new Date(t.getFullYear(), 0, 0).getTime()) / 86400000); return (<div className="text-right"><p className="text-3xl font-extrabold text-gray-900">Day {d}</p><p className="text-sm text-gray-500">of {t.getFullYear()}</p></div>); })()}
           </div>
 
           {/* Stats Cards */}
@@ -201,27 +280,32 @@ export default function OpsDashboardPage() {
             />
           </div>
 
-          {/* Calendar Section */}
+          {/* Unified Calendar Section */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-            {/* Calendar - Takes 3 columns on left */}
             <div className="lg:col-span-3">
               <OpsScheduleCalendar
                 schedules={schedules}
                 onScheduleSelect={handleScheduleSelect}
                 onDateSelect={handleDateSelect}
+                teamMeets={teamMeets}
+                onTeamMeetSelect={handleTeamMeetSelect}
+                currentUserId={currentUserId}
               />
             </div>
-
-            {/* Sidebar - Takes 1 column on right */}
             <div className="lg:col-span-1">
-              <OpsScheduleSidebar
-                summary={summary}
-                onScheduleClick={handleScheduleSelect}
+              <OpsScheduleOverview
+                opsTasks={schedules}
+                teamMeets={teamMeets}
+                onTaskClick={handleScheduleSelect}
+                onTeamMeetClick={handleTeamMeetSelect}
+                onScheduleClick={() => { setSelectedSchedule(null); setSelectedDate(new Date()); setShowFormPanel(true); }}
+                onScheduleTeamMeet={() => { setSelectedTeamMeet(null); setSelectedTeamMeetDate(new Date()); setTeamMeetPanelMode('create'); setShowTeamMeetPanel(true); }}
+                currentUserId={user?._id || currentUserId}
               />
             </div>
           </div>
 
-      {/* Form Panel - Slide-in from left (overlay) */}
+      {/* OPS Schedule Form Panel - Slide-in from left (overlay) */}
       <OpsScheduleFormPanel
         schedule={selectedSchedule}
         students={students}
@@ -231,6 +315,19 @@ export default function OpsDashboardPage() {
         onSubmit={handleFormSubmit}
         onDelete={selectedSchedule ? handleDelete : undefined}
         isLoading={formLoading}
+        onSwitchToTeamMeet={handleSwitchToTeamMeet}
+      />
+
+      {/* TeamMeet Form Panel */}
+      <TeamMeetFormPanel
+        teamMeet={selectedTeamMeet}
+        isOpen={showTeamMeetPanel}
+        onClose={handleTeamMeetPanelClose}
+        onSave={handleTeamMeetSave}
+        selectedDate={selectedTeamMeetDate}
+        mode={teamMeetPanelMode}
+        currentUserId={user?._id || currentUserId}
+        onSwitchToTask={handleSwitchToTask}
       />
 
           {/* Quick Actions */}

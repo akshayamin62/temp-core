@@ -6,7 +6,7 @@ import { authAPI, serviceAPI } from '@/lib/api';
 import { User, USER_ROLE } from '@/types';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
-
+import StudentProfileModal from '@/components/StudentProfileModal';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 
@@ -132,6 +132,7 @@ export default function StudentDetailPage() {
   const [eduplanCoaches, setEduplanCoaches] = useState<EduplanCoach[]>([]);
   const [assigningOps, setAssigningOps] = useState<string | null>(null);
   const [switchingActive, setSwitchingActive] = useState<string | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Use ref to prevent double execution in React StrictMode
   const hasFetchedRef = useRef(false);
@@ -296,7 +297,11 @@ export default function StudentDetailPage() {
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success('Active OPS switched successfully');
+      const switchLabel =
+        serviceName === 'Ivy League Preparation' ? 'Active Ivy Expert switched successfully' :
+        serviceName === 'Education Planning' ? 'Active Eduplan Coach switched successfully' :
+        'Active OPS switched successfully';
+      toast.success(switchLabel);
       fetchStudentDetails(); // Refresh data
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to switch active OPS');
@@ -391,6 +396,12 @@ export default function StudentDetailPage() {
                 >
                   {student.userId.isActive ? 'Active' : 'Inactive'}
                 </span>
+                <button
+                  onClick={() => setShowProfileModal(true)}
+                  className="px-3 py-1 text-xs font-medium rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                >
+                  View Profile
+                </button>
               </div>
             </div>
 
@@ -924,6 +935,9 @@ export default function StudentDetailPage() {
           )}
         </div>
       </SuperAdminLayout>
+      {showProfileModal && (
+        <StudentProfileModal studentId={studentId} onClose={() => setShowProfileModal(false)} viewerRole="SUPER_ADMIN" />
+      )}
     </>
   );
 }

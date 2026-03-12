@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { OpsSchedule, OPS_SCHEDULE_STATUS, OpsScheduleStudent } from '@/types';
+import { OpsSchedule, OPS_SCHEDULE_STATUS, OpsScheduleStudent, OpsScheduleOps } from '@/types';
 import { format } from 'date-fns';
 import { getFullName } from '@/utils/nameHelpers';
 
@@ -21,6 +21,7 @@ interface OpsScheduleFormPanelProps {
   onDelete?: () => Promise<void>;
   isLoading?: boolean;
   readOnly?: boolean;
+  onSwitchToTeamMeet?: () => void;
 }
 
 export default function OpsScheduleFormPanel({
@@ -33,6 +34,7 @@ export default function OpsScheduleFormPanel({
   onDelete,
   isLoading = false,
   readOnly = false,
+  onSwitchToTeamMeet,
 }: OpsScheduleFormPanelProps) {
   const [assignTo, setAssignTo] = useState<string>('me'); // 'me' or studentId
   const [scheduledDate, setScheduledDate] = useState('');
@@ -113,14 +115,27 @@ export default function OpsScheduleFormPanel({
           <span className="text-white font-medium text-sm">
             {readOnly ? '📋 View Schedule' : isEditing ? '✏️ Edit Schedule' : '➕ New Schedule'}
           </span>
-          <button
-            onClick={onClose}
-            className="text-white hover:text-indigo-200 transition-colors p-1 hover:bg-white/10 rounded"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1">
+            {onSwitchToTeamMeet && (
+              <button
+                type="button"
+                onClick={onSwitchToTeamMeet}
+                className="bg-purple-500 hover:bg-purple-600 text-white transition-colors px-2 py-1 rounded text-xs font-medium flex items-center gap-1"
+                title="Switch to Team Meet"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                Team Meet
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="text-white hover:text-indigo-200 transition-colors p-1 hover:bg-white/10 rounded"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Content - Scrollable */}
@@ -198,6 +213,21 @@ export default function OpsScheduleFormPanel({
               />
             </div>
 
+            {/* Created by OPS — shown in readOnly mode */}
+            {readOnly && schedule && typeof schedule.opsId === 'object' && (schedule.opsId as OpsScheduleOps).userId && (
+              <div className="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2 flex items-center gap-2">
+                <svg className="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span className="text-xs text-indigo-700">
+                  <span className="font-semibold">Created by OPS: </span>
+                  {(schedule.opsId as OpsScheduleOps).userId.firstName}
+                  {(schedule.opsId as OpsScheduleOps).userId.middleName ? ` ${(schedule.opsId as OpsScheduleOps).userId.middleName}` : ''}
+                  {` ${(schedule.opsId as OpsScheduleOps).userId.lastName}`}
+                </span>
+              </div>
+            )}
+
             {/* Status (show when editing or readOnly) */}
             {(isEditing || readOnly) && (
               <div>
@@ -219,8 +249,17 @@ export default function OpsScheduleFormPanel({
           </form>
         </div>
 
-        {/* Footer - Action Buttons (hidden in readOnly mode) */}
-        {!readOnly && (
+        {/* Footer - Action Buttons */}
+        {readOnly ? (
+          <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+            <button
+              onClick={onClose}
+              className="w-full px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        ) : (
         <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl">
           <div className="flex gap-2">
             <button

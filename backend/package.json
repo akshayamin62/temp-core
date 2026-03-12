@@ -8,7 +8,6 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "seed:forms": "ts-node src/seedFormData.ts",
-    "seed:documents": "ts-node src/seedDocument.ts",
     "create:indexes": "ts-node src/scripts/createIndexes.ts"
   },
   "keywords": [],

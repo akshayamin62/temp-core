@@ -173,47 +173,55 @@ const seedFormData = async () => {
       },
       {
         partId: profilePart._id,
+        title: "Parental Details",
+        description: "Parent or guardian information",
+        order: 2,
+        isActive: true,
+      },
+      {
+        partId: profilePart._id,
         title: "Academic Qualification",
         description: "Your educational background",
-        order: 2,
+        order: 3,
         isActive: true,
       },
       {
         partId: profilePart._id,
         title: "Work Experience",
         description: "Your professional experience",
-        order: 3,
+        order: 4,
         isActive: true,
       },
       {
         partId: profilePart._id,
         title: "Tests",
         description: "Standardized test scores",
-        order: 4,
+        order: 5,
         isActive: true,
       },
       {
         partId: profilePart._id,
         title: "Finance",
         description: "Financial information and sponsorers",
-        order: 5,
+        order: 6,
         isActive: true,
       },
       {
         partId: profilePart._id,
         title: "Visa",
         description: "Visa referral information",
-        order: 6,
+        order: 7,
         isActive: true,
       },
     ]);
 
     const personalDetailsSection = profileSections[0];
-    const academicSection = profileSections[1];
-    const workExperienceSection = profileSections[2];
-    const testsSection = profileSections[3];
-    const financeSection = profileSections[4];
-    const visaSection = profileSections[5];
+    const parentalDetailsSection = profileSections[1];
+    const academicSection = profileSections[2];
+    const workExperienceSection = profileSections[3];
+    const testsSection = profileSections[4];
+    const financeSection = profileSections[5];
+    const visaSection = profileSections[6];
 
     // ========== STEP 5: Create Personal Details SubSections ==========
     console.log("📄 Creating Personal Details subsections...");
@@ -350,16 +358,7 @@ const seedFormData = async () => {
           { label: "Widowed", value: "widowed" },
         ],
       },
-      {
-        subSectionId: personalSubSections[0]._id,
-        label: "Phone Number",
-        key: "phone",
-        type: FieldType.PHONE,
-        placeholder: "+1 (555) 000-0000",
-        required: true,
-        order: 8,
-        isActive: true,
-      },
+      // Phone number removed - already present in Student model as mobileNumber
     ]);
 
     // ========== STEP 7: Create Mailing Address Fields ==========
@@ -585,6 +584,109 @@ const seedFormData = async () => {
         order: 1,
         isActive: true,
         helpText: "Include any other relevant details"
+      },
+    ]);
+
+    // ========== STEP 9.8: Create Parental Details SubSection (Repeatable) ==========
+    console.log("👨‍👩‍👧 Creating Parental Details subsection...");
+    const parentalSubSection = await FormSubSection.create({
+      sectionId: parentalDetailsSection._id,
+      title: "Parent / Guardian Details",
+      description: "Add parent or guardian information",
+      order: 1,
+      isRepeatable: true,
+      maxRepeat: 2,
+      isActive: true,
+    });
+
+    console.log("📝 Creating Parental Details fields...");
+    await FormField.insertMany([
+      {
+        subSectionId: parentalSubSection._id,
+        label: "First Name",
+        key: "parentFirstName",
+        type: FieldType.TEXT,
+        placeholder: "Enter first name",
+        required: true,
+        order: 1,
+        isActive: true,
+      },
+      {
+        subSectionId: parentalSubSection._id,
+        label: "Middle Name",
+        key: "parentMiddleName",
+        type: FieldType.TEXT,
+        placeholder: "Enter middle name",
+        required: false,
+        order: 2,
+        isActive: true,
+      },
+      {
+        subSectionId: parentalSubSection._id,
+        label: "Last Name",
+        key: "parentLastName",
+        type: FieldType.TEXT,
+        placeholder: "Enter last name",
+        required: true,
+        order: 3,
+        isActive: true,
+      },
+      {
+        subSectionId: parentalSubSection._id,
+        label: "Relationship with Student",
+        key: "parentRelationship",
+        type: FieldType.SELECT,
+        required: true,
+        order: 4,
+        isActive: true,
+        options: [
+          { label: "Father", value: "father" },
+          { label: "Mother", value: "mother" },
+          { label: "Guardian", value: "guardian" },
+          { label: "Sibling", value: "sibling" },
+          { label: "Spouse", value: "spouse" },
+          { label: "Other", value: "other" },
+        ],
+      },
+      {
+        subSectionId: parentalSubSection._id,
+        label: "Mobile Number",
+        key: "parentMobile",
+        type: FieldType.PHONE,
+        placeholder: "+91 XXXXX XXXXX",
+        required: true,
+        order: 5,
+        isActive: true,
+      },
+      {
+        subSectionId: parentalSubSection._id,
+        label: "Email Address",
+        key: "parentEmail",
+        type: FieldType.EMAIL,
+        placeholder: "parent@example.com",
+        required: true,
+        order: 6,
+        isActive: true,
+      },
+      {
+        subSectionId: parentalSubSection._id,
+        label: "Qualification",
+        key: "parentQualification",
+        type: FieldType.TEXT,
+        placeholder: "e.g., Bachelor's in Commerce",
+        required: true,
+        order: 7,
+        isActive: true,
+      },
+      {
+        subSectionId: parentalSubSection._id,
+        label: "Occupation",
+        key: "parentOccupation",
+        type: FieldType.TEXT,
+        placeholder: "e.g., Business, Government Service",
+        required: true,
+        order: 8,
+        isActive: true,
       },
     ]);
 
@@ -1758,9 +1860,10 @@ const seedFormData = async () => {
 
     console.log("   - Study Abroad form structure created with:");
     console.log("     • Personal Details (7 subsections)");
+    console.log("     • Parental Details (repeatable)");
     console.log("     • Academic Qualification (repeatable)");
     console.log("     • Work Experience (repeatable)");
-    console.log("     • Tests (6 test types)");
+    console.log("     • Tests (7 test types)");
     console.log("     • Finance (Sponsorers - repeatable)");
     console.log("     • Visa (Visa Referred Details)");
     console.log("     • Application (program selection)");

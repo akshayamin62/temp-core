@@ -3,6 +3,7 @@ import OpsSchedule, { OPS_SCHEDULE_STATUS } from "../models/OpsSchedule";
 import Ops from "../models/Ops";
 import Student from "../models/Student";
 import StudentServiceRegistration from "../models/StudentServiceRegistration";
+import User from "../models/User";
 import { AuthRequest } from "../types/auth";
 
 // Helper functions for date operations
@@ -474,5 +475,73 @@ export const markMissedSchedules = async () => {
   } catch (error) {
     console.error("Error marking missed schedules:", error);
     throw error;
+  }
+};
+
+// ── Student endpoint: get OPS tasks assigned to me ──
+export const getMyOpsTasksAsStudent = async (req: AuthRequest, res: Response): Promise<any> => {
+  try {
+    const userId = req.user?.userId;
+
+    // Find the student record for this user
+    const student = await Student.findOne({ userId });
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student profile not found",
+      });
+    }
+
+    // Get all OPS schedule entries where this student is assigned
+    const schedules = await OpsSchedule.find({ studentId: student._id })
+      .populate({
+        path: "opsId",
+        populate: {
+          path: "userId",
+          select: "firstName middleName lastName email",
+        },
+      })
+      .sort({ scheduledDate: 1, scheduledTime: 1 });
+
+    res.json({
+      success: true,
+      data: { schedules },
+    });
+  } catch (error: any) {
+    console.error("Error fetching student OPS tasks:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch OPS tasks",
+      error: error.message,
+    });
+  }
+};
+
+// Get OPS tasks for a specific student (for admin/counselor/super-admin/ops viewing student dashboard)
+export const getStudentOpsTasksById = async (req: AuthRequest, res: Response): Promise<any> => {
+  try {
+    const { studentId } = req.params;
+
+    const schedules = await OpsSchedule.find({ studentId })
+      .populate({
+        path: "opsId",
+        populate: {
+          path: "userId",
+          select: "firstName middleName lastName email",
+        },
+      })
+      .sort({ scheduledDate: 1, scheduledTime: 1 });
+
+    res.json({
+      success: true,
+      data: { schedules },
+    });
+  } catch (error: any) {
+    console.error("Error fetching student OPS tasks by ID:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch OPS tasks",
+      error: error.message,
+    });
   }
 };

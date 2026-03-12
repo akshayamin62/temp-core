@@ -129,6 +129,17 @@ export default function Navbar() {
                   >
                     Dashboard
                   </Link>
+                ) : (userRole?.toLowerCase() === 'parent' || userRole === 'PARENT') ? (
+                  <Link
+                    href="/parent/dashboard"
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                      pathname.startsWith('/parent')
+                        ? 'text-purple-600 bg-purple-50 shadow-md'
+                        : 'text-gray-700 hover:text-purple-600 hover:bg-purple-50/50 hover:shadow-sm'
+                    }`}
+                  >
+                    Dashboard
+                  </Link>
                 ) : (
                   <Link
                     href="/dashboard"
@@ -335,14 +346,14 @@ export default function Navbar() {
                   >
                     Dashboard
                   </Link>
-                ) : (userRole?.toLowerCase() === 'counselor' || userRole === 'COUNSELOR') ? (
+                ) : (userRole?.toLowerCase() === 'parent' || userRole === 'PARENT') ? (
                   <Link
-                    href="/counselor/dashboard"
+                    href="/parent/dashboard"
                     onClick={() => setMobileMenuOpen(false)}
                     className={`block px-3 py-2 rounded-md text-base font-medium ${
-                      pathname.startsWith('/counselor')
-                        ? 'text-blue-600 bg-blue-50'
-                        : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                      pathname.startsWith('/parent')
+                        ? 'text-purple-600 bg-purple-50'
+                        : 'text-gray-700 hover:text-purple-600 hover:bg-gray-50'
                     }`}
                   >
                     Dashboard

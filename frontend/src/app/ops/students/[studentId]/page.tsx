@@ -5,11 +5,12 @@ import { useRouter, useParams } from 'next/navigation';
 import { authAPI } from '@/lib/api';
 import { User, USER_ROLE } from '@/types';
 import OpsLayout from '@/components/OpsLayout';
+import StudentProfileModal from '@/components/StudentProfileModal';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 interface StudentDetails {
   _id: string;
@@ -74,6 +75,7 @@ export default function StudentDetailPage() {
   const [student, setStudent] = useState<StudentDetails | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -199,6 +201,12 @@ export default function StudentDetailPage() {
                 >
                   {student.userId.isActive ? 'Active' : 'Inactive'}
                 </span>
+                <button
+                  onClick={() => setShowProfileModal(true)}
+                  className="px-3 py-1 text-xs font-medium rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                >
+                  View Profile
+                </button>
               </div>
             </div>
 
@@ -317,6 +325,9 @@ export default function StudentDetailPage() {
           </div>
         </div>
       </OpsLayout>
+      {showProfileModal && (
+        <StudentProfileModal studentId={studentId} onClose={() => setShowProfileModal(false)} viewerRole="OPS" />
+      )}
     </>
   );
 }

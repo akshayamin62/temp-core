@@ -23,6 +23,7 @@ export interface IProgram extends Document {
     usNews?: number;
     qs?: number;
   };
+  universityStatus?: string;
   programName: string;
   programUrl: string;
   campus: string;
@@ -69,6 +70,10 @@ const programSchema = new Schema<IProgram>(
       webometricsNational: { type: Number, required: false },
       usNews: { type: Number, required: false },
       qs: { type: Number, required: false },
+    },
+    universityStatus: {
+      type: String,
+      required: false,
     },
     programName: {
       type: String,

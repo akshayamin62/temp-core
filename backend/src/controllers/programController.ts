@@ -8,6 +8,7 @@ import User from '../models/User';
 import StudentServiceRegistration from '../models/StudentServiceRegistration';
 import OpsSchedule, { OPS_SCHEDULE_STATUS } from '../models/OpsSchedule';
 import * as XLSX from 'xlsx';
+import { getQsRanking, clearQsRankingCache, getQsData } from '../utils/qsRankingLookup';
 
 /**
  * Get all programs for a student (added by their assigned OPS)
@@ -94,8 +95,8 @@ export const getOpsStudentPrograms = async (req: AuthRequest, res: Response): Pr
     const userId = req.user?.userId;
     const user = await User.findById(userId);
     
-    // Allow OPS, ADMIN, and COUNSELOR roles
-    if (!user || (user.role !== USER_ROLE.OPS && user.role !== USER_ROLE.ADMIN && user.role !== USER_ROLE.COUNSELOR)) {
+    // Allow OPS, ADMIN, COUNSELOR, and SUPER_ADMIN roles
+    if (!user || (user.role !== USER_ROLE.OPS && user.role !== USER_ROLE.ADMIN && user.role !== USER_ROLE.COUNSELOR && user.role !== USER_ROLE.SUPER_ADMIN)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied',
@@ -320,13 +321,29 @@ export const createProgram = async (req: AuthRequest, res: Response): Promise<Re
       opsObjectId = null;
     }
 
+    // Auto-populate QS ranking and university status if not provided
+    const finalRanking = universityRanking || {};
+    let universityStatusValue: string | undefined;
+    if (university) {
+      const qsData = getQsData(university);
+      if (qsData) {
+        if (!finalRanking.qs) {
+          finalRanking.qs = qsData.rank;
+        }
+        if (qsData.status) {
+          universityStatusValue = qsData.status;
+        }
+      }
+    }
+
     const program = await Program.create({
       createdBy: userId,
       opsId: opsObjectId,
       studentId: studentObjectId, // Link to specific student if provided
       registrationId: registrationId || undefined,
       university,
-      universityRanking: universityRanking || {},
+      universityRanking: finalRanking,
+      universityStatus: universityStatusValue,
       programName,
       programUrl,
       campus,
@@ -921,6 +938,19 @@ export const uploadProgramsFromExcel = async (req: AuthRequest & { file?: Expres
           isSelectedByStudent: false,
         };
 
+        // Auto-populate QS ranking and university status if not provided in the Excel
+        if (programData.university) {
+          const qsData = getQsData(programData.university);
+          if (qsData) {
+            if (!programData.universityRanking.qs) {
+              programData.universityRanking.qs = qsData.rank;
+            }
+            if (qsData.status) {
+              programData.universityStatus = qsData.status;
+            }
+          }
+        }
+
         // Validate required fields (only 5 fields are required)
         if (!programData.university || !programData.programName || !programData.programUrl || 
             !programData.country || !programData.studyLevel) {
@@ -955,6 +985,90 @@ export const uploadProgramsFromExcel = async (req: AuthRequest & { file?: Expres
     return res.status(500).json({
       success: false,
       message: 'Failed to upload programs from Excel',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Upload QS World University Rankings Excel file (Super Admin only)
+ * Replaces the existing QS ranking reference file
+ */
+export const uploadQsRankingExcel = async (req: AuthRequest & { file?: Express.Multer.File }, res: Response): Promise<Response> => {
+  try {
+    const userId = req.user?.userId;
+    const user = await User.findById(userId);
+
+    if (user?.role !== USER_ROLE.SUPER_ADMIN) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Only Super Admin can upload QS rankings.',
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded',
+      });
+    }
+
+    // Validate the Excel has expected structure
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { range: 0 });
+
+    if (rows.length < 3) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid QS ranking file. File appears to be empty or has insufficient data.',
+      });
+    }
+
+    // Check that expected columns exist (row index 2 should have data with __EMPTY and __EMPTY_2)
+    const sampleRow = rows[2];
+    if (!sampleRow || sampleRow['__EMPTY'] === undefined || sampleRow['__EMPTY_2'] === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid QS ranking file format. Expected columns for Rank and University Name not found.',
+      });
+    }
+
+    // Save the file to backend/data/
+    // Use process.cwd() so path works in both dev and production (compiled dist/)
+    const fs = await import('fs');
+    const path = await import('path');
+    const filePath = path.join(process.cwd(), 'data', 'qs-world-university-ranking.xlsx');
+
+    // Ensure data directory exists
+    const dataDir = path.dirname(filePath);
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+
+    fs.writeFileSync(filePath, req.file.buffer);
+
+    // Clear the cached rankings so next lookup reloads from the new file
+    clearQsRankingCache();
+
+    // Count how many rankings were loaded
+    let count = 0;
+    for (let i = 2; i < rows.length; i++) {
+      const row = rows[i];
+      if (row['__EMPTY_2'] && row['__EMPTY']) count++;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `QS ranking file uploaded successfully. ${count} university rankings loaded.`,
+      data: { universitiesLoaded: count },
+    });
+  } catch (error: any) {
+    console.error('Upload QS ranking Excel error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to upload QS ranking file',
       error: error.message,
     });
   }

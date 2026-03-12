@@ -49,6 +49,7 @@ interface VerifyOTPRequest extends Request {
     businessType?: string;
     registrationNumber?: string;
     gstNumber?: string;
+    businessPan?: string;
     address?: string;
     city?: string;
     state?: string;
@@ -242,7 +243,8 @@ export const verifySignupOTP = async (req: VerifyOTPRequest, res: Response): Pro
       pincode,
       website,
       servicesOffered,
-      coachingTests
+      coachingTests,
+      businessPan
     } = req.body;
 
     if (!email || !otp) {
@@ -337,6 +339,7 @@ export const verifySignupOTP = async (req: VerifyOTPRequest, res: Response): Pro
           businessType: businessType || "",
           registrationNumber: registrationNumber || "",
           gstNumber: gstNumber || "",
+          businessPan: businessPan || "",
           address: address || "",
           city: city || "",
           state: state || "",
@@ -531,6 +534,7 @@ export const getProfile = async (
           mobileNumber: sp.mobileNumber,
           registrationNumber: sp.registrationNumber,
           gstNumber: sp.gstNumber,
+          businessPan: sp.businessPan,
           address: sp.address,
           city: sp.city,
           state: sp.state,
@@ -538,6 +542,12 @@ export const getProfile = async (
           pincode: sp.pincode,
           website: sp.website,
           servicesOffered: sp.servicesOffered,
+          bankName: sp.bankName,
+          bankAccountNumber: sp.bankAccountNumber,
+          bankIfscCode: sp.bankIfscCode,
+          bankAccountType: sp.bankAccountType,
+          bankSwiftCode: sp.bankSwiftCode,
+          bankUpiId: sp.bankUpiId,
         };
         // Also include companyLogo and companyName in user object for easy access
         responseData.user.companyName = sp.companyName;
@@ -555,6 +565,65 @@ export const getProfile = async (
       success: false,
       message: "Internal server error",
     });
+  }
+};
+
+/**
+ * Update Service Provider Profile (bank details, etc.)
+ */
+export const updateSPProfile = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const userId = (req as any).user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user || user.role !== USER_ROLE.SERVICE_PROVIDER) {
+      return res.status(403).json({ success: false, message: "Only service providers can update SP profile" });
+    }
+
+    const allowedFields = [
+      'bankName', 'bankAccountNumber', 'bankIfscCode',
+      'bankAccountType', 'bankSwiftCode', 'bankUpiId',
+      'companyName', 'businessType', 'registrationNumber',
+      'gstNumber', 'businessPan', 'address', 'city',
+      'state', 'country', 'pincode', 'website',
+    ];
+
+    const updateData: Record<string, string> = {};
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        let value = String(req.body[field]).trim();
+        if (['businessPan', 'bankIfscCode', 'bankSwiftCode'].includes(field)) {
+          value = value.toUpperCase();
+        }
+        updateData[field] = value;
+      }
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ success: false, message: "No fields to update" });
+    }
+
+    const updated = await ServiceProvider.findOneAndUpdate(
+      { userId },
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ success: false, message: "Service provider profile not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: { serviceProvider: updated },
+    });
+  } catch (err: any) {
+    console.error("Update SP profile error:", err);
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 

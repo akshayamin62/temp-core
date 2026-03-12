@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import FollowUpCalendar from '@/components/FollowUpCalendar';
 import FollowUpSidebar from '@/components/FollowUpSidebar';
 import FollowUpFormPanel from '@/components/FollowUpFormPanel';
+import CounselorLayout from '@/components/CounselorLayout';
 
 export default function CounselorLeadDetailPage() {
   const router = useRouter();
@@ -377,7 +378,7 @@ export default function CounselorLeadDetailPage() {
   return (
     <>
       <Toaster position="top-right" />
-      <div className="min-h-screen bg-gray-50">
+      <CounselorLayout user={user}>
         <div className="p-8">
         {/* Back Button & Header */}
         <div className="mb-6">
@@ -469,6 +470,46 @@ export default function CounselorLeadDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* Parent Detail */}
+            {lead.parentDetail && (
+              <>
+                <hr className="my-4 border-gray-200" />
+                <h4 className="text-md font-bold text-gray-900 mb-3">Parent Detail</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Name</label>
+                    <p className="text-gray-900 font-medium">
+                      {[lead.parentDetail.firstName, lead.parentDetail.middleName, lead.parentDetail.lastName].filter(Boolean).join(' ')}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Relationship</label>
+                    <p className="text-gray-900 font-medium capitalize">{lead.parentDetail.relationship}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Mobile Number</label>
+                    <a href={`tel:${lead.parentDetail.mobileNumber}`} className="text-blue-600 hover:underline font-medium">
+                      {lead.parentDetail.mobileNumber}
+                    </a>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Email Address</label>
+                    <a href={`mailto:${lead.parentDetail.email}`} className="text-blue-600 hover:underline text-sm break-all">
+                      {lead.parentDetail.email}
+                    </a>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Qualification</label>
+                    <p className="text-gray-900 font-medium">{lead.parentDetail.qualification}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Occupation</label>
+                    <p className="text-gray-900 font-medium">{lead.parentDetail.occupation}</p>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Right Column - Stage + Services stacked */}
@@ -863,7 +904,7 @@ export default function CounselorLeadDetailPage() {
             </div>
           </div>
         </div>
-      </div>
+      </CounselorLayout>
 
       {/* Follow-up Edit Panel */}
       <FollowUpFormPanel

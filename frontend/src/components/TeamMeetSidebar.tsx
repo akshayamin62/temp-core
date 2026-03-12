@@ -138,6 +138,18 @@ export default function TeamMeetSidebar({
     (tm) => tm.status === TEAMMEET_STATUS.REJECTED && getUserId(tm.requestedBy) === currentUserId
   );
 
+  // Meetings where the user is only an invited participant (not sender or receiver)
+  const invitedMeetings = teamMeets.filter(
+    (tm) => {
+      const isSender = getUserId(tm.requestedBy) === currentUserId;
+      const isReceiver = getUserId(tm.requestedTo) === currentUserId;
+      if (isSender || isReceiver) return false;
+      return tm.invitedUsers?.some((u) => getUserId(u) === currentUserId) || false;
+    }
+  ).filter(
+    (tm) => tm.status !== TEAMMEET_STATUS.CANCELLED && tm.status !== TEAMMEET_STATUS.COMPLETED
+  );
+
   return (
     <div className={`bg-white overflow-hidden h-fit ${hideHeader ? '' : 'rounded-xl shadow-sm border border-gray-200'}`}>
       {/* Header - conditionally shown */}
@@ -147,7 +159,7 @@ export default function TeamMeetSidebar({
             <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <h3 className="font-semibold text-gray-900">TeamMeet Overview</h3>
+            <h3 className="font-semibold text-gray-900">Team Meet Overview</h3>
           </div>
           {onScheduleClick && (
             <button
@@ -291,6 +303,31 @@ export default function TeamMeetSidebar({
             
             <div className="space-y-2 max-h-32 overflow-y-auto">
               {rejectedMeetings.map((teamMeet) => (
+                <TeamMeetItem
+                  key={teamMeet._id}
+                  teamMeet={teamMeet}
+                  onClick={() => onTeamMeetClick(teamMeet)}
+                  showDate
+                  currentUserId={currentUserId}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Invitations Section (meetings where user is invited, not sender/receiver) */}
+        {invitedMeetings.length > 0 && (
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#D97706' }}></div>
+              <h4 className="text-sm font-semibold text-gray-700">Invitations</h4>
+              <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: '#FDE8CD', color: '#92400E' }}>
+                {invitedMeetings.length}
+              </span>
+            </div>
+            
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {invitedMeetings.map((teamMeet) => (
                 <TeamMeetItem
                   key={teamMeet._id}
                   teamMeet={teamMeet}

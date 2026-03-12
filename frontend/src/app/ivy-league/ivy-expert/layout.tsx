@@ -2,7 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { authAPI } from '@/lib/api';
+import { User, USER_ROLE } from '@/types';
+import IvyExpertLayoutWrapper from '@/components/IvyExpertLayout';
 
 
 
@@ -167,23 +170,57 @@ function IvyExpertSidebar() {
 function IvyExpertLayoutContent({ children }: { children: React.ReactNode }) {
     const searchParams = useSearchParams();
     const studentId = searchParams.get('studentId');
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    // Only show sidebar when a student is selected
-    if (!studentId) {
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) { setLoading(false); return; }
+                const res = await authAPI.getProfile();
+                const u = res.data.data.user;
+                if (u.role === USER_ROLE.IVY_EXPERT || u.role === USER_ROLE.SUPER_ADMIN) {
+                    setUser(u);
+                }
+            } catch { /* silent */ } finally { setLoading(false); }
+        };
+        fetchUser();
+    }, []);
+
+    // When a student is selected, show the pointer-navigation sidebar
+    if (studentId) {
         return (
-            <main className="min-h-screen bg-[#FBFBFE]">
+            <div className="flex bg-[#FBFBFE] min-h-screen">
+                <IvyExpertSidebar />
+                <main className="flex-1 min-h-screen overflow-x-hidden">
+                    {children}
+                </main>
+            </div>
+        );
+    }
+
+    // No student selected: show IvyExpertLayout wrapper
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            </div>
+        );
+    }
+
+    if (user) {
+        return (
+            <IvyExpertLayoutWrapper user={user}>
                 {children}
-            </main>
+            </IvyExpertLayoutWrapper>
         );
     }
 
     return (
-        <div className="flex bg-[#FBFBFE] min-h-screen">
-            <IvyExpertSidebar />
-            <main className="flex-1 min-h-screen overflow-x-hidden">
-                {children}
-            </main>
-        </div>
+        <main className="min-h-screen bg-[#FBFBFE]">
+            {children}
+        </main>
     );
 }
 

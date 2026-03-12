@@ -484,6 +484,43 @@ export const downloadPortfolio = async (req: AuthRequest, res: Response): Promis
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────
+// UPDATE BRAINOGRAPHY METADATA (standard / board)
+// ─────────────────────────────────────────────────────────────────────────
+export const updateBrainographyMeta = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const { registrationId } = req.params;
+    const { standard, board } = req.body;
+
+    const updateFields: Record<string, string> = {};
+    if (standard !== undefined) updateFields.standard = standard;
+    if (board !== undefined) updateFields.board = board;
+
+    if (Object.keys(updateFields).length === 0) {
+      return res.status(400).json({ success: false, message: 'No fields to update' });
+    }
+
+    const updated = await BrainographyData.findOneAndUpdate(
+      { registrationId },
+      { $set: updateFields },
+      { new: true, upsert: false }
+    ).lean().exec();
+
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Brainography data not found for this registration' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Brainography metadata updated',
+      data: { brainographyData: updated },
+    });
+  } catch (error: any) {
+    console.error('Update brainography meta error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to update brainography metadata' });
+  }
+};
+
 // ═════════════════════════════════════════════════════════════════════════
 // MULTI-AGENT REPORT GENERATION (ported from Python LangGraph)
 // ═════════════════════════════════════════════════════════════════════════

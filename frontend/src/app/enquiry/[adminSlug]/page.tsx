@@ -29,6 +29,15 @@ export default function PublicEnquiryFormPage() {
     serviceTypes: [] as string[],
     intake: '',
     year: '',
+    // Parent detail
+    parentFirstName: '',
+    parentMiddleName: '',
+    parentLastName: '',
+    parentRelationship: '',
+    parentMobile: '',
+    parentEmail: '',
+    parentQualification: '',
+    parentOccupation: '',
   });
 
   // Service types that require intake and year fields
@@ -144,6 +153,46 @@ export default function PublicEnquiryFormPage() {
       return;
     }
 
+    // Parent detail validation
+    if (!formData.parentFirstName.trim()) {
+      toast.error('Please enter parent first name');
+      return;
+    }
+    if (!formData.parentLastName.trim()) {
+      toast.error('Please enter parent last name');
+      return;
+    }
+    if (!formData.parentRelationship) {
+      toast.error('Please select relationship with student');
+      return;
+    }
+    if (!formData.parentMobile.trim()) {
+      toast.error('Please enter parent mobile number');
+      return;
+    }
+    const parentPhoneDigits = formData.parentMobile.replace(/\D/g, '');
+    if (parentPhoneDigits.length < 10) {
+      toast.error('Please enter a valid parent mobile number (at least 10 digits)');
+      return;
+    }
+    if (!formData.parentEmail.trim()) {
+      toast.error('Please enter parent email address');
+      return;
+    }
+    const parentEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!parentEmailRegex.test(formData.parentEmail)) {
+      toast.error('Please enter a valid parent email address');
+      return;
+    }
+    if (!formData.parentQualification.trim()) {
+      toast.error('Please enter parent qualification');
+      return;
+    }
+    if (!formData.parentOccupation.trim()) {
+      toast.error('Please enter parent occupation');
+      return;
+    }
+
     // Combine names
     const fullName = [formData.firstName.trim(), formData.middleName.trim(), formData.lastName.trim()]
       .filter(Boolean)
@@ -158,6 +207,16 @@ export default function PublicEnquiryFormPage() {
         city: formData.city.trim(),
         serviceTypes: formData.serviceTypes,
         ...(showIntakeYear && { intake: formData.intake, year: formData.year }),
+        parentDetail: {
+          firstName: formData.parentFirstName.trim(),
+          middleName: formData.parentMiddleName.trim(),
+          lastName: formData.parentLastName.trim(),
+          relationship: formData.parentRelationship,
+          mobileNumber: formData.parentMobile.trim(),
+          email: formData.parentEmail.trim().toLowerCase(),
+          qualification: formData.parentQualification.trim(),
+          occupation: formData.parentOccupation.trim(),
+        },
       });
       setSubmitted(true);
       toast.success('Your enquiry has been submitted successfully!');
@@ -267,6 +326,12 @@ export default function PublicEnquiryFormPage() {
         {/* Form Card */}
         <div className="bg-white rounded-3xl shadow-2xl shadow-gray-200/50 p-10 border border-gray-100">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* === Student Details Section === */}
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">Student Details</h3>
+              <p className="text-sm text-gray-500 mb-4">Please provide the student's information.</p>
+            </div>
+
             {/* Row 1: First Name, Middle Name, Last Name */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
               <div>
@@ -366,6 +431,151 @@ export default function PublicEnquiryFormPage() {
                   required
                 />
               </div>
+            </div>
+
+            {/* === Parent Details Section === */}
+            <div className="border-t border-gray-200 pt-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-1">Parent Details</h3>
+              <p className="text-sm text-gray-500 mb-4">Please provide the parent / guardian's information.</p>
+            </div>
+
+            {/* Parent Name Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <div>
+                <label htmlFor="parentFirstName" className="block text-sm font-semibold text-gray-700 mb-2">
+                  First Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="parentFirstName"
+                  name="parentFirstName"
+                  value={formData.parentFirstName}
+                  onChange={handleInputChange}
+                  placeholder="Enter first name"
+                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 placeholder:text-gray-400"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="parentMiddleName" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Middle Name
+                </label>
+                <input
+                  type="text"
+                  id="parentMiddleName"
+                  name="parentMiddleName"
+                  value={formData.parentMiddleName}
+                  onChange={handleInputChange}
+                  placeholder="Enter middle name"
+                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 placeholder:text-gray-400"
+                />
+              </div>
+              <div>
+                <label htmlFor="parentLastName" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Last Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="parentLastName"
+                  name="parentLastName"
+                  value={formData.parentLastName}
+                  onChange={handleInputChange}
+                  placeholder="Enter last name"
+                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 placeholder:text-gray-400"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Parent Relationship + Mobile */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <label htmlFor="parentRelationship" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Relationship with Student <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="parentRelationship"
+                  name="parentRelationship"
+                  value={formData.parentRelationship}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900"
+                  required
+                >
+                  <option value="">Select Relationship</option>
+                  <option value="father">Father</option>
+                  <option value="mother">Mother</option>
+                  <option value="guardian">Guardian</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="parentMobile" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Mobile Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  id="parentMobile"
+                  name="parentMobile"
+                  value={formData.parentMobile}
+                  onChange={handleInputChange}
+                  placeholder="+91 XXXXX XXXXX"
+                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 placeholder:text-gray-400"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Parent Email + Qualification + Occupation */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <div>
+                <label htmlFor="parentEmail" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  id="parentEmail"
+                  name="parentEmail"
+                  value={formData.parentEmail}
+                  onChange={handleInputChange}
+                  placeholder="parent@example.com"
+                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 placeholder:text-gray-400"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="parentQualification" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Qualification <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="parentQualification"
+                  name="parentQualification"
+                  value={formData.parentQualification}
+                  onChange={handleInputChange}
+                  placeholder="e.g., Bachelor's in Commerce"
+                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 placeholder:text-gray-400"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="parentOccupation" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Occupation <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="parentOccupation"
+                  name="parentOccupation"
+                  value={formData.parentOccupation}
+                  onChange={handleInputChange}
+                  placeholder="e.g., Business, Government Service"
+                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 placeholder:text-gray-400"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* === Services Section === */}
+            <div className="border-t border-gray-200 pt-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-1">Services</h3>
             </div>
 
             {/* Service Types - Multiple Selection (2 per row) */}

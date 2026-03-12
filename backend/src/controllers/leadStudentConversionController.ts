@@ -6,6 +6,7 @@ import Student from "../models/Student";
 import User from "../models/User";
 import Admin from "../models/Admin";
 import Counselor from "../models/Counselor";
+import Parent from "../models/Parent";
 import StudentFormAnswer from "../models/StudentFormAnswer";
 import FormPart from "../models/FormPart";
 import FormSection from "../models/FormSection";
@@ -362,8 +363,8 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
         throw new Error('Personal Information subsection not found');
       }
 
-      // Create nested structure: answers[sectionId][subSectionId][0]
-      const answers = {
+      // Build answers object starting with personal info
+      const answers: any = {
         [personalDetailsSection._id.toString()]: {
           [personalInfoSubSection._id.toString()]: [
             {
@@ -375,6 +376,40 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
           ]
         }
       };
+
+      // If lead has parent detail, also pre-fill the Parental Details section
+      if (lead.parentDetail && lead.parentDetail.firstName) {
+        try {
+          const parentalSection = await FormSection.findOne({
+            partId: profilePart._id,
+            title: 'Parental Details'
+          });
+          if (parentalSection) {
+            const parentalSubSection = await FormSubSection.findOne({
+              sectionId: parentalSection._id,
+            });
+            if (parentalSubSection) {
+              answers[parentalSection._id.toString()] = {
+                [parentalSubSection._id.toString()]: [
+                  {
+                    parentFirstName: lead.parentDetail.firstName,
+                    parentMiddleName: lead.parentDetail.middleName || '',
+                    parentLastName: lead.parentDetail.lastName,
+                    parentRelationship: lead.parentDetail.relationship,
+                    parentMobile: lead.parentDetail.mobileNumber,
+                    parentEmail: lead.parentDetail.email,
+                    parentQualification: lead.parentDetail.qualification,
+                    parentOccupation: lead.parentDetail.occupation,
+                  }
+                ]
+              };
+              console.log('✅ Parental details pre-populated in form');
+            }
+          }
+        } catch (parentFormError) {
+          console.error("⚠️ Failed to pre-populate parental form data:", parentFormError);
+        }
+      }
 
       const profileAnswers = new StudentFormAnswer({
         studentId: newStudent._id,
@@ -395,6 +430,60 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
     } catch (formError) {
       console.error("⚠️ Failed to pre-populate form data:", formError);
       // Continue with conversion even if form pre-population fails
+    }
+
+    // Create Parent user and Parent model if lead has parent detail
+    if (lead.parentDetail && lead.parentDetail.email) {
+      try {
+        const parentEmail = lead.parentDetail.email.toLowerCase().trim();
+        let parentUser = await User.findOne({ email: parentEmail });
+
+        if (!parentUser) {
+          const parentOtp = generateOTP();
+          parentUser = new User({
+            firstName: lead.parentDetail.firstName,
+            middleName: lead.parentDetail.middleName || '',
+            lastName: lead.parentDetail.lastName,
+            email: parentEmail,
+            role: USER_ROLE.PARENT,
+            isVerified: true,
+            isActive: true,
+            otp: parentOtp,
+            otpExpires: new Date(Date.now() + 10 * 60 * 1000),
+          });
+          await parentUser.save();
+          console.log('✅ Parent user created:', parentUser._id);
+        } else {
+          console.log('✅ Using existing user for parent:', parentUser._id);
+        }
+
+        // Check if Parent doc already exists
+        let parentDoc = await Parent.findOne({ userId: parentUser._id });
+        if (parentDoc) {
+          // Add studentId if not already present
+          const studentIdStr = (newStudent._id as mongoose.Types.ObjectId).toString();
+          if (!parentDoc.studentIds.map(id => id.toString()).includes(studentIdStr)) {
+            parentDoc.studentIds.push(newStudent._id as mongoose.Types.ObjectId);
+            await parentDoc.save();
+            console.log('✅ Added student to existing parent doc');
+          }
+        } else {
+          parentDoc = new Parent({
+            userId: parentUser._id,
+            studentIds: [newStudent._id],
+            relationship: lead.parentDetail.relationship || 'parent',
+            mobileNumber: lead.parentDetail.mobileNumber,
+            qualification: lead.parentDetail.qualification || '',
+            occupation: lead.parentDetail.occupation || '',
+            convertedFromLeadId: lead._id,
+          });
+          await parentDoc.save();
+          console.log('✅ Parent doc created:', parentDoc._id);
+        }
+      } catch (parentError) {
+        console.error("⚠️ Failed to create parent user/doc:", parentError);
+        // Continue with conversion even if parent creation fails
+      }
     }
 
     // Update conversion request

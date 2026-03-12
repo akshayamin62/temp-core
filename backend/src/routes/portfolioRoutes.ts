@@ -5,6 +5,7 @@ import { USER_ROLE } from '../types/roles';
 import {
   extractBrainographyData,
   getBrainographyData,
+  updateBrainographyMeta,
   generateBothReports,
   getReportLimit,
   getPortfolios,
@@ -28,6 +29,13 @@ router.get(
   '/:registrationId/data',
   authorize([USER_ROLE.STUDENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]),
   getBrainographyData,
+);
+
+// Update standard / board fields (Student, Eduplan Coach, Super Admin)
+router.patch(
+  '/:registrationId/data',
+  authorize([USER_ROLE.STUDENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN]),
+  updateBrainographyMeta,
 );
 
 // Generate both career + development reports in one click (Student, Eduplan Coach, Super Admin)

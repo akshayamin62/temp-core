@@ -1,9 +1,15 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import axios from 'axios';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { IVY_API_URL } from '@/lib/ivyApi';
+import { teamMeetAPI, authAPI, opsScheduleAPI } from '@/lib/api';
+import { TeamMeet, OpsSchedule, TEAMMEET_STATUS } from '@/types';
+import OpsScheduleCalendar from '@/components/OpsScheduleCalendar';
+import TeamMeetSidebar from '@/components/TeamMeetSidebar';
+import TeamMeetFormPanel from '@/components/TeamMeetFormPanel';
+import OpsScheduleFormPanel from '@/components/OpsScheduleFormPanel';
 
 interface PointerScore {
     pointerNo: number;
@@ -70,6 +76,67 @@ function IvyScoreContent() {
     const [error, setError] = useState<string | null>(null);
     const [serviceData, setServiceData] = useState<any>(null);
 
+    // Calendar / view toggle
+    const [showCalendar, setShowCalendar] = useState(false);
+
+    // OPS tasks
+    const [opsTasks, setOpsTasks] = useState<OpsSchedule[]>([]);
+    const [selectedOpsTask, setSelectedOpsTask] = useState<OpsSchedule | null>(null);
+    const [showOpsTaskPanel, setShowOpsTaskPanel] = useState(false);
+
+    // Team Meet state
+    const [teamMeets, setTeamMeets] = useState<TeamMeet[]>([]);
+    const [selectedTeamMeet, setSelectedTeamMeet] = useState<TeamMeet | null>(null);
+    const [showTeamMeetPanel, setShowTeamMeetPanel] = useState(false);
+    const [teamMeetPanelMode, setTeamMeetPanelMode] = useState<'create' | 'view' | 'respond'>('create');
+    const [selectedTeamMeetDate, setSelectedTeamMeetDate] = useState<Date | undefined>(undefined);
+    const [currentUserId, setCurrentUserId] = useState('');
+
+    const fetchTeamMeets = useCallback(async (studentDocId?: string) => {
+        try {
+            const response = studentDocId
+                ? await teamMeetAPI.getStudentTeamMeets(studentDocId)
+                : await teamMeetAPI.getTeamMeetsForCalendar();
+            setTeamMeets(response.data.data.teamMeets || []);
+        } catch (error: any) {
+            console.error('Error fetching team meets:', error);
+        }
+    }, []);
+
+    const fetchOpsTasks = useCallback(async (resolvedStudentDocId?: string) => {
+        try {
+            let response;
+            if (resolvedStudentDocId) {
+                // readOnly / super-admin flow — use admin-authorized endpoint
+                response = await opsScheduleAPI.getStudentTasks(resolvedStudentDocId);
+            } else {
+                response = await opsScheduleAPI.getMyTasksAsStudent();
+            }
+            setOpsTasks(response.data.data.schedules || []);
+        } catch (error: any) {
+            console.error('Error fetching OPS tasks:', error);
+        }
+    }, []);
+
+    // Fetch current user
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const res = await authAPI.getProfile();
+                if (res.data.success) {
+                    const u = res.data.data.user;
+                    setCurrentUserId(u?.id || u?._id || '');
+                }
+            } catch (err) {
+                console.error('Error fetching user:', err);
+            }
+        };
+        fetchUser();
+        // Only fetch logged-in user's team meets for the student's own view;
+        // in readOnly mode, team meets are fetched per student inside initData
+        if (!readOnly) fetchTeamMeets();
+    }, [fetchTeamMeets]);
+
     // Resolved from auth or URL params
     const [studentId, setStudentId] = useState<string>('');
     const [studentIvyServiceId, setStudentIvyServiceId] = useState<string>('');
@@ -112,6 +179,10 @@ function IvyScoreContent() {
                     resolvedStudentId && resolvedServiceId ? fetchAcademicScore(resolvedStudentId, resolvedServiceId) : Promise.resolve(),
                     resolvedServiceId ? fetchPointer5Score(resolvedServiceId) : Promise.resolve(),
                 ]);
+
+                // Fetch OPS tasks and team meets — use student-specific endpoints when viewing as admin/ivy-expert
+                fetchOpsTasks(readOnly ? resolvedStudentId : undefined);
+                if (readOnly) fetchTeamMeets(resolvedStudentId);
             } else {
                 setError('No Ivy service found. Please contact your administrator.');
             }
@@ -198,6 +269,49 @@ function IvyScoreContent() {
         return 'Needs Improvement';
     };
 
+    // TeamMeet panel handlers (admin pattern)
+    const handleTeamMeetSelect = (teamMeet: TeamMeet) => {
+        setSelectedTeamMeet(teamMeet);
+        const recipientId = (teamMeet.requestedTo as any)?.id || (teamMeet.requestedTo as any)?._id || '';
+        if (
+            String(recipientId) === String(currentUserId) &&
+            currentUserId &&
+            teamMeet.status === TEAMMEET_STATUS.PENDING_CONFIRMATION
+        ) {
+            setTeamMeetPanelMode('respond');
+        } else {
+            setTeamMeetPanelMode('view');
+        }
+        setShowTeamMeetPanel(true);
+    };
+
+    const handleTeamMeetDateSelect = (date: Date) => {
+        setSelectedTeamMeetDate(date);
+        setSelectedTeamMeet(null);
+        setTeamMeetPanelMode('create');
+        setShowTeamMeetPanel(true);
+    };
+
+    const handleScheduleTeamMeet = () => {
+        setSelectedTeamMeet(null);
+        setSelectedTeamMeetDate(undefined);
+        setTeamMeetPanelMode('create');
+        setShowTeamMeetPanel(true);
+    };
+
+    const handleTeamMeetSave = async () => {
+        setShowTeamMeetPanel(false);
+        setSelectedTeamMeet(null);
+        setSelectedTeamMeetDate(undefined);
+        await fetchTeamMeets(readOnly ? studentId : undefined);
+    };
+
+    const handleTeamMeetPanelClose = () => {
+        setShowTeamMeetPanel(false);
+        setSelectedTeamMeet(null);
+        setSelectedTeamMeetDate(undefined);
+    };
+
     if (loading) {
         return (
             <div className="p-20 text-center">
@@ -263,6 +377,7 @@ function IvyScoreContent() {
     };
 
     return (
+        <>
         <div className="p-8 md:p-12 max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-1000">
             {/* Read-Only Banner for Super Admin */}
             {readOnly && (
@@ -282,22 +397,45 @@ function IvyScoreContent() {
                         <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4 leading-tight">Your Ivy League Readiness Score</h1>
                         <p className="text-xl text-gray-400 font-medium max-w-2xl leading-relaxed">Track your competitive trajectory across all core admission pillars. Your score is real-time and reflects current Ivy Expert evaluations.</p>
                     </div>
-                    <button
-                        onClick={() => {
-                            const uid = serviceData?.studentId?.userId || '';
-                            router.push(uid ? `/ivy-league/candidate-profile?userId=${uid}` : '/ivy-league/candidate-profile');
-                        }}
-                        className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-3 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg"
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                        </svg>
-                        View Ivy League Profile
-                    </button>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                        <button
+                            onClick={() => setShowCalendar(prev => !prev)}
+                            className="inline-flex items-center gap-2 px-5 py-3 bg-brand-600 text-white text-sm font-bold rounded-xl hover:bg-brand-700 transition-all shadow-lg"
+                        >
+                            {showCalendar ? (
+                                <>
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                    </svg>
+                                    Dashboard
+                                </>
+                            ) : (
+                                <>
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    Calendar
+                                </>
+                            )}
+                        </button>
+                        <button
+                            onClick={() => {
+                                const uid = serviceData?.studentId?.userId || '';
+                                router.push(uid ? `/ivy-league/candidate-profile?userId=${uid}` : '/ivy-league/candidate-profile');
+                            }}
+                            className="inline-flex items-center gap-2 px-5 py-3 bg-brand-600 text-white text-sm font-bold rounded-xl hover:bg-brand-700 transition-all shadow-lg"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                            </svg>
+                            View Ivy Candidate Profile
+                        </button>
+                    </div>
                 </div>
             </header>
 
+            {!showCalendar && (<>
             {/* Overall Score Card */}
             <div className="relative mb-16 group">
                 <div className="absolute inset-0 bg-brand-600 rounded-[3rem] blur-3xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
@@ -484,7 +622,60 @@ function IvyScoreContent() {
                     </div>
                 </div>
             )}
+            </>)}
+
+            {/* Calendar Section */}
+            {showCalendar && (
+                <div className="mt-4">
+                    {readOnly && (
+                        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2">
+                            <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            <span className="text-xs font-bold text-amber-800 uppercase tracking-wide">Read-Only Calendar</span>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                        <div className="lg:col-span-3">
+                            <OpsScheduleCalendar
+                                schedules={opsTasks}
+                                onScheduleSelect={(schedule) => { setSelectedOpsTask(schedule); setShowOpsTaskPanel(true); }}
+                                onDateSelect={readOnly ? undefined : handleTeamMeetDateSelect}
+                                teamMeets={teamMeets}
+                                onTeamMeetSelect={readOnly ? (tm: TeamMeet) => { setSelectedTeamMeet(tm); setTeamMeetPanelMode('view'); setShowTeamMeetPanel(true); } : handleTeamMeetSelect}
+                                currentUserId={currentUserId}
+                            />
+                        </div>
+                        <div className="lg:col-span-1">
+                            <TeamMeetSidebar
+                                teamMeets={teamMeets}
+                                onTeamMeetClick={readOnly ? (tm: TeamMeet) => { setSelectedTeamMeet(tm); setTeamMeetPanelMode('view'); setShowTeamMeetPanel(true); } : handleTeamMeetSelect}
+                                onScheduleClick={readOnly ? undefined : handleScheduleTeamMeet}
+                                currentUserId={currentUserId}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
+        <TeamMeetFormPanel
+            teamMeet={selectedTeamMeet}
+            isOpen={showTeamMeetPanel}
+            onClose={handleTeamMeetPanelClose}
+            onSave={handleTeamMeetSave}
+            selectedDate={selectedTeamMeetDate}
+            mode={teamMeetPanelMode}
+            currentUserId={currentUserId}
+            readOnly={readOnly}
+        />
+        {/* OPS Task Detail Panel */}
+        <OpsScheduleFormPanel
+            schedule={selectedOpsTask}
+            students={[]}
+            isOpen={showOpsTaskPanel}
+            onClose={() => { setShowOpsTaskPanel(false); setSelectedOpsTask(null); }}
+            onSubmit={async () => {}}
+            readOnly={true}
+        />
+        </>
     );
 }
 

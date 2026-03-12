@@ -42,7 +42,7 @@ export const getUniqueSlug = async (baseSlug: string): Promise<string> => {
 export const submitEnquiry = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { adminSlug } = req.params;
-    const { name, email, mobileNumber, city, serviceTypes, intake, year } = req.body;
+    const { name, email, mobileNumber, city, serviceTypes, intake, year, parentDetail } = req.body;
 
     // Validation
     if (!name || !email || !mobileNumber || !city || !serviceTypes || !Array.isArray(serviceTypes) || serviceTypes.length === 0) {
@@ -94,6 +94,18 @@ export const submitEnquiry = async (req: Request, res: Response): Promise<Respon
       serviceTypes,
       ...(intake && { intake: intake.trim() }),
       ...(year && { year: year.trim() }),
+      ...(parentDetail && parentDetail.firstName && {
+        parentDetail: {
+          firstName: parentDetail.firstName?.trim(),
+          middleName: parentDetail.middleName?.trim() || '',
+          lastName: parentDetail.lastName?.trim(),
+          relationship: parentDetail.relationship?.trim(),
+          mobileNumber: parentDetail.mobileNumber?.trim(),
+          email: parentDetail.email?.trim().toLowerCase(),
+          qualification: parentDetail.qualification?.trim(),
+          occupation: parentDetail.occupation?.trim(),
+        },
+      }),
       adminId: admin.userId,
       stage: LEAD_STAGE.NEW,
       source: "Enquiry Form",

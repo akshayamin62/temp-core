@@ -13,6 +13,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 interface IvyStudent {
   _id: string;
   userId: string;
+  studentDocId?: string;
   firstName: string;
   middleName?: string;
   lastName: string;
@@ -274,7 +275,7 @@ export default function IvyStudentsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
                           <button
-                            onClick={() => router.push(`/super-admin/roles/ivy-expert/students/${s.userId}`)}
+                            onClick={() => router.push(`/super-admin/roles/student/${s.studentDocId || s.userId}`)}
                             className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white hover:bg-blue-700"
                           >
                             View Details

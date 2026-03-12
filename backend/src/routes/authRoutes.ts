@@ -5,6 +5,7 @@ import {
   verifyOTP,
   verifySignupOTP,
   getProfile,
+  updateSPProfile,
 } from "../controllers/authController";
 import {
   validateSignup,
@@ -21,6 +22,7 @@ router.post("/verify-otp", verifyOTP); // Verify OTP and login
 
 // Protected routes (require authentication)
 router.get("/profile", authenticate, getProfile);
+router.put("/sp-profile", authenticate, updateSPProfile);
 
 export default router;
 

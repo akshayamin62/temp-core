@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { authAPI, serviceAPI } from '@/lib/api';
-import { User, USER_ROLE, FormStructure, FormSection, FormSubSection, FormField } from '@/types';
+import { authAPI, serviceAPI, programAPI, teamMeetAPI, opsScheduleAPI } from '@/lib/api';
+import { User, USER_ROLE, FormStructure, FormSection, FormSubSection, FormField, TeamMeet, TEAMMEET_STATUS, OpsSchedule } from '@/types';
 import OpsLayout from '@/components/OpsLayout';
 import FormSectionRenderer from '@/components/FormSectionRenderer';
 import FormPartsNavigation from '@/components/FormPartsNavigation';
@@ -11,6 +11,10 @@ import FormSectionsNavigation from '@/components/FormSectionsNavigation';
 import FormSaveButtons from '@/components/FormSaveButtons';
 import StudentFormHeader from '@/components/StudentFormHeader';
 import ProgramSection from '@/components/ProgramSection';
+import OpsScheduleCalendar from '@/components/OpsScheduleCalendar';
+import TeamMeetSidebar from '@/components/TeamMeetSidebar';
+import TeamMeetFormPanel from '@/components/TeamMeetFormPanel';
+import OpsScheduleFormPanel from '@/components/OpsScheduleFormPanel';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName } from '@/utils/nameHelpers';
 import axios from 'axios';
@@ -36,6 +40,44 @@ export default function StudentFormEditPage() {
   const [formValues, setFormValues] = useState<any>({});
   const [studentInfo, setStudentInfo] = useState<any>(null);
   const [serviceInfo, setServiceInfo] = useState<any>(null);
+
+  // Dashboard / view state
+  type ActiveView = 'dashboard' | 'form';
+  const [activeView, setActiveView] = useState<ActiveView>('form');
+  const [isStudyAbroad, setIsStudyAbroad] = useState(false);
+  const [programStats, setProgramStats] = useState({
+    suggested: 0, selected: 0, shortlisted: 0, inProgress: 0, applied: 0, offerReceived: 0, offerAccepted: 0, rejected: 0, closed: 0,
+  });
+
+  // Calendar / TeamMeet state (Study Abroad dashboard)
+  const [teamMeets, setTeamMeets] = useState<TeamMeet[]>([]);
+  const [opsTasks, setOpsTasks] = useState<OpsSchedule[]>([]);
+  const [selectedTeamMeet, setSelectedTeamMeet] = useState<TeamMeet | null>(null);
+  const [showTeamMeetPanel, setShowTeamMeetPanel] = useState(false);
+  const [teamMeetPanelMode, setTeamMeetPanelMode] = useState<'create' | 'view' | 'respond'>('view');
+  const [selectedOpsTask, setSelectedOpsTask] = useState<OpsSchedule | null>(null);
+  const [showOpsTaskPanel, setShowOpsTaskPanel] = useState(false);
+  const currentUserId = user?._id || '';
+
+  const fetchTeamMeetsForStudent = useCallback(async () => {
+    if (!studentId) return;
+    try {
+      const res = await teamMeetAPI.getStudentTeamMeets(studentId);
+      setTeamMeets(res.data.data.teamMeets || []);
+    } catch (error) {
+      console.error('Error fetching student team meets:', error);
+    }
+  }, [studentId]);
+
+  const fetchOpsTasksForStudent = useCallback(async () => {
+    if (!studentId) return;
+    try {
+      const res = await opsScheduleAPI.getStudentTasks(studentId);
+      setOpsTasks(res.data.data.schedules || []);
+    } catch (error) {
+      console.error('Error fetching student OPS tasks:', error);
+    }
+  }, [studentId]);
 
   // Prevent double fetch in React StrictMode
   const hasFetchedRef = useRef(false);
@@ -96,6 +138,18 @@ export default function StudentFormEditPage() {
       
       setStudentInfo(studentData);
       setServiceInfo(regServiceId);
+
+      const svcName = typeof regServiceId === 'object' ? regServiceId.name : '';
+      const svcSlug = typeof regServiceId === 'object' ? regServiceId.slug : '';
+      const isEduPlan = svcSlug === 'education-planning' || svcName === 'Education Planning';
+      const studyAbroad = !isEduPlan;
+      setIsStudyAbroad(studyAbroad);
+      if (studyAbroad) {
+        setActiveView('dashboard');
+        fetchProgramStats();
+        fetchTeamMeetsForStudent();
+        fetchOpsTasksForStudent();
+      }
       
       if (!extractedServiceId) {
         throw new Error('Service ID not found');
@@ -160,6 +214,25 @@ export default function StudentFormEditPage() {
         return;
       }
       toast.error('Failed to load form data');
+    }
+  };
+
+  const fetchProgramStats = async () => {
+    if (!registrationId || !studentId) return;
+    try {
+      const [availableRes, appliedRes] = await programAPI.getStudentProgramStats(studentId, registrationId);
+      const availablePrograms = availableRes.data.data.programs || [];
+      const appliedPrograms = appliedRes.data.data.programs || [];
+      const all = [...availablePrograms, ...appliedPrograms];
+      const count = (status: string) => all.filter((p: any) => p.status === status).length;
+      setProgramStats({
+        suggested: availablePrograms.length, selected: appliedPrograms.length,
+        shortlisted: count('Shortlisted'), inProgress: count('In Progress'), applied: count('Applied'),
+        offerReceived: count('Offer Received'), offerAccepted: count('Offer Accepted'),
+        rejected: count('Rejected / Declined'), closed: count('Closed'),
+      });
+    } catch (error: any) {
+      console.error('Error fetching program stats:', error);
     }
   };
 
@@ -315,15 +388,127 @@ export default function StudentFormEditPage() {
             />
           )}
 
+          {/* Study Abroad: FormPartsNavigation with Dashboard tab */}
+          {isStudyAbroad && (
+            <FormPartsNavigation
+              formStructure={formStructure}
+              currentPartIndex={currentPartIndex}
+              onPartChange={(index) => { setActiveView('form'); setCurrentPartIndex(index); setCurrentSectionIndex(0); }}
+              showDashboard={true}
+              isDashboardActive={activeView === 'dashboard'}
+              onDashboardClick={() => setActiveView('dashboard')}
+            />
+          )}
+
+          {/* Study Abroad Dashboard (read-only, matching student side) */}
+          {isStudyAbroad && activeView === 'dashboard' && (() => {
+            const dashboardStatCards = [
+              { title: 'Suggested Program', value: programStats.suggested, color: 'blue' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> },
+              { title: 'Selected Program', value: programStats.selected, color: 'cyan' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
+              { title: 'Shortlisted Application', value: programStats.shortlisted, color: 'blue' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg> },
+              { title: 'In Progress', value: programStats.inProgress, color: 'orange' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
+              { title: 'Applied', value: programStats.applied, color: 'blue' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> },
+              { title: 'Offer Received', value: programStats.offerReceived, color: 'green' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg> },
+              { title: 'Offer Accepted', value: programStats.offerAccepted, color: 'green' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg> },
+              { title: 'Offer Rejected', value: programStats.rejected, color: 'red' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg> },
+              { title: 'Application Closed', value: programStats.closed, color: 'gray' as const, icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg> },
+            ];
+            const totalPrograms = programStats.suggested + programStats.selected;
+            const navigateToApplicationSection = (sectionTitle: 'Apply to Program' | 'Applied Program') => {
+              const appPartIndex = formStructure.findIndex((p: any) => p.part?.key === 'APPLICATION');
+              if (appPartIndex < 0) return;
+              const sections = formStructure[appPartIndex].sections || [];
+              const sectionIdx = sections.findIndex((s: any) => s.title === sectionTitle);
+              setCurrentPartIndex(appPartIndex);
+              setCurrentSectionIndex(sectionIdx >= 0 ? sectionIdx : 0);
+              setActiveView('form');
+            };
+            return (
+              <div className="mb-6 space-y-8">
+                {/* Application Stats */}
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Application Overview</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                    {dashboardStatCards.map((card) => {
+                      const colorMap: Record<string, string> = {
+                        blue: 'bg-blue-100 text-blue-600', cyan: 'bg-cyan-100 text-cyan-600',
+                        green: 'bg-green-100 text-green-600', orange: 'bg-orange-100 text-orange-600',
+                        red: 'bg-red-100 text-red-600', gray: 'bg-gray-200 text-gray-600',
+                      };
+                      const pct = totalPrograms > 0 ? (card.value / totalPrograms) * 100 : 0;
+                      const targetSection = card.title === 'Suggested Program' ? 'Apply to Program' : 'Applied Program';
+                      return (
+                        <div
+                          key={card.title}
+                          onClick={() => navigateToApplicationSection(targetSection)}
+                          className="bg-white rounded-xl shadow-sm border-2 border-gray-200 p-5 transition-all cursor-pointer hover:border-blue-400 hover:shadow-md"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className={`w-10 h-10 ${colorMap[card.color]} rounded-lg flex items-center justify-center`}>
+                              {card.icon}
+                            </div>
+                            <h3 className="text-3xl font-extrabold text-gray-900">{card.value}</h3>
+                          </div>
+                          <div className="flex items-center justify-between mt-3">
+                            <p className="text-sm font-semibold text-gray-700">{card.title}</p>
+                            <p className="text-sm font-semibold text-gray-900">{pct.toFixed(1)}%</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Schedule Calendar Section */}
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900">Schedule</h2>
+                      <p className="text-sm text-gray-500">Student meetings and tasks</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <div className="lg:col-span-3">
+                      <OpsScheduleCalendar
+                        schedules={opsTasks}
+                        onScheduleSelect={(schedule) => { setSelectedOpsTask(schedule); setShowOpsTaskPanel(true); }}
+                        onDateSelect={() => {}}
+                        teamMeets={teamMeets}
+                        onTeamMeetSelect={(tm) => { setSelectedTeamMeet(tm); setTeamMeetPanelMode('view'); setShowTeamMeetPanel(true); }}
+                        currentUserId={currentUserId}
+                      />
+                    </div>
+                    <div className="lg:col-span-1">
+                      <TeamMeetSidebar
+                        teamMeets={teamMeets}
+                        onTeamMeetClick={(tm) => { setSelectedTeamMeet(tm); setTeamMeetPanelMode('view'); setShowTeamMeetPanel(true); }}
+                        currentUserId={currentUserId}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Form Parts Navigation */}
-          <FormPartsNavigation
-            formStructure={formStructure}
-            currentPartIndex={currentPartIndex}
-            onPartChange={(index) => {
-              setCurrentPartIndex(index);
-              setCurrentSectionIndex(0);
-            }}
-          />
+          {activeView === 'form' && (
+            <>
+          {!isStudyAbroad && (
+            <FormPartsNavigation
+              formStructure={formStructure}
+              currentPartIndex={currentPartIndex}
+              onPartChange={(index) => {
+                setCurrentPartIndex(index);
+                setCurrentSectionIndex(0);
+              }}
+            />
+          )}
 
           {/* Sections Navigation */}
           {currentFormStructure && (
@@ -383,8 +568,31 @@ export default function StudentFormEditPage() {
               saving={saving}
             />
           )}
+            </>
+          )}
         </div>
       </OpsLayout>
+
+      {/* TeamMeet Panel (read-only) */}
+      <TeamMeetFormPanel
+        teamMeet={selectedTeamMeet}
+        isOpen={showTeamMeetPanel}
+        onClose={() => { setShowTeamMeetPanel(false); setSelectedTeamMeet(null); }}
+        onSave={() => { setShowTeamMeetPanel(false); setSelectedTeamMeet(null); }}
+        mode={teamMeetPanelMode}
+        currentUserId={currentUserId}
+        readOnly={true}
+      />
+
+      {/* OPS Task Panel (read-only) */}
+      <OpsScheduleFormPanel
+        schedule={selectedOpsTask}
+        students={[]}
+        isOpen={showOpsTaskPanel}
+        onClose={() => { setShowOpsTaskPanel(false); setSelectedOpsTask(null); }}
+        onSubmit={async () => {}}
+        readOnly={true}
+      />
     </>
   );
 }

@@ -182,6 +182,32 @@ export default function ScheduleCalendar({
     } else {
       // TeamMeet
       const teamMeet = event.resource as TeamMeet;
+
+      // If user is only an invited participant, show in light brown
+      const isSender = teamMeet.requestedBy._id === currentUserId;
+      const isReceiver = teamMeet.requestedTo._id === currentUserId;
+      const isOnlyInvited = !isSender && !isReceiver && teamMeet.invitedUsers?.some((u) => u._id === currentUserId);
+
+      if (isOnlyInvited) {
+        return {
+          style: {
+            backgroundColor: '#FDE8CD',
+            borderLeft: '4px solid #D97706',
+            color: '#92400E',
+            borderRadius: '4px',
+            padding: '4px 8px',
+            fontSize: '11px',
+            fontWeight: 500,
+            cursor: 'pointer',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            minHeight: '22px',
+            lineHeight: '1.3',
+          },
+        };
+      }
+
       const colors = getTeamMeetStatusColor(teamMeet.status);
       
       return {
@@ -202,7 +228,7 @@ export default function ScheduleCalendar({
         },
       };
     }
-  }, []);
+  }, [currentUserId]);
 
   const handleEventSelect = useCallback((event: CalendarEvent) => {
     if (event.type === 'followup') {
@@ -370,11 +396,11 @@ export default function ScheduleCalendar({
                 <span className="w-2 h-2 rounded bg-red-800"></span>
                 <span className="w-2 h-2 rounded bg-slate-400"></span>
                 <span className="w-2 h-2 rounded bg-teal-500"></span>
-                <span className="text-xs text-gray-500 ml-1">TeamMeets</span>
+                <span className="text-xs text-gray-500 ml-1">Team Meets</span>
               </div>
               {/* Tooltip */}
               <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                <p className="text-xs font-semibold text-gray-700 mb-2">TeamMeet Colors (Status)</p>
+                <p className="text-xs font-semibold text-gray-700 mb-2">Team Meet Colors (Status)</p>
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded bg-amber-400"></span>

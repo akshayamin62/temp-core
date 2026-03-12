@@ -339,6 +339,46 @@ export default function SuperAdminLeadDetailPage() {
                   </div>
                 )}
               </div>
+
+              {/* Parent Detail */}
+              {lead.parentDetail && (
+                <>
+                  <hr className="my-4 border-gray-200" />
+                  <h4 className="text-md font-bold text-gray-900 mb-3">Parent Detail</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Name</label>
+                      <p className="text-gray-900 font-medium">
+                        {[lead.parentDetail.firstName, lead.parentDetail.middleName, lead.parentDetail.lastName].filter(Boolean).join(' ')}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Relationship</label>
+                      <p className="text-gray-900 font-medium capitalize">{lead.parentDetail.relationship}</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Mobile Number</label>
+                      <a href={`tel:${lead.parentDetail.mobileNumber}`} className="text-teal-600 hover:underline font-medium">
+                        {lead.parentDetail.mobileNumber}
+                      </a>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Email Address</label>
+                      <a href={`mailto:${lead.parentDetail.email}`} className="text-teal-600 hover:underline text-sm break-all">
+                        {lead.parentDetail.email}
+                      </a>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Qualification</label>
+                      <p className="text-gray-900 font-medium">{lead.parentDetail.qualification}</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Occupation</label>
+                      <p className="text-gray-900 font-medium">{lead.parentDetail.occupation}</p>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Right Column - Stage + Services + Assignment stacked */}

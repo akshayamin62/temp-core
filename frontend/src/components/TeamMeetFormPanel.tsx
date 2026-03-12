@@ -8,6 +8,13 @@ import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { getFullName } from '@/utils/nameHelpers';
 
+// Format role for display: "SUPER_ADMIN" → "Super Admin", "EDUPLAN_COACH" → "Eduplan Coach"
+const formatRole = (role: string) =>
+  role
+    .toLowerCase()
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
 interface TeamMeetFormPanelProps {
   teamMeet: TeamMeet | null;
   isOpen: boolean;
@@ -17,6 +24,7 @@ interface TeamMeetFormPanelProps {
   mode: 'create' | 'view' | 'respond';
   currentUserId?: string;
   readOnly?: boolean; // If true, hides all action buttons (for admin viewing counselor's TeamMeets)
+  onSwitchToTask?: () => void;
 }
 
 // TeamMeet theme colors (Updated theme)
@@ -42,6 +50,7 @@ export default function TeamMeetFormPanel({
   mode,
   currentUserId,
   readOnly = false,
+  onSwitchToTask,
 }: TeamMeetFormPanelProps) {
   // Form state
   const [subject, setSubject] = useState('');
@@ -83,12 +92,23 @@ export default function TeamMeetFormPanel({
   const [availability, setAvailability] = useState<TeamMeetAvailability | null>(null);
   const [showRejectInput, setShowRejectInput] = useState(false);
 
+  // Invitation state
+  const [inviteParticipants, setInviteParticipants] = useState<TeamMeetParticipant[]>([]);
+  const [showInviteDropdown, setShowInviteDropdown] = useState(false);
+  const [selectedInviteId, setSelectedInviteId] = useState('');
+  const [inviting, setInviting] = useState(false);
+  const [removingInvite, setRemovingInvite] = useState<string | null>(null);
+
   // Fetch participants on open
   useEffect(() => {
     if (isOpen && mode === 'create') {
       fetchParticipants();
     }
-  }, [isOpen, mode]);
+    // Also fetch participants for invite feature in view/respond modes
+    if (isOpen && (mode === 'view' || mode === 'respond') && teamMeet) {
+      fetchInviteParticipants();
+    }
+  }, [isOpen, mode, teamMeet?._id]);
 
   // Initialize form when teamMeet changes or mode changes
   useEffect(() => {
@@ -135,6 +155,47 @@ export default function TeamMeetFormPanel({
     } catch (error) {
       console.error('Error fetching participants:', error);
       toast.error('Failed to load participants');
+    }
+  };
+
+  const fetchInviteParticipants = async () => {
+    try {
+      const response = await teamMeetAPI.getParticipants();
+      setInviteParticipants(response.data.data.participants);
+    } catch (error) {
+      console.error('Error fetching invite participants:', error);
+    }
+  };
+
+  const handleInvite = async () => {
+    if (!teamMeet || !selectedInviteId) return;
+
+    setInviting(true);
+    try {
+      await teamMeetAPI.inviteToTeamMeet(teamMeet._id, [selectedInviteId]);
+      toast.success('User invited successfully');
+      setSelectedInviteId('');
+      setShowInviteDropdown(false);
+      onSave(); // Refresh data
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to invite user');
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const handleRemoveInvite = async (invitedUserId: string) => {
+    if (!teamMeet) return;
+
+    setRemovingInvite(invitedUserId);
+    try {
+      await teamMeetAPI.removeInviteFromTeamMeet(teamMeet._id, invitedUserId);
+      toast.success('Invitation removed');
+      onSave(); // Refresh data
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to remove invitation');
+    } finally {
+      setRemovingInvite(null);
     }
   };
 
@@ -290,8 +351,16 @@ export default function TeamMeetFormPanel({
   if (!isOpen) return null;
 
   // Determine user role in this meeting
-  const isSender = teamMeet && teamMeet.requestedBy._id === currentUserId;
-  const isRecipient = teamMeet && teamMeet.requestedTo._id === currentUserId;
+  const senderIdMatch = teamMeet && currentUserId && (
+    String(teamMeet.requestedBy._id) === String(currentUserId) ||
+    String((teamMeet.requestedBy as any).id) === String(currentUserId)
+  );
+  const recipientIdMatch = teamMeet && currentUserId && (
+    String(teamMeet.requestedTo._id) === String(currentUserId) ||
+    String((teamMeet.requestedTo as any).id) === String(currentUserId)
+  );
+  const isSender = !!senderIdMatch;
+  const isRecipient = !!recipientIdMatch;
   const statusColors = teamMeet ? TEAMMEET_COLORS[teamMeet.status] : null;
 
   return (
@@ -310,17 +379,30 @@ export default function TeamMeetFormPanel({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <span className="text-white font-semibold">
-              {mode === 'create' ? 'Schedule TeamMeet' : mode === 'respond' ? 'Meeting Invitation' : 'Meeting Details'}
+              {mode === 'create' ? 'Schedule Team Meet' : mode === 'respond' ? 'Meeting Invitation' : 'Meeting Details'}
             </span>
           </div>
-          <button
-            onClick={onClose}
-            className="text-white/80 hover:text-white transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1">
+            {onSwitchToTask && (
+              <button
+                type="button"
+                onClick={onSwitchToTask}
+                className="bg-blue-500 hover:bg-blue-600 text-white transition-colors px-2 py-1 rounded text-xs font-medium flex items-center gap-1"
+                title="Switch to OPS Task"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                Task
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="text-white/80 hover:text-white transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -337,11 +419,11 @@ export default function TeamMeetFormPanel({
             <div className="bg-gray-50 rounded-lg p-3 mb-4">
               <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
                 <span className="font-medium">From:</span>
-                <span>{getFullName(teamMeet.requestedBy)} ({teamMeet.requestedBy.role})</span>
+                <span>{getFullName(teamMeet.requestedBy)} ({formatRole(teamMeet.requestedBy.role)})</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <span className="font-medium">To:</span>
-                <span>{getFullName(teamMeet.requestedTo)} ({teamMeet.requestedTo.role})</span>
+                <span>{getFullName(teamMeet.requestedTo)} ({formatRole(teamMeet.requestedTo.role)})</span>
               </div>
             </div>
           )}
@@ -372,6 +454,113 @@ export default function TeamMeetFormPanel({
                 </svg>
                 Join Zoho Meeting
               </a>
+            </div>
+          )}
+
+          {/* Online Meeting - Pending info (Zoho link will be available after confirmation) */}
+          {teamMeet && mode !== 'create' && teamMeet.meetingType === TEAMMEET_TYPE.ONLINE && !teamMeet.zohoMeetingUrl && teamMeet.status === TEAMMEET_STATUS.PENDING_CONFIRMATION && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <span className="text-xs text-blue-600">Zoho meeting link will be available once the meeting is confirmed</span>
+              </div>
+            </div>
+          )}
+
+          {/* Invitation Section */}
+          {teamMeet && mode !== 'create' && teamMeet.status !== TEAMMEET_STATUS.CANCELLED && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  <span className="text-sm font-medium text-amber-700">Invitations</span>
+                </div>
+                {/* Show invite button only for sender or receiver */}
+                {!readOnly && (isSender || isRecipient) && teamMeet.status !== TEAMMEET_STATUS.COMPLETED && (
+                  <button
+                    type="button"
+                    onClick={() => setShowInviteDropdown(!showInviteDropdown)}
+                    className="text-xs font-medium text-amber-700 hover:text-amber-800 flex items-center gap-1 px-2 py-1 bg-amber-100 rounded-lg hover:bg-amber-200 transition-colors"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Invite
+                  </button>
+                )}
+              </div>
+
+              {/* Invite dropdown */}
+              {showInviteDropdown && (
+                <div className="mb-3 flex gap-2">
+                  <select
+                    value={selectedInviteId}
+                    onChange={(e) => setSelectedInviteId(e.target.value)}
+                    className="flex-1 px-2 py-1.5 text-xs border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-transparent bg-white"
+                  >
+                    <option value="">Select participant...</option>
+                    {inviteParticipants
+                      .filter((p) => {
+                        // Exclude sender, receiver, and already invited
+                        const isAlreadyInvited = teamMeet.invitedUsers?.some((u) => u._id === p._id);
+                        return p._id !== teamMeet.requestedBy._id && p._id !== teamMeet.requestedTo._id && !isAlreadyInvited;
+                      })
+                      .map((p) => (
+                        <option key={p._id} value={p._id}>
+                          {getFullName(p)} ({formatRole(p.role)})
+                        </option>
+                      ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleInvite}
+                    disabled={inviting || !selectedInviteId}
+                    className="px-3 py-1.5 text-xs font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 disabled:bg-amber-300 transition-colors"
+                  >
+                    {inviting ? '...' : 'Add'}
+                  </button>
+                </div>
+              )}
+
+              {/* Invited users list */}
+              {teamMeet.invitedUsers && teamMeet.invitedUsers.length > 0 ? (
+                <div className="space-y-1.5">
+                  {teamMeet.invitedUsers.map((user) => (
+                    <div key={user._id} className="flex items-center justify-between bg-white rounded-lg px-2.5 py-1.5 border border-amber-100">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-6 h-6 bg-amber-200 rounded-full flex items-center justify-center shrink-0">
+                          <span className="text-xs font-medium text-amber-800">
+                            {(user.firstName || '?')[0]}
+                          </span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-gray-800 truncate">{getFullName(user)}</p>
+                          <p className="text-[10px] text-gray-500">{formatRole(user.role)}</p>
+                        </div>
+                      </div>
+                      {!readOnly && (isSender || isRecipient) && teamMeet.status !== TEAMMEET_STATUS.COMPLETED && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveInvite(user._id)}
+                          disabled={removingInvite === user._id}
+                          className="text-gray-400 hover:text-red-500 transition-colors shrink-0 ml-1"
+                          title="Remove invitation"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-amber-600 italic">No invitations yet</p>
+              )}
             </div>
           )}
 
@@ -408,7 +597,7 @@ export default function TeamMeetFormPanel({
                 <option value="">Select participant...</option>
                 {participants.map((p) => (
                   <option key={p._id} value={p._id}>
-                    {getFullName(p)} ({p.role})
+                    {getFullName(p)} ({formatRole(p.role)})
                   </option>
                 ))}
               </select>
@@ -661,7 +850,7 @@ export default function TeamMeetFormPanel({
           )}
 
           {/* Respond Mode Actions (for recipient with pending status) */}
-          {!readOnly && mode === 'respond' && isRecipient && teamMeet?.status === TEAMMEET_STATUS.PENDING_CONFIRMATION && (
+          {!readOnly && mode === 'respond' && teamMeet?.status === TEAMMEET_STATUS.PENDING_CONFIRMATION && (
             <div className="flex gap-2">
               {showRejectInput ? (
                 <>
@@ -767,7 +956,17 @@ export default function TeamMeetFormPanel({
           )}
 
           {/* Close for recipient viewing non-pending meetings */}
-          {!readOnly && mode === 'respond' && isRecipient && teamMeet?.status !== TEAMMEET_STATUS.PENDING_CONFIRMATION && (
+          {!readOnly && mode === 'respond' && teamMeet?.status !== TEAMMEET_STATUS.PENDING_CONFIRMATION && (
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Close
+            </button>
+          )}
+
+          {/* Close for recipient viewing meetings in view mode (non-completed/non-cancelled) */}
+          {!readOnly && mode === 'view' && !isSender && teamMeet?.status !== TEAMMEET_STATUS.COMPLETED && teamMeet?.status !== TEAMMEET_STATUS.CANCELLED && (
             <button
               onClick={onClose}
               className="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"

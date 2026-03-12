@@ -12,6 +12,7 @@ import FollowUpFormPanel from '@/components/FollowUpFormPanel';
 import LeadDetailPanel from '@/components/LeadDetailPanel';
 import TeamMeetFormPanel from '@/components/TeamMeetFormPanel';
 import { getFullName } from '@/utils/nameHelpers';
+import CounselorLayout from '@/components/CounselorLayout';
 
 interface DashboardStats {
   totalLeads: number;
@@ -316,15 +317,17 @@ export default function CounselorDashboardPage() {
   return (
     <>
       <Toaster position="top-right" />
-      <div className="min-h-screen bg-gray-50">
+      <CounselorLayout user={user}>
         <div className="p-8">
           {/* Header */}
           <div className="mb-8 flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{getFullName(user)}</h1>
             </div>
-            {/* Copy Enquiry URL */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 max-w-lg">
+            <div className="flex flex-col items-end gap-4">
+              {(() => { const t = new Date(); const d = Math.floor((t.getTime() - new Date(t.getFullYear(), 0, 0).getTime()) / 86400000); return (<div className="text-right"><p className="text-3xl font-extrabold text-gray-900">Day {d}</p><p className="text-sm text-gray-500">of {t.getFullYear()}</p></div>); })()}
+              {/* Copy Enquiry URL */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 max-w-lg">
               <div className="flex items-center gap-2 mb-2">
                 <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -347,6 +350,7 @@ export default function CounselorDashboardPage() {
                   Copy URL
                 </button>
               </div>
+            </div>
             </div>
           </div>
 
@@ -672,7 +676,7 @@ export default function CounselorDashboardPage() {
             </div>
           )}
         </div>
-      </div>
+      </CounselorLayout>
 
       {/* Follow-up Slide-in Panel */}
       <FollowUpFormPanel

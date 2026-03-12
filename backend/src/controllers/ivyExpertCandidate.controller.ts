@@ -130,47 +130,59 @@ export const getMyIvyStudents = async (req: AuthRequest, res: Response): Promise
       return;
     }
 
-    // Find SSRs where this expert is assigned
+    // Base truth: SSRs where this expert is assigned
     const ssrs = await StudentServiceRegistration.find({
       serviceId,
       activeIvyExpertId: ivyExpertId,
-    }).populate('studentId', 'userId').lean();
+    }).populate({
+      path: 'studentId',
+      populate: { path: 'userId', select: 'firstName middleName lastName email' },
+    }).lean();
 
-    const assignedUserIds = ssrs
-      .map((ssr: any) => ssr.studentId?.userId?.toString())
-      .filter(Boolean);
-
-    if (assignedUserIds.length === 0) {
+    if (ssrs.length === 0) {
       res.json({ success: true, students: [] });
       return;
     }
 
-    const registrations = await IvyLeagueRegistration.find({
-      userId: { $in: assignedUserIds },
-    }).lean();
-
+    // Build results from SSRs directly (not filtered through IvyLeagueRegistration)
     const studentsWithStatus = await Promise.all(
-      registrations.map(async (reg: any) => {
-        const testSession = await IvyTestSession.findOne({ studentId: reg.userId }).lean();
-        const user = await User.findById(reg.userId).select('email').lean();
-        // Find SSR for this student to get service ID
-        const student = await Student.findOne({ userId: reg.userId }).lean();
-        const ssr = student ? ssrs.find((s: any) => 
-          s.studentId?._id?.toString() === (student as any)._id.toString() ||
-          s.studentId?.userId?.toString() === reg.userId.toString()
-        ) : null;
+      ssrs.map(async (ssr: any) => {
+        const student = ssr.studentId;
+        const userDoc = student?.userId;
+        const userIdStr = userDoc?._id?.toString() || '';
+
+        // Optionally enrich with IvyLeagueRegistration data
+        const registration = userIdStr
+          ? await IvyLeagueRegistration.findOne({ userId: userIdStr }).lean()
+          : null;
+
+        const testSession = userIdStr
+          ? await IvyTestSession.findOne({ studentId: userIdStr }).lean()
+          : null;
 
         return {
-          ...reg,
-          email: (user as any)?.email || '',
+          _id: registration?._id || ssr._id,
+          userId: userIdStr,
+          firstName: (registration as any)?.firstName || userDoc?.firstName || '',
+          middleName: (registration as any)?.middleName || userDoc?.middleName || '',
+          lastName: (registration as any)?.lastName || userDoc?.lastName || '',
+          email: userDoc?.email || '',
+          schoolName: (registration as any)?.schoolName || '',
+          curriculum: (registration as any)?.curriculum || '',
+          currentGrade: (registration as any)?.currentGrade || '',
+          parentFirstName: (registration as any)?.parentFirstName || '',
+          parentLastName: (registration as any)?.parentLastName || '',
+          parentEmail: (registration as any)?.parentEmail || '',
+          parentMobile: (registration as any)?.parentMobile || '',
           testStatus: testSession ? testSession.status : 'not-started',
           totalScore: testSession?.totalScore ?? null,
           maxScore: testSession?.maxScore ?? 120,
           completedSections: testSession
             ? testSession.sections.filter((s: any) => s.status === 'submitted').length
             : 0,
-          studentId: student ? (student as any)._id.toString() : null,
-          studentIvyServiceId: ssr ? (ssr as any)._id.toString() : null,
+          studentId: student ? student._id.toString() : null,
+          studentIvyServiceId: ssr._id.toString(),
+          createdAt: ssr.createdAt,
         };
       })
     );
