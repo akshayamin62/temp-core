@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { formAnswerAPI } from '@/lib/api';
-import { FormSection, USER_ROLE } from '@/types';
+import { USER_ROLE } from '@/types';
+import { SectionConfig } from '@/config/formConfig';
 import FormSectionRenderer from './FormSectionRenderer';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -15,14 +16,15 @@ interface StudentProfileModalProps {
 export default function StudentProfileModal({ studentId, onClose, viewerRole }: StudentProfileModalProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [formSections, setFormSections] = useState<FormSection[]>([]);
+  const [formSections, setFormSections] = useState<SectionConfig[]>([]);
   const [formValues, setFormValues] = useState<any>({});
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(0);
   const [studentInfo, setStudentInfo] = useState<any>(null);
+  const [errors, setErrors] = useState<any>({});
 
   // Role-based permissions
   const isReadOnly = viewerRole === USER_ROLE.ADMIN || viewerRole === USER_ROLE.COUNSELOR || viewerRole === USER_ROLE.PARENT;
-  const canEditNames = viewerRole === USER_ROLE.SUPER_ADMIN;
+  const canEditParents = viewerRole === USER_ROLE.SUPER_ADMIN;
   const canEdit = !isReadOnly;
 
   useEffect(() => {
@@ -38,14 +40,14 @@ export default function StudentProfileModal({ studentId, onClose, viewerRole }: 
       setStudentInfo(student);
 
       const values: any = {};
-      formStructure?.forEach((section: FormSection) => {
-        if (!values[section._id]) values[section._id] = {};
-        const sectionAnswers = answers?.[section._id] || {};
+      formStructure?.forEach((section: SectionConfig) => {
+        if (!values[section.key]) values[section.key] = {};
+        const sectionAnswers = answers?.[section.key] || {};
         section.subSections?.forEach((sub: any) => {
-          if (sectionAnswers[sub._id]) {
-            values[section._id][sub._id] = sectionAnswers[sub._id];
+          if (sectionAnswers[sub.key]) {
+            values[section.key][sub.key] = sectionAnswers[sub.key];
           } else {
-            values[section._id][sub._id] = [{}];
+            values[section.key][sub.key] = [{}];
           }
         });
       });
@@ -93,12 +95,61 @@ export default function StudentProfileModal({ studentId, onClose, viewerRole }: 
     });
   };
 
+  const validateSection = (sectionKey: string): boolean => {
+    const section = formSections[selectedSectionIndex];
+    if (!section) return true;
+    const sectionValues = formValues[sectionKey] || {};
+
+    const newErrors: any = {};
+    let hasErrors = false;
+
+    section.subSections?.forEach((subSection) => {
+      const subSectionValues = sectionValues[subSection.key] || [{}];
+
+      subSectionValues.forEach((instanceValues: any, index: number) => {
+        subSection.fields.forEach((field) => {
+          if (field.required) {
+            let value = instanceValues?.[field.key];
+
+            if ((!value || (typeof value === 'string' && value.trim() === '')) && field.defaultValue) {
+              value = field.defaultValue;
+              setFormValues((prev: any) => {
+                const updated = { ...prev };
+                if (updated[sectionKey]?.[subSection.key]?.[index]) {
+                  const instances = [...updated[sectionKey][subSection.key]];
+                  instances[index] = { ...instances[index], [field.key]: field.defaultValue };
+                  updated[sectionKey] = { ...updated[sectionKey], [subSection.key]: instances };
+                }
+                return updated;
+              });
+            }
+
+            if (!value || (typeof value === 'string' && value.trim() === '')) {
+              if (!newErrors[subSection.key]) newErrors[subSection.key] = [];
+              if (!newErrors[subSection.key][index]) newErrors[subSection.key][index] = {};
+              newErrors[subSection.key][index][field.key] = `${field.label} is required`;
+              hasErrors = true;
+            }
+          }
+        });
+      });
+    });
+
+    setErrors(newErrors);
+    return !hasErrors;
+  };
+
   const handleSaveSection = async (sectionId: string) => {
+    if (!validateSection(sectionId)) {
+      toast.error('Please fill all required fields');
+      return;
+    }
     try {
       setSaving(true);
       const sectionValues = formValues[sectionId] || {};
       await formAnswerAPI.saveStudentProfileById(studentId, { [sectionId]: sectionValues });
       toast.success('Section saved successfully');
+      setErrors({});
     } catch (error) {
       console.error('Failed to save section:', error);
       toast.error('Failed to save section');
@@ -111,10 +162,25 @@ export default function StudentProfileModal({ studentId, onClose, viewerRole }: 
   const isParentalSection = currentSection?.title === 'Parental Details';
   const isPersonalSection = currentSection?.title === 'Personal Details';
 
-  // ReadOnlyKeys: lock name fields for non-super-admin editors
-  const readOnlyKeys = (!canEditNames && isPersonalSection)
+  // ReadOnlyKeys: lock name fields for ALL editing roles
+  const readOnlyKeys = isPersonalSection
     ? ['firstName', 'middleName', 'lastName']
     : undefined;
+
+  // Parental readOnlyInstances: for non-super-admin editors, filled entries are read-only
+  const parentalReadOnlyInstances: number[] = [];
+  if (isParentalSection && canEdit && !canEditParents) {
+    const sData = formValues[currentSection.key] || {};
+    Object.values(sData).forEach((subData: any) => {
+      if (Array.isArray(subData)) {
+        subData.forEach((entry: any, idx: number) => {
+          if (entry && Object.values(entry).some((v: any) => v && String(v).trim() !== '')) {
+            parentalReadOnlyInstances.push(idx);
+          }
+        });
+      }
+    });
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
@@ -151,7 +217,7 @@ export default function StudentProfileModal({ studentId, onClose, viewerRole }: 
               <div className="flex flex-wrap gap-2 mb-6">
                 {formSections.map((section, idx) => (
                   <button
-                    key={section._id}
+                    key={section.key}
                     onClick={() => setSelectedSectionIndex(idx)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                       idx === selectedSectionIndex
@@ -169,29 +235,30 @@ export default function StudentProfileModal({ studentId, onClose, viewerRole }: 
                 <div>
                   <FormSectionRenderer
                     section={currentSection}
-                    values={formValues[currentSection._id] || {}}
+                    values={formValues[currentSection.key] || {}}
                     onChange={canEdit
                       ? (subSectionId, index, key, value) =>
-                          handleFieldChange(currentSection._id, subSectionId, index, key, value)
+                          handleFieldChange(currentSection.key, subSectionId, index, key, value)
                       : () => {}
                     }
                     onAddInstance={canEdit
-                      ? (subSectionId) => handleAddInstance(currentSection._id, subSectionId)
+                      ? (subSectionId) => handleAddInstance(currentSection.key, subSectionId)
                       : () => {}
                     }
                     onRemoveInstance={canEdit
-                      ? (subSectionId, index) => handleRemoveInstance(currentSection._id, subSectionId, index)
+                      ? (subSectionId, index) => handleRemoveInstance(currentSection.key, subSectionId, index)
                       : () => {}
                     }
-                    errors={{}}
+                    errors={errors}
                     readOnly={isReadOnly}
                     readOnlyKeys={readOnlyKeys}
                     noDelete={isParentalSection}
+                    readOnlyInstances={isParentalSection ? parentalReadOnlyInstances : []}
                   />
                   {canEdit && (
                     <div className="mt-4 flex justify-end">
                       <button
-                        onClick={() => handleSaveSection(currentSection._id)}
+                        onClick={() => handleSaveSection(currentSection.key)}
                         disabled={saving}
                         className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
                       >

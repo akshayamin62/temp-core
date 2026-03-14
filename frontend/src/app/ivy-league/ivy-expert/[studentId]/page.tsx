@@ -1,135 +1,313 @@
 'use client';
 
 import { Suspense, use, useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import axios from 'axios';
+import StudentProfileModal from '@/components/StudentProfileModal';
+import toast, { Toaster } from 'react-hot-toast';
+import { getFullName, getInitials } from '@/utils/nameHelpers';
 
-export default function IvyExpertStudentHubPage({ params }: { params: Promise<{ studentId: string }> }) {
-    return (
-        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div></div>}>
-            <IvyExpertStudentHub params={params} />
-        </Suspense>
-    );
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+interface StudentDetails {
+  _id: string;
+  userId: {
+    _id: string;
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    email: string;
+    role: string;
+    isVerified: boolean;
+    isActive: boolean;
+    createdAt: string;
+  };
+  mobileNumber?: string;
+  adminId?: {
+    _id: string;
+    companyName?: string;
+    mobileNumber?: string;
+    userId: {
+      _id: string;
+      firstName: string;
+      middleName?: string;
+      lastName: string;
+      email: string;
+    };
+  };
+  counselorId?: {
+    _id: string;
+    mobileNumber?: string;
+    userId: {
+      _id: string;
+      firstName: string;
+      middleName?: string;
+      lastName: string;
+      email: string;
+    };
+  };
+  intake?: string;
+  year?: string;
+  createdAt: string;
 }
 
-function IvyExpertStudentHub({ params }: { params: Promise<{ studentId: string }> }) {
-    const resolvedParams = use(params); // Unwrap params in Next.js 15+
-    const { studentId } = resolvedParams;
-    const searchParams = useSearchParams();
-    const serviceId = searchParams.get('serviceId');
+interface Registration {
+  _id: string;
+  serviceId: {
+    _id: string;
+    name: string;
+    slug: string;
+    shortDescription: string;
+  };
+  status: string;
+  createdAt: string;
+}
 
-    // We could fetch student details here again if needed, or trust the ID
-    // For now, we build the hub.
+export default function IvyExpertStudentDetailPage({ params }: { params: Promise<{ studentId: string }> }) {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+      <IvyExpertStudentDetail params={params} />
+    </Suspense>
+  );
+}
 
-    const queryString = `?studentId=${studentId}&studentIvyServiceId=${serviceId || ''}`;
+function IvyExpertStudentDetail({ params }: { params: Promise<{ studentId: string }> }) {
+  const resolvedParams = use(params);
+  const { studentId } = resolvedParams;
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const serviceId = searchParams.get('serviceId') || '';
 
+  const [student, setStudent] = useState<StudentDetails | null>(null);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
+  useEffect(() => {
+    fetchStudentDetails();
+  }, [studentId]);
+
+  const fetchStudentDetails = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/super-admin/students/${studentId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setStudent(response.data.data.student);
+      const allRegs: Registration[] = response.data.data.registrations || [];
+      setRegistrations(allRegs.filter((r) => r.serviceId.slug === 'ivy-league' || r.serviceId.name === 'Ivy League Admissions'));
+    } catch (error: any) {
+      if (error.response?.status === 403) {
+        toast.error('Access denied. You are not assigned as the active Ivy Expert for this student.');
+        router.push('/ivy-league/ivy-expert/students');
+      } else {
+        toast.error('Failed to fetch student details');
+        console.error('Fetch student details error:', error);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewService = (registration: Registration) => {
+    if (registration.serviceId.name === 'Ivy League Admissions' || registration.serviceId.slug === 'ivy-league') {
+      router.push(`/ivy-league/ivy-expert?studentId=${studentId}&studentIvyServiceId=${serviceId || registration._id}`);
+    }
+  };
+
+  if (loading) {
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
-                <div className="mb-8">
-                    <Link href="/ivy-league/ivy-expert" className="text-brand-600 hover:text-brand-800 mb-4 inline-block">
-                        ← Back to Student List
-                    </Link>
-                    <h1 className="text-3xl font-bold text-gray-900">Student Management Hub</h1>
-                    <p className="text-gray-600 mt-2">Managing Student ID: <span className="font-mono text-sm bg-gray-200 px-2 py-1 rounded">{studentId}</span></p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-                    {/* Pointer 1: Academic Excellence */}
-                    <Link href={`/ivy-league/ivy-expert/pointer1${queryString}`} className="block group">
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-brand-300 transition-all h-full relative overflow-hidden">
-                            <div className="h-12 w-12 bg-brand-100 rounded-lg flex items-center justify-center mb-4 text-brand-600">
-                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                                </svg>
-                            </div>
-                            <h2 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-brand-600">Academic Excellence</h2>
-                            <p className="text-gray-600 text-sm">Review documents and evaluate marksheet performance.</p>
-                        </div>
-                    </Link>
-
-                    {/* Pointer 2: Spike in One Area */}
-                    <Link href={`/ivy-league/ivy-expert/activities${queryString}&pointerNo=2`} className="block group">
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-brand-300 transition-all h-full relative overflow-hidden">
-                            <div className="h-12 w-12 bg-brand-50 rounded-lg flex items-center justify-center mb-4 text-brand-600">
-                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                </svg>
-                            </div>
-                            <h2 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-brand-600">Spike in One Area</h2>
-                            <p className="text-gray-600 text-sm">Review activity suggestions and evaluate performance.</p>
-                        </div>
-                    </Link>
-
-                    {/* Pointer 3: Leadership & Initiative */}
-                    <Link href={`/ivy-league/ivy-expert/activities${queryString}&pointerNo=3`} className="block group">
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-brand-300 transition-all h-full relative overflow-hidden">
-                            <div className="h-12 w-12 bg-brand-50 rounded-lg flex items-center justify-center mb-4 text-brand-600">
-                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
-                            </div>
-                            <h2 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-brand-600">Leadership & Initiative</h2>
-                            <p className="text-gray-600 text-sm">Review activity suggestions and evaluate performance.</p>
-                        </div>
-                    </Link>
-
-                    {/* Pointer 4: Global & Social Impact */}
-                    <Link href={`/ivy-league/ivy-expert/activities${queryString}&pointerNo=4`} className="block group">
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-brand-300 transition-all h-full relative overflow-hidden">
-                            <div className="h-12 w-12 bg-brand-50 rounded-lg flex items-center justify-center mb-4 text-brand-600">
-                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 002 2h.158a2.5 2.5 0 012.236 1.382l.842 1.684a1 1 0 00.894.553H20M13 4.108V5a3 3 0 003 3H20m-7-7a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <h2 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-brand-600">Global & Social Impact</h2>
-                            <p className="text-gray-600 text-sm">Review activity suggestions and evaluate performance.</p>
-                        </div>
-                    </Link>
-
-                    {/* Essay */}
-                    <Link href={`/ivy-league/ivy-expert/pointer5${queryString}`} className="block group">
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-brand-300 transition-all h-full relative overflow-hidden">
-                            <div className="h-12 w-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4 text-pink-600">
-                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                            </div>
-                            <h2 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-pink-600">Authentic & Reflective Storytelling</h2>
-                            <p className="text-gray-600 text-sm">Upload guidelines and evaluate the student's essay.</p>
-                        </div>
-                    </Link>
-
-                    {/* Courses */}
-                    <Link href={`/ivy-league/ivy-expert/pointer6${queryString}`} className="block group">
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-brand-300 transition-all h-full relative overflow-hidden">
-                            <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4 text-orange-600">
-                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                </svg>
-                            </div>
-                            <h2 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-orange-600">Engagement with Learning & Intellectual Curiosity</h2>
-                            <p className="text-gray-600 text-sm">Upload course list and evaluate certificates.</p>
-                        </div>
-                    </Link>
-
-                    {/* Review Score */}
-                    <Link href={`/ivy-league/ivy-expert/ivy-score${queryString}`} className="block group">
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-brand-300 transition-all h-full relative overflow-hidden">
-                            <div className="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-4 text-yellow-600">
-                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <h2 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-yellow-600">Ivy Score</h2>
-                            <p className="text-gray-600 text-sm">Review overall readiness score and pointer breakdown.</p>
-                        </div>
-                    </Link>
-
-                </div>
-            </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
         </div>
+      </div>
     );
+  }
+
+  if (!student) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-red-600">Student not found</p>
+        <button
+          onClick={() => router.back()}
+          className="mt-4 text-blue-600 hover:underline"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Toaster position="top-right" />
+      <div className="p-8">
+        {/* Back Button */}
+        <button
+          onClick={() => router.push('/ivy-league/ivy-expert/students')}
+          className="mb-6 flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Students
+        </button>
+
+        {/* Student Info Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-start justify-between mb-6">
+            <div className="flex items-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                <span className="text-blue-600 font-bold text-xl">
+                  {getInitials(student.userId)}
+                </span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{getFullName(student.userId)}</h1>
+                <p className="text-gray-600">{student.userId.email}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className={`px-3 py-1 text-xs font-medium rounded-full ${
+                  student.userId.isVerified
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}
+              >
+                {student.userId.isVerified ? 'Verified' : 'Unverified'}
+              </span>
+              <span
+                className={`px-3 py-1 text-xs font-medium rounded-full ${
+                  student.userId.isActive
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
+                }`}
+              >
+                {student.userId.isActive ? 'Active' : 'Inactive'}
+              </span>
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="px-3 py-1 text-xs font-medium rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              >
+                View Profile
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 pt-4 border-t border-gray-200">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Mobile Number</p>
+              <p className="font-medium text-gray-900">
+                {student.mobileNumber || 'Not provided'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Admin</p>
+              <p className="font-medium text-gray-900">
+                {student.adminId?.companyName || 'Not assigned'}
+              </p>
+              {student.adminId?.userId?.email && (
+                <p className="text-sm text-gray-500">{student.adminId.userId.email}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Counselor</p>
+              <p className="font-medium text-gray-900">
+                {getFullName(student.counselorId?.userId) || 'Not assigned'}
+              </p>
+              {student.counselorId?.userId?.email && (
+                <p className="text-sm text-gray-500">{student.counselorId.userId.email}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Joined Date</p>
+              <p className="font-medium text-gray-900">
+                {new Date(student.createdAt).toLocaleDateString('en-GB')}
+              </p>
+            </div>
+            {(student.intake || student.year) && (
+              <div>
+                {student.intake && (
+                  <div className="mb-2">
+                    <p className="text-sm text-gray-600 mb-1">Intake</p>
+                    <p className="font-medium text-blue-600">{student.intake}</p>
+                  </div>
+                )}
+                {student.year && (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Year</p>
+                    <p className="font-medium text-blue-600">{student.year}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Service Registrations */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Ivy League Service ({registrations.length})
+          </h2>
+
+          {registrations.length > 0 ? (
+            <div className="space-y-4">
+              {registrations.map((registration) => (
+                <div
+                  key={registration._id}
+                  className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 mb-1">
+                        {registration.serviceId.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {registration.serviceId.shortDescription}
+                      </p>
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <span>Registered: {new Date(registration.createdAt).toLocaleDateString('en-GB')}</span>
+                        <span className="px-2 py-1 bg-brand-100 text-brand-800 rounded text-xs font-medium">
+                          {registration.status}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleViewService(registration)}
+                      className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <svg
+                className="w-16 h-16 mx-auto mb-4 text-gray-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
+              </svg>
+              <p className="text-gray-500">No service registrations yet</p>
+            </div>
+          )}
+        </div>
+      </div>
+      {showProfileModal && (
+        <StudentProfileModal studentId={studentId} onClose={() => setShowProfileModal(false)} viewerRole="IVY_EXPERT" />
+      )}
+    </>
+  );
 }

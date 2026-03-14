@@ -4,6 +4,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { User } from '@/types';
 import { useState } from 'react';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
+import { BACKEND_URL } from '@/lib/ivyApi';
 
 interface ParentLayoutProps {
   children: React.ReactNode;
@@ -55,7 +56,7 @@ export default function ParentLayout({ children, user }: ParentLayoutProps) {
         <div className="h-16 border-b border-gray-200 flex items-center justify-between px-4">
           {sidebarOpen && (
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">P</span>
               </div>
               <span className="font-semibold text-gray-900">Parent</span>
@@ -90,7 +91,7 @@ export default function ParentLayout({ children, user }: ParentLayoutProps) {
                 onClick={() => router.push(item.path)}
                 className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
                   isActive
-                    ? 'bg-purple-50 text-purple-600'
+                    ? 'bg-blue-50 text-blue-600'
                     : 'text-gray-700 hover:bg-gray-100'
                 } ${!sidebarOpen && 'justify-center'}`}
                 title={!sidebarOpen ? item.name : undefined}
@@ -107,19 +108,28 @@ export default function ParentLayout({ children, user }: ParentLayoutProps) {
         {/* User Info & Logout */}
         <div className="border-t border-gray-200 p-4">
           {sidebarOpen ? (
-            <div className="mb-3">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {getFullName(user)}
-              </p>
-              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+            <div className="mb-3 flex items-center gap-2">
+              {user?.profilePicture ? (
+                <img src={`${BACKEND_URL}/uploads/${user.profilePicture}`} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+              ) : (
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-blue-600 font-semibold text-sm">{getInitials(user)}</span>
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{getFullName(user)}</p>
+                <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              </div>
             </div>
           ) : (
             <div className="mb-3 flex justify-center">
-              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                <span className="text-purple-600 font-semibold text-sm">
-                  {getInitials(user)}
-                </span>
-              </div>
+              {user?.profilePicture ? (
+                <img src={`${BACKEND_URL}/uploads/${user.profilePicture}`} alt="" className="w-8 h-8 rounded-full object-cover" />
+              ) : (
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-blue-600 font-semibold text-sm">{getInitials(user)}</span>
+                </div>
+              )}
             </div>
           )}
           <button

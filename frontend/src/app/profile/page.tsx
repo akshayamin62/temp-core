@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { authAPI, formAnswerAPI } from '@/lib/api';
-import { User, FormSection } from '@/types';
+import { User } from '@/types';
+import { SectionConfig } from '@/config/formConfig';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
 import FormSectionRenderer from '@/components/FormSectionRenderer';
+import { BACKEND_URL } from '@/lib/ivyApi';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -14,10 +16,13 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   // Student profile form state
-  const [formSections, setFormSections] = useState<FormSection[]>([]);
+  const [formSections, setFormSections] = useState<SectionConfig[]>([]);
   const [formValues, setFormValues] = useState<any>({});
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<any>({});
+  const [uploadingPic, setUploadingPic] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchProfile();
@@ -54,14 +59,14 @@ export default function ProfilePage() {
 
       // Initialize form values from saved answers
       const values: any = {};
-      formStructure?.forEach((section: FormSection) => {
-        if (!values[section._id]) values[section._id] = {};
-        const sectionAnswers = answers?.[section._id] || {};
+      formStructure?.forEach((section: SectionConfig) => {
+        if (!values[section.key]) values[section.key] = {};
+        const sectionAnswers = answers?.[section.key] || {};
         section.subSections?.forEach((sub: any) => {
-          if (sectionAnswers[sub._id]) {
-            values[section._id][sub._id] = sectionAnswers[sub._id];
+          if (sectionAnswers[sub.key]) {
+            values[section.key][sub.key] = sectionAnswers[sub.key];
           } else {
-            values[section._id][sub._id] = [{}];
+            values[section.key][sub.key] = [{}];
           }
         });
       });
@@ -70,6 +75,56 @@ export default function ProfilePage() {
       console.error('Failed to fetch student profile data:', error);
     }
   };
+
+  const handleProfilePicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+    setUploadingPic(true);
+    try {
+      const res = await authAPI.uploadProfilePicture(file);
+      const newPic = res.data.data.profilePicture;
+      setUser((prev) => prev ? { ...prev, profilePicture: newPic } : prev);
+      // Sync localStorage for Navbar
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        try { const u = JSON.parse(stored); u.profilePicture = newPic; localStorage.setItem('user', JSON.stringify(u)); } catch {}
+      }
+      toast.success('Profile picture updated');
+    } catch {
+      toast.error('Failed to upload profile picture');
+    } finally {
+      setUploadingPic(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveProfilePic = async () => {
+    setUploadingPic(true);
+    try {
+      await authAPI.removeProfilePicture();
+      setUser((prev) => prev ? { ...prev, profilePicture: undefined } : prev);
+      // Sync localStorage for Navbar
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        try { const u = JSON.parse(stored); delete u.profilePicture; localStorage.setItem('user', JSON.stringify(u)); } catch {}
+      }
+      toast.success('Profile picture removed');
+    } catch {
+      toast.error('Failed to remove profile picture');
+    } finally {
+      setUploadingPic(false);
+    }
+  };
+
+  const profilePicUrl = user?.profilePicture ? `${BACKEND_URL}/uploads/${user.profilePicture}` : null;
 
   const handleFieldChange = (
     sectionId: string,
@@ -110,12 +165,59 @@ export default function ProfilePage() {
     });
   };
 
+  const validateSection = (sectionKey: string): boolean => {
+    const section = formSections[selectedSectionIndex];
+    if (!section) return true;
+    const sectionValues = formValues[sectionKey] || {};
+
+    const newErrors: any = {};
+    let hasErrors = false;
+
+    section.subSections?.forEach((subSection) => {
+      const subSectionValues = sectionValues[subSection.key] || [{}];
+
+      subSectionValues.forEach((instanceValues: any, index: number) => {
+        subSection.fields.forEach((field) => {
+          if (field.required) {
+            let value = instanceValues?.[field.key];
+
+            if ((!value || (typeof value === 'string' && value.trim() === '')) && field.defaultValue) {
+              value = field.defaultValue;
+              setFormValues((prev: any) => {
+                const newValues = JSON.parse(JSON.stringify(prev));
+                if (newValues[sectionKey]?.[subSection.key]?.[index]) {
+                  newValues[sectionKey][subSection.key][index][field.key] = field.defaultValue;
+                }
+                return newValues;
+              });
+            }
+
+            if (!value || (typeof value === 'string' && value.trim() === '')) {
+              if (!newErrors[subSection.key]) newErrors[subSection.key] = [];
+              if (!newErrors[subSection.key][index]) newErrors[subSection.key][index] = {};
+              newErrors[subSection.key][index][field.key] = `${field.label} is required`;
+              hasErrors = true;
+            }
+          }
+        });
+      });
+    });
+
+    setErrors(newErrors);
+    return !hasErrors;
+  };
+
   const handleSaveSection = async (sectionId: string) => {
+    if (!validateSection(sectionId)) {
+      toast.error('Please fill all required fields');
+      return;
+    }
     try {
       setSaving(true);
       const sectionAnswers = formValues[sectionId] || {};
       await formAnswerAPI.saveStudentProfile({ [sectionId]: sectionAnswers });
       toast.success('Saved successfully!');
+      setErrors({});
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to save');
     } finally {
@@ -171,12 +273,30 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 mb-6 animate-fade-in">
             <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-t-2xl p-6">
               <div className="flex items-center">
-                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-2xl font-bold shadow-xl text-white`}>
-                  {getInitials(user)}
+                <div className="relative">
+                  {profilePicUrl ? (
+                    <img src={profilePicUrl} alt="Profile" className="w-16 h-16 rounded-2xl object-cover shadow-xl" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-2xl font-bold shadow-xl text-white">
+                      {getInitials(user)}
+                    </div>
+                  )}
+                  <input type="file" ref={fileInputRef} accept="image/*" onChange={handleProfilePicUpload} className="hidden" />
+                  {uploadingPic && <div className="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center"><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /></div>}
                 </div>
                 <div className="ml-5">
                   <h2 className="text-2xl font-bold text-white mb-1">{getFullName(user)}</h2>
                   <p className="text-blue-100">{user?.email}</p>
+                  <div className="flex gap-2 mt-2">
+                    <button onClick={() => fileInputRef.current?.click()} disabled={uploadingPic} className="px-3 py-1 text-xs font-medium bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors">
+                      {profilePicUrl ? 'Change Photo' : 'Upload Photo'}
+                    </button>
+                    {profilePicUrl && (
+                      <button onClick={handleRemoveProfilePic} disabled={uploadingPic} className="px-3 py-1 text-xs font-medium bg-red-500/30 hover:bg-red-500/50 text-white rounded-lg transition-colors">
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -186,7 +306,7 @@ export default function ProfilePage() {
           <div className="flex flex-wrap gap-2 mb-6">
             {formSections.map((section, idx) => (
               <button
-                key={section._id}
+                key={section.key}
                 onClick={() => setSelectedSectionIndex(idx)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   idx === selectedSectionIndex
@@ -204,17 +324,17 @@ export default function ProfilePage() {
             <div className="animate-fade-in">
               <FormSectionRenderer
                 section={currentSection}
-                values={formValues[currentSection._id] || {}}
+                values={formValues[currentSection.key] || {}}
                 onChange={isParentalSection ? () => {} : (subSectionId, index, key, value) =>
-                  handleFieldChange(currentSection._id, subSectionId, index, key, value)
+                  handleFieldChange(currentSection.key, subSectionId, index, key, value)
                 }
                 onAddInstance={isParentalSection ? () => {} : (subSectionId) =>
-                  handleAddInstance(currentSection._id, subSectionId)
+                  handleAddInstance(currentSection.key, subSectionId)
                 }
                 onRemoveInstance={isParentalSection ? () => {} : (subSectionId, index) =>
-                  handleRemoveInstance(currentSection._id, subSectionId, index)
+                  handleRemoveInstance(currentSection.key, subSectionId, index)
                 }
-                errors={{}}
+                errors={errors}
                 readOnly={isParentalSection}
                 readOnlyKeys={['firstName', 'middleName', 'lastName']}
                 noDelete={isParentalSection}
@@ -227,7 +347,7 @@ export default function ProfilePage() {
               {!isParentalSection && (
                 <div className="mt-4 flex justify-end">
                   <button
-                    onClick={() => handleSaveSection(currentSection._id)}
+                    onClick={() => handleSaveSection(currentSection.key)}
                     disabled={saving}
                     className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
                   >
@@ -270,12 +390,30 @@ export default function ProfilePage() {
             {/* Profile Header */}
             <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-t-2xl p-8">
               <div className="flex items-center">
-                <div className={`w-20 h-20 rounded-2xl bg-white flex items-center justify-center text-3xl font-bold shadow-xl ${user?.role ? `bg-gradient-to-br ${getRoleBadgeColor(user.role)}` : 'bg-gradient-to-br from-blue-500 to-cyan-500'} text-white`}>
-                  {getInitials(user)}
+                <div className="relative">
+                  {profilePicUrl ? (
+                    <img src={profilePicUrl} alt="Profile" className="w-20 h-20 rounded-2xl object-cover shadow-xl" />
+                  ) : (
+                    <div className={`w-20 h-20 rounded-2xl bg-white flex items-center justify-center text-3xl font-bold shadow-xl ${user?.role ? `bg-gradient-to-br ${getRoleBadgeColor(user.role)}` : 'bg-gradient-to-br from-blue-500 to-cyan-500'} text-white`}>
+                      {getInitials(user)}
+                    </div>
+                  )}
+                  <input type="file" ref={fileInputRef} accept="image/*" onChange={handleProfilePicUpload} className="hidden" />
+                  {uploadingPic && <div className="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center"><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /></div>}
                 </div>
                 <div className="ml-6">
                   <h2 className="text-3xl font-bold text-white mb-1">{getFullName(user)}</h2>
                   <p className="text-blue-100 text-lg">{user?.email}</p>
+                  <div className="flex gap-2 mt-2">
+                    <button onClick={() => fileInputRef.current?.click()} disabled={uploadingPic} className="px-3 py-1.5 text-xs font-medium bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors">
+                      {profilePicUrl ? 'Change Photo' : 'Upload Photo'}
+                    </button>
+                    {profilePicUrl && (
+                      <button onClick={handleRemoveProfilePic} disabled={uploadingPic} className="px-3 py-1.5 text-xs font-medium bg-red-500/30 hover:bg-red-500/50 text-white rounded-lg transition-colors">
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

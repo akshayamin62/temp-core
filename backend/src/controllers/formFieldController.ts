@@ -1,62 +1,21 @@
 import { Response } from "express";
 import { AuthRequest } from "../types/auth";
-import FormField, { FieldType } from "../models/FormField";
-import FormSubSection from "../models/FormSubSection";
-import FormSection from "../models/FormSection";
-import FormPart, { FormPartKey } from "../models/FormPart";
+import DocumentField from "../models/DocumentField";
 
-// Get all document fields (FILE type fields from DOCUMENT part)
+// Get all document fields
 export const getDocumentFields = async (_req: AuthRequest, res: Response) => {
   try {
-    // Find DOCUMENT part
-    const documentPart = await FormPart.findOne({ key: FormPartKey.DOCUMENT });
-    if (!documentPart) {
-      return res.status(404).json({
-        success: false,
-        message: "Document part not found",
-      });
-    }
+    const fields = await DocumentField.find({ isActive: true }).sort({ order: 1 });
 
-    // Find all sections for DOCUMENT part
-    const documentSections = await FormSection.find({ 
-      partId: documentPart._id,
-      isActive: true 
-    }).sort({ order: 1 });
-
-    const result = [];
-
-    for (const section of documentSections) {
-      // Find subsections
-      const subsections = await FormSubSection.find({
-        sectionId: section._id,
-        isActive: true
-      }).sort({ order: 1 });
-
-      for (const subsection of subsections) {
-        // Find FILE type fields
-        const fields = await FormField.find({
-          subSectionId: subsection._id,
-          type: FieldType.FILE,
-          isActive: true
-        }).sort({ order: 1 });
-
-        // Map fields to response format
-        for (const field of fields) {
-          result.push({
-            _id: field._id,
-            documentKey: field.key,
-            documentName: field.label,
-            category: subsection.title.includes('Primary') ? 'PRIMARY' : 'SECONDARY',
-            required: field.required,
-            helpText: field.helpText,
-            order: field.order,
-            sectionTitle: section.title,
-            subsectionTitle: subsection.title,
-            subsectionId: subsection._id,
-          });
-        }
-      }
-    }
+    const result = fields.map(f => ({
+      _id: f._id,
+      documentKey: f.documentKey,
+      documentName: f.documentName,
+      category: f.category,
+      required: f.required,
+      helpText: f.helpText,
+      order: f.order,
+    }));
 
     return res.status(200).json({
       success: true,
@@ -83,7 +42,6 @@ export const addDocumentField = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Validate category
     if (!['PRIMARY', 'SECONDARY'].includes(category)) {
       return res.status(400).json({
         success: false,
@@ -91,52 +49,12 @@ export const addDocumentField = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Find DOCUMENT part
-    const documentPart = await FormPart.findOne({ key: FormPartKey.DOCUMENT });
-    if (!documentPart) {
-      return res.status(404).json({
-        success: false,
-        message: "Document part not found",
-      });
-    }
-
-    // Find "Your Documents" section
-    const yourDocsSection = await FormSection.findOne({
-      partId: documentPart._id,
-      title: "Your Documents"
-    });
-    if (!yourDocsSection) {
-      return res.status(404).json({
-        success: false,
-        message: "Your Documents section not found",
-      });
-    }
-
-    // Find appropriate subsection
-    const subsectionTitle = category === 'PRIMARY' ? 'Primary Documents' : 'Secondary Documents';
-    const subsection = await FormSubSection.findOne({
-      sectionId: yourDocsSection._id,
-      title: subsectionTitle
-    });
-    if (!subsection) {
-      return res.status(404).json({
-        success: false,
-        message: `${subsectionTitle} subsection not found`,
-      });
-    }
-
-    // Generate document key from name
     const documentKey = documentName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '_')
       .replace(/^_|_$/g, '');
 
-    // Check if key already exists
-    const existingField = await FormField.findOne({
-      subSectionId: subsection._id,
-      key: documentKey
-    });
-
+    const existingField = await DocumentField.findOne({ documentKey });
     if (existingField) {
       return res.status(400).json({
         success: false,
@@ -144,23 +62,17 @@ export const addDocumentField = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Get max order for this subsection
-    const maxOrderField = await FormField.findOne({
-      subSectionId: subsection._id
-    }).sort({ order: -1 });
-
+    const maxOrderField = await DocumentField.findOne().sort({ order: -1 });
     const nextOrder = maxOrderField ? maxOrderField.order + 1 : 1;
 
-    // Create new field
-    const newField = await FormField.create({
-      subSectionId: subsection._id,
-      label: documentName,
-      key: documentKey,
-      type: FieldType.FILE,
+    const newField = await DocumentField.create({
+      documentName,
+      documentKey,
+      category,
       required: required || false,
+      helpText: helpText || undefined,
       order: nextOrder,
       isActive: true,
-      helpText: helpText || undefined,
     });
 
     return res.status(201).json({
@@ -169,13 +81,12 @@ export const addDocumentField = async (req: AuthRequest, res: Response) => {
       data: {
         field: {
           _id: newField._id,
-          documentKey: newField.key,
-          documentName: newField.label,
-          category,
+          documentKey: newField.documentKey,
+          documentName: newField.documentName,
+          category: newField.category,
           required: newField.required,
           helpText: newField.helpText,
           order: newField.order,
-          subsectionId: subsection._id,
         }
       },
     });
@@ -193,19 +104,11 @@ export const deleteDocumentField = async (req: AuthRequest, res: Response) => {
   try {
     const { fieldId } = req.params;
 
-    const field = await FormField.findById(fieldId);
+    const field = await DocumentField.findById(fieldId);
     if (!field) {
       return res.status(404).json({
         success: false,
         message: "Document field not found",
-      });
-    }
-
-    // Verify it's a FILE type field
-    if (field.type !== FieldType.FILE) {
-      return res.status(400).json({
-        success: false,
-        message: "This is not a document field",
       });
     }
 

@@ -435,127 +435,127 @@ function IvyExpertDashboard() {
 
         return (
             <>
-            <div className="p-8 md:p-12 max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                {/* Header */}
-                <header className="mb-16">
-                    <div className="flex items-start justify-between gap-4">
-                        <div>
-                            <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4 leading-tight">
-                                {selectedStudent?.studentId.firstName ? `${selectedStudent.studentId.firstName} ${selectedStudent.studentId.lastName}` : 'Student'}'s Ivy League Readiness
-                            </h1>
-                            <p className="text-xl text-gray-400 font-medium max-w-2xl leading-relaxed">
-                                Track competitive trajectory across all core admission pillars. Scores are real-time and reflect current evaluations.
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                            <button
-                                onClick={() => setShowCalendar(prev => !prev)}
-                                className="inline-flex items-center gap-2 px-5 py-3 bg-brand-600 text-white text-sm font-bold rounded-xl hover:bg-brand-700 transition-all shadow-lg"
-                            >
-                                {showCalendar ? (
-                                    <>
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                                        </svg>
-                                        Dashboard
-                                    </>
-                                ) : (
-                                    <>
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                        Calendar
-                                    </>
-                                )}
-                            </button>
-                            <button
-                                onClick={() => {
-                                    const resolvedUserId = userIdForProfile || selectedStudent?.studentId.userId || selectedStudentId;
-                                    router.push(`/ivy-league/ivy-expert/student-report/${resolvedUserId}`);
-                                }}
-                                className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-3 bg-brand-600 text-white text-sm font-bold rounded-xl hover:bg-brand-700 transition-all shadow-lg"
-                            >
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                View Candidate Report
-                            </button>
-                        </div>
-                    </div>
-                </header>
-
-                {!showCalendar && (<>
-                {/* Overall Score Card */}
-                <div className="relative mb-16 group">
-                    <div className="absolute inset-0 bg-brand-600 rounded-[3rem] blur-3xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
-                    <div className="relative bg-white rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(41,89,186,0.1)] border border-gray-100 p-12 overflow-hidden">
-                        <div className="flex flex-col md:flex-row items-center gap-12">
-                            <div className="flex-1 text-center md:text-left">
-                                <span className="text-[10px] font-black tracking-[0.4em] text-gray-400 uppercase mb-4 block">Calculated Potential</span>
-                                <div className="flex items-baseline justify-center md:justify-start gap-4 mb-6">
-                                    <span className="text-9xl font-black text-brand-600 leading-none tracking-tighter">{overallScore.toFixed(1)}</span>
-                                    <span className="text-3xl font-black text-gray-300">/ {totalMaxScore}</span>
-                                </div>
-                                <div className="inline-flex items-center gap-3 bg-brand-50 text-brand-600 px-6 py-3 rounded-full text-base font-black uppercase tracking-widest">
-                                    <span className="h-2 w-2 bg-brand-600 rounded-full animate-pulse"></span>
-                                    {getScoreGrade(overallScore, totalMaxScore)}
-                                </div>
+                <div className="p-8 md:p-12 max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                    {/* Header */}
+                    <header className="mb-16">
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4 leading-tight">
+                                    {selectedStudent?.studentId.firstName ? `${selectedStudent.studentId.firstName} ${selectedStudent.studentId.lastName}` : 'Student'}'s Ivy League Readiness
+                                </h1>
+                                <p className="text-xl text-gray-400 font-medium max-w-2xl leading-relaxed">
+                                    Track competitive trajectory across all core admission pillars. Scores are real-time and reflect current evaluations.
+                                </p>
                             </div>
-
-                            <div className="w-full md:w-[400px] space-y-6">
-                                <div className="flex items-end justify-between mb-2">
-                                    <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Aggregate Readiness</span>
-                                    <span className="text-2xl font-black text-brand-600">{overallPercentage.toFixed(0)}%</span>
-                                </div>
-                                <div className="h-8 bg-gray-50 rounded-2xl overflow-hidden p-1.5 border border-gray-100 flex items-center">
-                                    <div
-                                        className="h-full bg-brand-600 rounded-xl transition-all duration-1500 ease-out shadow-[0_0_20px_rgba(41,89,186,0.3)]"
-                                        style={{ width: `${overallPercentage}%` }}
-                                    ></div>
-                                </div>
-                                <p className="text-xs text-center text-gray-400 font-bold italic">Last evaluated on {new Date(scoreData.generatedAt).toLocaleDateString('en-GB')}</p>
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                                <button
+                                    onClick={() => setShowCalendar(prev => !prev)}
+                                    className="inline-flex items-center gap-2 px-5 py-3 bg-brand-600 text-white text-sm font-bold rounded-xl hover:bg-brand-700 transition-all shadow-lg"
+                                >
+                                    {showCalendar ? (
+                                        <>
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                            </svg>
+                                            Dashboard
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            Calendar
+                                        </>
+                                    )}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const resolvedUserId = userIdForProfile || selectedStudent?.studentId.userId || selectedStudentId;
+                                        router.push(`/ivy-league/ivy-expert/student-report/${resolvedUserId}`);
+                                    }}
+                                    className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-3 bg-brand-600 text-white text-sm font-bold rounded-xl hover:bg-brand-700 transition-all shadow-lg"
+                                >
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    View Candidate Report
+                                </button>
                             </div>
                         </div>
-                    </div>
-                </div>
+                    </header>
 
-                {/* Individual Pointer Scores */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {scoreData.pointerScores.map((pointer) => {
-                        // Use academic excellence score for Pointer 1 if available
-                        // Use pointer5Score for Pointer 5 if available
-                        const displayScore = pointer.pointerNo === 1 && academicScore
-                            ? academicScore.finalScore
-                            : pointer.pointerNo === 5 && pointer5Score !== null
-                                ? pointer5Score
-                                : pointer.score;
-                        const percentage = (displayScore / pointer.maxScore) * 100;
-                        const colorClass = getScoreColor(displayScore, pointer.maxScore);
-
-                        return (
-                            <div
-                                key={pointer.pointerNo}
-                                onClick={() => handlePointerClick(pointer.pointerNo)}
-                                className="bg-white rounded-[2.5rem] shadow-sm hover:shadow-2xl hover:translate-y-[-8px] transition-all duration-500 p-8 border border-gray-100 hover:border-brand-100 group flex flex-col cursor-pointer"
-                            >
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 font-black text-xl border border-brand-100 shadow-inner group-hover:bg-brand-600 group-hover:text-white transition-colors">
-                                            {pointer.pointerNo}
+                    {!showCalendar && (<>
+                        {/* Overall Score Card */}
+                        <div className="relative mb-16 group">
+                            <div className="absolute inset-0 bg-brand-600 rounded-[3rem] blur-3xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
+                            <div className="relative bg-white rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(41,89,186,0.1)] border border-gray-100 p-12 overflow-hidden">
+                                <div className="flex flex-col md:flex-row items-center gap-12">
+                                    <div className="flex-1 text-center md:text-left">
+                                        <span className="text-[10px] font-black tracking-[0.4em] text-gray-400 uppercase mb-4 block">Calculated Potential</span>
+                                        <div className="flex items-baseline justify-center md:justify-start gap-4 mb-6">
+                                            <span className="text-9xl font-black text-brand-600 leading-none tracking-tighter">{overallScore.toFixed(1)}</span>
+                                            <span className="text-3xl font-black text-gray-300">/ {totalMaxScore}</span>
                                         </div>
-                                        <h3 className="font-black text-gray-900 text-lg leading-tight uppercase tracking-tight">
-                                            {pointerNames[pointer.pointerNo]}
-                                        </h3>
+                                        <div className="inline-flex items-center gap-3 bg-brand-50 text-brand-600 px-6 py-3 rounded-full text-base font-black uppercase tracking-widest">
+                                            <span className="h-2 w-2 bg-brand-600 rounded-full animate-pulse"></span>
+                                            {getScoreGrade(overallScore, totalMaxScore)}
+                                        </div>
+                                    </div>
+
+                                    <div className="w-full md:w-[400px] space-y-6">
+                                        <div className="flex items-end justify-between mb-2">
+                                            <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Aggregate Readiness</span>
+                                            <span className="text-2xl font-black text-brand-600">{overallPercentage.toFixed(0)}%</span>
+                                        </div>
+                                        <div className="h-8 bg-gray-50 rounded-2xl overflow-hidden p-1.5 border border-gray-100 flex items-center">
+                                            <div
+                                                className="h-full bg-brand-600 rounded-xl transition-all duration-1500 ease-out shadow-[0_0_20px_rgba(41,89,186,0.3)]"
+                                                style={{ width: `${overallPercentage}%` }}
+                                            ></div>
+                                        </div>
+                                        <p className="text-xs text-center text-gray-400 font-bold italic">Last evaluated on {new Date(scoreData.generatedAt).toLocaleDateString('en-GB')}</p>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
 
-                                <p className="text-sm text-gray-400 font-bold mb-8 leading-relaxed uppercase tracking-wide">
-                                    {pointerDescriptions[pointer.pointerNo]}
-                                </p>
+                        {/* Individual Pointer Scores */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {scoreData.pointerScores.map((pointer) => {
+                                // Use academic excellence score for Pointer 1 if available
+                                // Use pointer5Score for Pointer 5 if available
+                                const displayScore = pointer.pointerNo === 1 && academicScore
+                                    ? academicScore.finalScore
+                                    : pointer.pointerNo === 5 && pointer5Score !== null
+                                        ? pointer5Score
+                                        : pointer.score;
+                                const percentage = (displayScore / pointer.maxScore) * 100;
+                                const colorClass = getScoreColor(displayScore, pointer.maxScore);
 
-                                {pointer.pointerNo === 1 && academicScore && (
-                                    <div className="mb-4 text-xs text-gray-500 space-y-1">
-                                        {/* <div className="flex justify-between">
+                                return (
+                                    <div
+                                        key={pointer.pointerNo}
+                                        onClick={() => handlePointerClick(pointer.pointerNo)}
+                                        className="bg-white rounded-[2.5rem] shadow-sm hover:shadow-2xl hover:translate-y-[-8px] transition-all duration-500 p-8 border border-gray-100 hover:border-brand-100 group flex flex-col cursor-pointer"
+                                    >
+                                        <div className="flex items-center justify-between mb-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 font-black text-xl border border-brand-100 shadow-inner group-hover:bg-brand-600 group-hover:text-white transition-colors">
+                                                    {pointer.pointerNo}
+                                                </div>
+                                                <h3 className="font-black text-gray-900 text-lg leading-tight uppercase tracking-tight">
+                                                    {pointerNames[pointer.pointerNo]}
+                                                </h3>
+                                            </div>
+                                        </div>
+
+                                        <p className="text-sm text-gray-400 font-bold mb-8 leading-relaxed uppercase tracking-wide">
+                                            {pointerDescriptions[pointer.pointerNo]}
+                                        </p>
+
+                                        {pointer.pointerNo === 1 && academicScore && (
+                                            <div className="mb-4 text-xs text-gray-500 space-y-1">
+                                                {/* <div className="flex justify-between">
                                             <span>Evaluated Docs:</span>
                                             <span className="font-bold">{academicScore.evaluatedDocsCount}</span>
                                         </div>
@@ -563,188 +563,192 @@ function IvyExpertDashboard() {
                                             <span>Informal Sections:</span>
                                             <span className="font-bold">{academicScore.informalSectionsWithScores}</span>
                                         </div> */}
-                                    </div>
-                                )}
+                                            </div>
+                                        )}
 
-                                <div className="mt-auto">
-                                    <div className="flex items-baseline justify-between mb-4">
-                                        <span className="text-5xl font-black text-gray-900 tracking-tighter">
-                                            {displayScore.toFixed(1)}
-                                        </span>
-                                        <span className="text-sm font-black text-gray-300 uppercase italic">
-                                            Target: {pointer.maxScore}
-                                        </span>
-                                    </div>
+                                        <div className="mt-auto">
+                                            <div className="flex items-baseline justify-between mb-4">
+                                                <span className="text-5xl font-black text-gray-900 tracking-tighter">
+                                                    {displayScore.toFixed(1)}
+                                                </span>
+                                                <span className="text-sm font-black text-gray-300 uppercase italic">
+                                                    Target: {pointer.maxScore}
+                                                </span>
+                                            </div>
 
-                                    <div className="h-3 bg-gray-50 rounded-full overflow-hidden border border-gray-100 p-0.5">
-                                        <div
-                                            className={`h-full ${colorClass} rounded-full transition-all duration-1000 ease-out shadow-sm`}
-                                            style={{ width: `${percentage}%` }}
-                                        ></div>
-                                    </div>
+                                            <div className="h-3 bg-gray-50 rounded-full overflow-hidden border border-gray-100 p-0.5">
+                                                <div
+                                                    className={`h-full ${colorClass} rounded-full transition-all duration-1000 ease-out shadow-sm`}
+                                                    style={{ width: `${percentage}%` }}
+                                                ></div>
+                                            </div>
 
-                                    <div className="flex items-center justify-between mt-4">
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                                            {getScoreGrade(pointer.score, pointer.maxScore)}
-                                        </span>
-                                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${colorClass} text-white uppercase tracking-tighter`}>
-                                            {percentage.toFixed(0)}%
-                                        </span>
+                                            <div className="flex items-center justify-between mt-4">
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                                                    {getScoreGrade(pointer.score, pointer.maxScore)}
+                                                </span>
+                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${colorClass} text-white uppercase tracking-tighter`}>
+                                                    {percentage.toFixed(0)}%
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Info Panel */}
+                        <div className="mt-20 bg-gray-900 rounded-[3rem] p-12 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-96 h-96 bg-brand-600 rounded-full blur-[120px] opacity-20 translate-x-1/2 -translate-y-1/2"></div>
+                            <div className="relative z-10 flex flex-col md:flex-row items-center gap-12 text-center md:text-left">
+                                <div className="flex-shrink-0 w-20 h-20 bg-white/10 rounded-[2rem] flex items-center justify-center backdrop-blur-xl border border-white/20">
+                                    <svg className="h-10 w-10 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Understanding Student Profile</h4>
+                                    <p className="text-brand-200/60 font-medium leading-relaxed max-w-3xl">
+                                        Each pointer follows the Ivy League evaluation matrix scaled from 0-10. Scores are manually verified based on shared evidences.
+                                    </p>
                                 </div>
                             </div>
-                        );
-                    })}
-                </div>
+                        </div>
+                    </>)}
 
-                {/* Info Panel */}
-                <div className="mt-20 bg-gray-900 rounded-[3rem] p-12 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-96 h-96 bg-brand-600 rounded-full blur-[120px] opacity-20 translate-x-1/2 -translate-y-1/2"></div>
-                    <div className="relative z-10 flex flex-col md:flex-row items-center gap-12 text-center md:text-left">
-                        <div className="flex-shrink-0 w-20 h-20 bg-white/10 rounded-[2rem] flex items-center justify-center backdrop-blur-xl border border-white/20">
-                            <svg className="h-10 w-10 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Understanding Student Profile</h4>
-                            <p className="text-brand-200/60 font-medium leading-relaxed max-w-3xl">
-                                Each pointer follows the Ivy League evaluation matrix scaled from 0-10. Scores are manually verified based on shared evidences.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                </>)}
-
-                {/* Calendar Section — read-only when viewing student */}
-                {showCalendar && (
-                    <div className="mt-4">
-                        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2">
-                            <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                            <span className="text-xs font-bold text-amber-800 uppercase tracking-wide">Read-Only Calendar</span>
-                        </div>
-                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                            <div className="lg:col-span-3">
-                                <OpsScheduleCalendar
-                                    schedules={opsTasks}
-                                    onScheduleSelect={(schedule) => { setSelectedOpsTask(schedule); setShowOpsTaskPanel(true); }}
-                                    teamMeets={teamMeets}
-                                    onTeamMeetSelect={(tm: TeamMeet) => { setSelectedTeamMeet(tm); setTeamMeetPanelMode('view'); setShowTeamMeetPanel(true); }}
-                                    currentUserId={currentUserId}
-                                />
+                    {/* Calendar Section — read-only when viewing student */}
+                    {showCalendar && (
+                        <div className="mt-4">
+                            <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2">
+                                <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                <span className="text-xs font-bold text-amber-800 uppercase tracking-wide">Read-Only Calendar</span>
                             </div>
-                            <div className="lg:col-span-1">
-                                <TeamMeetSidebar
-                                    teamMeets={teamMeets}
-                                    onTeamMeetClick={(tm: TeamMeet) => { setSelectedTeamMeet(tm); setTeamMeetPanelMode('view'); setShowTeamMeetPanel(true); }}
-                                    currentUserId={currentUserId}
-                                />
+                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                                <div className="lg:col-span-3">
+                                    <OpsScheduleCalendar
+                                        schedules={opsTasks}
+                                        onScheduleSelect={(schedule) => { setSelectedOpsTask(schedule); setShowOpsTaskPanel(true); }}
+                                        teamMeets={teamMeets}
+                                        onTeamMeetSelect={(tm: TeamMeet) => { setSelectedTeamMeet(tm); setTeamMeetPanelMode('view'); setShowTeamMeetPanel(true); }}
+                                        currentUserId={currentUserId}
+                                    />
+                                </div>
+                                <div className="lg:col-span-1">
+                                    <TeamMeetSidebar
+                                        teamMeets={teamMeets}
+                                        onTeamMeetClick={(tm: TeamMeet) => { setSelectedTeamMeet(tm); setTeamMeetPanelMode('view'); setShowTeamMeetPanel(true); }}
+                                        currentUserId={currentUserId}
+                                    />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
-            </div>
-            <TeamMeetFormPanel
-                teamMeet={selectedTeamMeet}
-                isOpen={showTeamMeetPanel}
-                onClose={handleTeamMeetPanelClose}
-                onSave={handleTeamMeetSave}
-                selectedDate={selectedTeamMeetDate}
-                mode={teamMeetPanelMode}
-                currentUserId={currentUserId}
-                readOnly={true}
-            />
-            <OpsScheduleFormPanel
-                schedule={selectedOpsTask}
-                students={[]}
-                isOpen={showOpsTaskPanel}
-                onClose={() => { setShowOpsTaskPanel(false); setSelectedOpsTask(null); }}
-                onSubmit={async () => {}}
-                readOnly={true}
-            />
+                    )}
+                </div>
+                <TeamMeetFormPanel
+                    teamMeet={selectedTeamMeet}
+                    isOpen={showTeamMeetPanel}
+                    onClose={handleTeamMeetPanelClose}
+                    onSave={handleTeamMeetSave}
+                    selectedDate={selectedTeamMeetDate}
+                    mode={teamMeetPanelMode}
+                    currentUserId={currentUserId}
+                    readOnly={true}
+                />
+                <OpsScheduleFormPanel
+                    schedule={selectedOpsTask}
+                    students={[]}
+                    isOpen={showOpsTaskPanel}
+                    onClose={() => { setShowOpsTaskPanel(false); setSelectedOpsTask(null); }}
+                    onSubmit={async () => { }}
+                    readOnly={true}
+                />
             </>
         );
     }
 
-// Show dashboard with stats + calendar when no student is selected
+    // Show dashboard with stats + calendar when no student is selected
 
     return (
         <>
-        <div className="py-8 px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-1">Ivy Expert Dashboard</h1>
-                    <p className="text-gray-600 text-sm">Manage your assigned Ivy League candidates and students</p>
-                </div>
+            <div className="py-8 px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto">
+                    {/* Header */}
+                    <div className="mb-6 flex items-start justify-between">
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900 mb-1">Ivy Expert Dashboard</h1>
+                            <p className="text-gray-600 text-sm">Manage your assigned Ivy League candidates and students</p>
+                        </div>
+                        {(() => { const t = new Date(); const d = Math.floor((t.getTime() - new Date(t.getFullYear(), 0, 0).getTime()) / 86400000); return (<div className="text-right"><p className="text-3xl font-extrabold text-gray-900">Day {d}</p><p className="text-sm text-gray-500">of {t.getFullYear()}</p></div>); })()}
 
-                {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow" onClick={() => router.push('/ivy-league/ivy-expert/candidates')}>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600 mb-1">Ivy Candidates</p>
-                                <p className="text-3xl font-bold text-gray-900">{myCandidates.length}</p>
-                            </div>
-                            <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-amber-100 text-amber-600">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                </svg>
-                            </div>
-                        </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow" onClick={() => router.push('/ivy-league/ivy-expert/students')}>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600 mb-1">Ivy Students</p>
-                                <p className="text-3xl font-bold text-gray-900">{myStudents.length}</p>
-                            </div>
-                            <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-green-100 text-green-600">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600 mb-1">Upcoming Meetings</p>
-                                <p className="text-3xl font-bold text-gray-900">{teamMeets.filter(t => t.status === TEAMMEET_STATUS.CONFIRMED || t.status === TEAMMEET_STATUS.PENDING_CONFIRMATION).length}</p>
-                            </div>
-                            <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-indigo-100 text-indigo-600">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    {/* Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 
-                {/* Calendar + TeamMeet Sidebar */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2">
-                    <OpsScheduleCalendar
-                      schedules={[]}
-                      onScheduleSelect={() => {}}
-                      onDateSelect={handleTeamMeetDateSelect}
-                      teamMeets={teamMeets}
-                      onTeamMeetSelect={handleTeamMeetSelect}
-                      currentUserId={currentUserId}
-                    />
-                  </div>
-                  <div>
-                    <TeamMeetSidebar
-                      teamMeets={teamMeets}
-                      onTeamMeetClick={handleTeamMeetSelect}
-                      onScheduleClick={handleScheduleTeamMeet}
-                      currentUserId={currentUserId}
-                    />
-                  </div>
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow" onClick={() => router.push('/ivy-league/ivy-expert/candidates')}>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600 mb-1">Ivy Candidates</p>
+                                    <p className="text-3xl font-bold text-gray-900">{myCandidates.length}</p>
+                                </div>
+                                <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-amber-100 text-amber-600">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow" onClick={() => router.push('/ivy-league/ivy-expert/students')}>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600 mb-1">Ivy Students</p>
+                                    <p className="text-3xl font-bold text-gray-900">{myStudents.length}</p>
+                                </div>
+                                <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-green-100 text-green-600">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600 mb-1">Upcoming Meetings</p>
+                                    <p className="text-3xl font-bold text-gray-900">{teamMeets.filter(t => t.status === TEAMMEET_STATUS.CONFIRMED || t.status === TEAMMEET_STATUS.PENDING_CONFIRMATION).length}</p>
+                                </div>
+                                <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-indigo-100 text-indigo-600">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Calendar + TeamMeet Sidebar */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-2">
+                            <OpsScheduleCalendar
+                                schedules={[]}
+                                onScheduleSelect={() => { }}
+                                onDateSelect={handleTeamMeetDateSelect}
+                                teamMeets={teamMeets}
+                                onTeamMeetSelect={handleTeamMeetSelect}
+                                currentUserId={currentUserId}
+                            />
+                        </div>
+                        <div>
+                            <TeamMeetSidebar
+                                teamMeets={teamMeets}
+                                onTeamMeetClick={handleTeamMeetSelect}
+                                onScheduleClick={handleScheduleTeamMeet}
+                                currentUserId={currentUserId}
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <TeamMeetFormPanel
+            <TeamMeetFormPanel
                 teamMeet={selectedTeamMeet}
                 isOpen={showTeamMeetPanel}
                 onClose={handleTeamMeetPanelClose}

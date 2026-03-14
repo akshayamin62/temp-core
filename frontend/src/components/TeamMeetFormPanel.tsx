@@ -99,6 +99,9 @@ export default function TeamMeetFormPanel({
   const [inviting, setInviting] = useState(false);
   const [removingInvite, setRemovingInvite] = useState<string | null>(null);
 
+  // Role filter state
+  const [selectedRole, setSelectedRole] = useState('');
+
   // Fetch participants on open
   useEffect(() => {
     if (isOpen && mode === 'create') {
@@ -135,6 +138,7 @@ export default function TeamMeetFormPanel({
         setRejectionMessage('');
         setAvailability(null);
         setShowRejectInput(false);
+        setSelectedRole('');
       }
     }
   }, [isOpen, teamMeet, mode, selectedDate]);
@@ -511,7 +515,7 @@ export default function TeamMeetFormPanel({
                       })
                       .map((p) => (
                         <option key={p._id} value={p._id}>
-                          {getFullName(p)} ({formatRole(p.role)})
+                          {getFullName(p)} ({formatRole(p.role)}){p.studentName ? ` (Student: ${p.studentName})` : ''}
                         </option>
                       ))}
                   </select>
@@ -589,17 +593,31 @@ export default function TeamMeetFormPanel({
           {mode === 'create' && (
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
+              {/* Role filter */}
+              <select
+                value={selectedRole}
+                onChange={(e) => { setSelectedRole(e.target.value); setRequestedTo(''); }}
+                className="w-full px-3 py-2 mb-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              >
+                <option value="">All Roles</option>
+                {[...new Set(participants.map((p) => p.role))].map((role) => (
+                  <option key={role} value={role}>{formatRole(role)}</option>
+                ))}
+              </select>
+              {/* Participant select */}
               <select
                 value={requestedTo}
                 onChange={(e) => setRequestedTo(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
               >
                 <option value="">Select participant...</option>
-                {participants.map((p) => (
-                  <option key={p._id} value={p._id}>
-                    {getFullName(p)} ({formatRole(p.role)})
-                  </option>
-                ))}
+                {participants
+                  .filter((p) => !selectedRole || p.role === selectedRole)
+                  .map((p) => (
+                    <option key={p._id} value={p._id}>
+                      {getFullName(p)} ({formatRole(p.role)}){p.studentName ? ` (Student: ${p.studentName})` : ''}
+                    </option>
+                  ))}
               </select>
             </div>
           )}

@@ -83,7 +83,7 @@ export default function StudentFormHeader({
           </p>
         </div>
 
-        {studentId && !open && (
+        {studentId && !open && editMode !== 'VIEW' && (
           <button
             onClick={() => setOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
@@ -97,7 +97,7 @@ export default function StudentFormHeader({
       </div>
 
       {/* Compose panel — slides in below */}
-      {studentId && open && (
+      {studentId && open && editMode !== 'VIEW' && (
         <div className="mt-5 border-t border-gray-100 pt-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-gray-700">

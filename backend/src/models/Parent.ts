@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface IParent extends Document {
   userId: mongoose.Types.ObjectId;
   studentIds: mongoose.Types.ObjectId[];
+  email: string;
   relationship: string;
   mobileNumber: string;
   qualification: string;
@@ -26,6 +27,11 @@ const parentSchema = new Schema<IParent>(
         ref: "Student",
       },
     ],
+    email: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     relationship: {
       type: String,
       required: true,

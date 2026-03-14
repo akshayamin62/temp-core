@@ -19,6 +19,7 @@ export interface User {
   lastName: string;
   email: string;
   role: USER_ROLE | string;
+  profilePicture?: string;
   isVerified: boolean;
   isActive?: boolean;
   createdAt?: string;
@@ -83,101 +84,24 @@ export interface StudentServiceRegistration {
   notes?: string;
 }
 
-// Form Types
-export enum FormPartKey {
-  PROFILE = 'PROFILE',
-  APPLICATION = 'APPLICATION',
-  DOCUMENT = 'DOCUMENT',
-  PAYMENT = 'PAYMENT',
-}
+// Form Types — re-exported from hardcoded config
+// Use FormFieldConfig, SubSectionConfig, SectionConfig, PartConfig from '@/config/formConfig'
+export { FormPartKey, FieldType } from '@/config/formConfig';
+export type { FormFieldConfig, SubSectionConfig, SectionConfig, PartConfig } from '@/config/formConfig';
 
-export enum FieldType {
-  TEXT = 'TEXT',
-  EMAIL = 'EMAIL',
-  NUMBER = 'NUMBER',
-  DATE = 'DATE',
-  PHONE = 'PHONE',
-  TEXTAREA = 'TEXTAREA',
-  SELECT = 'SELECT',
-  RADIO = 'RADIO',
-  CHECKBOX = 'CHECKBOX',
-  FILE = 'FILE',
-  COUNTRY = 'COUNTRY',
-  STATE = 'STATE',
-  CITY = 'CITY',
-}
-
-export interface FormField {
-  _id: string;
-  subSectionId: string;
-  label: string;
-  key: string;
-  type: FieldType;
-  placeholder?: string;
-  helpText?: string;
-  required: boolean;
-  order: number;
-  isActive: boolean;
-  validation?: {
-    min?: number;
-    max?: number;
-    pattern?: string;
-    message?: string;
-  };
-  options?: Array<{
-    label: string;
-    value: string;
-  }>;
-  defaultValue?: any;
-}
-
-export interface FormSubSection {
-  _id: string;
-  sectionId: string;
-  title: string;
-  description?: string;
-  order: number;
-  isRepeatable: boolean;
-  isActive: boolean;
-  maxRepeat?: number;
-  fields: FormField[];
-}
-
-export interface FormSection {
-  _id: string;
-  serviceId: string;
-  partId: string;
-  title: string;
-  description?: string;
-  order: number;
-  isActive: boolean;
-  subSections: FormSubSection[];
-}
-
-export interface FormPart {
-  _id: string;
-  key: FormPartKey;
-  title: string;
-  description?: string;
-  order: number;
-  isActive: boolean;
-}
-
-export interface FormStructure {
-  part: FormPart;
-  order: number;
-  sections: FormSection[];
-}
+// Legacy aliases for compatibility
+export type FormField = import('@/config/formConfig').FormFieldConfig;
+export type FormSubSection = import('@/config/formConfig').SubSectionConfig;
+export type FormSection = import('@/config/formConfig').SectionConfig;
+export type FormPart = { key: import('@/config/formConfig').FormPartKey; title: string; description?: string; order: number };
+export type FormStructure = { part: FormPart; order: number; sections: FormSection[] };
 
 export interface StudentFormAnswer {
   _id: string;
-  studentServiceId: string;
+  studentId: string;
   partKey: string;
-  sectionId?: string;
   answers: any;
-  completed: boolean;
   lastSavedAt: string;
-  completedAt?: string;
 }
 
 // Document Types
@@ -602,6 +526,7 @@ export interface TeamMeetParticipant {
   lastName?: string;
   email: string;
   role: string;
+  studentName?: string;
 }
 
 export interface CreateTeamMeetData {

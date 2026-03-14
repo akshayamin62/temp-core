@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { authAPI, serviceAPI, programAPI, teamMeetAPI, opsScheduleAPI, activityAPI } from '@/lib/api';
-import { User, USER_ROLE, FormStructure, FormSection, FormSubSection, TeamMeet, TEAMMEET_STATUS, OpsSchedule } from '@/types';
+import { authAPI, programAPI, teamMeetAPI, opsScheduleAPI, activityAPI } from '@/lib/api';
+import { User, USER_ROLE, TeamMeet, TEAMMEET_STATUS, OpsSchedule, FormStructure } from '@/types';
+import { getServiceFormStructure, SectionConfig } from '@/config/formConfig';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
 import FormSectionRenderer from '@/components/FormSectionRenderer';
 import FormPartsNavigation from '@/components/FormPartsNavigation';
@@ -261,8 +262,13 @@ export default function SuperAdminStudentFormEditPage() {
 
       if (!extractedServiceId) throw new Error('Service ID not found');
 
-      const formResponse = await serviceAPI.getServiceForm(extractedServiceId);
-      const structure = formResponse.data.data.formStructure || [];
+      const serviceSlug = typeof regServiceId === 'object' ? regServiceId.slug : '';
+      const partConfigs = getServiceFormStructure(serviceSlug);
+      const structure = partConfigs.map(part => ({
+        part: { key: part.key, title: part.title, description: part.description, order: part.order },
+        order: part.order,
+        sections: part.sections,
+      }));
       setFormStructure(structure);
 
       const answers = registrationData.answers || [];
@@ -272,16 +278,16 @@ export default function SuperAdminStudentFormEditPage() {
       });
 
       if (structure.length > 0) {
-        structure.forEach((part: FormStructure) => {
+        structure.forEach((part) => {
           const partKey = part.part.key;
           if (!formattedAnswers[partKey]) formattedAnswers[partKey] = {};
-          part.sections?.forEach((section: FormSection) => {
-            if (!formattedAnswers[partKey][section._id]) formattedAnswers[partKey][section._id] = {};
-            section.subSections?.forEach((subSection: FormSubSection) => {
-              if (!formattedAnswers[partKey][section._id][subSection._id]) {
-                formattedAnswers[partKey][section._id][subSection._id] = [{}];
+          part.sections?.forEach((section) => {
+            if (!formattedAnswers[partKey][section.key]) formattedAnswers[partKey][section.key] = {};
+            section.subSections?.forEach((subSection) => {
+              if (!formattedAnswers[partKey][section.key][subSection.key]) {
+                formattedAnswers[partKey][section.key][subSection.key] = [{}];
               }
-              const instances = formattedAnswers[partKey][section._id][subSection._id];
+              const instances = formattedAnswers[partKey][section.key][subSection.key];
               if (Array.isArray(instances)) {
                 instances.forEach((instance: any) => {
                   const phoneField = subSection.fields?.find((f: any) => f.key === 'phone' || f.key === 'phoneNumber' || f.key === 'mobileNumber');
@@ -321,7 +327,7 @@ export default function SuperAdminStudentFormEditPage() {
         if (ps.length > 0) {
           const ms = ps[0].subSections.find((s: any) => s.title === 'Mailing Address');
           if (value && ms) {
-            const mv = newValues[partKey][sectionId][ms._id]?.[0] || {};
+            const mv = newValues[partKey][sectionId][ms.key]?.[0] || {};
             newValues[partKey][sectionId][subSectionId][index]['permanentAddress1'] = mv['mailingAddress1'] || '';
             newValues[partKey][sectionId][subSectionId][index]['permanentAddress2'] = mv['mailingAddress2'] || '';
             newValues[partKey][sectionId][subSectionId][index]['permanentCountry'] = mv['mailingCountry'] || '';
@@ -669,14 +675,16 @@ export default function SuperAdminStudentFormEditPage() {
                   ) : (
                     <FormSectionRenderer
                       section={currentSection}
-                      values={formValues[currentPart.key]?.[currentSection._id] || {}}
-                      onChange={(subSectionId, index, key, value) => handleFieldChange(currentPart.key, currentSection._id, subSectionId, index, key, value)}
-                      onAddInstance={(subSectionId) => handleAddInstance(currentPart.key, currentSection._id, subSectionId)}
-                      onRemoveInstance={(subSectionId, index) => handleRemoveInstance(currentPart.key, currentSection._id, subSectionId, index)}
+                      values={formValues[currentPart.key]?.[currentSection.key] || {}}
+                      onChange={(subSectionId, index, key, value) => handleFieldChange(currentPart.key, currentSection.key, subSectionId, index, key, value)}
+                      onAddInstance={(subSectionId) => handleAddInstance(currentPart.key, currentSection.key, subSectionId)}
+                      onRemoveInstance={(subSectionId, index) => handleRemoveInstance(currentPart.key, currentSection.key, subSectionId, index)}
                       isAdminEdit={true}
                       registrationId={registrationId}
                       studentId={studentId}
                       userRole="SUPER_ADMIN"
+                      readOnlyKeys={currentPart.key === 'PROFILE' && currentSection.title === 'Personal Details' ? ['firstName', 'middleName', 'lastName'] : undefined}
+                      noDelete={currentPart.key === 'PROFILE' && currentSection.title === 'Parental Details'}
                     />
                   )}
                 </div>

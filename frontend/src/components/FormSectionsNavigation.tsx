@@ -20,7 +20,7 @@ export default function FormSectionsNavigation({
       <div className="flex gap-2 overflow-x-auto">
         {sections.map((section, index) => (
           <button
-            key={section._id}
+            key={section.key}
             onClick={() => onSectionChange(index)}
             className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
               currentSectionIndex === index

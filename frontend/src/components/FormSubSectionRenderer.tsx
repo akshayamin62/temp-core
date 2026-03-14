@@ -1,11 +1,11 @@
-'use client';
+﻿'use client';
 
-import { FormSubSection } from '@/types';
+import { SubSectionConfig } from '@/config/formConfig';
 import FormFieldRenderer from './FormFieldRenderer';
 import { useState } from 'react';
 
 interface FormSubSectionRendererProps {
-  subSection: FormSubSection;
+  subSection: SubSectionConfig;
   values: any[];
   onChange: (index: number, key: string, value: any) => void;
   onAdd?: () => void;
@@ -103,7 +103,7 @@ export default function FormSubSectionRenderer({
       {/* Render each instance */}
       {values.map((instanceValues, index) => (
         <div
-          key={`${subSection._id}-${index}`}
+          key={`${subSection.key}-${index}`}
           className="bg-white rounded-lg border border-gray-200 overflow-hidden"
         >
           {/* Instance Header (for repeatable sections) */}
@@ -181,7 +181,7 @@ export default function FormSubSectionRenderer({
                   // CHECKBOX fields - Full width for "Same as Mailing Address"
                   if (field.type === 'CHECKBOX' && field.key === 'sameAsMailingAddress') {
                     renderedFields.push(
-                      <div key={field._id} className="mb-5">
+                      <div key={field.key} className="mb-5">
                         <FormFieldRenderer
                           field={field}
                           value={instanceValues?.[field.key]}
@@ -198,7 +198,7 @@ export default function FormSubSectionRenderer({
                   // TEXTAREA and FILE fields - Always full width
                   else if (field.type === 'TEXTAREA' || field.type === 'FILE') {
                     renderedFields.push(
-                      <div key={field._id} className="mb-4">
+                      <div key={field.key} className="mb-4">
                         <FormFieldRenderer
                           field={field}
                           value={instanceValues?.[field.key]}
@@ -331,7 +331,7 @@ export default function FormSubSectionRenderer({
                         i += 2;
                       } else {
                         renderedFields.push(
-                          <div key={field._id} className="mb-4">
+                          <div key={field.key} className="mb-4">
                             <FormFieldRenderer
                               field={field}
                               value={instanceValues?.[field.key]}
@@ -424,7 +424,7 @@ export default function FormSubSectionRenderer({
                       i += 2;
                     } else {
                       renderedFields.push(
-                        <div key={field._id} className="mb-4">
+                        <div key={field.key} className="mb-4">
                           <FormFieldRenderer
                             field={field}
                             value={instanceValues?.[field.key]}

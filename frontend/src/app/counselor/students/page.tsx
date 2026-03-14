@@ -7,6 +7,7 @@ import { User, USER_ROLE } from '@/types';
 import CounselorLayout from '@/components/CounselorLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
+import { BACKEND_URL } from '@/lib/ivyApi';
 
 interface StudentData {
   _id: string;
@@ -16,6 +17,7 @@ interface StudentData {
     middleName?: string;
     lastName?: string;
     email: string;
+    profilePicture?: string;
     isVerified: boolean;
     isActive: boolean;
     createdAt: string;
@@ -201,18 +203,9 @@ export default function CounselorStudentsPage() {
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setStatusFilter('');
-                  }}
-                  className="px-4 py-2.5 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  Clear Filters
-                </button>
               </div>
             </div>
-
+            
             {/* Students Table */}
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -241,11 +234,15 @@ export default function CounselorStudentsPage() {
                       <tr key={student._id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                              <span className="text-blue-600 font-semibold text-sm">
-                                {getInitials(student.user)}
-                              </span>
-                            </div>
+                            {student.user.profilePicture ? (
+                              <img src={`${BACKEND_URL}/uploads/${student.user.profilePicture}`} alt="" className="w-10 h-10 rounded-full object-cover mr-3" />
+                            ) : (
+                              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                <span className="text-blue-600 font-semibold text-sm">
+                                  {getInitials(student.user)}
+                                </span>
+                              </div>
+                            )}
                             <div>
                               <div className="font-medium text-gray-900">
                                 {getFullName(student.user) || 'N/A'}
@@ -278,12 +275,8 @@ export default function CounselorStudentsPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <button
                             onClick={() => handleViewStudent(student._id)}
-                            className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-xs inline-flex items-center gap-1"
+                            className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-xs"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
                             View Details
                           </button>
                         </td>
@@ -322,13 +315,6 @@ export default function CounselorStudentsPage() {
               </table>
             </div>
           </div>
-
-          {/* Results count */}
-          {students.length > 0 && (
-            <div className="mt-6 text-sm text-gray-600">
-              Showing {filteredStudents.length} of {students.length} total students
-            </div>
-          )}
         </div>
       </CounselorLayout>
     </>

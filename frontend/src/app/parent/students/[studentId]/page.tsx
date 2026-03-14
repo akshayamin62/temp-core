@@ -134,7 +134,11 @@ export default function ParentStudentDetailPage() {
     }
   };
 
-  const handleViewFormData = (registrationId: string) => {
+  const handleViewFormData = (registrationId: string, serviceName?: string) => {
+    if (serviceName === 'Ivy League Preparation' && student?.userId?._id) {
+      router.push(`/ivy-league/student?studentId=${student.userId._id}&readOnly=true`);
+      return;
+    }
     router.push(`/parent/students/${studentId}/registration/${registrationId}`);
   };
 
@@ -316,14 +320,14 @@ export default function ParentStudentDetailPage() {
                             )}
                           </div>
                           <button
-                            onClick={() => handleViewFormData(registration._id)}
+                            onClick={() => handleViewFormData(registration._id, registration.serviceId?.name)}
                             className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium inline-flex items-center gap-2"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            View Form Data
+                            View
                           </button>
                         </div>
                       </div>

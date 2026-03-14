@@ -15,8 +15,6 @@ import FollowUp, { FOLLOWUP_STATUS } from "../models/FollowUp";
 import ServiceProvider from "../models/ServiceProvider";
 import Parent from "../models/Parent";
 import StudentFormAnswer from "../models/StudentFormAnswer";
-import FormPart, { FormPartKey } from "../models/FormPart";
-import FormSection from "../models/FormSection";
 import { generateSlug, getUniqueSlug } from "./leadController";
 // import { sendEmail } from "../utils/email";
 
@@ -2247,43 +2245,33 @@ export const editUserByRole = async (req: Request, res: Response): Promise<Respo
 
           // Sync to StudentFormAnswer (parental details section)
           try {
-            const profilePart = await FormPart.findOne({ key: FormPartKey.PROFILE });
-            if (profilePart) {
-              const parentalSection = await FormSection.findOne({
-                partId: profilePart._id,
-                title: "Parental Details",
-                isActive: true,
-              });
-              if (parentalSection) {
-                const sKey = parentalSection._id.toString();
-                const answerDoc = await StudentFormAnswer.findOne({
-                  studentId: student._id,
-                  partKey: "PROFILE",
-                });
-                if (answerDoc?.answers?.[sKey]) {
-                  let changed = false;
-                  for (const subKey of Object.keys(answerDoc.answers[sKey])) {
-                    const entries: any[] = answerDoc.answers[sKey][subKey];
-                    if (!Array.isArray(entries)) continue;
-                    for (const entry of entries) {
-                      if (entry.parentEmail?.trim().toLowerCase() === user.email.toLowerCase()) {
-                        entry.parentFirstName = updatedParentUser.firstName;
-                        entry.parentMiddleName = updatedParentUser.middleName || "";
-                        entry.parentLastName = updatedParentUser.lastName;
-                        entry.parentEmail = updatedParentUser.email;
-                        entry.parentMobile = parentDoc.mobileNumber || entry.parentMobile;
-                        entry.parentRelationship = parentDoc.relationship || entry.parentRelationship;
-                        entry.parentQualification = parentDoc.qualification || entry.parentQualification;
-                        entry.parentOccupation = parentDoc.occupation || entry.parentOccupation;
-                        changed = true;
-                      }
-                    }
-                  }
-                  if (changed) {
-                    answerDoc.markModified('answers');
-                    await answerDoc.save();
+            const sKey = "parentalDetails";
+            const answerDoc = await StudentFormAnswer.findOne({
+              studentId: student._id,
+              partKey: "PROFILE",
+            });
+            if (answerDoc?.answers?.[sKey]) {
+              let changed = false;
+              for (const subKey of Object.keys(answerDoc.answers[sKey])) {
+                const entries: any[] = answerDoc.answers[sKey][subKey];
+                if (!Array.isArray(entries)) continue;
+                for (const entry of entries) {
+                  if (entry.parentEmail?.trim().toLowerCase() === user.email.toLowerCase()) {
+                    entry.parentFirstName = updatedParentUser.firstName;
+                    entry.parentMiddleName = updatedParentUser.middleName || "";
+                    entry.parentLastName = updatedParentUser.lastName;
+                    entry.parentEmail = updatedParentUser.email;
+                    entry.parentMobile = parentDoc.mobileNumber || entry.parentMobile;
+                    entry.parentRelationship = parentDoc.relationship || entry.parentRelationship;
+                    entry.parentQualification = parentDoc.qualification || entry.parentQualification;
+                    entry.parentOccupation = parentDoc.occupation || entry.parentOccupation;
+                    changed = true;
                   }
                 }
+              }
+              if (changed) {
+                answerDoc.markModified('answers');
+                await answerDoc.save();
               }
             }
           } catch (syncErr) {

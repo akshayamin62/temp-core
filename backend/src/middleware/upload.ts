@@ -71,6 +71,29 @@ export const uploadAdminLogo = multer({
   },
 });
 
+// Profile picture upload
+const profilePicStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    const uploadsDir = path.join(getUploadBaseDir(), 'profile-pictures');
+    ensureDir(uploadsDir);
+    cb(null, uploadsDir);
+  },
+  filename: (_req, file, cb) => {
+    const timestamp = Date.now();
+    const ext = path.extname(file.originalname);
+    const filename = `profile_${timestamp}${ext}`;
+    cb(null, filename);
+  },
+});
+
+export const uploadProfilePicture = multer({
+  storage: profilePicStorage,
+  fileFilter: imageFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max for profile pictures
+  },
+});
+
 // Error handler for multer errors
 export const handleMulterError = (err: any, _req: any, res: any, next: any) => {
   if (err instanceof multer.MulterError) {

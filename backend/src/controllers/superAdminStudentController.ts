@@ -13,6 +13,7 @@ import { sendStaffMessageSms } from '../utils/sms';
 import StudentServiceRegistration from '../models/StudentServiceRegistration';
 import StudentFormAnswer from '../models/StudentFormAnswer';
 import { USER_ROLE } from '../types/roles';
+import { syncParentsFromFormAnswers } from '../utils/parentSync';
 
 /**
  * Get all students with their registrations
@@ -97,9 +98,43 @@ export const getAllStudents = async (req: AuthRequest, res: Response): Promise<R
       
       studentQuery = { _id: { $in: studentIds } };
     }
+
+    // If user is an Ivy Expert, filter by active assignments only
+    if (userRole === USER_ROLE.IVY_EXPERT) {
+      const ivyExpert = await IvyExpert.findOne({ userId });
+      if (!ivyExpert) {
+        return res.status(404).json({
+          success: false,
+          message: 'Ivy Expert record not found',
+        });
+      }
+
+      const registrations = await StudentServiceRegistration.find({
+        $or: [
+          { activeIvyExpertId: ivyExpert._id },
+          { activeIvyExpertId: { $exists: false }, primaryIvyExpertId: ivyExpert._id },
+          { activeIvyExpertId: null, primaryIvyExpertId: ivyExpert._id }
+        ]
+      }).select('studentId');
+
+      const studentIds = [...new Set(registrations.map(r => r.studentId.toString()))];
+
+      if (studentIds.length === 0) {
+        return res.status(200).json({
+          success: true,
+          message: 'Students fetched successfully',
+          data: {
+            students: [],
+            total: 0,
+          },
+        });
+      }
+
+      studentQuery = { _id: { $in: studentIds } };
+    }
     
     const students = await Student.find(studentQuery)
-      .populate('userId', 'firstName middleName lastName email isVerified isActive createdAt')
+      .populate('userId', 'firstName middleName lastName email profilePicture isVerified isActive createdAt')
       .populate({
         path: 'adminId',
         select: 'companyName',
@@ -210,7 +245,7 @@ export const getStudentDetails = async (req: AuthRequest, res: Response): Promis
     const user = await User.findById(userId);
 
     const student = await Student.findById(studentId)
-      .populate('userId', 'firstName middleName lastName email role isVerified isActive createdAt')
+      .populate('userId', 'firstName middleName lastName email role profilePicture isVerified isActive createdAt')
       .populate({
         path: 'adminId',
         populate: {
@@ -339,6 +374,31 @@ export const getStudentDetails = async (req: AuthRequest, res: Response): Promis
       }
     }
 
+    // If user is IVY_EXPERT, verify they are active ivy expert for at least one registration
+    if (user?.role === USER_ROLE.IVY_EXPERT) {
+      const ivyExpert = await IvyExpert.findOne({ userId });
+
+      if (!ivyExpert) {
+        return res.status(404).json({
+          success: false,
+          message: 'Ivy Expert record not found',
+        });
+      }
+
+      const hasAccess = registrations.some(reg => {
+        const activeIvyExpertIdValue = reg.activeIvyExpertId || reg.primaryIvyExpertId;
+        const activeIvyExpertIdString = activeIvyExpertIdValue?._id?.toString() || activeIvyExpertIdValue?.toString();
+        return activeIvyExpertIdString === ivyExpert._id.toString();
+      });
+
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. You are not the active Ivy Expert for this student.',
+        });
+      }
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Student details fetched successfully',
@@ -371,7 +431,7 @@ export const getStudentFormAnswers = async (req: AuthRequest, res: Response): Pr
       _id: registrationId,
       studentId,
     })
-      .populate('serviceId', 'name')
+      .populate('serviceId', 'name slug')
       .populate('activeOpsId')
       .lean()
       .exec();
@@ -439,6 +499,33 @@ export const getStudentFormAnswers = async (req: AuthRequest, res: Response): Pr
       }
     }
 
+    // If user is IVY_EXPERT, verify they are the active ivy expert for this registration
+    if (user?.role === USER_ROLE.IVY_EXPERT) {
+      const ivyExpert = await IvyExpert.findOne({ userId }).lean().exec();
+      if (!ivyExpert) {
+        return res.status(404).json({
+          success: false,
+          message: 'Ivy Expert record not found',
+        });
+      }
+
+      const fullRegistration = await StudentServiceRegistration.findById(registrationId)
+        .populate('primaryIvyExpertId')
+        .populate('activeIvyExpertId')
+        .lean()
+        .exec();
+
+      const activeIvyExpertIdValue = fullRegistration?.activeIvyExpertId || fullRegistration?.primaryIvyExpertId;
+      const activeIvyExpertIdString = activeIvyExpertIdValue?._id?.toString() || activeIvyExpertIdValue?.toString();
+
+      if (activeIvyExpertIdString !== ivyExpert._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. You are not the active Ivy Expert for this registration.',
+        });
+      }
+    }
+
     // Get all form answers for this student (optimized with lean)
     const answers = await StudentFormAnswer.find({
       studentId,
@@ -478,6 +565,56 @@ export const updateStudentFormAnswers = async (req: AuthRequest, res: Response):
   try {
     const { studentId, partKey } = req.params;
     const { answers } = req.body;
+    const callerRole = req.user?.role;
+
+    // Guard name fields for ALL roles, and parental entries for non-super-admin
+    if (partKey === 'PROFILE' && answers) {
+      const existingAnswer = await StudentFormAnswer.findOne({ studentId, partKey: 'PROFILE' });
+      if (existingAnswer?.answers) {
+        // Guard name fields (firstName, middleName, lastName) for ALL roles
+        const existingPI = existingAnswer.answers?.personalDetails?.personalInformation;
+        const incomingPI = answers?.personalDetails?.personalInformation;
+        if (existingPI?.[0] && incomingPI) {
+          if (!incomingPI[0]) incomingPI[0] = {};
+          for (const field of ['firstName', 'middleName', 'lastName']) {
+            if (existingPI[0][field] !== undefined) {
+              incomingPI[0][field] = existingPI[0][field];
+            }
+          }
+        }
+        // Guard parental entries for non-super-admin
+        if (callerRole !== USER_ROLE.SUPER_ADMIN) {
+          const existingPG = existingAnswer.answers?.parentalDetails?.parentGuardian;
+          const incomingPG = answers?.parentalDetails?.parentGuardian;
+          if (Array.isArray(existingPG) && Array.isArray(incomingPG)) {
+            const merged: any[] = [];
+            for (let i = 0; i < Math.max(existingPG.length, incomingPG.length); i++) {
+              const existing = existingPG[i];
+              const hasFilled = existing && Object.values(existing).some((v: any) => v && String(v).trim() !== '');
+              if (hasFilled) merged.push(existing);
+              else if (incomingPG[i]) merged.push(incomingPG[i]);
+            }
+            if (!answers.parentalDetails) answers.parentalDetails = {};
+            answers.parentalDetails.parentGuardian = merged.slice(0, 2);
+          }
+        }
+      }
+    }
+
+    // Extract phone number from PROFILE answers
+    if (partKey === 'PROFILE' && answers) {
+      const pi = answers?.personalDetails?.personalInformation;
+      if (Array.isArray(pi) && pi[0]) {
+        const phone = pi[0].phoneNumber || pi[0].mobileNumber || pi[0].phone;
+        if (phone && String(phone).trim()) {
+          const student = await Student.findById(studentId);
+          if (student) {
+            student.mobileNumber = String(phone).trim();
+            await student.save();
+          }
+        }
+      }
+    }
 
     // Find or create the answer document
     let answerDoc = await StudentFormAnswer.findOne({
@@ -496,6 +633,14 @@ export const updateStudentFormAnswers = async (req: AuthRequest, res: Response):
         answers,
         lastSavedAt: new Date(),
       });
+    }
+
+    // Sync parent records when PROFILE part is saved
+    if (partKey === 'PROFILE') {
+      const parentEntries = answerDoc.answers?.parentalDetails?.parentGuardian;
+      if (Array.isArray(parentEntries) && parentEntries.length > 0) {
+        await syncParentsFromFormAnswers(studentId, parentEntries);
+      }
     }
 
     return res.status(200).json({

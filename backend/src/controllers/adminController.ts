@@ -122,7 +122,7 @@ export const getCounselors = async (req: AuthRequest, res: Response): Promise<Re
 
     // Find counselors created by this admin
     const counselors = await Counselor.find({ adminId: adminUserId })
-      .populate('userId', 'firstName middleName lastName email isActive isVerified')
+      .populate('userId', 'firstName middleName lastName email profilePicture isActive isVerified')
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -224,7 +224,7 @@ export const getCounselorDetail = async (req: AuthRequest, res: Response): Promi
     const counselor = await Counselor.findOne({
       _id: counselorId,
       adminId: adminUserId,
-    }).populate('userId', 'firstName middleName lastName email isActive isVerified');
+    }).populate('userId', 'firstName middleName lastName email profilePicture isActive isVerified');
 
     if (!counselor) {
       return res.status(404).json({

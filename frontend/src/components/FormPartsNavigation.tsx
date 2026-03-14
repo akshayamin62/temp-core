@@ -38,7 +38,7 @@ export default function FormPartsNavigation({
         )}
         {formStructure.map((formStruct, index) => (
           <button
-            key={formStruct.part._id}
+            key={formStruct.part.key}
             onClick={() => onPartChange(index)}
             className={`flex-1 px-6 py-4 font-medium transition-colors border-b-2 ${
               !isDashboardActive && currentPartIndex === index

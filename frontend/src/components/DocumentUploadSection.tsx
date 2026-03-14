@@ -11,7 +11,7 @@ import { Upload, Download, Check, X, Plus, FileText, AlertCircle, Trash2 } from 
 interface DocumentUploadSectionProps {
   registrationId: string;
   studentId: string;
-  userRole: 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN' | 'COUNSELOR';
+  userRole: 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN' | 'COUNSELOR' | 'EDUPLAN_COACH' | 'IVY_EXPERT' | 'PARENT';
   sectionTitle: string;
 }
 

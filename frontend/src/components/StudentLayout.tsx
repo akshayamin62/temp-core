@@ -3,6 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
+import { BACKEND_URL } from '@/lib/ivyApi';
 import { serviceAPI } from '@/lib/api';
 
 interface StudentLayoutProps {
@@ -16,7 +17,7 @@ interface StudentLayoutProps {
   showDashboard?: boolean;
   isDashboardActive?: boolean;
   onDashboardClick?: () => void;
-  user?: { firstName?: string; middleName?: string; lastName?: string; email: string } | null;
+  user?: { firstName?: string; middleName?: string; lastName?: string; email: string; profilePicture?: string } | null;
   isEducationPlanning?: boolean;
   activeEduPlanView?: string;
   onEduPlanViewChange?: (view: string) => void;
@@ -218,7 +219,7 @@ export default function StudentLayout({
             })
           )}
           {formStructure.map((part, i) =>
-            navBtn(part.part._id, part.part.title, getPartIcon(part.part.title),
+            navBtn(part.part.key, part.part.title, getPartIcon(part.part.title),
               currentPartIndex === i && activeEduPlanView === 'form',
               () => { onPartChange(i); onSectionChange(0); }
             )
@@ -234,7 +235,7 @@ export default function StudentLayout({
           navBtn('dashboard', 'Dashboard', Icon.dashboard, isDashboardActive, () => onDashboardClick?.())
         }
         {formStructure.map((part, i) =>
-          navBtn(part.part._id, part.part.title, getPartIcon(part.part.title),
+          navBtn(part.part.key, part.part.title, getPartIcon(part.part.title),
             currentPartIndex === i && !isDashboardActive,
             () => { onPartChange(i); onSectionChange(0); }
           )
@@ -284,15 +285,28 @@ export default function StudentLayout({
         {user && (
           <div className="border-t border-gray-200 p-4">
             {sidebarOpen ? (
-              <div className="mb-3">
-                <p className="text-sm font-medium text-gray-900 truncate">{getFullName(user)}</p>
-                <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              <div className="mb-3 flex items-center gap-2">
+                {user?.profilePicture ? (
+                  <img src={`${BACKEND_URL}/uploads/${user.profilePicture}`} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-blue-600 font-semibold text-sm">{getInitials(user)}</span>
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{getFullName(user)}</p>
+                  <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                </div>
               </div>
             ) : (
               <div className="mb-3 flex justify-center">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold text-sm">{getInitials(user)}</span>
-                </div>
+                {user?.profilePicture ? (
+                  <img src={`${BACKEND_URL}/uploads/${user.profilePicture}`} alt="" className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600 font-semibold text-sm">{getInitials(user)}</span>
+                  </div>
+                )}
               </div>
             )}
             <button

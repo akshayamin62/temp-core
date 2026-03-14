@@ -7,6 +7,7 @@ import { User, USER_ROLE } from '@/types';
 import AdminLayout from '@/components/AdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
+import { BACKEND_URL } from '@/lib/ivyApi';
 
 interface CounselorData {
   _id: string;
@@ -16,6 +17,7 @@ interface CounselorData {
     middleName?: string;
     lastName?: string;
     email: string;
+    profilePicture?: string;
     isVerified: boolean;
     isActive: boolean;
   };
@@ -375,11 +377,15 @@ export default function CounselorsListPage() {
                     <tr key={counselor._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                            <span className="text-blue-600 font-semibold">
-                              {getInitials(counselor.userId)}
-                            </span>
-                          </div>
+                          {counselor.userId.profilePicture ? (
+                            <img src={`${BACKEND_URL}/uploads/${counselor.userId.profilePicture}`} alt="" className="w-10 h-10 rounded-full object-cover mr-3" />
+                          ) : (
+                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-blue-600 font-semibold">
+                                {getInitials(counselor.userId)}
+                              </span>
+                            </div>
+                          )}
                           <div className="font-medium text-gray-900">{getFullName(counselor.userId) || 'N/A'}</div>
                         </div>
                       </td>

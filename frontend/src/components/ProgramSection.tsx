@@ -73,7 +73,7 @@ interface Program {
   };
 }
 
-type UserRole = 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN' | 'COUNSELOR';
+type UserRole = 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN' | 'COUNSELOR' | 'PARENT' | 'EDUPLAN_COACH' | 'IVY_EXPERT';
 type SectionType = 'available' | 'applied';
 
 interface ProgramSectionProps {
@@ -170,7 +170,7 @@ export default function ProgramSection({
         response = await programAPI.getSuperAdminStudentPrograms(studentId, sectionType === 'applied' ? 'applied' : 'all', registrationId);
         const progs = response.data.data.programs || [];
         setPrograms(sectionType === 'available' ? sortAvailablePrograms(progs) : progs);
-      } else if ((userRole === 'ADMIN' || userRole === 'COUNSELOR') && studentId) {
+      } else if ((userRole === 'ADMIN' || userRole === 'COUNSELOR' || userRole === 'PARENT') && studentId) {
         response = await axios.get(
           `${API_URL}/programs/ops/student/${studentId}/programs?section=${sectionType === 'applied' ? 'applied' : 'all'}${regParam}`,
           { headers: { Authorization: `Bearer ${token}` } }
@@ -822,7 +822,7 @@ export default function ProgramSection({
                             </div>
                             {/* Chat buttons on the right */}
                             <div className="flex gap-2 shrink-0">
-                              {userRole === 'STUDENT' ? (
+                              {(userRole === 'STUDENT' || userRole === 'PARENT') ? (
                                 <button
                                   onClick={() => {
                                     setSelectedChatProgram(program);

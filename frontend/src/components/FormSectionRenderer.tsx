@@ -1,12 +1,12 @@
 'use client';
 
-import { FormSection } from '@/types';
+import { SectionConfig } from '@/config/formConfig';
 import FormSubSectionRenderer from './FormSubSectionRenderer';
 import TestSubSectionRenderer from './TestSubSectionRenderer';
 import DocumentUploadSection from './DocumentUploadSection';
 
 interface FormSectionRendererProps {
-  section: FormSection;
+  section: SectionConfig;
   values: any;
   onChange: (subSectionId: string, index: number, key: string, value: any) => void;
   onAddInstance: (subSectionId: string) => void;
@@ -15,7 +15,7 @@ interface FormSectionRendererProps {
   isAdminEdit?: boolean;
   registrationId?: string;
   studentId?: string;
-  userRole?: 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN' | 'COUNSELOR';
+  userRole?: 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN' | 'COUNSELOR' | 'EDUPLAN_COACH' | 'IVY_EXPERT' | 'PARENT';
   readOnly?: boolean;
   readOnlyKeys?: string[];
   noDelete?: boolean;
@@ -85,19 +85,19 @@ export default function FormSectionRenderer({
         {section.subSections
           .sort((a, b) => a.order - b.order)
           .map((subSection, idx) => {
-            const subSectionValues = values[subSection._id] || [{}];
+            const subSectionValues = values[subSection.key] || [{}];
             
             // Use TestSubSectionRenderer for test sections
             if (isTestSection) {
               return (
                 <TestSubSectionRenderer
-                  key={subSection._id}
+                  key={subSection.key}
                   subSection={subSection}
                   values={subSectionValues}
                   onChange={(index, key, value) =>
-                    onChange(subSection._id, index, key, value)
+                    onChange(subSection.key, index, key, value)
                   }
-                  errors={errors[subSection._id]}
+                  errors={errors[subSection.key]}
                   isAdminEdit={isAdminEdit}
                 />
               );
@@ -108,7 +108,7 @@ export default function FormSectionRenderer({
             
             // Use regular FormSubSectionRenderer for other sections
             return (
-              <div key={subSection._id}>
+              <div key={subSection.key}>
                 {isPermanentAddress && idx > 0 && (
                   <div className="my-6 border-t-2 border-gray-200"></div>
                 )}
@@ -116,11 +116,11 @@ export default function FormSectionRenderer({
                   subSection={subSection}
                   values={subSectionValues}
                   onChange={(index, key, value) =>
-                    onChange(subSection._id, index, key, value)
+                    onChange(subSection.key, index, key, value)
                   }
-                  onAdd={() => onAddInstance(subSection._id)}
-                  onRemove={(index) => onRemoveInstance(subSection._id, index)}
-                  errors={errors[subSection._id]}
+                  onAdd={() => onAddInstance(subSection.key)}
+                  onRemove={(index) => onRemoveInstance(subSection.key, index)}
+                  errors={errors[subSection.key]}
                   isAdminEdit={isAdminEdit}
                   readOnly={readOnly}
                   readOnlyKeys={readOnlyKeys}

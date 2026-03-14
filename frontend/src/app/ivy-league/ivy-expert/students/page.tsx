@@ -233,7 +233,7 @@ function IvyStudentsContent() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => router.push(`/ivy-league/ivy-expert?studentId=${s.studentId}&userId=${s.userId}&studentIvyServiceId=${s.studentIvyServiceId}`)}
+                          onClick={() => router.push(`/ivy-league/ivy-expert/${s.studentId}?serviceId=${s.studentIvyServiceId}`)}
                           className="px-3 py-1.5 rounded-lg text-xs bg-brand-600 text-white hover:bg-brand-700 transition-colors font-medium"
                         >
                           View Details

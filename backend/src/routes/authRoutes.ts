@@ -6,11 +6,14 @@ import {
   verifySignupOTP,
   getProfile,
   updateSPProfile,
+  uploadProfilePic,
+  removeProfilePic,
 } from "../controllers/authController";
 import {
   validateSignup,
 } from "../middleware/validate";
 import { authenticate } from "../middleware/auth";
+import { uploadProfilePicture } from "../middleware/upload";
 
 const router = Router();
 
@@ -23,6 +26,8 @@ router.post("/verify-otp", verifyOTP); // Verify OTP and login
 // Protected routes (require authentication)
 router.get("/profile", authenticate, getProfile);
 router.put("/sp-profile", authenticate, updateSPProfile);
+router.post("/profile-picture", authenticate, uploadProfilePicture.single('profilePicture'), uploadProfilePic);
+router.delete("/profile-picture", authenticate, removeProfilePic);
 
 export default router;
 

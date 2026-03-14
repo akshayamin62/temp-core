@@ -4,13 +4,66 @@ import Student from "../models/Student";
 import StudentServiceRegistration, {
   ServiceRegistrationStatus,
 } from "../models/StudentServiceRegistration";
-import FormPart, { FormPartKey } from "../models/FormPart";
-import FormSection from "../models/FormSection";
-import FormSubSection from "../models/FormSubSection";
-import FormField from "../models/FormField";
 import { AuthRequest } from "../types/auth";
 import { USER_ROLE } from "../types/roles";
 import { syncParentsFromFormAnswers } from "../utils/parentSync";
+import {
+  PROFILE_CONFIG,
+  PROFILE_PAGE_SECTIONS,
+} from "../config/formConfig";
+
+// ─── Helpers ───
+
+/** Extract phone from PROFILE answers → personalDetails.personalInformation[0].mobileNumber */
+function extractPhoneFromAnswers(answers: any): string | null {
+  const pi = answers?.personalDetails?.personalInformation;
+  if (Array.isArray(pi) && pi[0]) {
+    const v = pi[0].phoneNumber || pi[0].mobileNumber || pi[0].phone;
+    if (v && String(v).trim()) return String(v).trim();
+  }
+  return null;
+}
+
+/** Sync parents from saved parentalDetails.parentGuardian entries */
+async function syncParentsIfPresent(studentId: any, answers: any): Promise<void> {
+  const parentEntries = answers?.parentalDetails?.parentGuardian;
+  if (Array.isArray(parentEntries) && parentEntries.length > 0) {
+    await syncParentsFromFormAnswers(studentId, parentEntries);
+  }
+}
+
+/** Guard: preserve name fields (firstName, middleName, lastName) from existing answers */
+function guardNameFields(existingAnswers: any, incomingAnswers: any) {
+  const existingPI = existingAnswers?.personalDetails?.personalInformation;
+  const incomingPI = incomingAnswers?.personalDetails?.personalInformation;
+  if (existingPI?.[0] && incomingPI) {
+    if (!incomingPI[0]) incomingPI[0] = {};
+    for (const field of ['firstName', 'middleName', 'lastName']) {
+      if (existingPI[0][field] !== undefined) {
+        incomingPI[0][field] = existingPI[0][field];
+      }
+    }
+  }
+}
+
+/** Guard: prevent student from editing already-filled parent entries (allow adding new up to 2) */
+function guardParentEntries(existingAnswers: any, incomingAnswers: any) {
+  const existingPG = existingAnswers?.parentalDetails?.parentGuardian;
+  const incomingPG = incomingAnswers?.parentalDetails?.parentGuardian;
+  if (!Array.isArray(existingPG) || !Array.isArray(incomingPG)) return;
+  const merged: any[] = [];
+  for (let i = 0; i < Math.max(existingPG.length, incomingPG.length); i++) {
+    const existing = existingPG[i];
+    const hasFilled = existing && Object.values(existing).some((v: any) => v && String(v).trim() !== "");
+    if (hasFilled) {
+      merged.push(existing);
+    } else if (incomingPG[i]) {
+      merged.push(incomingPG[i]);
+    }
+  }
+  if (!incomingAnswers.parentalDetails) incomingAnswers.parentalDetails = {};
+  incomingAnswers.parentalDetails.parentGuardian = merged.slice(0, 2);
+}
 
 // Save form answers (part-wise for reusability across services)
 export const saveFormAnswers = async (req: AuthRequest, res: Response) => {
@@ -18,73 +71,45 @@ export const saveFormAnswers = async (req: AuthRequest, res: Response) => {
     const { registrationId, partKey, answers } = req.body;
     const userId = req.user?.userId;
 
-    // Get student record from userId
     const student = await Student.findOne({ userId });
     if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: "Student record not found",
-      });
+      return res.status(404).json({ success: false, message: "Student record not found" });
     }
 
-    // Verify registration belongs to student (for tracking)
     const registration = await StudentServiceRegistration.findOne({
       _id: registrationId,
       studentId: student._id,
     });
-
     if (!registration) {
-      return res.status(404).json({
-        success: false,
-        message: "Registration not found",
-      });
+      return res.status(404).json({ success: false, message: "Registration not found" });
     }
 
-    // Extract phone number from answers if present (PROFILE part)
+    // Extract phone number from PROFILE answers
     if (partKey === 'PROFILE' && answers) {
-      let studentUpdated = false;
-      
-      // Navigate through the nested structure: answers[sectionId][subSectionId][index]
-      for (const sectionId in answers) {
-        const sectionData = answers[sectionId];
-        if (typeof sectionData === 'object' && sectionData !== null) {
-          for (const subSectionId in sectionData) {
-            const subSectionData = sectionData[subSectionId];
-            if (Array.isArray(subSectionData)) {
-              // Check first instance (index 0)
-              const instanceData = subSectionData[0] || {};
-              
-              // Update phone number if present (check multiple possible keys)
-              const phoneValue = instanceData.phoneNumber || instanceData.mobileNumber || instanceData.phone;
-              if (phoneValue && phoneValue.trim()) {
-                student.mobileNumber = phoneValue.trim();
-                studentUpdated = true;
-              }
-            }
-          }
-        }
-      }
-      
-      // Save student updates if any
-      if (studentUpdated) {
+      const phone = extractPhoneFromAnswers(answers);
+      if (phone) {
+        student.mobileNumber = phone;
         await student.save();
       }
     }
 
     // Find or create answer document (linked to student, not registration)
-    // This allows answers to be reused across multiple services
     let answerDoc = await StudentFormAnswer.findOne({
       studentId: student._id,
       partKey,
     });
 
+    // Guard name fields and parent entries for PROFILE saves
+    if (partKey === 'PROFILE' && answerDoc) {
+      guardNameFields(answerDoc.answers, answers);
+      guardParentEntries(answerDoc.answers, answers);
+    }
+
     if (answerDoc) {
-      // Update existing - merge new answers with existing
       answerDoc.answers = { ...answerDoc.answers, ...answers };
       answerDoc.lastSavedAt = new Date();
       await answerDoc.save();
     } else {
-      // Create new
       answerDoc = await StudentFormAnswer.create({
         studentId: student._id,
         partKey,
@@ -101,30 +126,7 @@ export const saveFormAnswers = async (req: AuthRequest, res: Response) => {
 
     // Sync parent records when PROFILE part's Parental Details is saved
     if (partKey === 'PROFILE') {
-      try {
-        const profilePart = await FormPart.findOne({ key: FormPartKey.PROFILE });
-        if (profilePart) {
-          const parentalSection = await FormSection.findOne({
-            partId: profilePart._id,
-            title: "Parental Details",
-            isActive: true,
-          });
-          if (parentalSection) {
-            const sKey = parentalSection._id.toString();
-            const savedAnswers = answerDoc.answers?.[sKey];
-            if (savedAnswers) {
-              for (const subKey of Object.keys(savedAnswers)) {
-                const entries = savedAnswers[subKey];
-                if (Array.isArray(entries) && entries.length > 0) {
-                  await syncParentsFromFormAnswers(student._id, entries);
-                }
-              }
-            }
-          }
-        }
-      } catch (syncError) {
-        console.error("⚠️ Parent sync after form save failed:", syncError);
-      }
+      await syncParentsIfPresent(student._id, answerDoc.answers);
     }
 
     return res.status(200).json({
@@ -319,52 +321,13 @@ export const getStudentProfileData = async (req: AuthRequest, res: Response) => 
 
     const student = await Student.findOne({ userId });
     if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: "Student record not found",
-      });
+      return res.status(404).json({ success: false, message: "Student record not found" });
     }
 
-    // Get PROFILE part  
-    const profilePart = await FormPart.findOne({ key: FormPartKey.PROFILE });
-    if (!profilePart) {
-      return res.status(404).json({ success: false, message: "Profile form part not found" });
-    }
-
-    // Get sections for profile (only the 4 relevant ones)
-    const sectionTitles = ["Personal Details", "Parental Details", "Academic Qualification", "Work Experience"];
-    const sections = await FormSection.find({
-      partId: profilePart._id,
-      title: { $in: sectionTitles },
-      isActive: true,
-    }).sort({ order: 1 });
-
-    // Get subsections and fields for each section
-    const formStructure = [];
-    for (const section of sections) {
-      const subSections = await FormSubSection.find({
-        sectionId: section._id,
-        isActive: true,
-      }).sort({ order: 1 });
-
-      const subSectionsWithFields = [];
-      for (const subSection of subSections) {
-        const fields = await FormField.find({
-          subSectionId: subSection._id,
-          isActive: true,
-        }).sort({ order: 1 });
-
-        subSectionsWithFields.push({
-          ...subSection.toObject(),
-          fields,
-        });
-      }
-
-      formStructure.push({
-        ...section.toObject(),
-        subSections: subSectionsWithFields,
-      });
-    }
+    // Return hardcoded profile sections (only the 4 relevant ones for /profile)
+    const formStructure = PROFILE_CONFIG.sections
+      .filter(s => PROFILE_PAGE_SECTIONS.includes(s.key))
+      .sort((a, b) => a.order - b.order);
 
     // Get saved answers
     const answerDoc = await StudentFormAnswer.findOne({
@@ -398,104 +361,27 @@ export const saveStudentProfileData = async (req: AuthRequest, res: Response) =>
 
     const student = await Student.findOne({ userId });
     if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: "Student record not found",
-      });
+      return res.status(404).json({ success: false, message: "Student record not found" });
     }
 
-    // Guard: Prevent student from editing name fields (firstName, middleName, lastName)
-    // in Personal Details section
+    // Guard: Prevent student from editing name fields
     if (answers) {
-      const profilePart = await FormPart.findOne({ key: FormPartKey.PROFILE });
-      if (profilePart) {
-        const personalSection = await FormSection.findOne({
-          partId: profilePart._id,
-          title: "Personal Details",
-          isActive: true,
-        });
-        if (personalSection) {
-          const personalKey = personalSection._id.toString();
-          const existingAnswer = await StudentFormAnswer.findOne({
-            studentId: student._id,
-            partKey: "PROFILE",
-          });
-          if (existingAnswer?.answers?.[personalKey] && answers[personalKey]) {
-            const existingData = existingAnswer.answers[personalKey];
-            const incomingData = answers[personalKey];
-            for (const subKey of Object.keys(incomingData)) {
-              const existingEntries: any[] = existingData[subKey] || [];
-              const incomingEntries: any[] = incomingData[subKey] || [];
-              if (existingEntries[0]) {
-                const nameFields = ['firstName', 'middleName', 'lastName'];
-                for (const field of nameFields) {
-                  if (existingEntries[0][field] !== undefined) {
-                    if (!incomingEntries[0]) incomingEntries[0] = {};
-                    incomingEntries[0][field] = existingEntries[0][field];
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        // Guard: Prevent student from editing already-filled Parental Details entries
-        // but allow adding new entries up to maxRepeat=2
-        const parentalSection = await FormSection.findOne({
-          partId: profilePart._id,
-          title: "Parental Details",
-          isActive: true,
-        });
-        if (parentalSection) {
-          const sectionKey = parentalSection._id.toString();
-          const existingAnswer = await StudentFormAnswer.findOne({
-            studentId: student._id,
-            partKey: "PROFILE",
-          });
-          if (existingAnswer?.answers?.[sectionKey] && answers[sectionKey]) {
-            const existingSectionData = existingAnswer.answers[sectionKey];
-            const incomingSectionData = answers[sectionKey];
-            // For each subsection, preserve already-filled entries
-            for (const subKey of Object.keys(incomingSectionData)) {
-              const existingEntries: any[] = existingSectionData[subKey] || [];
-              const incomingEntries: any[] = incomingSectionData[subKey] || [];
-              const merged: any[] = [];
-              for (let idx = 0; idx < Math.max(existingEntries.length, incomingEntries.length); idx++) {
-                const existing = existingEntries[idx];
-                const hasFilled = existing && Object.values(existing).some((v: any) => v && String(v).trim() !== "");
-                if (hasFilled) {
-                  // Keep existing entry — student can't overwrite
-                  merged.push(existing);
-                } else if (incomingEntries[idx]) {
-                  merged.push(incomingEntries[idx]);
-                }
-              }
-              // Cap at 2 entries
-              incomingSectionData[subKey] = merged.slice(0, 2);
-            }
-            answers[sectionKey] = incomingSectionData;
-          }
-        }
+      const existingAnswer = await StudentFormAnswer.findOne({
+        studentId: student._id,
+        partKey: "PROFILE",
+      });
+      if (existingAnswer?.answers) {
+        guardNameFields(existingAnswer.answers, answers);
+        guardParentEntries(existingAnswer.answers, answers);
       }
     }
 
     // Extract phone number if present
     if (answers) {
-      for (const sectionId in answers) {
-        const sectionData = answers[sectionId];
-        if (typeof sectionData === 'object' && sectionData !== null) {
-          for (const subSectionId in sectionData) {
-            const subSectionData = sectionData[subSectionId];
-            if (Array.isArray(subSectionData)) {
-              const instanceData = subSectionData[0] || {};
-              const phoneValue = instanceData.phoneNumber || instanceData.mobileNumber || instanceData.phone;
-              if (phoneValue && phoneValue.trim()) {
-                student.mobileNumber = phoneValue.trim();
-                await student.save();
-              }
-            }
-          }
-        }
+      const phone = extractPhoneFromAnswers(answers);
+      if (phone) {
+        student.mobileNumber = phone;
+        await student.save();
       }
     }
 
@@ -517,31 +403,8 @@ export const saveStudentProfileData = async (req: AuthRequest, res: Response) =>
       });
     }
 
-    // Sync parent records from Parental Details entries
-    try {
-      const profilePart2 = await FormPart.findOne({ key: FormPartKey.PROFILE });
-      if (profilePart2) {
-        const parentalSection2 = await FormSection.findOne({
-          partId: profilePart2._id,
-          title: "Parental Details",
-          isActive: true,
-        });
-        if (parentalSection2) {
-          const sKey = parentalSection2._id.toString();
-          const savedAnswers = answerDoc.answers?.[sKey];
-          if (savedAnswers) {
-            for (const subKey of Object.keys(savedAnswers)) {
-              const entries = savedAnswers[subKey];
-              if (Array.isArray(entries) && entries.length > 0) {
-                await syncParentsFromFormAnswers(student._id, entries);
-              }
-            }
-          }
-        }
-      }
-    } catch (syncError) {
-      console.error("⚠️ Parent sync after profile save failed:", syncError);
-    }
+    // Sync parent records
+    await syncParentsIfPresent(student._id, answerDoc.answers);
 
     return res.status(200).json({
       success: true,
@@ -565,51 +428,13 @@ export const getStudentProfileDataById = async (req: AuthRequest, res: Response)
 
     const student = await Student.findById(studentId).populate('userId', 'firstName middleName lastName email isVerified isActive');
     if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: "Student not found",
-      });
+      return res.status(404).json({ success: false, message: "Student not found" });
     }
 
-    // Get PROFILE part
-    const profilePart = await FormPart.findOne({ key: FormPartKey.PROFILE });
-    if (!profilePart) {
-      return res.status(404).json({ success: false, message: "Profile form part not found" });
-    }
-
-    // Get sections
-    const sectionTitles = ["Personal Details", "Parental Details", "Academic Qualification", "Work Experience"];
-    const sections = await FormSection.find({
-      partId: profilePart._id,
-      title: { $in: sectionTitles },
-      isActive: true,
-    }).sort({ order: 1 });
-
-    const formStructure = [];
-    for (const section of sections) {
-      const subSections = await FormSubSection.find({
-        sectionId: section._id,
-        isActive: true,
-      }).sort({ order: 1 });
-
-      const subSectionsWithFields = [];
-      for (const subSection of subSections) {
-        const fields = await FormField.find({
-          subSectionId: subSection._id,
-          isActive: true,
-        }).sort({ order: 1 });
-
-        subSectionsWithFields.push({
-          ...subSection.toObject(),
-          fields,
-        });
-      }
-
-      formStructure.push({
-        ...section.toObject(),
-        subSections: subSectionsWithFields,
-      });
-    }
+    // Return hardcoded profile sections
+    const formStructure = PROFILE_CONFIG.sections
+      .filter(s => PROFILE_PAGE_SECTIONS.includes(s.key))
+      .sort((a, b) => a.order - b.order);
 
     const answerDoc = await StudentFormAnswer.findOne({
       studentId: student._id,
@@ -644,65 +469,29 @@ export const saveStudentProfileDataById = async (req: AuthRequest, res: Response
 
     const student = await Student.findById(studentId);
     if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: "Student not found",
-      });
+      return res.status(404).json({ success: false, message: "Student not found" });
     }
 
-    // Guard: Protect student name fields for non-super-admin callers
-    if (answers && callerRole !== USER_ROLE.SUPER_ADMIN) {
-      const profilePart = await FormPart.findOne({ key: FormPartKey.PROFILE });
-      if (profilePart) {
-        const personalSection = await FormSection.findOne({
-          partId: profilePart._id,
-          title: "Personal Details",
-          isActive: true,
-        });
-        if (personalSection) {
-          const personalKey = personalSection._id.toString();
-          const existingAnswer = await StudentFormAnswer.findOne({
-            studentId: student._id,
-            partKey: "PROFILE",
-          });
-          if (existingAnswer?.answers?.[personalKey] && answers[personalKey]) {
-            const existingData = existingAnswer.answers[personalKey];
-            const incomingData = answers[personalKey];
-            for (const subKey of Object.keys(incomingData)) {
-              const existingEntries: any[] = existingData[subKey] || [];
-              const incomingEntries: any[] = incomingData[subKey] || [];
-              if (existingEntries[0]) {
-                const nameFields = ['firstName', 'middleName', 'lastName'];
-                for (const field of nameFields) {
-                  if (existingEntries[0][field] !== undefined) {
-                    if (!incomingEntries[0]) incomingEntries[0] = {};
-                    incomingEntries[0][field] = existingEntries[0][field];
-                  }
-                }
-              }
-            }
-          }
+    // Guard: Protect name fields for ALL roles, and parent entries for non-super-admin
+    if (answers) {
+      const existingAnswer = await StudentFormAnswer.findOne({
+        studentId: student._id,
+        partKey: "PROFILE",
+      });
+      if (existingAnswer?.answers) {
+        guardNameFields(existingAnswer.answers, answers);
+        if (callerRole !== USER_ROLE.SUPER_ADMIN) {
+          guardParentEntries(existingAnswer.answers, answers);
         }
       }
     }
 
     // Extract phone number if present
     if (answers) {
-      for (const sectionId in answers) {
-        const sectionData = answers[sectionId];
-        if (typeof sectionData === 'object' && sectionData !== null) {
-          for (const subSectionId in sectionData) {
-            const subSectionData = sectionData[subSectionId];
-            if (Array.isArray(subSectionData)) {
-              const instanceData = subSectionData[0] || {};
-              const phoneValue = instanceData.phoneNumber || instanceData.mobileNumber || instanceData.phone;
-              if (phoneValue && phoneValue.trim()) {
-                student.mobileNumber = phoneValue.trim();
-                await student.save();
-              }
-            }
-          }
-        }
+      const phone = extractPhoneFromAnswers(answers);
+      if (phone) {
+        student.mobileNumber = phone;
+        await student.save();
       }
     }
 
@@ -724,31 +513,8 @@ export const saveStudentProfileDataById = async (req: AuthRequest, res: Response
       });
     }
 
-    // Sync parent records from Parental Details entries
-    try {
-      const profilePart = await FormPart.findOne({ key: FormPartKey.PROFILE });
-      if (profilePart) {
-        const parentalSection = await FormSection.findOne({
-          partId: profilePart._id,
-          title: "Parental Details",
-          isActive: true,
-        });
-        if (parentalSection) {
-          const sKey = parentalSection._id.toString();
-          const savedAnswers = answerDoc.answers?.[sKey];
-          if (savedAnswers) {
-            for (const subKey of Object.keys(savedAnswers)) {
-              const entries = savedAnswers[subKey];
-              if (Array.isArray(entries) && entries.length > 0) {
-                await syncParentsFromFormAnswers(student._id, entries);
-              }
-            }
-          }
-        }
-      }
-    } catch (syncError) {
-      console.error("⚠️ Parent sync after staff profile save failed:", syncError);
-    }
+    // Sync parent records
+    await syncParentsIfPresent(student._id, answerDoc.answers);
 
     return res.status(200).json({
       success: true,

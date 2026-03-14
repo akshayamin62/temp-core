@@ -3,6 +3,8 @@ import {
   getParentsByStudent,
   updateParentInfo,
   addParentForStudent,
+  getMyParents,
+  getParentDetail,
 } from "../controllers/parentController";
 import {
   getParentStudents,
@@ -41,6 +43,36 @@ router.get(
 );
 
 // All routes require authentication
+
+// Get parents that belong to the logged-in user (role-aware)
+router.get(
+  "/list",
+  authenticate,
+  authorize(
+    USER_ROLE.ADMIN,
+    USER_ROLE.COUNSELOR,
+    USER_ROLE.OPS,
+    USER_ROLE.EDUPLAN_COACH,
+    USER_ROLE.IVY_EXPERT,
+    USER_ROLE.STUDENT
+  ),
+  getMyParents
+);
+
+// Get a single parent detail
+router.get(
+  "/detail/:parentId",
+  authenticate,
+  authorize(
+    USER_ROLE.ADMIN,
+    USER_ROLE.COUNSELOR,
+    USER_ROLE.OPS,
+    USER_ROLE.EDUPLAN_COACH,
+    USER_ROLE.IVY_EXPERT,
+    USER_ROLE.STUDENT
+  ),
+  getParentDetail
+);
 
 // Get parents for a student
 router.get(

@@ -15,9 +15,9 @@ import {
 
 const router = express.Router();
 
-// All routes require authentication and super admin/ops/eduplan-coach role
+// All routes require authentication and super admin/ops/eduplan-coach/ivy-expert role
 router.use(authenticate);
-router.use(authorize([USER_ROLE.SUPER_ADMIN, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH]));
+router.use(authorize([USER_ROLE.SUPER_ADMIN, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT]));
 
 // Get all students
 router.get('/', getAllStudents);

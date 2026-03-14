@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { authAPI, serviceAPI, adminStudentAPI, programAPI, teamMeetAPI, opsScheduleAPI, activityAPI } from '@/lib/api';
-import { User, USER_ROLE, FormStructure, FormSection, FormSubSection, TeamMeet, TEAMMEET_STATUS, OpsSchedule } from '@/types';
+import { authAPI, adminStudentAPI, programAPI, teamMeetAPI, opsScheduleAPI, activityAPI } from '@/lib/api';
+import { User, USER_ROLE, TeamMeet, TEAMMEET_STATUS, OpsSchedule, FormStructure } from '@/types';
+import { getServiceFormStructure, SectionConfig } from '@/config/formConfig';
 import FormSectionRenderer from '@/components/FormSectionRenderer';
 import FormPartsNavigation from '@/components/FormPartsNavigation';
 import FormSectionsNavigation from '@/components/FormSectionsNavigation';
@@ -244,8 +245,13 @@ export default function CounselorStudentFormViewPage() {
 
       if (!extractedServiceId) throw new Error('Service ID not found');
 
-      const formResponse = await serviceAPI.getServiceForm(extractedServiceId);
-      const structure = formResponse.data.data.formStructure || [];
+      const serviceSlug = typeof regServiceId === 'object' ? regServiceId.slug : '';
+      const partConfigs = getServiceFormStructure(serviceSlug);
+      const structure = partConfigs.map(part => ({
+        part: { key: part.key, title: part.title, description: part.description, order: part.order },
+        order: part.order,
+        sections: part.sections,
+      }));
       setFormStructure(structure);
 
       const answers = registrationData.answers || [];
@@ -255,14 +261,14 @@ export default function CounselorStudentFormViewPage() {
       });
 
       if (structure.length > 0) {
-        structure.forEach((part: FormStructure) => {
+        structure.forEach((part) => {
           const partKey = part.part.key;
           if (!formattedAnswers[partKey]) formattedAnswers[partKey] = {};
-          part.sections?.forEach((section: FormSection) => {
-            if (!formattedAnswers[partKey][section._id]) formattedAnswers[partKey][section._id] = {};
-            section.subSections?.forEach((subSection: FormSubSection) => {
-              if (!formattedAnswers[partKey][section._id][subSection._id]) {
-                formattedAnswers[partKey][section._id][subSection._id] = [{}];
+          part.sections?.forEach((section) => {
+            if (!formattedAnswers[partKey][section.key]) formattedAnswers[partKey][section.key] = {};
+            section.subSections?.forEach((subSection) => {
+              if (!formattedAnswers[partKey][section.key][subSection.key]) {
+                formattedAnswers[partKey][section.key][subSection.key] = [{}];
               }
             });
           });
@@ -577,7 +583,7 @@ export default function CounselorStudentFormViewPage() {
                   ) : (
                     <FormSectionRenderer
                       section={currentSection}
-                      values={formValues[currentPart.key]?.[currentSection._id] || {}}
+                      values={formValues[currentPart.key]?.[currentSection.key] || {}}
                       onChange={handleFieldChange}
                       onAddInstance={handleAddInstance}
                       onRemoveInstance={handleRemoveInstance}

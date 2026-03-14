@@ -7,6 +7,9 @@ import ServiceProvider from "../models/ServiceProvider";
 import { USER_ROLE } from "../types/roles";
 import { generateToken } from "../utils/jwt";
 import { Request } from "express";
+import path from "path";
+import fs from "fs";
+import { getUploadBaseDir } from "../utils/uploadDir";
 import {
   sendOTPEmail,
 } from "../utils/email";
@@ -457,6 +460,7 @@ export const verifyOTP = async (req: VerifyOTPRequest, res: Response): Promise<R
           lastName: user.lastName,
           email: user.email,
           role: user.role,
+          profilePicture: user.profilePicture,
         },
         token,
       },
@@ -502,6 +506,7 @@ export const getProfile = async (
         lastName: user.lastName,
         email: user.email,
         role: user.role,
+        profilePicture: user.profilePicture,
         isVerified: user.isVerified,
         isActive: user.isActive,
         createdAt: user.createdAt,
@@ -627,4 +632,79 @@ export const updateSPProfile = async (req: Request, res: Response): Promise<Resp
   }
 };
 
+/**
+ * Upload profile picture for current user
+ */
+export const uploadProfilePic = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const userId = (req as any).user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Delete old profile picture if exists
+    if (user.profilePicture) {
+      const oldPath = path.join(getUploadBaseDir(), 'profile-pictures', path.basename(user.profilePicture));
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    const relativePath = `profile-pictures/${req.file.filename}`;
+    user.profilePicture = relativePath;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile picture uploaded successfully",
+      data: { profilePicture: relativePath },
+    });
+  } catch (err: any) {
+    console.error("Upload profile picture error:", err);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+/**
+ * Remove profile picture for current user
+ */
+export const removeProfilePic = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const userId = (req as any).user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (user.profilePicture) {
+      const filePath = path.join(getUploadBaseDir(), 'profile-pictures', path.basename(user.profilePicture));
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      user.profilePicture = undefined;
+      await user.save();
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile picture removed successfully",
+    });
+  } catch (err: any) {
+    console.error("Remove profile picture error:", err);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
 

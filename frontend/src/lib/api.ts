@@ -79,6 +79,17 @@ export const authAPI = {
 
   updateSPProfile: (data: Record<string, string>) =>
     api.put('/auth/sp-profile', data),
+
+  uploadProfilePicture: (file: File) => {
+    const formData = new FormData();
+    formData.append('profilePicture', file);
+    return api.post('/auth/profile-picture', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  removeProfilePicture: () =>
+    api.delete('/auth/profile-picture'),
 };
 
 export const superAdminAPI = {
@@ -216,6 +227,8 @@ export const parentAPI = {
   getStudentDetails: (studentId: string) => api.get(`/parents/my-students/${studentId}`),
   getStudentFormAnswers: (studentId: string, registrationId: string) =>
     api.get(`/parents/my-students/${studentId}/registrations/${registrationId}/answers`),
+  getMyParents: () => api.get('/parents/list'),
+  getParentDetail: (parentId: string) => api.get(`/parents/detail/${parentId}`),
 };
 
 // Service API
@@ -226,9 +239,6 @@ export const serviceAPI = {
   
   registerForService: (serviceId: string) => 
     api.post('/services/register', { serviceId }),
-  
-  getServiceForm: (serviceId: string) => 
-    api.get(`/services/services/${serviceId}/form`),
   
   getRegistrationDetails: (registrationId: string) => 
     api.get(`/services/registrations/${registrationId}`),

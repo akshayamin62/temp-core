@@ -5,14 +5,10 @@ import User from "../models/User";
 import StudentServiceRegistration, {
   ServiceRegistrationStatus,
 } from "../models/StudentServiceRegistration";
-// import FormPart from "../models/FormPart";
-import ServiceFormPart from "../models/ServiceFormPart";
-import FormSection from "../models/FormSection";
-import FormSubSection from "../models/FormSubSection";
-import FormField from "../models/FormField";
 import { AuthRequest } from "../types/auth";
 import { USER_ROLE } from "../types/roles";
 import { sendServiceRegistrationEmailToSuperAdmin } from "../utils/email";
+import { getServiceFormStructure } from "../config/formConfig";
 
 // Get all active services
 export const getAllServices = async (_req: Request, res: Response) => {
@@ -163,79 +159,27 @@ export const registerForService = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// Get service form structure
+// Get service form structure (returns hardcoded config)
 export const getServiceForm = async (req: Request, res: Response) => {
   try {
     const { serviceId } = req.params;
 
-    // Get service
     const service = await Service.findById(serviceId);
     if (!service) {
-      return res.status(404).json({
-        success: false,
-        message: "Service not found",
-      });
+      return res.status(404).json({ success: false, message: "Service not found" });
     }
 
-    // Get form parts for this service
-    const serviceParts = await ServiceFormPart.find({
-      serviceId,
-      isActive: true,
-    })
-      .populate("partId")
-      .sort({ order: 1 });
-
-    // Get sections for each part (sections are now only linked to part, not service)
-    const formStructure = await Promise.all(
-      serviceParts.map(async (servicePart: any) => {
-        const sections = await FormSection.find({
-          partId: servicePart.partId._id,
-          isActive: true,
-        }).sort({ order: 1 });
-
-        const sectionsWithSubSections = await Promise.all(
-          sections.map(async (section) => {
-            const subSections = await FormSubSection.find({
-              sectionId: section._id,
-              isActive: true,
-            }).sort({ order: 1 });
-
-            const subSectionsWithFields = await Promise.all(
-              subSections.map(async (subSection) => {
-                const fields = await FormField.find({
-                  subSectionId: subSection._id,
-                  isActive: true,
-                }).sort({ order: 1 });
-
-                return {
-                  ...subSection.toObject(),
-                  fields,
-                };
-              })
-            );
-
-            return {
-              ...section.toObject(),
-              subSections: subSectionsWithFields,
-            };
-          })
-        );
-
-        return {
-          part: servicePart.partId,
-          order: servicePart.order,
-          sections: sectionsWithSubSections,
-        };
-      })
-    );
+    const partConfigs = getServiceFormStructure(service.slug);
+    const formStructure = partConfigs.map(part => ({
+      part: { key: part.key, title: part.title, description: part.description, order: part.order },
+      order: part.order,
+      sections: part.sections,
+    }));
 
     return res.status(200).json({
       success: true,
       message: "Service form structure fetched successfully",
-      data: {
-        service,
-        formStructure,
-      },
+      data: { service, formStructure },
     });
   } catch (error: any) {
     console.error("Get service form error:", error);

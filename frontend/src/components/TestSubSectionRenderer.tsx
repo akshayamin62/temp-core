@@ -1,11 +1,11 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
-import { FormSubSection } from '@/types';
+import { SubSectionConfig } from '@/config/formConfig';
 import FormFieldRenderer from './FormFieldRenderer';
 
 interface TestSubSectionRendererProps {
-  subSection: FormSubSection;
+  subSection: SubSectionConfig;
   values: any[];
   onChange: (index: number, key: string, value: any) => void;
   errors?: { [key: string]: string }[];
@@ -68,7 +68,7 @@ export default function TestSubSectionRenderer({
                   ? 'bg-yellow-100 text-yellow-700'
                   : 'bg-gray-100 text-gray-700'
               }`}>
-                {hasTakenValue === 'yes' ? '✓ Taken' : hasTakenValue === 'planning' ? '⏳ Planning' : '✗ Not Taken'}
+                {hasTakenValue === 'yes' ? 'âœ“ Taken' : hasTakenValue === 'planning' ? 'â³ Planning' : 'âœ— Not Taken'}
               </span>
             )}
           </div>
@@ -111,7 +111,7 @@ export default function TestSubSectionRenderer({
               // First field (Have you taken X?) - Full width
               if (i === 0) {
                 renderedFields.push(
-                  <div key={field._id} className="mb-5">
+                  <div key={field.key} className="mb-5">
                     <FormFieldRenderer
                       field={field}
                       value={instanceValues?.[field.key]}
@@ -126,7 +126,7 @@ export default function TestSubSectionRenderer({
               // Test Date - Full width
               else if (field.key.includes('TestDate')) {
                 renderedFields.push(
-                  <div key={field._id} className="mb-5">
+                  <div key={field.key} className="mb-5">
                     <FormFieldRenderer
                       field={field}
                       value={instanceValues?.[field.key]}
@@ -171,7 +171,7 @@ export default function TestSubSectionRenderer({
                   >
                     {fieldsInRow.map((f) => (
                 <FormFieldRenderer
-                  key={f._id}
+                  key={f.key}
                   field={f}
                   value={instanceValues?.[f.key]}
                   onChange={(key, value) => onChange(0, key, value)}

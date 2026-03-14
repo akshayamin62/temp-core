@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { authAPI, parentAPI } from '@/lib/api';
-import { User, USER_ROLE } from '@/types';
+import { authAPI, parentAPI, teamMeetAPI } from '@/lib/api';
+import { User, USER_ROLE, TeamMeet, TEAMMEET_STATUS } from '@/types';
 import ParentLayout from '@/components/ParentLayout';
+import TeamMeetCalendar from '@/components/TeamMeetCalendar';
+import TeamMeetSidebar from '@/components/TeamMeetSidebar';
+import TeamMeetFormPanel from '@/components/TeamMeetFormPanel';
 import toast, { Toaster } from 'react-hot-toast';
-import { getFullName, getInitials } from '@/utils/nameHelpers';
+import { getFullName } from '@/utils/nameHelpers';
 
 interface StudentData {
   _id: string;
@@ -33,7 +36,23 @@ export default function ParentDashboardPage() {
   const [students, setStudents] = useState<StudentData[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // TeamMeet state
+  const [teamMeets, setTeamMeets] = useState<TeamMeet[]>([]);
+  const [selectedTeamMeet, setSelectedTeamMeet] = useState<TeamMeet | null>(null);
+  const [showTeamMeetPanel, setShowTeamMeetPanel] = useState(false);
+  const [teamMeetPanelMode, setTeamMeetPanelMode] = useState<'create' | 'view' | 'respond'>('create');
+  const [selectedTeamMeetDate, setSelectedTeamMeetDate] = useState<Date | undefined>(undefined);
+
   const hasFetchedRef = useRef(false);
+
+  const fetchTeamMeets = useCallback(async () => {
+    try {
+      const response = await teamMeetAPI.getTeamMeetsForCalendar();
+      setTeamMeets(response.data.data.teamMeets);
+    } catch (error: any) {
+      console.error('Error fetching team meets:', error);
+    }
+  }, []);
 
   useEffect(() => {
     if (hasFetchedRef.current) return;
@@ -54,6 +73,7 @@ export default function ParentDashboardPage() {
 
       setUser(userData);
       fetchStudents();
+      fetchTeamMeets();
     } catch {
       toast.error('Please login to continue');
       router.push('/login');
@@ -69,6 +89,45 @@ export default function ParentDashboardPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // TeamMeet handlers
+  const handleTeamMeetSelect = (teamMeet: TeamMeet) => {
+    setSelectedTeamMeet(teamMeet);
+    const currentUserId = user?.id || user?._id;
+    if (teamMeet.requestedTo._id === currentUserId && teamMeet.status === TEAMMEET_STATUS.PENDING_CONFIRMATION) {
+      setTeamMeetPanelMode('respond');
+    } else {
+      setTeamMeetPanelMode('view');
+    }
+    setShowTeamMeetPanel(true);
+  };
+
+  const handleTeamMeetDateSelect = (date: Date) => {
+    setSelectedTeamMeetDate(date);
+    setSelectedTeamMeet(null);
+    setTeamMeetPanelMode('create');
+    setShowTeamMeetPanel(true);
+  };
+
+  const handleScheduleTeamMeet = () => {
+    setSelectedTeamMeet(null);
+    setSelectedTeamMeetDate(undefined);
+    setTeamMeetPanelMode('create');
+    setShowTeamMeetPanel(true);
+  };
+
+  const handleTeamMeetSave = async () => {
+    setShowTeamMeetPanel(false);
+    setSelectedTeamMeet(null);
+    setSelectedTeamMeetDate(undefined);
+    await fetchTeamMeets();
+  };
+
+  const handleTeamMeetPanelClose = () => {
+    setShowTeamMeetPanel(false);
+    setSelectedTeamMeet(null);
+    setSelectedTeamMeetDate(undefined);
   };
 
   if (loading || !user) {
@@ -88,9 +147,12 @@ export default function ParentDashboardPage() {
       <ParentLayout user={user}>
         <div className="p-8">
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">Welcome, {user.firstName}</h1>
-            <p className="text-gray-600 mt-1">View your children&apos;s academic progress</p>
+          <div className="mb-6 flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Welcome, {user.firstName}</h1>
+              <p className="text-gray-600 mt-1">View your children&apos;s academic progress</p>
+            </div>
+            {(() => { const t = new Date(); const d = Math.floor((t.getTime() - new Date(t.getFullYear(), 0, 0).getTime()) / 86400000); return (<div className="text-right"><p className="text-3xl font-extrabold text-gray-900">Day {d}</p><p className="text-sm text-gray-500">of {t.getFullYear()}</p></div>); })()}
           </div>
 
           {/* Stats */}
@@ -125,83 +187,43 @@ export default function ParentDashboardPage() {
             </div>
           </div>
 
-          {/* Students Grid */}
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">My Children</h2>
+          {/* Team Meet Section */}
+          <div className="mt-2">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Calendar Section */}
+              <div className="lg:col-span-3">
+                <TeamMeetCalendar
+                  teamMeets={teamMeets}
+                  onTeamMeetSelect={handleTeamMeetSelect}
+                  onDateSelect={handleTeamMeetDateSelect}
+                  currentUserId={user?.id || user?._id}
+                />
+              </div>
+
+              {/* Sidebar Section */}
+              <div className="lg:col-span-1">
+                <TeamMeetSidebar
+                  teamMeets={teamMeets}
+                  onTeamMeetClick={handleTeamMeetSelect}
+                  onScheduleClick={handleScheduleTeamMeet}
+                  currentUserId={user?.id || user?._id}
+                />
+              </div>
+            </div>
           </div>
-
-          {students.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {students.map((student) => (
-                <div
-                  key={student._id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-                >
-                  <div className="p-6">
-                    <div className="flex items-center mb-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-blue-600 font-bold text-lg">
-                          {getInitials(student.user)}
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">
-                          {getFullName(student.user)}
-                        </h3>
-                        <p className="text-sm text-gray-500">{student.user.email}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Services</span>
-                        <span className="font-medium text-gray-900">{student.registrationCount}</span>
-                      </div>
-                      {student.intake && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">Intake</span>
-                          <span className="font-medium text-blue-600">{student.intake}</span>
-                        </div>
-                      )}
-                      {student.year && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">Year</span>
-                          <span className="font-medium text-blue-600">{student.year}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Joined</span>
-                        <span className="font-medium text-gray-900">
-                          {new Date(student.createdAt).toLocaleDateString('en-GB')}
-                        </span>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => router.push(`/parent/students/${student._id}`)}
-                      className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm inline-flex items-center justify-center gap-2"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                      View Details
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-              <svg className="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-              <p className="text-lg font-medium text-gray-900 mb-1">No students linked</p>
-              <p className="text-sm text-gray-500">Your children will appear here once they are registered.</p>
-            </div>
-          )}
         </div>
       </ParentLayout>
+
+      {/* TeamMeet Slide-in Panel */}
+      <TeamMeetFormPanel
+        teamMeet={selectedTeamMeet}
+        isOpen={showTeamMeetPanel}
+        onClose={handleTeamMeetPanelClose}
+        onSave={handleTeamMeetSave}
+        selectedDate={selectedTeamMeetDate}
+        mode={teamMeetPanelMode}
+        currentUserId={user?.id || user?._id}
+      />
     </>
   );
 }

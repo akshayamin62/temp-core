@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getFullName } from '@/utils/nameHelpers';
+import { BACKEND_URL } from '@/lib/ivyApi';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -11,6 +12,7 @@ export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState('');
   const [userRole, setUserRole] = useState('');
+  const [userProfilePic, setUserProfilePic] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
@@ -26,6 +28,7 @@ export default function Navbar() {
           const userData = JSON.parse(user);
           setUserName(getFullName(userData) || '');
           setUserRole(userData.role || '');
+          setUserProfilePic(userData.profilePicture || '');
         } catch (error) {
           console.error('Error parsing user data:', error);
         }
@@ -34,6 +37,7 @@ export default function Navbar() {
       setIsLoggedIn(false);
       setUserName('');
       setUserRole('');
+      setUserProfilePic('');
     }
   }, [pathname]);
 
@@ -134,8 +138,8 @@ export default function Navbar() {
                     href="/parent/dashboard"
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
                       pathname.startsWith('/parent')
-                        ? 'text-purple-600 bg-purple-50 shadow-md'
-                        : 'text-gray-700 hover:text-purple-600 hover:bg-purple-50/50 hover:shadow-sm'
+                        ? 'text-blue-600 bg-blue-50 shadow-md'
+                        : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50/50 hover:shadow-sm'
                     }`}
                   >
                     Dashboard
@@ -156,11 +160,15 @@ export default function Navbar() {
                 <div className="relative ml-4">
                   <button
                     onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                    className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 overflow-hidden"
                     aria-label="User menu"
                     aria-expanded={profileDropdownOpen}
                   >
-                    {userName ? userName.charAt(0).toUpperCase() : 'U'}
+                    {userProfilePic ? (
+                      <img src={`${BACKEND_URL}/uploads/${userProfilePic}`} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      userName ? userName.charAt(0).toUpperCase() : 'U'
+                    )}
                   </button>
                   
                   {/* Dropdown Menu */}

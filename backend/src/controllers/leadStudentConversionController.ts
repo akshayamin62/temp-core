@@ -8,9 +8,6 @@ import Admin from "../models/Admin";
 import Counselor from "../models/Counselor";
 import Parent from "../models/Parent";
 import StudentFormAnswer from "../models/StudentFormAnswer";
-import FormPart from "../models/FormPart";
-import FormSection from "../models/FormSection";
-import FormSubSection from "../models/FormSubSection";
 import FollowUp, { FOLLOWUP_STATUS } from "../models/FollowUp";
 import { USER_ROLE } from "../types/roles";
 import mongoose from "mongoose";
@@ -337,36 +334,11 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
     // Parse lead name into first, middle, and last name
     const { firstName, middleName, lastName } = parseName(lead.name);
 
-    // Pre-populate student form with lead information
+    // Pre-populate student form with lead information using semantic keys
     try {
-      // Find the PROFILE part
-      const profilePart = await FormPart.findOne({ key: 'PROFILE' });
-      if (!profilePart) {
-        throw new Error('PROFILE part not found');
-      }
-
-      // Find the "Personal Details" section under PROFILE
-      const personalDetailsSection = await FormSection.findOne({
-        partId: profilePart._id,
-        title: 'Personal Details'
-      });
-      if (!personalDetailsSection) {
-        throw new Error('Personal Details section not found');
-      }
-
-      // Find the "Personal Information" subsection
-      const personalInfoSubSection = await FormSubSection.findOne({
-        sectionId: personalDetailsSection._id,
-        title: 'Personal Information'
-      });
-      if (!personalInfoSubSection) {
-        throw new Error('Personal Information subsection not found');
-      }
-
-      // Build answers object starting with personal info
       const answers: any = {
-        [personalDetailsSection._id.toString()]: {
-          [personalInfoSubSection._id.toString()]: [
+        personalDetails: {
+          personalInformation: [
             {
               firstName: firstName,
               middleName: middleName,
@@ -379,36 +351,21 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
 
       // If lead has parent detail, also pre-fill the Parental Details section
       if (lead.parentDetail && lead.parentDetail.firstName) {
-        try {
-          const parentalSection = await FormSection.findOne({
-            partId: profilePart._id,
-            title: 'Parental Details'
-          });
-          if (parentalSection) {
-            const parentalSubSection = await FormSubSection.findOne({
-              sectionId: parentalSection._id,
-            });
-            if (parentalSubSection) {
-              answers[parentalSection._id.toString()] = {
-                [parentalSubSection._id.toString()]: [
-                  {
-                    parentFirstName: lead.parentDetail.firstName,
-                    parentMiddleName: lead.parentDetail.middleName || '',
-                    parentLastName: lead.parentDetail.lastName,
-                    parentRelationship: lead.parentDetail.relationship,
-                    parentMobile: lead.parentDetail.mobileNumber,
-                    parentEmail: lead.parentDetail.email,
-                    parentQualification: lead.parentDetail.qualification,
-                    parentOccupation: lead.parentDetail.occupation,
-                  }
-                ]
-              };
-              console.log('✅ Parental details pre-populated in form');
+        answers.parentalDetails = {
+          parentGuardian: [
+            {
+              parentFirstName: lead.parentDetail.firstName,
+              parentMiddleName: lead.parentDetail.middleName || '',
+              parentLastName: lead.parentDetail.lastName,
+              parentRelationship: lead.parentDetail.relationship,
+              parentMobile: lead.parentDetail.mobileNumber,
+              parentEmail: lead.parentDetail.email,
+              parentQualification: lead.parentDetail.qualification,
+              parentOccupation: lead.parentDetail.occupation,
             }
-          }
-        } catch (parentFormError) {
-          console.error("⚠️ Failed to pre-populate parental form data:", parentFormError);
-        }
+          ]
+        };
+        console.log('✅ Parental details pre-populated in form');
       }
 
       const profileAnswers = new StudentFormAnswer({
@@ -424,8 +381,6 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
         middleName,
         lastName,
         phone: lead.mobileNumber,
-        sectionId: personalDetailsSection._id,
-        subSectionId: personalInfoSubSection._id
       });
     } catch (formError) {
       console.error("⚠️ Failed to pre-populate form data:", formError);
@@ -471,6 +426,7 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
           parentDoc = new Parent({
             userId: parentUser._id,
             studentIds: [newStudent._id],
+            email: (lead.parentDetail.email || '').trim().toLowerCase(),
             relationship: lead.parentDetail.relationship || 'parent',
             mobileNumber: lead.parentDetail.mobileNumber,
             qualification: lead.parentDetail.qualification || '',

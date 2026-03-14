@@ -3,7 +3,8 @@
 import { useEffect, useState, Suspense, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { serviceAPI, formAnswerAPI, teamMeetAPI, programAPI, opsScheduleAPI, authAPI, activityAPI } from '@/lib/api';
-import { FormStructure, StudentServiceRegistration, Service, TeamMeet, TEAMMEET_STATUS, OpsSchedule } from '@/types';
+import { StudentServiceRegistration, Service, TeamMeet, TEAMMEET_STATUS, OpsSchedule } from '@/types';
+import { getServiceFormStructure, PartConfig, SectionConfig } from '@/config/formConfig';
 import toast, { Toaster } from 'react-hot-toast';
 import FormSectionRenderer from '@/components/FormSectionRenderer';
 import StudentLayout from '@/components/StudentLayout';
@@ -92,13 +93,14 @@ function MyDetailsContent() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [registration, setRegistration] = useState<ExtendedRegistration | null>(null);
-  const [formStructure, setFormStructure] = useState<FormStructure[]>([]);
+  const [formStructure, setFormStructure] = useState<{ part: { key: string; title: string; description?: string; order: number }; order: number; sections: SectionConfig[] }[]>([]);
   const [selectedPartIndex, setSelectedPartIndex] = useState(0);
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(0);
   const [formValues, setFormValues] = useState<any>({});
   const [errors, setErrors] = useState<any>({});
+  const initialParentalReadOnlyRef = useRef<number[]>([]);
   const [brainographyDoc, setBrainographyDoc] = useState<BrainographyDoc | null>(null);
-  const [currentUser, setCurrentUser] = useState<{ firstName?: string; middleName?: string; lastName?: string; email: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ firstName?: string; middleName?: string; lastName?: string; email: string; profilePicture?: string } | null>(null);
 
   // Extracted data & Portfolio
   const [brainographyData, setBrainographyData] = useState<BrainographyDataType | null>(null);
@@ -335,10 +337,16 @@ function MyDetailsContent() {
       // Remember active registration for outer pages (parents, alumni, service-providers)
       sessionStorage.setItem('activeRegistrationId', registrationId!);
 
-      // Fetch form structure
-      const serviceId = typeof reg.serviceId === 'object' ? reg.serviceId._id : reg.serviceId;
-      const formResponse = await serviceAPI.getServiceForm(serviceId);
-      setFormStructure(formResponse.data.data.formStructure);
+      // Get form structure from local config (no API call)
+      const serviceObj = typeof reg.serviceId === 'object' ? reg.serviceId : null;
+      const serviceSlug = serviceObj?.slug || '';
+      const partConfigs = getServiceFormStructure(serviceSlug);
+      const localFormStructure = partConfigs.map(part => ({
+        part: { key: part.key, title: part.title, description: part.description, order: part.order },
+        order: part.order,
+        sections: part.sections,
+      }));
+      setFormStructure(localFormStructure);
 
       // Fetch existing answers from database (for auto-fill)
       const answersResponse = await formAnswerAPI.getFormAnswers(registrationId!);
@@ -352,25 +360,24 @@ function MyDetailsContent() {
         if (!values[partKey]) {
           values[partKey] = {};
         }
-        // The answers object contains section-wise data
         values[partKey] = answer.answers;
       });
       
       // Initialize form structure and pre-fill phone and country defaults
-      if (formStructure.length > 0) {
-        formStructure.forEach((part) => {
+      if (localFormStructure.length > 0) {
+        localFormStructure.forEach((part) => {
           const partKey = part.part.key;
           if (!values[partKey]) values[partKey] = {};
           
           part.sections?.forEach((section) => {
-            if (!values[partKey][section._id]) values[partKey][section._id] = {};
+            if (!values[partKey][section.key]) values[partKey][section.key] = {};
             
             section.subSections?.forEach((subSection) => {
-              if (!values[partKey][section._id][subSection._id]) {
-                values[partKey][section._id][subSection._id] = [{}];
+              if (!values[partKey][section.key][subSection.key]) {
+                values[partKey][section.key][subSection.key] = [{}];
               }
               
-              const instances = values[partKey][section._id][subSection._id];
+              const instances = values[partKey][section.key][subSection.key];
               if (Array.isArray(instances) && instances.length > 0) {
                 const instance = instances[0];
                 
@@ -385,7 +392,6 @@ function MyDetailsContent() {
                 // Set India as default for country fields (always set if not present)
                 subSection.fields?.forEach((field) => {
                   if (field.key === 'mailingCountry' || field.key === 'permanentCountry') {
-                    // Always set default if field is empty or undefined
                     if (!instance[field.key] || instance[field.key] === '') {
                       instance[field.key] = field.defaultValue || 'IN';
                     }
@@ -397,6 +403,22 @@ function MyDetailsContent() {
         });
       }
       
+      // Compute initial parental readOnly indices from DB data
+      const profileParental = values['PROFILE']?.['parentalDetails'];
+      if (profileParental) {
+        const indices: number[] = [];
+        Object.values(profileParental).forEach((subData: any) => {
+          if (Array.isArray(subData)) {
+            subData.forEach((entry: any, idx: number) => {
+              if (entry && Object.values(entry).some((v: any) => v && String(v).trim() !== '')) {
+                indices.push(idx);
+              }
+            });
+          }
+        });
+        initialParentalReadOnlyRef.current = indices;
+      }
+
       setFormValues(values);
 
     } catch (error: any) {
@@ -499,8 +521,8 @@ function MyDetailsContent() {
       
       // Find the subsection to get field defaults
       const currentPart = formStructure.find(p => p.part.key === partKey);
-      const section = currentPart?.sections?.find(s => s._id === sectionId);
-      const subSection = section?.subSections?.find(ss => ss._id === subSectionId);
+      const section = currentPart?.sections?.find(s => s.key === sectionId);
+      const subSection = section?.subSections?.find(ss => ss.key === subSectionId);
       
       if (subSection) {
         subSection.fields?.forEach((field) => {
@@ -542,17 +564,17 @@ function MyDetailsContent() {
     });
   };
 
-  const validateSection = (partKey: string, sectionId: string): boolean => {
+  const validateSection = (partKey: string, sectionKey: string): boolean => {
     const currentPart = formStructure[selectedPartIndex];
-    const section = currentPart.sections[selectedSectionIndex];
-    const sectionValues = formValues[partKey]?.[sectionId] || {};
+    const section = currentPart.sections.sort((a, b) => a.order - b.order)[selectedSectionIndex];
+    const sectionValues = formValues[partKey]?.[sectionKey] || {};
     
     const newErrors: any = {};
     let hasErrors = false;
 
     // Validate each subsection
     section.subSections.forEach((subSection) => {
-      const subSectionValues = sectionValues[subSection._id] || [{}];
+      const subSectionValues = sectionValues[subSection.key] || [{}];
       
       subSectionValues.forEach((instanceValues: any, index: number) => {
         subSection.fields.forEach((field) => {
@@ -562,15 +584,13 @@ function MyDetailsContent() {
             // If value is empty and field has defaultValue, use defaultValue
             if ((!value || (typeof value === 'string' && value.trim() === '')) && field.defaultValue) {
               value = field.defaultValue;
-              // Update the instance value with default to ensure it's saved
               if (instanceValues) {
                 instanceValues[field.key] = field.defaultValue;
               }
-              // Also update formValues state to persist the default
               setFormValues((prev: any) => {
                 const newValues = JSON.parse(JSON.stringify(prev));
-                if (newValues[partKey]?.[sectionId]?.[subSection._id]?.[index]) {
-                  newValues[partKey][sectionId][subSection._id][index][field.key] = field.defaultValue;
+                if (newValues[partKey]?.[sectionKey]?.[subSection.key]?.[index]) {
+                  newValues[partKey][sectionKey][subSection.key][index][field.key] = field.defaultValue;
                 }
                 return newValues;
               });
@@ -578,9 +598,9 @@ function MyDetailsContent() {
             
             // Now validate
             if (!value || (typeof value === 'string' && value.trim() === '')) {
-              if (!newErrors[subSection._id]) newErrors[subSection._id] = [];
-              if (!newErrors[subSection._id][index]) newErrors[subSection._id][index] = {};
-              newErrors[subSection._id][index][field.key] = `${field.label} is required`;
+              if (!newErrors[subSection.key]) newErrors[subSection.key] = [];
+              if (!newErrors[subSection.key][index]) newErrors[subSection.key][index] = {};
+              newErrors[subSection.key][index][field.key] = `${field.label} is required`;
               hasErrors = true;
             }
           }
@@ -597,10 +617,10 @@ function MyDetailsContent() {
       const currentPart = formStructure[selectedPartIndex];
       const section = currentPart.sections[selectedSectionIndex];
       const partKey = currentPart.part.key;
-      const sectionId = section._id;
+      const sectionKey = section.key;
 
       // Validate before saving
-      if (!validateSection(partKey, sectionId)) {
+      if (!validateSection(partKey, sectionKey)) {
         toast.error('Please fill all required fields');
         return;
       }
@@ -608,7 +628,7 @@ function MyDetailsContent() {
       setSaving(true);
       
       // Get ONLY current section answers
-      const sectionAnswers = formValues[partKey]?.[sectionId] || {};
+      const sectionAnswers = formValues[partKey]?.[sectionKey] || {};
       
       // Get existing part answers from database to merge with
       const existingAnswersResponse = await formAnswerAPI.getFormAnswers(registrationId!, partKey);
@@ -619,7 +639,7 @@ function MyDetailsContent() {
       if (existingAnswers && existingAnswers.length > 0) {
         allPartAnswers = { ...existingAnswers[0].answers };
       }
-      allPartAnswers = { ...allPartAnswers, [sectionId]: sectionAnswers };
+      allPartAnswers = { ...allPartAnswers, [sectionKey]: sectionAnswers };
       
       await formAnswerAPI.saveFormAnswers({
         registrationId: registrationId!,
@@ -1265,7 +1285,7 @@ function MyDetailsContent() {
                       .sort((a, b) => a.order - b.order)
                       .map((section, index) => (
                         <button
-                          key={section._id}
+                          key={section.key}
                           onClick={() => setSelectedSectionIndex(index)}
                           className={`px-4 py-2 rounded-md font-medium transition-all whitespace-nowrap text-sm ${
                             selectedSectionIndex === index
@@ -1297,15 +1317,15 @@ function MyDetailsContent() {
                     ) : currentPart.part.key === 'DOCUMENT' ? (
                       <FormSectionRenderer
                         section={currentSection}
-                        values={formValues[currentPart.part.key]?.[currentSection._id] || {}}
+                        values={formValues[currentPart.part.key]?.[currentSection.key] || {}}
                         onChange={(subSectionId, index, key, value) =>
-                          handleFieldChange(currentPart.part.key, currentSection._id, subSectionId, index, key, value)
+                          handleFieldChange(currentPart.part.key, currentSection.key, subSectionId, index, key, value)
                         }
                         onAddInstance={(subSectionId) =>
-                          handleAddInstance(currentPart.part.key, currentSection._id, subSectionId)
+                          handleAddInstance(currentPart.part.key, currentSection.key, subSectionId)
                         }
                         onRemoveInstance={(subSectionId, index) =>
-                          handleRemoveInstance(currentPart.part.key, currentSection._id, subSectionId, index)
+                          handleRemoveInstance(currentPart.part.key, currentSection.key, subSectionId, index)
                         }
                         errors={errors}
                         registrationId={registrationId!}
@@ -1316,38 +1336,21 @@ function MyDetailsContent() {
                       <>
                         {(() => {
                           const isParentalSection = currentPart.part.key === 'PROFILE' && currentSection.title === 'Parental Details';
-                          const sData = formValues[currentPart.part.key]?.[currentSection._id];
-                          const parentalReadOnlyInstances: number[] = [];
-                          let allParentalSlotsFilled = false;
-                          if (isParentalSection && sData) {
-                            Object.values(sData).forEach((subData: any) => {
-                              if (Array.isArray(subData)) {
-                                subData.forEach((entry: any, idx: number) => {
-                                  if (entry && Object.values(entry).some((v: any) => v && String(v).trim() !== '')) {
-                                    parentalReadOnlyInstances.push(idx);
-                                  }
-                                });
-                              }
-                            });
-                            const entries = Object.values(sData).flat() as any[];
-                            const filledCount = entries.filter((entry: any) =>
-                              entry && Object.values(entry).some((v: any) => v && String(v).trim() !== '')
-                            ).length;
-                            allParentalSlotsFilled = filledCount >= 2;
-                          }
+                          const parentalReadOnlyInstances = isParentalSection ? initialParentalReadOnlyRef.current : [];
+                          const allParentalSlotsFilled = parentalReadOnlyInstances.length >= 2;
                           return (
                             <>
                               <FormSectionRenderer
                                 section={currentSection}
-                                values={formValues[currentPart.part.key]?.[currentSection._id] || {}}
+                                values={formValues[currentPart.part.key]?.[currentSection.key] || {}}
                                 onChange={(subSectionId, index, key, value) =>
-                                  handleFieldChange(currentPart.part.key, currentSection._id, subSectionId, index, key, value)
+                                  handleFieldChange(currentPart.part.key, currentSection.key, subSectionId, index, key, value)
                                 }
                                 onAddInstance={(subSectionId) =>
-                                  handleAddInstance(currentPart.part.key, currentSection._id, subSectionId)
+                                  handleAddInstance(currentPart.part.key, currentSection.key, subSectionId)
                                 }
                                 onRemoveInstance={(subSectionId, index) =>
-                                  handleRemoveInstance(currentPart.part.key, currentSection._id, subSectionId, index)
+                                  handleRemoveInstance(currentPart.part.key, currentSection.key, subSectionId, index)
                                 }
                                 errors={errors}
                                 readOnly={isParentalSection && allParentalSlotsFilled}

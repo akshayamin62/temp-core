@@ -550,9 +550,21 @@ export default function RoleUserListPage({
                                   if (fallback) fallback.style.display = 'flex';
                                 }}
                               />
+                            ) : user.profilePicture ? (
+                              <img
+                                src={`${BACKEND_URL}/uploads/${user.profilePicture}`}
+                                alt=""
+                                className="w-10 h-10 rounded-full object-cover"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const fallback = target.nextElementSibling as HTMLElement;
+                                  if (fallback) fallback.style.display = 'flex';
+                                }}
+                              />
                             ) : null}
                             <div className={`w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center ${
-                              (isAdminRole || roleEnum === USER_ROLE.SERVICE_PROVIDER) && user.companyLogo ? 'hidden' : ''
+                              ((isAdminRole || roleEnum === USER_ROLE.SERVICE_PROVIDER) && user.companyLogo) || user.profilePicture ? 'hidden' : ''
                             }`}>
                               <span className="text-blue-600 font-semibold">
                                 {(isAdminRole || roleEnum === USER_ROLE.SERVICE_PROVIDER) && user.companyName
