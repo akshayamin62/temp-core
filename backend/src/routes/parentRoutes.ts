@@ -5,6 +5,7 @@ import {
   addParentForStudent,
   getMyParents,
   getParentDetail,
+  getParentDetailByUserId,
 } from "../controllers/parentController";
 import {
   getParentStudents,
@@ -69,9 +70,18 @@ router.get(
     USER_ROLE.OPS,
     USER_ROLE.EDUPLAN_COACH,
     USER_ROLE.IVY_EXPERT,
-    USER_ROLE.STUDENT
+    USER_ROLE.STUDENT,
+    USER_ROLE.SUPER_ADMIN
   ),
   getParentDetail
+);
+
+// Get a single parent detail by userId (for super-admin)
+router.get(
+  "/detail-by-user/:userId",
+  authenticate,
+  authorize(USER_ROLE.SUPER_ADMIN),
+  getParentDetailByUserId
 );
 
 // Get parents for a student

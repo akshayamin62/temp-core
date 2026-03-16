@@ -688,6 +688,14 @@ export default function RoleUserListPage({
                                 View Details
                               </button>
                             )}
+                            {roleEnum === USER_ROLE.PARENT && (
+                              <button
+                                onClick={() => router.push(`/super-admin/roles/parent/${user._id || user.id}`)}
+                                className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white hover:bg-blue-700"
+                              >
+                                View Detail
+                              </button>
+                            )}
                             <button
                               onClick={() => handleOpenEdit(user._id || user.id!)}
                               className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-brand-600 text-white hover:bg-brand-700"

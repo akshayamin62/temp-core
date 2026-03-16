@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { authAPI, parentAPI } from '@/lib/api';
 import { User, USER_ROLE } from '@/types';
-import CounselorLayout from '@/components/CounselorLayout';
+import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
 import { BACKEND_URL } from '@/lib/ivyApi';
@@ -21,10 +21,10 @@ interface ParentDetail {
   createdAt: string;
 }
 
-export default function CounselorParentDetailPage() {
+export default function SuperAdminParentDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const parentId = params.parentId as string;
+  const parentId = params.parentId as string; // This is actually userId from the list page
   const [user, setUser] = useState<User | null>(null);
   const [parent, setParent] = useState<ParentDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,7 +34,7 @@ export default function CounselorParentDetailPage() {
     if (!token) { router.push('/login'); return; }
     authAPI.getProfile().then(res => {
       const u = res.data.data.user;
-      if (u.role !== USER_ROLE.COUNSELOR) { router.push('/login'); return; }
+      if (u.role !== USER_ROLE.SUPER_ADMIN) { router.push('/login'); return; }
       setUser(u);
       fetchParent();
     }).catch(() => router.push('/login'));
@@ -42,7 +42,7 @@ export default function CounselorParentDetailPage() {
 
   const fetchParent = async () => {
     try {
-      const response = await parentAPI.getParentDetail(parentId);
+      const response = await parentAPI.getParentDetailByUserId(parentId);
       setParent(response.data.data.parent);
     } catch { toast.error('Failed to fetch parent details'); } finally { setLoading(false); }
   };
@@ -54,18 +54,18 @@ export default function CounselorParentDetailPage() {
   );
 
   if (!parent) return (
-    <CounselorLayout user={user}>
+    <SuperAdminLayout user={user}>
       <div className="p-8">
         <p className="text-gray-600 mb-4">Parent not found.</p>
         <button onClick={() => router.back()} className="text-blue-600 hover:underline">Go Back</button>
       </div>
-    </CounselorLayout>
+    </SuperAdminLayout>
   );
 
   return (
     <>
       <Toaster position="top-right" />
-      <CounselorLayout user={user}>
+      <SuperAdminLayout user={user}>
         <div className="p-8">
           <button onClick={() => router.back()} className="mb-6 flex items-center text-gray-600 hover:text-gray-900 transition-colors">
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
@@ -119,7 +119,7 @@ export default function CounselorParentDetailPage() {
                       </div>
                     </div>
                     <button
-                      onClick={() => router.push(`/counselor/students/${s._id}`)}
+                      onClick={() => router.push(`/super-admin/roles/student/${s._id}`)}
                       className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-xs"
                     >
                       View Detail
@@ -132,7 +132,7 @@ export default function CounselorParentDetailPage() {
             )}
           </div>
         </div>
-      </CounselorLayout>
+      </SuperAdminLayout>
     </>
   );
 }

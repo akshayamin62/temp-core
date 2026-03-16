@@ -124,6 +124,32 @@ export const getParentDetail = async (req: AuthRequest, res: Response): Promise<
 };
 
 /**
+ * Get a single parent detail by userId (for super-admin)
+ */
+export const getParentDetailByUserId = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const { userId } = req.params;
+
+    const parent = await Parent.findOne({ userId })
+      .populate("userId", "firstName middleName lastName email profilePicture isActive isVerified createdAt")
+      .populate({
+        path: "studentIds",
+        populate: { path: "userId", select: "firstName middleName lastName email" },
+      })
+      .lean();
+
+    if (!parent) {
+      return res.status(404).json({ success: false, message: "Parent not found" });
+    }
+
+    return res.status(200).json({ success: true, data: { parent } });
+  } catch (error: any) {
+    console.error("Get parent detail by userId error:", error);
+    return res.status(500).json({ success: false, message: "Failed to get parent detail" });
+  }
+};
+
+/**
  * Get parents for a given student
  */
 export const getParentsByStudent = async (req: AuthRequest, res: Response): Promise<Response> => {

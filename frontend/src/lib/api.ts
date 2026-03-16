@@ -229,6 +229,7 @@ export const parentAPI = {
     api.get(`/parents/my-students/${studentId}/registrations/${registrationId}/answers`),
   getMyParents: () => api.get('/parents/list'),
   getParentDetail: (parentId: string) => api.get(`/parents/detail/${parentId}`),
+  getParentDetailByUserId: (userId: string) => api.get(`/parents/detail-by-user/${userId}`),
 };
 
 // Service API
