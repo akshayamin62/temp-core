@@ -37,6 +37,8 @@ export default function DashboardPage() {
         router.push('/eduplan-coach/dashboard');
       } else if (user.role === 'SERVICE_PROVIDER') {
         router.push('/service-provider/dashboard');
+      } else if (user.role === 'PARENT') {
+        router.push('/parent/dashboard');
       } else {
         fetchMyServices();
       }
