@@ -220,11 +220,19 @@ export const updateSPEnquiryStatus = async (req: AuthRequest, res: Response): Pr
 // ============ Student-facing endpoints ============
 
 // Get all active services (public listing for students)
+// Only shows services from active (non-deactivated) service providers
 export const getAllSPServicesForStudents = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { category, search } = req.query;
 
-    const filter: any = { isActive: true };
+    // Find all active SP user IDs, then their ServiceProvider profile IDs
+    const User = (await import('../models/User')).default;
+    const activeSpUsers = await User.find({ role: 'SERVICE_PROVIDER', isActive: true }).select('_id').lean();
+    const activeSpUserIds = activeSpUsers.map((u: any) => u._id);
+    const activeSPs = await ServiceProvider.find({ userId: { $in: activeSpUserIds } }).select('_id').lean();
+    const activeSpIds = activeSPs.map((sp: any) => sp._id);
+
+    const filter: any = { isActive: true, serviceProviderId: { $in: activeSpIds } };
     if (category && category !== 'All') {
       filter.category = category;
     }
@@ -307,5 +315,92 @@ export const getStudentMyEnquiries = async (req: AuthRequest, res: Response): Pr
     res.json({ success: true, data: { enquiries } });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message || 'Failed to fetch enquiries' });
+  }
+};
+
+// ============ Admin-facing endpoints (Super Admin, Admin, Parent) ============
+
+// Get enquiries for a specific student (by studentId)
+export const getStudentEnquiriesById = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { studentId } = req.params;
+
+    const enquiries = await SPEnquiry.find({ studentId })
+      .populate('spServiceId', 'title category description price priceType thumbnail')
+      .populate('serviceProviderId', 'companyName companyLogo city state country website')
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, data: { enquiries } });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Failed to fetch student enquiries' });
+  }
+};
+
+// Get services for a specific service provider (by userId)
+export const getSPServicesById = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { providerId } = req.params;
+
+    // providerId is a User._id; resolve to ServiceProvider._id
+    const sp = await ServiceProvider.findOne({ userId: providerId }).lean();
+    if (!sp) {
+      res.json({ success: true, data: { services: [] } });
+      return;
+    }
+
+    const services = await SPService.find({ serviceProviderId: sp._id }).sort({ createdAt: -1 });
+
+    res.json({ success: true, data: { services } });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Failed to fetch SP services' });
+  }
+};
+
+// Get enquiries for a specific service provider (by userId)
+export const getSPEnquiriesById = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { providerId } = req.params;
+
+    // providerId is a User._id; resolve to ServiceProvider._id
+    const sp = await ServiceProvider.findOne({ userId: providerId }).lean();
+    if (!sp) {
+      res.json({ success: true, data: { enquiries: [] } });
+      return;
+    }
+
+    const enquiries = await SPEnquiry.find({ serviceProviderId: sp._id })
+      .populate('spServiceId', 'title category description price priceType thumbnail')
+      .populate('studentId', 'userId')
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, data: { enquiries } });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Failed to fetch SP enquiries' });
+  }
+};
+
+// Get all services (for Super Admin - browse all services from all providers)
+export const getAllSPServicesForSuperAdmin = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { category, search } = req.query;
+
+    const filter: any = {};
+    if (category && category !== 'All') {
+      filter.category = category;
+    }
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const services = await SPService.find(filter)
+      .populate('serviceProviderId', 'companyName companyLogo city state country servicesOffered website')
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, data: { services } });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Failed to fetch services' });
   }
 };

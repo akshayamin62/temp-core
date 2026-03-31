@@ -130,6 +130,8 @@ export default function ProgramSection({
   const canEditApplied = sectionType === 'applied' && userRole === 'SUPER_ADMIN';
   const canSelectPrograms = sectionType === 'available' && userRole === 'STUDENT' && !isReadOnly;
   const canChangeStatus = sectionType === 'applied' && (userRole === 'OPS' || userRole === 'SUPER_ADMIN') && !isReadOnly;
+  const canDeleteAvailable = sectionType === 'available' && (userRole === 'OPS' || userRole === 'SUPER_ADMIN') && !isReadOnly;
+  const [deletingProgram, setDeletingProgram] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPrograms();
@@ -348,6 +350,24 @@ export default function ProgramSection({
       delete newData[programId];
       return newData;
     });
+  };
+
+  const handleDeleteProgram = async (programId: string) => {
+    if (!confirm('Are you sure you want to delete this program?')) return;
+    setDeletingProgram(programId);
+    try {
+      if (userRole === 'SUPER_ADMIN') {
+        await programAPI.deleteAvailableProgramSuperAdmin(programId);
+      } else if (userRole === 'OPS') {
+        await programAPI.deleteAvailableProgramOps(programId);
+      }
+      toast.success('Program deleted successfully');
+      setPrograms(prev => prev.filter(p => p._id !== programId));
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to delete program');
+    } finally {
+      setDeletingProgram(null);
+    }
   };
 
   // Admin edit handlers
@@ -655,7 +675,31 @@ export default function ProgramSection({
                       )}
                     </div>
                   ) : (
-                    <ProgramCard program={program} showPriority={false} showActions={false} index={index} />
+                    <ProgramCard
+                      program={program}
+                      showPriority={false}
+                      showActions={false}
+                      index={index}
+                      headerAction={canDeleteAvailable ? (
+                        <button
+                          onClick={() => handleDeleteProgram(program._id)}
+                          disabled={deletingProgram === program._id}
+                          title="Delete program"
+                          className="ml-2 p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50 shrink-0"
+                        >
+                          {deletingProgram === program._id ? (
+                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          )}
+                        </button>
+                      ) : undefined}
+                    />
                   )}
                 </div>
               ))}

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authAPI, spServiceAPI } from '@/lib/api';
 import { User, USER_ROLE, SPServiceListing, SPEnquiryItem } from '@/types';
-import StudentLayout from '@/components/StudentLayout';
 import toast, { Toaster } from 'react-hot-toast';
 
 const BACKEND_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
@@ -122,19 +121,14 @@ export default function StudentServiceProvidersPage() {
   if (!user) return null;
 
   return (
-    <StudentLayout
-      formStructure={[]}
-      currentPartIndex={0}
-      currentSectionIndex={0}
-      onPartChange={() => {}}
-      onSectionChange={() => {}}
-      isOuterNav={true}
-      serviceName="Study Abroad"
-      user={user}
-    >
+    <>
       <Toaster position="top-right" />
       <div className="bg-gray-50 min-h-[calc(100vh-5rem)]">
         <div className="max-w-7xl mx-auto p-6 lg:p-8">
+          <button onClick={() => router.back()} className="mb-4 inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors">
+            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            Return to Dashboard
+          </button>
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">Service Providers</h1>
@@ -550,6 +544,6 @@ export default function StudentServiceProvidersPage() {
           </div>
         </div>
       )}
-    </StudentLayout>
+    </>
   );
 }

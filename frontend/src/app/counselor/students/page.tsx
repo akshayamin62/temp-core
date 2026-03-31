@@ -144,11 +144,7 @@ export default function CounselorStudentsPage() {
       student.mobileNumber?.includes(query) ||
       counselorName.includes(query);
     
-    const matchesStatus = !statusFilter || 
-      (statusFilter === 'active' && student.user.isActive) ||
-      (statusFilter === 'inactive' && !student.user.isActive);
-    
-    return matchesSearch && matchesStatus;
+    return matchesSearch && student.user.isActive !== false;
   });
 
   const handleViewStudent = (studentId: string) => {
@@ -201,7 +197,6 @@ export default function CounselorStudentsPage() {
                 >
                   <option value="">All Status</option>
                   <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
                 </select>
               </div>
             </div>

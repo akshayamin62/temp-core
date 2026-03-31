@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { authAPI, programAPI, teamMeetAPI, opsScheduleAPI } from '@/lib/api';
-import { User, USER_ROLE, TeamMeet, TEAMMEET_STATUS, OpsSchedule, FormStructure } from '@/types';
-import { getServiceFormStructure, SectionConfig } from '@/config/formConfig';
+import { authAPI, serviceAPI, programAPI, teamMeetAPI, opsScheduleAPI } from '@/lib/api';
+import { getServiceFormStructure } from '@/config/formConfig';
+import { User, USER_ROLE, FormStructure, FormSection, FormSubSection, FormField, TeamMeet, TEAMMEET_STATUS, OpsSchedule } from '@/types';
 import OpsLayout from '@/components/OpsLayout';
 import FormSectionRenderer from '@/components/FormSectionRenderer';
 import FormPartsNavigation from '@/components/FormPartsNavigation';
@@ -19,6 +19,7 @@ import OpsScheduleFormPanel from '@/components/OpsScheduleFormPanel';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName } from '@/utils/nameHelpers';
 import axios from 'axios';
+import PaymentSection from '@/components/PaymentSection';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -41,10 +42,11 @@ export default function StudentFormEditPage() {
   const [formValues, setFormValues] = useState<any>({});
   const [studentInfo, setStudentInfo] = useState<any>(null);
   const [serviceInfo, setServiceInfo] = useState<any>(null);
-  const initialParentalReadOnlyRef = useRef<number[]>([]);
+  const [planTier, setPlanTier] = useState<string | undefined>();
+  const [registrationObj, setRegistrationObj] = useState<any>(null);
 
   // Dashboard / view state
-  type ActiveView = 'dashboard' | 'form';
+  type ActiveView = 'dashboard' | 'form' | 'payment';
   const [activeView, setActiveView] = useState<ActiveView>('form');
   const [isStudyAbroad, setIsStudyAbroad] = useState(false);
   const [programStats, setProgramStats] = useState({
@@ -140,6 +142,8 @@ export default function StudentFormEditPage() {
       
       setStudentInfo(studentData);
       setServiceInfo(regServiceId);
+      setPlanTier(registrationData.registration.planTier);
+      setRegistrationObj(registrationData.registration);
 
       const svcName = typeof regServiceId === 'object' ? regServiceId.name : '';
       const svcSlug = typeof regServiceId === 'object' ? regServiceId.slug : '';
@@ -211,22 +215,6 @@ export default function StudentFormEditPage() {
         });
       }
       
-      // Compute initial parental readOnly indices from DB data
-      const profileParental = formattedAnswers['PROFILE']?.['parentalDetails'];
-      if (profileParental) {
-        const indices: number[] = [];
-        Object.values(profileParental).forEach((subData: any) => {
-          if (Array.isArray(subData)) {
-            subData.forEach((entry: any, idx: number) => {
-              if (entry && Object.values(entry).some((v: any) => v && String(v).trim() !== '')) {
-                indices.push(idx);
-              }
-            });
-          }
-        });
-        initialParentalReadOnlyRef.current = indices;
-      }
-
       setFormValues(formattedAnswers);
     } catch (error: any) {
       console.error('Fetch data error:', error);
@@ -408,6 +396,9 @@ export default function StudentFormEditPage() {
               serviceName={serviceInfo.name}
               editMode="OPS"
               studentId={studentId}
+              planTier={planTier}
+              serviceSlug={typeof serviceInfo === 'object' ? serviceInfo.slug : ''}
+              adminId={studentInfo.adminId?._id}
             />
           )}
 
@@ -420,6 +411,9 @@ export default function StudentFormEditPage() {
               showDashboard={true}
               isDashboardActive={activeView === 'dashboard'}
               onDashboardClick={() => setActiveView('dashboard')}
+              showPayment={true}
+              isPaymentActive={activeView === 'payment'}
+              onPaymentClick={() => setActiveView('payment')}
             />
           )}
 
@@ -527,9 +521,13 @@ export default function StudentFormEditPage() {
               formStructure={formStructure}
               currentPartIndex={currentPartIndex}
               onPartChange={(index) => {
+                setActiveView('form');
                 setCurrentPartIndex(index);
                 setCurrentSectionIndex(0);
               }}
+              showPayment={true}
+              isPaymentActive={false}
+              onPaymentClick={() => setActiveView('payment')}
             />
           )}
 
@@ -562,10 +560,7 @@ export default function StudentFormEditPage() {
                     userRole="OPS"
                   />
                 </div>
-              ) : (() => {
-                const isParentalSection = currentPart.key === 'PROFILE' && currentSection.title === 'Parental Details';
-                const parentalReadOnlyInstances = isParentalSection ? initialParentalReadOnlyRef.current : [];
-                return (
+              ) : (
                 <FormSectionRenderer
                   section={currentSection}
                   values={formValues[currentPart.key]?.[currentSection.key] || {}}
@@ -582,12 +577,8 @@ export default function StudentFormEditPage() {
                   registrationId={registrationId}
                   studentId={studentId}
                   userRole="OPS"
-                  readOnlyKeys={currentPart.key === 'PROFILE' && currentSection.title === 'Personal Details' ? ['firstName', 'middleName', 'lastName'] : undefined}
-                  noDelete={isParentalSection}
-                  readOnlyInstances={isParentalSection ? parentalReadOnlyInstances : []}
                 />
-                );
-              })()}
+              )}
             </div>
           )}
 
@@ -599,6 +590,28 @@ export default function StudentFormEditPage() {
             />
           )}
             </>
+          )}
+
+          {/* Payment View */}
+          {activeView === 'payment' && (
+            <div className="mb-6">
+              <PaymentSection
+                registrationId={registrationId}
+                studentId={studentId}
+                paymentStatus={registrationObj?.paymentStatus}
+                paymentAmount={registrationObj?.paymentAmount}
+                paymentDate={registrationObj?.paymentDate}
+                planTier={planTier}
+                serviceName={typeof serviceInfo === 'object' ? serviceInfo.name : ''}
+                totalAmount={registrationObj?.totalAmount}
+                discountedAmount={registrationObj?.discountedAmount}
+                paymentModel={registrationObj?.paymentModel}
+                installmentPlan={registrationObj?.installmentPlan}
+                totalPaid={registrationObj?.totalPaid}
+                paymentComplete={registrationObj?.paymentComplete}
+                readOnly={true}
+              />
+            </div>
           )}
         </div>
       </OpsLayout>

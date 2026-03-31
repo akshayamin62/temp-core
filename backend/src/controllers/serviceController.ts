@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import Service from "../models/Service";
 import Student from "../models/Student";
 import User from "../models/User";
+import ServicePricing from "../models/ServicePricing";
+import StudentPlanDiscount from "../models/StudentPlanDiscount";
 import StudentServiceRegistration, {
   ServiceRegistrationStatus,
 } from "../models/StudentServiceRegistration";
@@ -49,6 +51,72 @@ export const getMyServices = async (req: AuthRequest, res: Response) => {
     })
       .populate("serviceId")
       .sort({ registeredAt: -1 });
+
+    // Backfill missing payment fields for older registrations so payment UI stays accurate.
+    if (registrations.length > 0) {
+      const pricingMapByServiceSlug: Record<string, Record<string, number>> = {};
+      const discountMap: Record<string, number> = {};
+
+      if (student.adminId) {
+        const allPricing = await ServicePricing.find({ adminId: student.adminId }).lean();
+        allPricing.forEach((p) => {
+          pricingMapByServiceSlug[p.serviceSlug] = (p.prices as unknown as Record<string, number>) || {};
+        });
+      }
+
+      const activeDiscounts = await StudentPlanDiscount.find({
+        studentId: student._id,
+        isActive: true,
+      }).lean();
+      activeDiscounts.forEach((d) => {
+        discountMap[`${d.serviceSlug}::${d.planTier}`] = d.calculatedAmount || 0;
+      });
+
+      for (const reg of registrations) {
+        let changed = false;
+        const serviceDoc = reg.serviceId as any;
+        const serviceSlug = serviceDoc?.slug as string | undefined;
+        const planTier = reg.planTier;
+
+        let baseAmount = reg.totalAmount ?? reg.paymentAmount;
+        if ((!baseAmount || baseAmount <= 0) && serviceSlug && planTier) {
+          const fallbackPrice = pricingMapByServiceSlug[serviceSlug]?.[planTier];
+          if (fallbackPrice && fallbackPrice > 0) {
+            baseAmount = fallbackPrice;
+          }
+        }
+
+        if (baseAmount && baseAmount > 0) {
+          if (!reg.paymentAmount || reg.paymentAmount <= 0) {
+            reg.paymentAmount = baseAmount;
+            changed = true;
+          }
+          if (!reg.totalAmount || reg.totalAmount <= 0) {
+            reg.totalAmount = baseAmount;
+            changed = true;
+          }
+
+          if (serviceSlug && planTier) {
+            const discountAmount = discountMap[`${serviceSlug}::${planTier}`] || 0;
+            if (discountAmount > 0) {
+              const discountedValue = Math.max(0, baseAmount - discountAmount);
+              if (reg.discountedAmount !== discountedValue) {
+                reg.discountedAmount = discountedValue;
+                changed = true;
+              }
+            } else if (reg.discountedAmount != null && reg.discountedAmount <= 0) {
+              // Repair invalid zero discounted amount where no discount exists.
+              reg.discountedAmount = undefined;
+              changed = true;
+            }
+          }
+        }
+
+        if (changed) {
+          await reg.save();
+        }
+      }
+    }
 
     return res.status(200).json({
       success: true,

@@ -142,7 +142,7 @@ export default function SuperAdminLeadsPage() {
         return 'bg-amber-100 text-amber-800';
       case SERVICE_TYPE.EDUCATION_PLANNING:
         return 'bg-teal-100 text-teal-800';
-      case SERVICE_TYPE.IELTS_GRE_LANGUAGE_COACHING:
+      case SERVICE_TYPE.COACHING_CLASSES:
         return 'bg-rose-100 text-rose-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -232,7 +232,7 @@ export default function SuperAdminLeadsPage() {
                   <option value={SERVICE_TYPE.CAREER_FOCUS_STUDY_ABROAD}>Career Focus Study Abroad</option>
                   <option value={SERVICE_TYPE.IVY_LEAGUE_ADMISSION}>Ivy League Admission</option>
                   <option value={SERVICE_TYPE.EDUCATION_PLANNING}>Education Planning</option>
-                  <option value={SERVICE_TYPE.IELTS_GRE_LANGUAGE_COACHING}>IELTS/GRE Language Coaching</option>
+                  <option value={SERVICE_TYPE.COACHING_CLASSES}>Coaching Classes</option>
                 </select>
                 <button
                   onClick={() => { setSearchQuery(''); setServiceFilter(''); setSelectedStageCard(null); setStageFilter(''); }}

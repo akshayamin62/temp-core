@@ -57,13 +57,22 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     order: 5,
   },
   {
-    documentKey: 'aadhar_card',
-    documentName: 'Aadhar Card (Both Sides)',
+    documentKey: 'aadhar_card_front',
+    documentName: 'Aadhar Card Front Page',
     category: 'PRIMARY',
     required: true,
     allowMultiple: false,
-    helpText: 'Upload both sides of your Aadhar card',
+    helpText: 'Upload front side of your Aadhar card',
     order: 6,
+  },
+  {
+    documentKey: 'aadhar_card_back',
+    documentName: 'Aadhar Card Back Page',
+    category: 'PRIMARY',
+    required: true,
+    allowMultiple: false,
+    helpText: 'Upload back side of your Aadhar card',
+    order: 7,
   },
   {
     documentKey: 'passport_photograph',
@@ -72,10 +81,19 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: true,
     allowMultiple: false,
     helpText: 'Upload a recent passport size photograph',
-    order: 7,
+    order: 8,
   },
   
   // SECONDARY DOCUMENTS
+  {
+    documentKey: 'birth_certificate',
+    documentName: 'Birth Certificate',
+    category: 'SECONDARY',
+    required: false,
+    allowMultiple: false,
+    helpText: 'Upload your birth certificate',
+    order: 9,
+  },
   {
     documentKey: 'grade_explanation',
     documentName: 'Grade Explanation Details',
@@ -83,7 +101,7 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: false,
     allowMultiple: false,
     helpText: 'Upload grade explanation document if required',
-    order: 8,
+    order: 10,
   },
   {
     documentKey: 'transcripts',
@@ -92,7 +110,7 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: false,
     allowMultiple: true,
     helpText: 'Upload transcripts (can upload multiple)',
-    order: 9,
+    order: 11,
   },
   {
     documentKey: 'sop',
@@ -101,7 +119,7 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: false,
     allowMultiple: true,
     helpText: 'Upload Statement of Purpose for each course',
-    order: 10,
+    order: 12,
   },
   {
     documentKey: 'academic_lor',
@@ -110,7 +128,7 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: false,
     allowMultiple: true,
     helpText: 'Upload 2-3 academic letters of recommendation',
-    order: 11,
+    order: 13,
   },
   {
     documentKey: 'professional_lor',
@@ -119,7 +137,7 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: false,
     allowMultiple: true,
     helpText: 'Upload professional letter of recommendation if you have work experience',
-    order: 12,
+    order: 14,
   },
   {
     documentKey: 'references',
@@ -128,7 +146,7 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: false,
     allowMultiple: true,
     helpText: 'Upload reference details documents',
-    order: 13,
+    order: 15,
   },
   {
     documentKey: 'language_score',
@@ -137,7 +155,7 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: false,
     allowMultiple: false,
     helpText: 'Upload your language proficiency test score',
-    order: 14,
+    order: 16,
   },
   {
     documentKey: 'entrance_score',
@@ -146,7 +164,7 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: false,
     allowMultiple: false,
     helpText: 'Upload your entrance exam scores if applicable',
-    order: 15,
+    order: 17,
   },
   {
     documentKey: 'resume_cv',
@@ -155,7 +173,7 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: false,
     allowMultiple: false,
     helpText: 'Upload your resume or CV',
-    order: 16,
+    order: 18,
   },
   {
     documentKey: 'work_experience',
@@ -164,7 +182,7 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: false,
     allowMultiple: true,
     helpText: 'Upload work experience or internship letters',
-    order: 17,
+    order: 19,
   },
   {
     documentKey: 'immigration_history',
@@ -173,7 +191,7 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: false,
     allowMultiple: false,
     helpText: 'Upload immigration history documents if applicable',
-    order: 18,
+    order: 20,
   },
   {
     documentKey: 'academic_programs',
@@ -182,7 +200,7 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: false,
     allowMultiple: true,
     helpText: 'Upload certificates of additional academic programs',
-    order: 19,
+    order: 21,
   },
   {
     documentKey: 'workshop_certificates',
@@ -191,7 +209,7 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: false,
     allowMultiple: true,
     helpText: 'Upload workshop or seminar certificates',
-    order: 20,
+    order: 22,
   },
   {
     documentKey: 'social_contribution',
@@ -200,7 +218,7 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: false,
     allowMultiple: true,
     helpText: 'Upload certificates of social contributions or volunteer work',
-    order: 21,
+    order: 23,
   },
   {
     documentKey: 'bank_certificate_statement',
@@ -209,7 +227,7 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: false,
     allowMultiple: true,
     helpText: 'Upload bank certificates and statements',
-    order: 22,
+    order: 24,
   },
   {
     documentKey: 'finance_declaration_certification',
@@ -218,7 +236,7 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: false,
     allowMultiple: true,
     helpText: 'Upload financial declaration and certification documents for visa',
-    order: 23,
+    order: 25,
   },
   {
     documentKey: 'health_document',
@@ -227,7 +245,7 @@ export const YOUR_DOCUMENTS_CONFIG: YourDocumentField[] = [
     required: false,
     allowMultiple: true,
     helpText: 'Upload health-related documents (medical certificates, vaccination records, etc.)',
-    order: 24,
+    order: 26,
   },
 ];
 

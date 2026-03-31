@@ -11,6 +11,7 @@ import {
   assignOps,
   switchActiveOps,
   sendMessageToStudent,
+  updateRegistrationStatus,
 } from '../controllers/superAdminStudentController';
 
 const router = express.Router();
@@ -42,6 +43,9 @@ router.post('/registrations/:registrationId/switch-active-ops', authorize([USER_
 
 // Send message to student (all roles)
 router.post('/:studentId/send-message', sendMessageToStudent);
+
+// Update registration status (role-based: super admin for all, ops for study abroad, eduplan coach for education planning, ivy expert for ivy league)
+router.patch('/registrations/:registrationId/status', updateRegistrationStatus);
 
 export default router;
 

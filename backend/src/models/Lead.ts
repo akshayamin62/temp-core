@@ -4,7 +4,7 @@ export enum SERVICE_TYPE {
   EDUCATION_PLANNING = "Education Planning",
   CAREER_FOCUS_STUDY_ABROAD = "Career Focus Study Abroad",
   IVY_LEAGUE_ADMISSION = "Ivy League Admission",
-  IELTS_GRE_LANGUAGE_COACHING = "IELTS/GRE/Language Coaching",
+  COACHING_CLASSES = "Coaching Classes",
 }
 
 export enum LEAD_STAGE {

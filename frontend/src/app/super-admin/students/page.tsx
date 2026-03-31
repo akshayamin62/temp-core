@@ -10,7 +10,7 @@ import axios from 'axios';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
 import { BACKEND_URL } from '@/lib/ivyApi';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 interface StudentData {
   _id: string;

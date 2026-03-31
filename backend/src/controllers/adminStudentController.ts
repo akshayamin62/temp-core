@@ -58,7 +58,7 @@ export const getAdminStudents = async (req: AuthRequest, res: Response): Promise
     }
     
     const students = await Student.find(studentQuery)
-      .populate('userId', 'firstName middleName lastName email profilePicture isVerified isActive createdAt')
+      .populate('userId', 'firstName middleName lastName email isVerified isActive createdAt')
       .populate({
         path: 'adminId',
         populate: {
@@ -138,7 +138,7 @@ export const getAdminStudentDetails = async (req: AuthRequest, res: Response): P
     }
 
     const student = await Student.findById(studentId)
-      .populate('userId', 'firstName middleName lastName name email role profilePicture isVerified isActive createdAt')
+      .populate('userId', 'firstName middleName lastName name email role isVerified isActive createdAt')
       .populate({
         path: 'adminId',
         populate: {

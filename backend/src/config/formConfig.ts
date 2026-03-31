@@ -27,7 +27,6 @@ export enum FormPartKey {
   PROFILE = "PROFILE",
   APPLICATION = "APPLICATION",
   DOCUMENT = "DOCUMENT",
-  PAYMENT = "PAYMENT",
 }
 
 // ─── Types ───
@@ -109,11 +108,21 @@ const PARENT_RELATIONSHIP_OPTIONS: FieldOption[] = [
 ];
 
 const EDUCATION_LEVEL_OPTIONS: FieldOption[] = [
-  { label: "High School", value: "high_school" },
+  { label: "Secondary School", value: "secondary_school" },
+  { label: "Higher Secondary School", value: "higher_secondary_school" },
   { label: "Associate Degree", value: "associate" },
   { label: "Bachelor's Degree", value: "bachelors" },
   { label: "Master's Degree", value: "masters" },
   { label: "Doctorate", value: "doctorate" },
+];
+
+const BOARD_OPTIONS: FieldOption[] = [
+  { label: "CBSE", value: "CBSE" },
+  { label: "ICSE", value: "ICSE" },
+  { label: "IGCSE", value: "IGCSE" },
+  { label: "IB/Cambridge", value: "IB_Cambridge" },
+  { label: "State Board", value: "State Board" },
+  { label: "Other", value: "Other" },
 ];
 
 const MARKS_SYSTEM_OPTIONS: FieldOption[] = [
@@ -312,14 +321,16 @@ export const PROFILE_CONFIG: PartConfig = {
           maxRepeat: 10,
           fields: [
             { key: "educationLevel", label: "Education Level", type: FieldType.SELECT, required: true, order: 1, options: EDUCATION_LEVEL_OPTIONS },
-            { key: "institutionName", label: "Institution Name", type: FieldType.TEXT, placeholder: "Enter institution name", required: true, order: 2 },
-            { key: "institutionCountry", label: "Country of Institution", type: FieldType.COUNTRY, required: true, order: 3 },
-            { key: "fieldOfStudy", label: "Field of Study", type: FieldType.TEXT, placeholder: "Enter field of study", required: true, order: 4 },
-            { key: "startDate", label: "Start Date", type: FieldType.DATE, required: true, order: 5 },
-            { key: "endDate", label: "End Date", type: FieldType.DATE, required: false, order: 6 },
-            { key: "totalMarks", label: "Grading System", type: FieldType.SELECT, required: true, order: 7, options: MARKS_SYSTEM_OPTIONS },
-            { key: "gpa", label: "GPA / Percentage", type: FieldType.TEXT, placeholder: "Enter your GPA or percentage", required: true, order: 8 },
-            { key: "currentlyStudying", label: "Currently Studying Here", type: FieldType.CHECKBOX, required: false, order: 9 },
+            { key: "board", label: "Board", type: FieldType.SELECT, required: true, order: 2, options: BOARD_OPTIONS },
+            { key: "boardFullName", label: "Enter Full Name of Board", type: FieldType.TEXT, placeholder: "Enter full name of your board", required: true, order: 3 },
+            { key: "institutionName", label: "Institution Name", type: FieldType.TEXT, placeholder: "Enter institution name", required: true, order: 4 },
+            { key: "institutionCountry", label: "Country of Institution", type: FieldType.COUNTRY, required: true, order: 5 },
+            { key: "fieldOfStudy", label: "Field of Study", type: FieldType.TEXT, placeholder: "Enter field of study", required: true, order: 6 },
+            { key: "startDate", label: "Start Date", type: FieldType.DATE, required: true, order: 7 },
+            { key: "endDate", label: "End Date", type: FieldType.DATE, required: false, order: 8 },
+            { key: "totalMarks", label: "Grading System", type: FieldType.SELECT, required: true, order: 9, options: MARKS_SYSTEM_OPTIONS },
+            { key: "gpa", label: "GPA / Percentage", type: FieldType.TEXT, placeholder: "Enter your GPA or percentage", required: true, order: 10 },
+            { key: "currentlyStudying", label: "Currently Studying Here", type: FieldType.CHECKBOX, required: false, order: 11 },
           ],
         },
       ],
@@ -534,31 +545,7 @@ export const DOCUMENT_CONFIG: PartConfig = {
   ],
 };
 
-// ─── PAYMENT Part Config ───
-export const PAYMENT_CONFIG: PartConfig = {
-  key: FormPartKey.PAYMENT,
-  title: "Payment",
-  description: "Payment information",
-  order: 4,
-  sections: [
-    {
-      key: "paymentInformation",
-      title: "Payment Information",
-      order: 1,
-      subSections: [
-        {
-          key: "paymentDetails",
-          title: "Payment Details",
-          order: 1,
-          isRepeatable: false,
-          fields: [
-            { key: "paymentStatus", label: "Payment Status", type: FieldType.TEXT, placeholder: "Payment status", required: false, order: 1 },
-          ],
-        },
-      ],
-    },
-  ],
-};
+
 
 // ═══════════════════════════════════════════════════════
 // SERVICE → PARTS MAPPING
@@ -566,10 +553,10 @@ export const PAYMENT_CONFIG: PartConfig = {
 
 /**
  * Which parts each service uses. Only Study Abroad has all 4.
- * Education Planning, Ivy League, IELTS, GRE have no form parts.
+ * Education Planning, Ivy League, Coaching Classes have no form parts.
  */
 export const SERVICE_FORM_PARTS: Record<string, PartConfig[]> = {
-  "study-abroad": [PROFILE_CONFIG, APPLICATION_CONFIG, DOCUMENT_CONFIG, PAYMENT_CONFIG],
+  "study-abroad": [PROFILE_CONFIG, APPLICATION_CONFIG, DOCUMENT_CONFIG],
   // add more services here if they need forms in the future
 };
 
@@ -589,7 +576,7 @@ export function getServiceFormStructure(serviceSlug: string): PartConfig[] {
  * Get a specific part config by key
  */
 export function getPartConfig(partKey: FormPartKey): PartConfig | undefined {
-  const all = [PROFILE_CONFIG, APPLICATION_CONFIG, DOCUMENT_CONFIG, PAYMENT_CONFIG];
+  const all = [PROFILE_CONFIG, APPLICATION_CONFIG, DOCUMENT_CONFIG];
   return all.find(p => p.key === partKey);
 }
 

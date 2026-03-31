@@ -62,6 +62,7 @@ interface Registration {
     slug: string;
     shortDescription: string;
   };
+  planTier?: 'PRO' | 'PREMIUM' | 'PLATINUM';
   status: string;
   createdAt: string;
 }
@@ -283,6 +284,11 @@ export default function StudentDetailPage() {
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900 mb-1">
                           {registration.serviceId.name}
+                          {registration.planTier && (
+                            <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-medium">
+                              {registration.planTier}
+                            </span>
+                          )}
                         </h3>
                         <p className="text-sm text-gray-600 mb-2">
                           {registration.serviceId.shortDescription}
@@ -323,6 +329,21 @@ export default function StudentDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Service Plans */}
+          {student && student.adminId?._id && (
+            <div className="mt-6">
+              <button
+                onClick={() => router.push('/service-plans/view?studentId=' + studentId)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Service Plans
+              </button>
+            </div>
+          )}
         </div>
       </OpsLayout>
       {showProfileModal && (

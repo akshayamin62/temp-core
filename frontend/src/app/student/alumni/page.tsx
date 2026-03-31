@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { authAPI } from '@/lib/api';
 import { User, USER_ROLE } from '@/types';
 import ComingSoon from '@/components/ComingSoon';
-import StudentLayout from '@/components/StudentLayout';
 
 export default function StudentAlumniPage() {
   const router = useRouter();
@@ -30,19 +29,12 @@ export default function StudentAlumniPage() {
   );
 
   return (
-    <StudentLayout
-      formStructure={[]}
-      currentPartIndex={0}
-      currentSectionIndex={0}
-      onPartChange={() => {}}
-      onSectionChange={() => {}}
-      isOuterNav={true}
-      serviceName="Study Abroad"
-      user={user}
-    >
-      <div className="p-8">
-        <ComingSoon title="Alumni" />
-      </div>
-    </StudentLayout>
+    <div className="p-8">
+      <button onClick={() => router.back()} className="mb-4 inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors">
+        <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+        Return to Dashboard
+      </button>
+      <ComingSoon title="Alumni" />
+    </div>
   );
 }

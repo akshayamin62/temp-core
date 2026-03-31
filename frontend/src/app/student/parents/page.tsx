@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authAPI, parentAPI } from '@/lib/api';
 import { User, USER_ROLE } from '@/types';
-import StudentLayout from '@/components/StudentLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
 import { BACKEND_URL } from '@/lib/ivyApi';
@@ -58,17 +57,11 @@ export default function StudentParentsPage() {
   return (
     <>
       <Toaster position="top-right" />
-      <StudentLayout
-        formStructure={[]}
-        currentPartIndex={0}
-        currentSectionIndex={0}
-        onPartChange={() => {}}
-        onSectionChange={() => {}}
-        isOuterNav={true}
-        serviceName="Study Abroad"
-        user={user}
-      >
         <div className="p-8">
+          <button onClick={() => router.back()} className="mb-4 inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors">
+            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            Return to Dashboard
+          </button>
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-gray-900">My Parents</h1>
             <p className="text-gray-600 mt-1">View your linked parents</p>
@@ -140,7 +133,6 @@ export default function StudentParentsPage() {
             </div>
           </div>
         </div>
-      </StudentLayout>
     </>
   );
 }

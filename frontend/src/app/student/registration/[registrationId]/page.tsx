@@ -2,12 +2,13 @@
 
 import { useEffect, useState, Suspense, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { serviceAPI, formAnswerAPI, teamMeetAPI, programAPI, opsScheduleAPI, authAPI, activityAPI } from '@/lib/api';
+import { serviceAPI, formAnswerAPI, teamMeetAPI, programAPI, opsScheduleAPI, authAPI, activityAPI, servicePlanAPI } from '@/lib/api';
 import { StudentServiceRegistration, Service, TeamMeet, TEAMMEET_STATUS, OpsSchedule } from '@/types';
 import { getServiceFormStructure, PartConfig, SectionConfig } from '@/config/formConfig';
+import { getServicePlans } from '@/config/servicePlans';
 import toast, { Toaster } from 'react-hot-toast';
 import FormSectionRenderer from '@/components/FormSectionRenderer';
-import StudentLayout from '@/components/StudentLayout';
+import { StudyAbroadLayout, EducationPlanningLayout, CoachingClassesLayout } from '@/components/layouts';
 import ProgramSection from '@/components/ProgramSection';
 import { getFullName } from '@/utils/nameHelpers';
 import axios from 'axios';
@@ -18,6 +19,7 @@ import TeamMeetSidebar from '@/components/TeamMeetSidebar';
 import TeamMeetFormPanel from '@/components/TeamMeetFormPanel';
 import OpsScheduleCalendar from '@/components/OpsScheduleCalendar';
 import OpsScheduleFormPanel from '@/components/OpsScheduleFormPanel';
+import CoachingClassCards, { ClassTiming } from '@/components/CoachingClassCards';
 
 const BRAINOGRAPHY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -101,6 +103,9 @@ function MyDetailsContent() {
   const initialParentalReadOnlyRef = useRef<number[]>([]);
   const [brainographyDoc, setBrainographyDoc] = useState<BrainographyDoc | null>(null);
   const [currentUser, setCurrentUser] = useState<{ firstName?: string; middleName?: string; lastName?: string; email: string; profilePicture?: string } | null>(null);
+
+  // Coaching classes pricing (for coaching service registrations)
+  const [coachingPricing, setCoachingPricing] = useState<Record<string, number> | null>(null);
 
   // Extracted data & Portfolio
   const [brainographyData, setBrainographyData] = useState<BrainographyDataType | null>(null);
@@ -347,6 +352,14 @@ function MyDetailsContent() {
         sections: part.sections,
       }));
       setFormStructure(localFormStructure);
+
+      // Fetch coaching pricing if this is a coaching-classes registration
+      if (serviceSlug === 'coaching-classes') {
+        try {
+          const pricingRes = await servicePlanAPI.getPricing('coaching-classes');
+          setCoachingPricing(pricingRes.data.data.pricing || null);
+        } catch { /* ignore */ }
+      }
 
       // Fetch existing answers from database (for auto-fill)
       const answersResponse = await formAnswerAPI.getFormAnswers(registrationId!);
@@ -1156,6 +1169,39 @@ function MyDetailsContent() {
     // Education Planning has no form parts — render a dedicated view showing only the Brainography Report
     if (formStructure.length === 0) {
       const isEducationPlanning = service?.slug === 'education-planning' || service?.name === 'Education Planning';
+      const isCoachingClasses = service?.slug === 'coaching-classes' || service?.name === 'Coaching Classes';
+
+      if (isCoachingClasses) {
+        const coachingPlans = getServicePlans('coaching-classes');
+        const regTier = registration?.planTier;
+        const regClasses: Record<string, ClassTiming | null> = {};
+        if (regTier) {
+          regClasses[regTier] = (registration as any)?.classTiming || null;
+        }
+
+        return (
+          <div className="min-h-screen bg-gray-50">
+            <Toaster position="top-right" />
+            <CoachingClassesLayout
+              serviceName={service?.name || 'Coaching Classes'}
+              user={currentUser}
+            >
+              <div className="p-6 lg:p-8">
+                <div className="mb-8">
+                  <h2 className="text-2xl lg:text-3xl font-extrabold text-gray-900 tracking-tight">Service Plan</h2>
+                  <p className="mt-1 text-gray-500 text-lg max-w-2xl">Your registered coaching class details and available plans.</p>
+                </div>
+                <CoachingClassCards
+                  plans={coachingPlans}
+                  pricing={coachingPricing}
+                  registeredClasses={regClasses}
+                />
+              </div>
+            </CoachingClassesLayout>
+          </div>
+        );
+      }
+
       if (!isEducationPlanning) {
         return (
           <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -1176,17 +1222,11 @@ function MyDetailsContent() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Toaster position="top-right" />
-        <StudentLayout
-          formStructure={[]}
-          currentPartIndex={0}
-          currentSectionIndex={0}
-          onPartChange={() => {}}
-          onSectionChange={() => {}}
+        <EducationPlanningLayout
           serviceName={service?.name || 'Education Planning'}
           user={currentUser}
-          isEducationPlanning={true}
-          activeEduPlanView={activeView}
-          onEduPlanViewChange={(view) => setActiveView(view as ActiveView)}
+          activeView={activeView}
+          onViewChange={(view) => setActiveView(view as ActiveView)}
           onMyActivityClick={() => router.push(`/student/registration/${registrationId}/activity`)}
         >
           {/* Dashboard */}
@@ -1202,7 +1242,7 @@ function MyDetailsContent() {
           {activeView === 'portfolio' && renderPortfolioContent()}
 
           {renderSupportTeam()}
-        </StudentLayout>
+        </EducationPlanningLayout>
 
         {/* TeamMeet Slide-in Panel */}
         <TeamMeetFormPanel
@@ -1231,163 +1271,177 @@ function MyDetailsContent() {
   const currentPart = formStructure[selectedPartIndex];
   const currentSection = currentPart.sections.sort((a, b) => a.order - b.order)[selectedSectionIndex];
 
+  const renderFormContent = () => (
+    <>
+      {/* Section Navigation (Horizontal Tabs) */}
+      {currentPart && currentPart.sections && currentPart.sections.length > 0 && (
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="inline-flex bg-gray-100 rounded-lg p-1 border border-gray-200 overflow-x-auto">
+              {[...currentPart.sections]
+                .sort((a, b) => a.order - b.order)
+                .map((section, index) => (
+                  <button
+                    key={section.key}
+                    onClick={() => setSelectedSectionIndex(index)}
+                    className={`px-4 py-2 rounded-md font-medium transition-all whitespace-nowrap text-sm ${
+                      selectedSectionIndex === index
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-gray-700 hover:text-gray-900'
+                    }`}
+                  >
+                    {section.title}
+                  </button>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Form Content - Single Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-8">
+        <div className="space-y-5">
+          {currentSection && (
+            <div>
+              {currentPart.part.key === 'APPLICATION' && 
+               (currentSection.title === 'Apply to Program' || currentSection.title === 'Applied Program') ? (
+                <ProgramSection
+                  sectionType={currentSection.title === 'Apply to Program' ? 'available' : 'applied'}
+                  studentId={registration?.studentId?._id || ''}
+                  registrationId={registrationId}
+                  userRole="STUDENT"
+                />
+              ) : currentPart.part.key === 'DOCUMENT' ? (
+                <FormSectionRenderer
+                  section={currentSection}
+                  values={formValues[currentPart.part.key]?.[currentSection.key] || {}}
+                  onChange={(subSectionId, index, key, value) =>
+                    handleFieldChange(currentPart.part.key, currentSection.key, subSectionId, index, key, value)
+                  }
+                  onAddInstance={(subSectionId) =>
+                    handleAddInstance(currentPart.part.key, currentSection.key, subSectionId)
+                  }
+                  onRemoveInstance={(subSectionId, index) =>
+                    handleRemoveInstance(currentPart.part.key, currentSection.key, subSectionId, index)
+                  }
+                  errors={errors}
+                  registrationId={registrationId!}
+                  studentId={registration?.studentId?.toString()}
+                  userRole="STUDENT"
+                />
+              ) : (
+                <>
+                  {(() => {
+                    const isParentalSection = currentPart.part.key === 'PROFILE' && currentSection.title === 'Parental Details';
+                    const parentalReadOnlyInstances = isParentalSection ? initialParentalReadOnlyRef.current : [];
+                    const allParentalSlotsFilled = parentalReadOnlyInstances.length >= 2;
+                    return (
+                      <>
+                        <FormSectionRenderer
+                          section={currentSection}
+                          values={formValues[currentPart.part.key]?.[currentSection.key] || {}}
+                          onChange={(subSectionId, index, key, value) =>
+                            handleFieldChange(currentPart.part.key, currentSection.key, subSectionId, index, key, value)
+                          }
+                          onAddInstance={(subSectionId) =>
+                            handleAddInstance(currentPart.part.key, currentSection.key, subSectionId)
+                          }
+                          onRemoveInstance={(subSectionId, index) =>
+                            handleRemoveInstance(currentPart.part.key, currentSection.key, subSectionId, index)
+                          }
+                          errors={errors}
+                          readOnly={isParentalSection && allParentalSlotsFilled}
+                          readOnlyKeys={currentPart.part.key === 'PROFILE' ? ['firstName', 'middleName', 'lastName'] : undefined}
+                          noDelete={isParentalSection}
+                          readOnlyInstances={isParentalSection ? parentalReadOnlyInstances : []}
+                        />
+                        {isParentalSection && parentalReadOnlyInstances.length > 0 && (
+                          <div className="mt-3 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+                            {allParentalSlotsFilled
+                              ? 'Both parental detail entries are saved. Contact your counselor or admin to make changes.'
+                              : 'Saved parental details cannot be edited. You may add one more parent entry.'}
+                          </div>
+                        )}
+                        <div className="flex justify-end gap-3 mt-5">
+                          <button
+                            onClick={handleSaveSection}
+                            disabled={saving}
+                            className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {saving ? 'Saving...' : 'Save'}
+                          </button>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+
   // ═══ Regular Form View ═══
   return (
     <div className="min-h-screen bg-gray-50">
       <Toaster position="top-right" />
 
-      <StudentLayout
-        formStructure={formStructure}
-        currentPartIndex={selectedPartIndex}
-        currentSectionIndex={selectedSectionIndex}
-        onPartChange={(index) => {
-          setSelectedPartIndex(index);
-          setSelectedSectionIndex(0);
-          setActiveView('form');
-        }}
-        onSectionChange={(index) => {
-          setSelectedSectionIndex(index);
-          setActiveView('form');
-        }}
-        serviceName={service?.name || 'Service'}
-        showDashboard={isStudyAbroad}
-        isDashboardActive={activeView === 'dashboard'}
-        onDashboardClick={() => setActiveView('dashboard')}
-        user={currentUser}
-        isEducationPlanning={isEducationPlanning}
-        activeEduPlanView={activeView}
-        onEduPlanViewChange={(view) => setActiveView(view as ActiveView)}
-        onMyActivityClick={() => router.push(`/student/registration/${registrationId}/activity`)}
-      >
-        {/* Education Planning Dashboard */}
-        {isEducationPlanning && activeView === 'dashboard' && renderEduPlanDashboard()}
-
-        {/* Study Abroad Dashboard */}
-        {isStudyAbroad && activeView === 'dashboard' && renderStudentDashboard()}
-
-        {/* Dynamic Content Area */}
-        {isEducationPlanning && activeView === 'analytics' && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <ActivityAnalyticsDashboard registrationId={registrationId} />
-          </div>
-        )}
-        {isEducationPlanning && activeView === 'brainography' && renderBrainographyContent()}
-        {isEducationPlanning && activeView === 'portfolio' && renderPortfolioContent()}
-
-        {activeView === 'form' && (
-          <>
-            {/* Section Navigation (Horizontal Tabs) */}
-            {currentPart && currentPart.sections && currentPart.sections.length > 0 && (
-              <div className="bg-white border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                  <div className="inline-flex bg-gray-100 rounded-lg p-1 border border-gray-200 overflow-x-auto">
-                    {[...currentPart.sections]
-                      .sort((a, b) => a.order - b.order)
-                      .map((section, index) => (
-                        <button
-                          key={section.key}
-                          onClick={() => setSelectedSectionIndex(index)}
-                          className={`px-4 py-2 rounded-md font-medium transition-all whitespace-nowrap text-sm ${
-                            selectedSectionIndex === index
-                              ? 'bg-blue-600 text-white shadow-sm'
-                              : 'text-gray-700 hover:text-gray-900'
-                          }`}
-                        >
-                          {section.title}
-                        </button>
-                      ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Form Content - Single Section */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-8">
-              <div className="space-y-5">
-                {currentSection && (
-                  <div>
-                    {currentPart.part.key === 'APPLICATION' && 
-                     (currentSection.title === 'Apply to Program' || currentSection.title === 'Applied Program') ? (
-                      <ProgramSection
-                        sectionType={currentSection.title === 'Apply to Program' ? 'available' : 'applied'}
-                        studentId={registration?.studentId?._id || ''}
-                        registrationId={registrationId}
-                        userRole="STUDENT"
-                      />
-                    ) : currentPart.part.key === 'DOCUMENT' ? (
-                      <FormSectionRenderer
-                        section={currentSection}
-                        values={formValues[currentPart.part.key]?.[currentSection.key] || {}}
-                        onChange={(subSectionId, index, key, value) =>
-                          handleFieldChange(currentPart.part.key, currentSection.key, subSectionId, index, key, value)
-                        }
-                        onAddInstance={(subSectionId) =>
-                          handleAddInstance(currentPart.part.key, currentSection.key, subSectionId)
-                        }
-                        onRemoveInstance={(subSectionId, index) =>
-                          handleRemoveInstance(currentPart.part.key, currentSection.key, subSectionId, index)
-                        }
-                        errors={errors}
-                        registrationId={registrationId!}
-                        studentId={registration?.studentId?.toString()}
-                        userRole="STUDENT"
-                      />
-                    ) : (
-                      <>
-                        {(() => {
-                          const isParentalSection = currentPart.part.key === 'PROFILE' && currentSection.title === 'Parental Details';
-                          const parentalReadOnlyInstances = isParentalSection ? initialParentalReadOnlyRef.current : [];
-                          const allParentalSlotsFilled = parentalReadOnlyInstances.length >= 2;
-                          return (
-                            <>
-                              <FormSectionRenderer
-                                section={currentSection}
-                                values={formValues[currentPart.part.key]?.[currentSection.key] || {}}
-                                onChange={(subSectionId, index, key, value) =>
-                                  handleFieldChange(currentPart.part.key, currentSection.key, subSectionId, index, key, value)
-                                }
-                                onAddInstance={(subSectionId) =>
-                                  handleAddInstance(currentPart.part.key, currentSection.key, subSectionId)
-                                }
-                                onRemoveInstance={(subSectionId, index) =>
-                                  handleRemoveInstance(currentPart.part.key, currentSection.key, subSectionId, index)
-                                }
-                                errors={errors}
-                                readOnly={isParentalSection && allParentalSlotsFilled}
-                                readOnlyKeys={currentPart.part.key === 'PROFILE' ? ['firstName', 'middleName', 'lastName'] : undefined}
-                                noDelete={isParentalSection}
-                                readOnlyInstances={isParentalSection ? parentalReadOnlyInstances : []}
-                              />
-                              {isParentalSection && parentalReadOnlyInstances.length > 0 && (
-                                <div className="mt-3 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
-                                  {allParentalSlotsFilled
-                                    ? 'Both parental detail entries are saved. Contact your counselor or admin to make changes.'
-                                    : 'Saved parental details cannot be edited. You may add one more parent entry.'}
-                                </div>
-                              )}
-                              <div className="flex justify-end gap-3 mt-5">
-                                <button
-                                  onClick={handleSaveSection}
-                                  disabled={saving}
-                                  className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  {saving ? 'Saving...' : 'Save'}
-                                </button>
-                              </div>
-                            </>
-                          );
-                        })()}
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
+      {isEducationPlanning ? (
+        <EducationPlanningLayout
+          formStructure={formStructure}
+          currentPartIndex={selectedPartIndex}
+          onPartChange={(index) => {
+            setSelectedPartIndex(index);
+            setSelectedSectionIndex(0);
+            setActiveView('form');
+          }}
+          onSectionChange={(index) => {
+            setSelectedSectionIndex(index);
+            setActiveView('form');
+          }}
+          serviceName={service?.name || 'Education Planning'}
+          user={currentUser}
+          activeView={activeView}
+          onViewChange={(view) => setActiveView(view as ActiveView)}
+          onMyActivityClick={() => router.push(`/student/registration/${registrationId}/activity`)}
+        >
+          {activeView === 'dashboard' && renderEduPlanDashboard()}
+          {activeView === 'analytics' && (
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+              <ActivityAnalyticsDashboard registrationId={registrationId} />
             </div>
-          </>
-        )}
-
-        {renderSupportTeam()}
-      </StudentLayout>
+          )}
+          {activeView === 'brainography' && renderBrainographyContent()}
+          {activeView === 'portfolio' && renderPortfolioContent()}
+          {activeView === 'form' && renderFormContent()}
+          {renderSupportTeam()}
+        </EducationPlanningLayout>
+      ) : (
+        <StudyAbroadLayout
+          formStructure={formStructure}
+          currentPartIndex={selectedPartIndex}
+          onPartChange={(index) => {
+            setSelectedPartIndex(index);
+            setSelectedSectionIndex(0);
+            setActiveView('form');
+          }}
+          onSectionChange={(index) => {
+            setSelectedSectionIndex(index);
+            setActiveView('form');
+          }}
+          serviceName={service?.name || 'Study Abroad'}
+          showDashboard={true}
+          isDashboardActive={activeView === 'dashboard'}
+          onDashboardClick={() => setActiveView('dashboard')}
+          user={currentUser}
+        >
+          {activeView === 'dashboard' && renderStudentDashboard()}
+          {activeView === 'form' && renderFormContent()}
+          {renderSupportTeam()}
+        </StudyAbroadLayout>
+      )}
 
       {/* TeamMeet Slide-in Panel */}
       <TeamMeetFormPanel

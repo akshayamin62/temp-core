@@ -1,0 +1,324 @@
+STUDY ABROAD WORKFLOW — KAREER STUDIO
+======================================
+Complete Journey: Lead Generation → Application Closed
+
+This document describes the full Study Abroad workflow in simple English,
+covering every phase, role, and feature involved.
+
+
+PHASE 1: LEAD GENERATION
+-------------------------
+How it starts:
+- A prospective student (or their parent) fills out a public enquiry form.
+- Each Admin has a unique enquiry form link (via their enquiryFormSlug).
+- When submitted, a Lead record is created with:
+  Name, Email, Mobile Number, City, Service Types (e.g. "Career Focus Study Abroad"),
+  Intake, Year, Parent Details (name, relationship, mobile, email, qualification, occupation),
+  Source (defaults to "Enquiry Form").
+- The Lead starts at Stage: "New" and is linked to the Admin who owns the form.
+
+
+PHASE 2: LEAD MANAGEMENT & FOLLOW-UPS
+--------------------------------------
+What happens next:
+- The Admin assigns a Counselor to the Lead.
+- The Counselor conducts Follow-ups:
+  * Each follow-up has: Scheduled Date, Time, Duration (15/30/45/60 min),
+    Meeting Type (Online or Face to Face), Notes.
+  * Follow-ups are numbered sequentially (1st, 2nd, 3rd...).
+  * After each follow-up, the Counselor sets a status. There are 21 possible outcomes:
+    Scheduled, Call Not Answered, Phone Switched Off, Out of Coverage Area,
+    Number Busy, Call Disconnected, Invalid/Wrong Number, Incoming Calls Barred,
+    Call Rejected/Declined, Asked to Call Back Later, Busy - Requested Reschedule,
+    Need time to discuss with parents, Responding Vaguely, Interested - Need Time,
+    Interested - Discussing with Family, Not Interested, Not Required Anymore,
+    Repeatedly Not Responding, Fake/Test Enquiry, Duplicate Enquiry, Converted to Student.
+- The Lead Stage is updated as follow-ups progress:
+  New → Hot → Warm → Cold → Converted to Student (or Closed).
+- If the lead is not interested, the stage moves to "Closed".
+
+
+PHASE 3: LEAD TO STUDENT CONVERSION
+-------------------------------------
+When a lead is ready:
+- The Counselor sends a "Conversion Request" to the Admin.
+- A LeadStudentConversion record is created with status: PENDING.
+- The Admin reviews and decides:
+  * APPROVE: The system automatically creates:
+    - A new User account (role: STUDENT)
+    - A Student record (linked to the Admin and Counselor)
+    - A Parent record (from the lead's parent details — name, relationship, mobile, qualification, occupation)
+    - The Lead stage changes to "Converted to Student"
+  * REJECT: The Admin provides a rejection reason. The Lead stays as-is.
+
+
+PHASE 4: STUDENT SETUP
+-----------------------
+After conversion:
+- The Student record is created with:
+  UserId, AdminId (which Admin manages them), CounselorId (which Counselor handles them),
+  Email, Mobile, Intake, Year, ConvertedFromLeadId (for traceability).
+- The Parent is linked to the Student (parentIds array).
+- The Student logs in and registers for the "Study Abroad" service.
+- A StudentServiceRegistration record is created:
+  StudentId, ServiceId, Status: REGISTERED, PaymentStatus, PaymentAmount.
+
+
+PHASE 5: TEAM ASSIGNMENT
+-------------------------
+Setting up the operations team:
+- The Super Admin or Admin assigns OPS (Operations) team members to the student's registration:
+  * Primary OPS — main operations handler
+  * Secondary OPS — backup
+  * Active OPS — currently responsible (can rotate)
+- The registration status changes to: IN_PROGRESS.
+
+
+PHASE 6: PROFILE FORM (Part 1 of 4)
+-------------------------------------
+The student fills out their profile, which has 7 sections:
+
+1. PERSONAL DETAILS
+   - Personal Information (name, DOB, gender, etc.)
+   - Mailing Address
+   - Permanent Address
+   - Passport Information
+   - Nationality
+   - Background Information
+   - Additional Information
+
+2. PARENTAL DETAILS
+   - Parent/Guardian info (repeatable — up to 2 entries)
+
+3. ACADEMIC QUALIFICATION
+   - Education Summary (repeatable — up to 10 entries)
+   - School, college, university details
+
+4. WORK EXPERIENCE
+   - Work Experience & Internships (repeatable — up to 10 entries)
+
+5. TESTS
+   - IELTS, GRE, SAT, PTE, TOEFL, GMAT, Duolingo scores
+
+6. FINANCE
+   - Sponsors (repeatable — up to 10 entries)
+   - Who is funding the study abroad
+
+7. VISA
+   - Visa Referred information
+
+All answers are saved as a StudentFormAnswer record (partKey: PROFILE, answers: JSON).
+Field types include: Text, Email, Number, Date, Phone, Textarea, Select, Radio,
+Checkbox, File upload, Country, State, City.
+
+
+PHASE 7: OPS OPERATIONS
+------------------------
+While the student fills their profile, OPS handles operations:
+
+a) OPS SCHEDULE
+   - Scheduled tasks for each student
+   - Fields: Date, Time, Description
+   - Statuses: SCHEDULED → COMPLETED / MISSED
+
+b) DOCUMENT MANAGEMENT
+   - Two categories: PRIMARY and SECONDARY documents
+   - Two types:
+     * CORE documents — created by OPS/Super Admin as required templates
+     * EXTRA documents — additional documents as needed
+   - Documents go through review: PENDING → APPROVED / REJECTED
+   - If rejected, a rejection message is provided
+   - Documents have versioning support
+
+c) TEAM MEETS
+   - Meetings between team members (OPS, Admin, Counselor, Student, Parent)
+   - Fields: Subject, Date, Time, Duration, Meeting Type (Online/Face to Face),
+     Description, Attachment, Invited Users
+   - Can be integrated with Zoho meetings
+   - Statuses: PENDING_CONFIRMATION → CONFIRMED → COMPLETED / REJECTED / CANCELLED
+
+
+PHASE 8: APPLICATION (Part 2 of 4)
+------------------------------------
+Program shortlisting and application process:
+
+a) PROGRAM SHORTLISTING
+   - OPS/Student/Admin creates program entries with:
+     University Name, University Rankings (Webometrics World & National, US News, QS),
+     Program Name, Program URL, Campus, Country, Study Level, Duration (months),
+     IELTS Score requirement, Application Fee (with currency), Yearly Tuition Fees,
+     Intake, Year.
+   - Each program starts at Status: "Shortlisted"
+
+b) STUDENT SELECTION
+   - Student reviews shortlisted programs
+   - Marks programs as selected (isSelectedByStudent: true)
+   - Sets priority ranking for each selected program
+
+c) APPLICATION IN PROGRESS
+   - Program status changes to: "In Progress"
+   - The team works on the application
+
+d) PROGRAM CHAT
+   - Each program gets a chat room (ProgramChat)
+   - Two chat types: Open (everyone sees) and Private
+   - Participants: Student, OPS, Admin, Counselor, Super Admin, Parent
+   - Message types: Text and Document
+   - Documents shared in chat can be saved to EXTRA documents (savedToExtra flag)
+   - Messages track who has read them (readBy array)
+
+e) APPLICATION SUBMITTED
+   - Program status changes to: "Applied"
+
+
+PHASE 9: DOCUMENT MANAGEMENT (Part 3 of 4)
+--------------------------------------------
+Document collection and review:
+
+- "Your Documents" — Student uploads their personal documents
+- "CORE Documents" — OPS/Super Admin creates document field requirements:
+  * Document Name, Key, Type (CORE/EXTRA), Category (PRIMARY/SECONDARY),
+    Required flag, Help Text, Allow Multiple uploads
+- Each uploaded document has:
+  File Name, Path, Size, MIME Type, Upload Date, Uploaded By (and their role),
+  Status (PENDING/APPROVED/REJECTED), Version number
+- Approved documents move forward. Rejected documents require re-upload.
+
+
+PHASE 10: PAYMENT (Part 4 of 4)
+---------------------------------
+Payment processing:
+- Payment Information form section
+- Tracks: Payment Status, Payment Amount
+- Saved as StudentFormAnswer (partKey: PAYMENT)
+
+
+PHASE 11: OFFER & APPLICATION CLOSE
+-------------------------------------
+The final stage:
+
+a) OFFER RECEIVED
+   - University sends an offer
+   - Program status changes to: "Offer Received"
+
+b) STUDENT DECIDES
+   - Accept: Program status → "Offer Accepted"
+   - Decline: Program status → "Offer not Accepted"
+
+c) UNIVERSITY REJECTION
+   - If the university rejects: Program status → "Rejected / Declined"
+
+d) APPLICATION CLOSED
+   - Program status → "Closed"
+   - Registration status → COMPLETED (with completedAt timestamp)
+   - If student cancels at any point: Registration status → CANCELLED
+
+
+PROGRAM STATUS FLOW
+--------------------
+Shortlisted
+  → Application not Open (waiting for application window)
+  → In Progress (application being prepared)
+  → Applied (submitted to university)
+  → Offer Received
+    → Offer Accepted → Closed
+    → Offer not Accepted → Closed
+  → Rejected / Declined → Closed
+
+
+ROLES AND THEIR RESPONSIBILITIES
+---------------------------------
+
+SUPER ADMIN
+- Full system oversight and management
+- Manages all users across all roles
+- Creates OPS, Eduplan Coach, Ivy Expert accounts
+- Assigns OPS to student registrations
+- Creates CORE document fields
+- Participates in program chats
+- Views all data across the platform
+
+ADMIN
+- Manages their own organization (companyName, companyLogo)
+- Owns enquiry forms (unique enquiryFormSlug)
+- Receives leads from their enquiry form
+- Creates and manages Counselors
+- Approves/Rejects lead-to-student conversions
+- Manages students under their organization
+- Participates in team meets and chats
+
+COUNSELOR
+- Assigned to Leads by Admin
+- Conducts follow-ups (calls, meetings)
+- Updates lead stages based on follow-up outcomes
+- Requests lead-to-student conversion
+- Continues to be linked to students after conversion
+- Participates in team meets and chats
+
+OPS (OPERATIONS)
+- Assigned to student service registrations (Primary/Secondary/Active)
+- Manages student profiles and applications
+- Creates and manages document requirements (CORE documents)
+- Reviews and approves/rejects uploaded documents
+- Shortlists programs for students
+- Manages program applications
+- Participates in program chats
+- Maintains OPS schedule (tasks per student)
+- Organizes team meets
+
+EDUPLAN COACH
+- Handles Education Planning service
+- Assigned via StudentServiceRegistration (Primary/Secondary/Active EduplanCoachId)
+- Views linked students and their parents
+
+IVY EXPERT
+- Handles Ivy League Admission service
+- Assigned via StudentServiceRegistration (Primary/Secondary/Active IvyExpertId)
+- Manages Ivy League specific features (pointers, activities, evaluations, scores)
+- Views linked students and parents
+
+STUDENT
+- Fills out profile form (7 sections)
+- Uploads documents
+- Reviews and selects shortlisted programs
+- Sets program priorities
+- Participates in program chats
+- Completes payment information
+- Views their linked parents
+
+PARENT
+- Read-only access to student's data
+- Can view student profile, form answers, registrations
+- Participates in program chats (sender role: PARENT)
+- Can attend team meets
+- Views their linked children's progress
+
+
+KEY FEATURES ACROSS THE WORKFLOW
+---------------------------------
+
+CHAT SYSTEM
+- Program-level chats (one per program per student)
+- Open chats (all participants see) and Private chats
+- Text messages and document sharing
+- Documents from chat can be saved to student's EXTRA documents
+- Read receipts tracked per user
+
+DOCUMENT SYSTEM
+- Two-tier structure: Document Fields (templates) + Student Documents (uploads)
+- Categories: PRIMARY and SECONDARY
+- Types: CORE (required by OPS) and EXTRA (additional)
+- Review workflow: Upload → Pending → Approved/Rejected
+- Version tracking for re-uploads
+
+SCHEDULING SYSTEM
+- OPS Schedule: Task management for OPS per student
+- Team Meets: Cross-role meetings with Zoho integration
+- Follow-ups: Counselor-lead meeting scheduling
+
+FORM SYSTEM
+- 4 Parts: Profile, Application, Document, Payment
+- Hierarchical: Part → Section → SubSection → Field
+- Repeatable subsections (e.g., multiple education entries)
+- 13 field types for comprehensive data collection
+- Auto-save support (lastSavedAt tracking)

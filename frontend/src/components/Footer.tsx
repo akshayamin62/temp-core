@@ -80,13 +80,7 @@ export default function Footer() {
               <li>
                 <a href="https://www.kareerrstudio.com/ielts.html" target="_blank" className="group flex items-center hover:text-white transition-all duration-300 hover:translate-x-1">
                   <span className="w-0 h-0.5 bg-purple-500 group-hover:w-4 transition-all duration-300 mr-0 group-hover:mr-2"></span>
-                  IELTS Coaching
-                </a>
-              </li>
-              <li>
-                <a href="https://www.kareerrstudio.com/gre.html" target="_blank" className="group flex items-center hover:text-white transition-all duration-300 hover:translate-x-1">
-                  <span className="w-0 h-0.5 bg-purple-500 group-hover:w-4 transition-all duration-300 mr-0 group-hover:mr-2"></span>
-                  GRE Coaching
+                  Coaching Classes
                 </a>
               </li>
             </ul>

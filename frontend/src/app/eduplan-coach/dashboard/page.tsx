@@ -9,7 +9,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 import { getFullName } from '@/utils/nameHelpers';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export default function EduplanCoachDashboardPage() {
   const router = useRouter();

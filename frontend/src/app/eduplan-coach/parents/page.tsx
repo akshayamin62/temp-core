@@ -44,6 +44,7 @@ export default function EduplanCoachParentsPage() {
   };
 
   const filteredParents = parents.filter((p) => {
+    if (p.userId?.isActive === false) return false;
     const q = searchQuery.toLowerCase();
     const name = getFullName(p.userId).toLowerCase();
     return name.includes(q) || p.userId.email.toLowerCase().includes(q) || p.mobileNumber?.includes(q);

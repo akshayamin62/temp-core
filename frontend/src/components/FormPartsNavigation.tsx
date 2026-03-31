@@ -9,6 +9,9 @@ interface FormPartsNavigationProps {
   showDashboard?: boolean;
   isDashboardActive?: boolean;
   onDashboardClick?: () => void;
+  showPayment?: boolean;
+  isPaymentActive?: boolean;
+  onPaymentClick?: () => void;
 }
 
 export default function FormPartsNavigation({
@@ -18,8 +21,11 @@ export default function FormPartsNavigation({
   showDashboard = false,
   isDashboardActive = false,
   onDashboardClick,
+  showPayment = false,
+  isPaymentActive = false,
+  onPaymentClick,
 }: FormPartsNavigationProps) {
-  if (formStructure.length === 0 && !showDashboard) return null;
+  if (formStructure.length === 0 && !showDashboard && !showPayment) return null;
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
@@ -41,7 +47,7 @@ export default function FormPartsNavigation({
             key={formStruct.part.key}
             onClick={() => onPartChange(index)}
             className={`flex-1 px-6 py-4 font-medium transition-colors border-b-2 ${
-              !isDashboardActive && currentPartIndex === index
+              !isDashboardActive && !isPaymentActive && currentPartIndex === index
                 ? 'border-blue-600 text-blue-600 bg-blue-50'
                 : 'border-transparent text-gray-700 hover:text-gray-900 hover:bg-gray-50'
             }`}
@@ -49,6 +55,18 @@ export default function FormPartsNavigation({
             {formStruct.part.title}
           </button>
         ))}
+        {showPayment && (
+          <button
+            onClick={onPaymentClick}
+            className={`flex-1 px-6 py-4 font-medium transition-colors border-b-2 ${
+              isPaymentActive
+                ? 'border-blue-600 text-blue-600 bg-blue-50'
+                : 'border-transparent text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+            }`}
+          >
+            Payment
+          </button>
+        )}
       </div>
     </div>
   );

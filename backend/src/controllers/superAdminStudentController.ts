@@ -7,10 +7,9 @@ import IvyExpert from '../models/IvyExpert';
 import EduplanCoach from '../models/EduplanCoach';
 import { sendCustomMessageToStudent } from '../utils/email';
 import { sendStaffMessageSms } from '../utils/sms';
-// import Service from '../models/Service';
 // import Admin from '../models/Admin';
 // import Counselor from '../models/Counselor';
-import StudentServiceRegistration from '../models/StudentServiceRegistration';
+import StudentServiceRegistration, { ServiceRegistrationStatus } from '../models/StudentServiceRegistration';
 import StudentFormAnswer from '../models/StudentFormAnswer';
 import { USER_ROLE } from '../types/roles';
 import { syncParentsFromFormAnswers } from '../utils/parentSync';
@@ -159,9 +158,11 @@ export const getAllStudents = async (req: AuthRequest, res: Response): Promise<R
           studentId: student._id,
         }).populate('serviceId', 'name');
 
-        const serviceNames = registrations
-          .map((r: any) => r.serviceId?.name)
-          .filter(Boolean);
+        const serviceNames = [...new Set(
+          registrations
+            .map((r: any) => r.serviceId?.name)
+            .filter(Boolean)
+        )];
 
         return {
           _id: student._id,
@@ -1094,4 +1095,170 @@ export const sendMessageToStudent = async (req: AuthRequest, res: Response): Pro
   }
 };
 
+/**
+ * Update the status of a StudentServiceRegistration
+ * Role-based access:
+ *   - SUPER_ADMIN: can update status for all services
+ *   - OPS: can update status only for Study Abroad services
+ *   - EDUPLAN_COACH: can update status only for Education Planning services
+ *   - IVY_EXPERT: can update status only for Ivy Expert services
+ */
+export const updateRegistrationStatus = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const { registrationId } = req.params;
+    const { status } = req.body;
+    const userId = req.user?.userId;
+    const userRole = req.user?.role as USER_ROLE;
+
+    // Validate status value
+    const allowedStatuses = [
+      ServiceRegistrationStatus.REGISTERED,
+      ServiceRegistrationStatus.IN_PROGRESS,
+      ServiceRegistrationStatus.COMPLETED,
+      ServiceRegistrationStatus.CANCELLED,
+    ];
+
+    if (!status || !allowedStatuses.includes(status as ServiceRegistrationStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status. Allowed values: ${allowedStatuses.join(', ')}`,
+      });
+    }
+
+    // Find the registration and populate serviceId
+    const registration = await StudentServiceRegistration.findById(registrationId)
+      .populate('serviceId', 'name slug');
+
+    if (!registration) {
+      return res.status(404).json({
+        success: false,
+        message: 'Registration not found',
+      });
+    }
+
+    const service = registration.serviceId as any;
+    const serviceName = service?.name;
+
+    // Role-based permission check
+    if (userRole === USER_ROLE.OPS) {
+      // OPS can only update Study Abroad services
+      if (serviceName !== 'Study Abroad') {
+        return res.status(403).json({
+          success: false,
+          message: 'OPS can only update status for Study Abroad services.',
+        });
+      }
+
+      // Verify OPS is assigned to this registration
+      const ops = await Ops.findOne({ userId });
+      if (!ops) {
+        return res.status(404).json({
+          success: false,
+          message: 'OPS record not found',
+        });
+      }
+      const activeOpsIdValue = registration.activeOpsId || registration.primaryOpsId;
+      const activeOpsIdString = activeOpsIdValue?.toString();
+      if (activeOpsIdString !== ops._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. You are not the active OPS for this registration.',
+        });
+      }
+    } else if (userRole === USER_ROLE.EDUPLAN_COACH) {
+      // Eduplan Coach can only update Education Planning services
+      if (serviceName !== 'Education Planning') {
+        return res.status(403).json({
+          success: false,
+          message: 'Eduplan Coach can only update status for Education Planning services.',
+        });
+      }
+
+      // Verify coach is assigned to this registration
+      const coach = await EduplanCoach.findOne({ userId });
+      if (!coach) {
+        return res.status(404).json({
+          success: false,
+          message: 'Eduplan Coach record not found',
+        });
+      }
+      const activeCoachIdValue = registration.activeEduplanCoachId || registration.primaryEduplanCoachId;
+      const activeCoachIdString = activeCoachIdValue?.toString();
+      if (activeCoachIdString !== coach._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. You are not the active Eduplan Coach for this registration.',
+        });
+      }
+    } else if (userRole === USER_ROLE.IVY_EXPERT) {
+      // Ivy Expert can only update Ivy League services
+      if (serviceName !== 'Ivy League Preparation' && serviceName !== 'Ivy League Admissions') {
+        return res.status(403).json({
+          success: false,
+          message: 'Ivy Expert can only update status for Ivy League services.',
+        });
+      }
+
+      // Verify ivy expert is assigned to this registration
+      const ivyExpert = await IvyExpert.findOne({ userId });
+      if (!ivyExpert) {
+        return res.status(404).json({
+          success: false,
+          message: 'Ivy Expert record not found',
+        });
+      }
+      const activeIvyExpertIdValue = registration.activeIvyExpertId || registration.primaryIvyExpertId;
+      const activeIvyExpertIdString = activeIvyExpertIdValue?.toString();
+      if (activeIvyExpertIdString !== ivyExpert._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. You are not the active Ivy Expert for this registration.',
+        });
+      }
+    } else if (userRole !== USER_ROLE.SUPER_ADMIN) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to update registration status.',
+      });
+    }
+
+    // Update the status
+    registration.status = status as ServiceRegistrationStatus;
+
+    // Set timestamp fields based on status
+    if (status === ServiceRegistrationStatus.COMPLETED) {
+      registration.completedAt = new Date();
+      registration.cancelledAt = undefined;
+    } else if (status === ServiceRegistrationStatus.CANCELLED) {
+      registration.cancelledAt = new Date();
+      registration.completedAt = undefined;
+    } else {
+      // IN_PROGRESS - clear completion/cancellation timestamps
+      registration.completedAt = undefined;
+      registration.cancelledAt = undefined;
+    }
+
+    await registration.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Registration status updated to ${status}`,
+      data: {
+        registration: {
+          _id: registration._id,
+          status: registration.status,
+          completedAt: registration.completedAt,
+          cancelledAt: registration.cancelledAt,
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error('Update registration status error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update registration status',
+      error: error.message,
+    });
+  }
+};
 

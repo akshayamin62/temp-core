@@ -34,7 +34,7 @@ export default function CounselorsListPage() {
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active'>('active');
   const [formData, setFormData] = useState({
     firstName: '',
     middleName: '',
@@ -117,8 +117,7 @@ export default function CounselorsListPage() {
     
     const matchesStatus = 
       statusFilter === 'all' ||
-      (statusFilter === 'active' && counselor.userId.isActive) ||
-      (statusFilter === 'inactive' && !counselor.userId.isActive);
+      (statusFilter === 'active' && counselor.userId.isActive);
     
     return matchesSearch && matchesStatus;
   });
@@ -200,12 +199,11 @@ export default function CounselorsListPage() {
             </div>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active')}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
             </select>
           </div>
 
@@ -413,7 +411,7 @@ export default function CounselorsListPage() {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => router.push(`/admin/counselors/${counselor._id}`)}
-                            className="px-3 py-1 text-xs font-medium rounded-lg transition-colors bg-blue-100 text-blue-700 hover:bg-blue-200"
+                            className="px-3 py-1 text-xs font-medium rounded-lg transition-colors bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                           >
                             View Detail
                           </button>
@@ -441,11 +439,11 @@ export default function CounselorsListPage() {
               <span>
                 Showing {filteredCounselors.length} of {counselors.length} counselor{counselors.length !== 1 ? 's' : ''}
               </span>
-              {(searchQuery || statusFilter !== 'all') && (
+              {(searchQuery || statusFilter !== 'active') && (
                 <button
                   onClick={() => {
                     setSearchQuery('');
-                    setStatusFilter('all');
+                    setStatusFilter('active');
                   }}
                   className="text-blue-600 hover:text-blue-700 font-medium"
                 >

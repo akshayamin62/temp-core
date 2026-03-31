@@ -148,7 +148,7 @@ export default function CounselorDashboardPage() {
         return 'bg-amber-100 text-amber-800';
       case SERVICE_TYPE.EDUCATION_PLANNING:
         return 'bg-teal-100 text-teal-800';
-      case SERVICE_TYPE.IELTS_GRE_LANGUAGE_COACHING:
+      case SERVICE_TYPE.COACHING_CLASSES:
         return 'bg-rose-100 text-rose-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -588,7 +588,7 @@ export default function CounselorDashboardPage() {
                       <option value="Education Planning">Education Planning</option>
                       <option value="Career Focus Study Abroad">Career Focus Study Abroad</option>
                       <option value="Ivy League Admission">Ivy League Admission</option>
-                      <option value="IELTS/GRE/Language Coaching">IELTS/GRE/Language Coaching</option>
+                      <option value="Coaching Classes">Coaching Classes</option>
                     </select>
                   </div>
                 </div>

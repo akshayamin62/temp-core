@@ -55,7 +55,7 @@ export default function PrivacyPolicyPage() {
               Introduction
             </h2>
             <p>
-              CORE – Student Application and Admission Management System ("CORE", "Platform", "System") is a centralized digital ecosystem developed and managed by ADMITra for structured education planning, study abroad consulting, IVY league application consulting, IELTS / GRE / Language Coaching and admission management.
+              CORE – Student Application and Admission Management System ("CORE", "Platform", "System") is a centralized digital ecosystem developed and managed by ADMITra for structured education planning, study abroad consulting, IVY league application consulting, coaching classes and admission management.
             </p>
             <p className="mt-3">
               This Privacy Policy explains how CORE collects, uses, stores, protects, and processes personal data of students, parents, schools, counselors, alumni, and service providers who access or use the platform available at{' '}

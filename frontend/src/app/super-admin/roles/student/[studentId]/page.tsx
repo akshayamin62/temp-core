@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { authAPI, serviceAPI } from '@/lib/api';
+import { authAPI, serviceAPI, superAdminAPI } from '@/lib/api';
 import { User, USER_ROLE } from '@/types';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
@@ -114,6 +114,7 @@ interface Registration {
   primaryEduplanCoachId?: EduplanCoach;
   secondaryEduplanCoachId?: EduplanCoach;
   activeEduplanCoachId?: EduplanCoach;
+  planTier?: 'PRO' | 'PREMIUM' | 'PLATINUM';
   status: string;
   createdAt: string;
 }
@@ -132,6 +133,7 @@ export default function StudentDetailPage() {
   const [eduplanCoaches, setEduplanCoaches] = useState<EduplanCoach[]>([]);
   const [assigningOps, setAssigningOps] = useState<string | null>(null);
   const [switchingActive, setSwitchingActive] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Use ref to prevent double execution in React StrictMode
@@ -320,6 +322,25 @@ export default function StudentDetailPage() {
     router.push(`/super-admin/roles/student/${studentId}/registration/${registrationId}`);
   };
 
+  const handleStatusChange = async (registrationId: string, newStatus: string) => {
+    setUpdatingStatus(registrationId);
+    try {
+      await superAdminAPI.updateRegistrationStatus(registrationId, newStatus);
+      toast.success(`Status updated to ${newStatus.replace(/_/g, ' ')}`);
+      // Update local state
+      setRegistrations(prev =>
+        prev.map(r =>
+          r._id === registrationId ? { ...r, status: newStatus } : r
+        )
+      );
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update status');
+      console.error('Update status error:', error);
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
   if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -478,15 +499,37 @@ export default function StudentDetailPage() {
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900 mb-1">
                           {registration.serviceId.name}
+                          {registration.planTier && (
+                            <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-medium">
+                              {registration.planTier}
+                            </span>
+                          )}
                         </h3>
                         <p className="text-sm text-gray-600 mb-2">
                           {registration.serviceId.shortDescription}
                         </p>
                         <div className="flex items-center gap-4 text-sm text-gray-500">
                           <span>Registered: {new Date(registration.createdAt).toLocaleDateString('en-GB')}</span>
-                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
-                            {registration.status}
-                          </span>
+                          <select
+                            value={registration.status}
+                            onChange={(e) => handleStatusChange(registration._id, e.target.value)}
+                            disabled={updatingStatus === registration._id}
+                            className={`px-2 py-1 rounded text-xs font-medium border cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                              registration.status === 'COMPLETED' ? 'bg-green-100 text-green-800 border-green-300' :
+                              registration.status === 'CANCELLED' ? 'bg-red-100 text-red-800 border-red-300' :
+                              registration.status === 'IN_PROGRESS' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' :
+                              registration.status === 'REGISTERED' ? 'bg-blue-100 text-blue-800 border-blue-300' :
+                              'bg-gray-100 text-gray-800 border-gray-300'
+                            }`}
+                          >
+                            <option value="REGISTERED">REGISTERED</option>
+                            <option value="IN_PROGRESS">IN_PROGRESS</option>
+                            <option value="COMPLETED">COMPLETED</option>
+                            <option value="CANCELLED">CANCELLED</option>
+                          </select>
+                          {updatingStatus === registration._id && (
+                            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                          )}
                         </div>
                         {user?.role === USER_ROLE.SUPER_ADMIN && (
                           <div className="mt-4 space-y-4 border-t pt-4">
@@ -920,7 +963,7 @@ export default function StudentDetailPage() {
 
           {/* Ivy League Candidate Profile */}
           {student && student.userId?._id && (
-            <div className="mt-6">
+            <div className="mt-6 flex flex-wrap gap-3">
               <button
                 onClick={() => router.push(`/super-admin/roles/ivy-expert/students/${student.userId._id}`)}
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
@@ -931,6 +974,26 @@ export default function StudentDetailPage() {
                 </svg>
                 View Ivy League Candidate Profile
               </button>
+              <button
+                onClick={() => router.push(`/super-admin/roles/student/${studentId}/enquiries`)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+                Student Service Enquiry
+              </button>
+              {student.adminId?._id && (
+                <button
+                  onClick={() => router.push('/service-plans/view?studentId=' + studentId)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Service Plans
+                </button>
+              )}
             </div>
           )}
         </div>

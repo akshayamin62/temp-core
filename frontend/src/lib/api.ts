@@ -203,6 +203,9 @@ export const superAdminAPI = {
   
   switchActiveOps: (registrationId: string, activeOpsId: string) =>
     api.post(`/super-admin/students/registrations/${registrationId}/switch-active-ops`, { activeOpsId }),
+
+  updateRegistrationStatus: (registrationId: string, status: string) =>
+    api.patch(`/super-admin/students/registrations/${registrationId}/status`, { status }),
 };
 
 // Admin Student API (read-only access to students for admin/counselor)
@@ -232,6 +235,14 @@ export const parentAPI = {
   getParentDetailByUserId: (userId: string) => api.get(`/parents/detail-by-user/${userId}`),
 };
 
+// Archive API
+export const archiveAPI = {
+  getSuperAdminArchive: (params?: { role?: string; search?: string }) =>
+    api.get('/archive/super-admin', { params }),
+  getStaffArchive: (params?: { search?: string; type?: string }) =>
+    api.get('/archive/staff', { params }),
+};
+
 // Service API
 export const serviceAPI = {
   getAllServices: () => api.get('/services/services'),
@@ -243,6 +254,42 @@ export const serviceAPI = {
   
   getRegistrationDetails: (registrationId: string) => 
     api.get(`/services/registrations/${registrationId}`),
+};
+
+// Service Plans API (Study Abroad, Coaching Classes, etc.)
+export const servicePlanAPI = {
+  getPricing: (serviceSlug: string) => api.get(`/service-plans/${serviceSlug}/pricing`),  // works for STUDENT and COUNSELOR
+  register: (serviceSlug: string, planTier: string, classTiming?: { batchDate: string; timeFrom: string; timeTo: string }) =>
+    api.post(`/service-plans/${serviceSlug}/register`, { planTier, classTiming }),
+  upgrade: (serviceSlug: string, newPlanTier: string) =>
+    api.put(`/service-plans/${serviceSlug}/upgrade`, { newPlanTier }),
+  // Admin
+  getAdminPricing: (serviceSlug: string) => api.get(`/service-plans/${serviceSlug}/admin/pricing`),
+  setAdminPricing: (serviceSlug: string, prices: Record<string, number>) =>
+    api.put(`/service-plans/${serviceSlug}/admin/pricing`, { prices }),
+  getBasePricingForAdmin: (serviceSlug: string) => api.get(`/service-plans/${serviceSlug}/admin/base-pricing`),
+  // Get any admin's pricing by adminId (for viewing plans from any role)
+  getAdminPricingById: (serviceSlug: string, adminId: string) =>
+    api.get(`/service-plans/${serviceSlug}/admin/${adminId}/pricing`),
+  // Super Admin
+  getSuperAdminPricing: (serviceSlug: string) => api.get(`/service-plans/${serviceSlug}/super-admin/pricing`),
+  setSuperAdminPricing: (serviceSlug: string, prices: Record<string, number>) =>
+    api.put(`/service-plans/${serviceSlug}/super-admin/pricing`, { prices }),
+  // Get a student's plan tiers
+  getStudentPlanTiers: (studentId: string) =>
+    api.get(`/service-plans/student/${studentId}/plan-tiers`),
+};
+
+// Coaching Batch API
+export const coachingBatchAPI = {
+  getBatches: (planKey?: string) =>
+    api.get('/coaching-batches', { params: planKey ? { planKey } : {} }),
+  getAllBatches: () => api.get('/coaching-batches/all'),
+  createBatch: (data: { planKey: string; batchDate: string; timeFrom: string; timeTo: string }) =>
+    api.post('/coaching-batches', data),
+  updateBatch: (batchId: string, data: Partial<{ planKey: string; batchDate: string; timeFrom: string; timeTo: string; isActive: boolean }>) =>
+    api.put(`/coaching-batches/${batchId}`, data),
+  deleteBatch: (batchId: string) => api.delete(`/coaching-batches/${batchId}`),
 };
 
 // Ivy League Registration API
@@ -376,6 +423,8 @@ export const programAPI = {
     api.put(`/programs/super-admin/programs/${programId}/status`, { status, ...extra }),
   updateProgramStatusOps: (programId: string, status: string, extra?: { applicationOpenDate?: string; scheduleTime?: string }) =>
     api.put(`/programs/ops/programs/${programId}/status`, { status, ...extra }),
+  deleteAvailableProgramOps: (programId: string) => api.delete(`/programs/ops/programs/${programId}`),
+  deleteAvailableProgramSuperAdmin: (programId: string) => api.delete(`/programs/super-admin/programs/${programId}`),
   createSuperAdminProgram: (studentId: string, data: any) => api.post('/programs/super-admin/programs/create', { ...data, studentId }),
   uploadSuperAdminProgramsExcel: (file: File, studentId: string) => {
     const formData = new FormData();
@@ -818,6 +867,68 @@ export const spServiceAPI = {
   browseServices: (params?: { category?: string; search?: string }) => api.get('/sp-services/browse', { params }),
   sendEnquiry: (data: { spServiceId: string; serviceProviderId: string; message: string }) => api.post('/sp-services/enquiry', data),
   getStudentEnquiries: () => api.get('/sp-services/student-enquiries'),
+
+  // Admin-facing (Super Admin, Admin, Parent)
+  getStudentEnquiriesById: (studentId: string) => api.get(`/sp-services/student/${studentId}/enquiries`),
+  getSPServicesById: (providerId: string) => api.get(`/sp-services/provider/${providerId}/services`),
+  getSPEnquiriesById: (providerId: string) => api.get(`/sp-services/provider/${providerId}/enquiries`),
+  getAllServicesForSuperAdmin: (params?: { category?: string; search?: string }) => api.get('/sp-services/all', { params }),
+};
+
+// ===== Payment System APIs =====
+export const paymentAPI = {
+  // Payment operations
+  initializePayment: (registrationId: string) => api.post('/payments/initialize', { registrationId }),
+  setPrice: (registrationId: string, totalAmount: number) =>
+    api.post('/payments/set-price', { registrationId, totalAmount }),
+  createOrder: (registrationId: string, installmentNumber?: number) =>
+    api.post('/payments/create-order', { registrationId, installmentNumber }),
+  verifyPayment: (data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
+    api.post('/payments/verify', data),
+  requestInstallment: (registrationId: string, installmentNumber: number) =>
+    api.post('/payments/request-installment', { registrationId, installmentNumber }),
+  createMiscCollection: (data: { studentId: string; amount: number; description: string; notes?: Record<string, string> }) =>
+    api.post('/payments/misc-collection', data),
+
+  // Pay-first registration flow
+  createRegistrationOrder: (serviceSlug: string, planTier: string, classTiming?: { batchDate: string; timeFrom: string; timeTo: string }) =>
+    api.post('/payments/create-registration-order', { serviceSlug, planTier, classTiming }),
+  verifyRegistrationPayment: (data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
+    api.post('/payments/verify-registration', data),
+
+  // Pay-first upgrade flow
+  createUpgradeOrder: (serviceSlug: string, newPlanTier: string) =>
+    api.post('/payments/create-upgrade-order', { serviceSlug, newPlanTier }),
+  verifyUpgradePayment: (data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
+    api.post('/payments/verify-upgrade', data),
+
+  // Read operations
+  getPaymentsByRegistration: (registrationId: string) => api.get(`/payments/registration/${registrationId}`),
+  getPaymentsByStudent: (studentId: string) => api.get(`/payments/student/${studentId}`),
+  getPaymentHistory: (studentId: string) => api.get(`/payments/history/${studentId}`),
+};
+
+// ===== Student Plan Discount APIs =====
+export const studentPlanDiscountAPI = {
+  setDiscount: (data: { studentId: string; serviceSlug: string; planTier: string; type: string; value: number; reason?: string }) =>
+    api.post('/student-plan-discounts', data),
+  getDiscounts: (studentId: string, serviceSlug?: string) =>
+    api.get(`/student-plan-discounts/student/${studentId}`, { params: serviceSlug ? { serviceSlug } : {} }),
+  removeDiscount: (discountId: string) => api.delete(`/student-plan-discounts/${discountId}`),
+};
+
+// ===== Invoice APIs =====
+export const invoiceAPI = {
+  getInvoicesByRegistration: (registrationId: string) => api.get(`/invoices/registration/${registrationId}`),
+  getInvoicesByStudent: (studentId: string) => api.get(`/invoices/student/${studentId}`),
+  getInvoice: (invoiceId: string) => api.get(`/invoices/${invoiceId}`),
+  getInvoiceByNumber: (invoiceNumber: string) => api.get(`/invoices/number/${invoiceNumber}`),
+};
+
+// ===== Ledger APIs =====
+export const ledgerAPI = {
+  getLedgerByRegistration: (registrationId: string) => api.get(`/ledger/registration/${registrationId}`),
+  getLedgersByStudent: (studentId: string) => api.get(`/ledger/student/${studentId}`),
 };
 
 export default api;

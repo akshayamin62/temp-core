@@ -186,7 +186,7 @@ export default function SPMyServicesPage() {
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                    placeholder="e.g. IELTS Coaching - Band 7+"
+                    placeholder="e.g. Coaching Classes - Band 7+"
                   />
                 </div>
                 <div>
@@ -198,7 +198,7 @@ export default function SPMyServicesPage() {
                     className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                   >
                     <option value="">Select from your Services Offered</option>
-                    {servicesOffered.map(cat => (
+                    {servicesOffered.filter(cat => cat !== 'Coaching Classes').map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>

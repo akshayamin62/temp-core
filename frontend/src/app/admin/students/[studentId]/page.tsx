@@ -75,8 +75,17 @@ interface Registration {
     mobileNumber?: string;
     userId: { _id: string; firstName: string; middleName?: string; lastName: string; email: string };
   };
+  planTier?: 'PRO' | 'PREMIUM' | 'PLATINUM';
   status: string;
   createdAt: string;
+  // Payment fields
+  paymentAmount?: number;
+  totalAmount?: number;
+  discountedAmount?: number;
+  totalPaid?: number;
+  paymentComplete?: boolean;
+  paymentStatus?: string;
+  paymentModel?: string;
 }
 
 export default function AdminStudentDetailPage() {
@@ -122,7 +131,8 @@ export default function AdminStudentDetailPage() {
     try {
       const response = await adminStudentAPI.getStudentDetails(studentId);
       setStudent(response.data.data.student);
-      setRegistrations(response.data.data.registrations);
+      const regs = response.data.data.registrations;
+      setRegistrations(regs);
     } catch (error: any) {
       console.error('Fetch student details error:', error);
       if (error.response?.status === 403) {
@@ -312,6 +322,11 @@ export default function AdminStudentDetailPage() {
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900 mb-1">
                           {registration.serviceId.name}
+                          {registration.planTier && (
+                            <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-medium">
+                              {registration.planTier}
+                            </span>
+                          )}
                         </h3>
                         <p className="text-sm text-gray-600 mb-2">
                           {registration.serviceId.shortDescription}
@@ -369,6 +384,40 @@ export default function AdminStudentDetailPage() {
                         View
                       </button>
                     </div>
+
+                    {/* ====== Pricing & Discount Section ====== */}
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-3">
+                        {/* Original price */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Original Price:</span>
+                          <span className={`text-sm font-medium ${registration.discountedAmount != null ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+                            {(registration.totalAmount || registration.paymentAmount) ? `₹${(registration.totalAmount || registration.paymentAmount)!.toLocaleString('en-IN')}` : '—'}
+                          </span>
+                        </div>
+
+                        {/* After discount */}
+                        {registration.discountedAmount != null && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-green-600 uppercase tracking-wider">After Discount:</span>
+                            <span className="text-sm font-bold text-green-700">
+                              ₹{registration.discountedAmount.toLocaleString('en-IN')}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Payment status */}
+                        {registration.paymentStatus && (
+                          <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                            registration.paymentComplete ? 'bg-green-100 text-green-800' :
+                            registration.paymentStatus === 'partial' ? 'bg-amber-100 text-amber-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {registration.paymentComplete ? 'Fully Paid' : registration.paymentStatus}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -394,7 +443,7 @@ export default function AdminStudentDetailPage() {
 
           {/* Ivy League Candidate Profile */}
           {student && student.userId?._id && (
-            <div className="mt-6">
+            <div className="mt-6 flex flex-wrap gap-3">
               <button
                 onClick={() => router.push(`/ivy-league/candidate-profile?userId=${student.userId._id}`)}
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
@@ -405,6 +454,26 @@ export default function AdminStudentDetailPage() {
                 </svg>
                 View Ivy League Candidate Profile
               </button>
+              <button
+                onClick={() => router.push(`/admin/students/${studentId}/enquiries`)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+                Student Service Enquiry
+              </button>
+              {student.adminId?._id && (
+                <button
+                  onClick={() => router.push('/service-plans/view?studentId=' + studentId)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Service Plans
+                </button>
+              )}
             </div>
           )}
         </div>

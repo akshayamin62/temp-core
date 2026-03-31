@@ -171,7 +171,20 @@ export default function FormSubSectionRenderer({
             <div className="p-5 bg-white">
               {(() => {
                 const isInstanceReadOnly = readOnly || readOnlyInstances.includes(index);
-                const sortedFields = subSection.fields.sort((a, b) => a.order - b.order);
+                const allSortedFields = [...subSection.fields].sort((a, b) => a.order - b.order);
+                // Conditional field visibility for education summary (board logic)
+                const sortedFields = allSortedFields.filter(f => {
+                  const eduLevel = instanceValues?.educationLevel;
+                  const board = instanceValues?.board;
+                  if (f.key === 'board' || f.key === 'boardFullName') {
+                    if (eduLevel !== 'secondary_school' && eduLevel !== 'higher_secondary_school') return false;
+                  }
+                  if (f.key === 'boardFullName') {
+                    if (board !== 'State Board' && board !== 'Other') return false;
+                  }
+                  if (f.key === 'fieldOfStudy' && eduLevel === 'secondary_school') return false;
+                  return true;
+                });
                 const renderedFields: React.ReactElement[] = [];
                 let i = 0;
 

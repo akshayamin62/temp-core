@@ -169,9 +169,8 @@ export default function RoleUserListPage({
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const params: any = { role: roleEnum };
+      const params: any = { role: roleEnum, isActive: true };
       if (searchQuery.trim()) params.search = searchQuery.trim();
-      if (statusFilter) params.isActive = statusFilter === 'active';
 
       const response = await superAdminAPI.getUsers(params);
       const fetchedUsers = response.data.data.users || [];
@@ -481,7 +480,6 @@ export default function RoleUserListPage({
                 >
                   <option value="">All Status</option>
                   <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
                 </select>
                 <button
                   onClick={() => {

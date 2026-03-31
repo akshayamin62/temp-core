@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -11,6 +12,9 @@ interface StudentFormHeaderProps {
   serviceName: string;
   editMode: 'admin' | 'OPS' | 'SUPER_ADMIN' | 'EDUPLAN_COACH' | 'COUNSELOR' | 'VIEW';
   studentId?: string;
+  planTier?: string;
+  serviceSlug?: string;
+  adminId?: string;
 }
 
 export default function StudentFormHeader({
@@ -18,11 +22,14 @@ export default function StudentFormHeader({
   serviceName,
   editMode,
   studentId,
+  planTier,
+  serviceSlug,
+  adminId,
 }: StudentFormHeaderProps) {
+  const router = useRouter();
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [open, setOpen] = useState(false);
-  const [sendVia, setSendVia] = useState<'email' | 'sms' | 'both'>('email');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -53,7 +60,7 @@ export default function StudentFormHeader({
       const token = localStorage.getItem('token');
       await axios.post(
         `${getApiBase()}/${studentId}/send-message`,
-        { message: message.trim(), serviceName, sendVia },
+        { message: message.trim(), serviceName, sendVia: 'both' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success('Message sent successfully');
@@ -68,7 +75,6 @@ export default function StudentFormHeader({
 
   const handleCancel = () => {
     setMessage('');
-    setSendVia('email');
     setOpen(false);
   };
 
@@ -80,18 +86,53 @@ export default function StudentFormHeader({
           <h1 className="text-2xl font-bold text-gray-900 mb-1">{studentName}</h1>
           <p className="text-gray-600">
             Service: <span className="font-medium text-gray-900">{serviceName}</span>
+            {planTier && (
+              <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-medium">
+                {planTier}
+              </span>
+            )}
           </p>
         </div>
 
         {studentId && !open && editMode !== 'VIEW' && (
+          <div className="flex items-center gap-2">
+            {adminId && (
+              <button
+                onClick={() => {
+                  router.push(`/service-plans/view?studentId=${studentId}`);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                Service Plans
+              </button>
+            )}
+            <button
+              onClick={() => setOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              Send Message
+            </button>
+          </div>
+        )}
+
+        {/* View Service Plans button for VIEW mode (Parent) */}
+        {studentId && editMode === 'VIEW' && adminId && (
           <button
-            onClick={() => setOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+            onClick={() => {
+              router.push(`/service-plans/view?studentId=${studentId}`);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
             </svg>
-            Send Message
+            Service Plans
           </button>
         )}
       </div>
@@ -103,23 +144,6 @@ export default function StudentFormHeader({
             <p className="text-sm font-medium text-gray-700">
               Message to <span className="text-gray-900">{studentName}</span>
             </p>
-            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
-              {(['email', 'sms', 'both'] as const).map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setSendVia(option)}
-                  disabled={sending}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                    sendVia === option
-                      ? 'bg-white text-blue-700 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  {option === 'email' ? 'Email' : option === 'sms' ? 'SMS' : 'Both'}
-                </button>
-              ))}
-            </div>
           </div>
           <textarea
             ref={textareaRef}

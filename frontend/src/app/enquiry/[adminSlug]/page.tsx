@@ -44,7 +44,7 @@ export default function PublicEnquiryFormPage() {
   const INTAKE_REQUIRED_SERVICES = [
     SERVICE_TYPE.CAREER_FOCUS_STUDY_ABROAD,
     SERVICE_TYPE.IVY_LEAGUE_ADMISSION,
-    SERVICE_TYPE.IELTS_GRE_LANGUAGE_COACHING,
+    SERVICE_TYPE.COACHING_CLASSES,
   ];
 
   const showIntakeYear = formData.serviceTypes.some(s =>

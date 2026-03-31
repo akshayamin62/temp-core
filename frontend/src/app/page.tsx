@@ -250,7 +250,7 @@ export default function Home() {
 
     // Check if service is configured
     const service = services.find(s => s._id === serviceId);
-    if (service && service.slug !== 'study-abroad' && service.slug !== 'ivy-league' && service.slug !== 'ivy-league-admission' && service.name !== 'Ivy League Preparation' && service.name !== 'Ivy League Admission' && service.slug !== 'education-planning' && service.name !== 'Education Planning') {
+    if (service && service.slug !== 'study-abroad' && service.slug !== 'ivy-league' && service.slug !== 'ivy-league-admission' && service.name !== 'Ivy League Preparation' && service.name !== 'Ivy League Admission' && service.slug !== 'education-planning' && service.name !== 'Education Planning' && service.slug !== 'coaching-classes' && service.name !== 'Coaching Classes') {
       toast('This service will be available soon for registration.');
       return;
     }
@@ -258,6 +258,24 @@ export default function Home() {
     // For Ivy League services, redirect to the registration form instead of adding to My List
     if (service && (service.slug === 'ivy-league' || service.slug === 'ivy-league-admission' || service.name === 'Ivy League Preparation' || service.name === 'Ivy League Admission')) {
       router.push('/ivy-league/register');
+      return;
+    }
+
+    // For Coaching Classes, redirect to plan page
+    if (service && (service.slug === 'coaching-classes' || service.name === 'Coaching Classes')) {
+      router.push('/student/coaching-classes/plans');
+      return;
+    }
+
+    // For Study Abroad, redirect to plan page
+    if (service && service.slug === 'study-abroad') {
+      router.push('/student/study-abroad/plans');
+      return;
+    }
+
+    // For Education Planning, redirect to plan page
+    if (service && (service.slug === 'education-planning' || service.name === 'Education Planning')) {
+      router.push('/student/education-planning/plans');
       return;
     }
 

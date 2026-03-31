@@ -1,0 +1,10 @@
+cd backend
+npx ts-node src/scripts/migrateFormAnswers.ts
+
+db.formfields.drop()
+db.formsubsections.drop()
+db.formsections.drop()
+db.formparts.drop()
+db.serviceformparts.drop()
+
+npx ts-node src/seedStudyAbroadPlan.ts

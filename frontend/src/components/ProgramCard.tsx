@@ -45,6 +45,7 @@ interface ProgramCardProps {
   editingProgramId?: string | null;
   index?: number;
   topRow?: React.ReactNode; // Rendered inside card, above program name
+  headerAction?: React.ReactNode; // Rendered in the same line as number badge + program name
 }
 
 export default function ProgramCard({
@@ -55,6 +56,7 @@ export default function ProgramCard({
   editingProgramId,
   index,
   topRow,
+  headerAction,
 }: ProgramCardProps) {
   return (
     <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors bg-white">
@@ -87,7 +89,8 @@ export default function ProgramCard({
                 {index + 1}
               </div>
             )}
-            <h4 className="font-semibold text-gray-900">{program.programName}</h4>
+            <h4 className="flex-1 font-semibold text-gray-900">{program.programName}</h4>
+            {headerAction}
           </div>
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <p className="text-sm text-gray-600">{program.university}</p>

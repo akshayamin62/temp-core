@@ -1,0 +1,46 @@
+import { Router } from 'express';
+import {
+  getPricingForStudent,
+  registerServicePlan,
+  upgradePlanTier,
+  getAdminPricing,
+  setAdminPricing,
+  getSuperAdminPricing,
+  setSuperAdminPricing,
+  getBasePricingForAdmin,
+  getAdminPricingByAdminId,
+  getStudentPlanTiers,
+} from '../controllers/servicePlanController';
+import { authenticate } from '../middleware/auth';
+import { authorize } from '../middleware/authorize';
+import { USER_ROLE } from '../types/roles';
+
+const router = Router();
+
+// Any authenticated user - get a student's plan tiers (must be before /:serviceSlug routes)
+router.get('/student/:studentId/plan-tiers', authenticate, getStudentPlanTiers);
+
+// Student or Counselor - get pricing for their admin
+router.get('/:serviceSlug/pricing', authenticate, authorize([USER_ROLE.STUDENT, USER_ROLE.COUNSELOR]), getPricingForStudent);
+
+// Student - register for a plan
+router.post('/:serviceSlug/register', authenticate, authorize([USER_ROLE.STUDENT]), registerServicePlan);
+
+// Student - upgrade plan tier
+router.put('/:serviceSlug/upgrade', authenticate, authorize([USER_ROLE.STUDENT]), upgradePlanTier);
+
+// Admin - get base pricing set by super admin
+router.get('/:serviceSlug/admin/base-pricing', authenticate, authorize([USER_ROLE.ADMIN]), getBasePricingForAdmin);
+
+// Admin - get/set own pricing
+router.get('/:serviceSlug/admin/pricing', authenticate, authorize([USER_ROLE.ADMIN]), getAdminPricing);
+router.put('/:serviceSlug/admin/pricing', authenticate, authorize([USER_ROLE.ADMIN]), setAdminPricing);
+
+// Any authenticated user - get a specific admin's pricing (for viewing plans)
+router.get('/:serviceSlug/admin/:adminId/pricing', authenticate, getAdminPricingByAdminId);
+
+// Super Admin - get/set base pricing
+router.get('/:serviceSlug/super-admin/pricing', authenticate, authorize([USER_ROLE.SUPER_ADMIN]), getSuperAdminPricing);
+router.put('/:serviceSlug/super-admin/pricing', authenticate, authorize([USER_ROLE.SUPER_ADMIN]), setSuperAdminPricing);
+
+export default router;

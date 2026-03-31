@@ -1075,4 +1075,52 @@ export const uploadQsRankingExcel = async (req: AuthRequest & { file?: Express.M
   }
 };
 
+/**
+ * Delete an available (not selected by student) program — OPS and Super Admin only
+ */
+export const deleteAvailableProgram = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const userId = req.user?.userId;
+    const user = await User.findById(userId);
+
+    if (!user || (user.role !== USER_ROLE.SUPER_ADMIN && user.role !== USER_ROLE.OPS)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Only Super Admin and OPS can delete available programs.',
+      });
+    }
+
+    const { programId } = req.params;
+
+    const program = await Program.findById(programId);
+    if (!program) {
+      return res.status(404).json({
+        success: false,
+        message: 'Program not found',
+      });
+    }
+
+    if (program.isSelectedByStudent) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete a program that has been selected by the student.',
+      });
+    }
+
+    await Program.findByIdAndDelete(programId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Program deleted successfully',
+    });
+  } catch (error: any) {
+    console.error('Delete available program error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to delete program',
+      error: error.message,
+    });
+  }
+};
+
 
