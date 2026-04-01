@@ -24,7 +24,7 @@ interface ParentDetail {
 export default function SuperAdminParentDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const parentId = params.parentId as string; // This is actually userId from the list page
+  const parentId = params.parentId as string;
   const [user, setUser] = useState<User | null>(null);
   const [parent, setParent] = useState<ParentDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,7 +42,7 @@ export default function SuperAdminParentDetailPage() {
 
   const fetchParent = async () => {
     try {
-      const response = await parentAPI.getParentDetailByUserId(parentId);
+      const response = await parentAPI.getParentDetail(parentId);
       setParent(response.data.data.parent);
     } catch { toast.error('Failed to fetch parent details'); } finally { setLoading(false); }
   };

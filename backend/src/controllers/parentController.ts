@@ -74,6 +74,16 @@ export const getMyParents = async (req: AuthRequest, res: Response): Promise<Res
       const student = await Student.findOne({ userId }).select("_id");
       if (!student) return res.status(404).json({ success: false, message: "Student not found" });
       studentIds = [student._id as mongoose.Types.ObjectId];
+    } else if (userRole === USER_ROLE.SUPER_ADMIN) {
+      // Super admin can see all parents
+      const allParents = await Parent.find()
+        .populate("userId", "firstName middleName lastName email profilePicture isActive isVerified createdAt")
+        .populate({
+          path: "studentIds",
+          populate: { path: "userId", select: "firstName middleName lastName email" },
+        })
+        .lean();
+      return res.status(200).json({ success: true, data: { parents: allParents } });
     } else {
       return res.status(403).json({ success: false, message: "Not authorized" });
     }

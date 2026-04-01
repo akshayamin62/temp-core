@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { superAdminAPI, authAPI } from '@/lib/api';
+import { superAdminAPI, authAPI, parentAPI } from '@/lib/api';
 import { User, USER_ROLE } from '@/types';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
@@ -50,6 +50,7 @@ export default function RoleUserListPage({
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [parentIdMap, setParentIdMap] = useState<Record<string, string>>({});
   const [showAddModal, setShowAddModal] = useState(false);
 
   // Edit user state
@@ -175,6 +176,22 @@ export default function RoleUserListPage({
       const response = await superAdminAPI.getUsers(params);
       const fetchedUsers = response.data.data.users || [];
       setUsers(fetchedUsers);
+
+      // Fetch parent records to map userId -> parentId
+      if (roleEnum === USER_ROLE.PARENT) {
+        try {
+          const parentRes = await parentAPI.getMyParents();
+          const parents = parentRes.data.data.parents || [];
+          const map: Record<string, string> = {};
+          parents.forEach((p: any) => {
+            const uid = typeof p.userId === 'object' ? p.userId._id : p.userId;
+            map[uid] = p._id;
+          });
+          setParentIdMap(map);
+        } catch (err) {
+          console.error('Failed to fetch parent records:', err);
+        }
+      }
 
       // Calculate stats
       setStats({
@@ -688,7 +705,7 @@ export default function RoleUserListPage({
                             )}
                             {roleEnum === USER_ROLE.PARENT && (
                               <button
-                                onClick={() => router.push(`/super-admin/roles/parent/${user._id || user.id}`)}
+                                onClick={() => router.push(`/super-admin/roles/parent/${parentIdMap[user._id || user.id!] || user._id || user.id}`)}
                                 className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white hover:bg-blue-700"
                               >
                                 View Detail
