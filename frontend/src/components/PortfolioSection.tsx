@@ -278,7 +278,6 @@ export default function PortfolioSection({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.832c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
             <p className="text-sm text-amber-800 font-medium">No career goals extracted from brainography report</p>
-            <p className="text-xs text-amber-600 mt-1">Ask your Eduplan Coach to re-extract the data from the PDF</p>
           </div>
         )}
 

@@ -227,6 +227,21 @@ export default function FormFieldRenderer({
     onChange(field.key, newValue);
   };
 
+  // Dynamic placeholder for fieldOfStudy based on education level
+  const getPlaceholder = () => {
+    if (field.key === 'fieldOfStudy' && allValues?.educationLevel) {
+      const placeholders: Record<string, string> = {
+        higher_secondary_school: 'e.g., Science, Commerce, Arts, Humanities',
+        associate: 'e.g., Computer Science, Business Administration, Nursing',
+        bachelors: 'e.g., Computer Science, Mechanical Engineering, Economics',
+        masters: 'e.g., Data Science, MBA, Public Health, Psychology',
+        doctorate: 'e.g., Physics, Neuroscience, Economics, Computer Science',
+      };
+      return placeholders[allValues.educationLevel] || field.placeholder;
+    }
+    return field.placeholder;
+  };
+
   const baseInputClasses = `w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 font-medium bg-white ${
     error ? 'border-red-500 bg-red-50' : 'border-gray-300'
   } ${readOnly ? 'cursor-not-allowed bg-gray-100' : ''}`;
@@ -242,7 +257,7 @@ export default function FormFieldRenderer({
             id={field.key}
             value={value || ''}
             onChange={handleChange}
-            placeholder={field.placeholder}
+            placeholder={getPlaceholder()}
             required={field.required}
             disabled={readOnly}
             className={baseInputClasses}

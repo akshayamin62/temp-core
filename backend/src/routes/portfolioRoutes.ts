@@ -31,10 +31,10 @@ router.get(
   getBrainographyData,
 );
 
-// Update standard / board fields (Student, Eduplan Coach, Super Admin)
+// Update standard / board fields (Student, Eduplan Coach, Super Admin, Admin, Counselor)
 router.patch(
   '/:registrationId/data',
-  authorize([USER_ROLE.STUDENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN]),
+  authorize([USER_ROLE.STUDENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]),
   updateBrainographyMeta,
 );
 

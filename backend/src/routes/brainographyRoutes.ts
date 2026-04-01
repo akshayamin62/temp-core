@@ -29,18 +29,18 @@ router.get(
   downloadBrainography
 );
 
-// Upload brainography report (Eduplan Coach or Super Admin only)
+// Upload brainography report (Eduplan Coach, Super Admin, Admin, or Counselor)
 router.post(
   '/:registrationId/upload',
-  authorize([USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN]),
+  authorize([USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]),
   upload.single('file'),
   uploadBrainography
 );
 
-// Delete brainography report (Eduplan Coach or Super Admin only)
+// Delete brainography report (Eduplan Coach, Super Admin, Admin, or Counselor)
 router.delete(
   '/:registrationId',
-  authorize([USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN]),
+  authorize([USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]),
   deleteBrainography
 );
 

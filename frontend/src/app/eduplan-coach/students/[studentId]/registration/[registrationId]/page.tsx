@@ -177,11 +177,23 @@ export default function EduplanCoachStudentFormEditPage() {
       const response = await axios.get(`${API_URL}/portfolio/${registrationId}/data`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setBrainographyData(response.data.data.brainographyData || null);
+      const data = response.data.data.brainographyData || null;
+      setBrainographyData(data);
+      return data;
     } catch {
       // silently fail
+      return null;
     }
   };
+
+  useEffect(() => {
+    if (!brainographyDoc || brainographyData || extracting) return;
+    const interval = setInterval(async () => {
+      const data = await fetchBrainographyData();
+      if (data) clearInterval(interval);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [brainographyDoc, brainographyData, extracting]);
 
   const handleUpdateBrainographyMeta = async (field: 'standard' | 'board', value: string) => {
     try {
@@ -259,7 +271,6 @@ export default function EduplanCoachStudentFormEditPage() {
       });
       toast.success('Brainography report uploaded successfully!');
       await fetchBrainography();
-      setTimeout(async () => { await fetchBrainographyData(); }, 5000);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to upload brainography report');
     } finally {
@@ -642,7 +653,6 @@ export default function EduplanCoachStudentFormEditPage() {
                       <div className="flex items-center gap-2">
                         <button onClick={handleBrainographyView} className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium">View</button>
                         <button onClick={handleBrainographyDownload} className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium">Download</button>
-                        <button onClick={handleBrainographyDelete} className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium">Delete</button>
                         <label className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium cursor-pointer">
                           Re-upload
                           <input ref={fileInputRef} type="file" className="hidden" onChange={handleBrainographyUpload} accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
@@ -675,10 +685,12 @@ export default function EduplanCoachStudentFormEditPage() {
               {brainographyDoc && (
                 <div className="mb-6">
                   {!brainographyData ? (
-                    <div className="bg-white rounded-xl shadow-sm border border-amber-200 p-6 text-center">
-                      <p className="text-gray-600 mb-3">Brainography data not yet extracted</p>
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
+                      <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                      <p className="text-sm font-medium text-blue-800">AI is extracting data from brainography report...</p>
+                      <p className="text-xs text-blue-600 mt-1">This may take a minute. Please wait.</p>
                       {extractProgress && (
-                        <div className="mb-4 max-w-md mx-auto">
+                        <div className="mt-4 max-w-md mx-auto">
                           <div className="flex items-center justify-between mb-1.5">
                             <span className="text-xs font-medium text-blue-800">{extractProgress.step}</span>
                             <span className="text-xs font-bold text-blue-700">{extractProgress.pct}%</span>
@@ -688,9 +700,6 @@ export default function EduplanCoachStudentFormEditPage() {
                           </div>
                         </div>
                       )}
-                      <button onClick={handleExtractData} disabled={extracting} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm transition-all ${extracting ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'}`}>
-                        {extracting ? (<><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>Extracting with AI...</>) : 'Extract Data from PDF'}
-                      </button>
                     </div>
                   ) : (
                     <BrainographyDataDisplay data={brainographyData} canEdit onUpdate={handleUpdateBrainographyMeta} />
@@ -698,13 +707,7 @@ export default function EduplanCoachStudentFormEditPage() {
                 </div>
               )}
 
-              {brainographyData && brainographyDoc && (
-                <div className="mb-6 flex justify-end">
-                  <button onClick={handleExtractData} disabled={extracting} className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
-                    {extracting ? 'Re-extracting...' : 'Re-extract Data'}
-                  </button>
-                </div>
-              )}
+
             </>
           )}
 

@@ -62,6 +62,9 @@ export default function CounselorStudentFormViewPage() {
   const [brainographyData, setBrainographyData] = useState<BrainographyDataType | null>(null);
   const [portfolios, setPortfolios] = useState<PortfolioItem[]>([]);
   const handlePortfolioDownload = usePortfolioDownload();
+  const [uploadingBrainography, setUploadingBrainography] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [extractingBrainography, setExtractingBrainography] = useState(false);
   const [activeView, setActiveView] = useState<ActiveView>('analytics');
   const [isEducationPlanning, setIsEducationPlanning] = useState(false);
   const [isStudyAbroad, setIsStudyAbroad] = useState(false);
@@ -154,9 +157,34 @@ export default function CounselorStudentFormViewPage() {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(`${API_URL}/portfolio/${registrationId}/data`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = response.data.data.brainographyData || null;
+      setBrainographyData(data);
+      if (data) setExtractingBrainography(false);
+      return data;
+    } catch { /* silently fail */ return null; }
+  };
+
+  const handleUpdateBrainographyMeta = async (field: 'standard' | 'board', value: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.patch(
+        `${API_URL}/portfolio/${registrationId}/data`,
+        { [field]: value },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
       setBrainographyData(response.data.data.brainographyData || null);
     } catch { /* silently fail */ }
   };
+
+  useEffect(() => {
+    if (!brainographyDoc || brainographyData) { setExtractingBrainography(false); return; }
+    setExtractingBrainography(true);
+    const interval = setInterval(async () => {
+      const data = await fetchBrainographyData();
+      if (data) clearInterval(interval);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [brainographyDoc, brainographyData]);
 
   const fetchPortfolios = async () => {
     try {
@@ -206,6 +234,41 @@ export default function CounselorStudentFormViewPage() {
       window.URL.revokeObjectURL(url);
     } catch {
       toast.error('Failed to download brainography report');
+    }
+  };
+
+  const handleBrainographyUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingBrainography(true);
+    try {
+      const token = localStorage.getItem('token');
+      const fd = new FormData();
+      fd.append('file', file);
+      await axios.post(`${API_URL}/brainography/${registrationId}/upload`, fd, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
+      });
+      toast.success('Brainography report uploaded successfully!');
+      await fetchBrainography();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to upload brainography report');
+    } finally {
+      setUploadingBrainography(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleBrainographyDelete = async () => {
+    if (!confirm('Are you sure you want to delete this brainography report?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_URL}/brainography/${registrationId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success('Brainography report deleted');
+      setBrainographyDoc(null);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to delete brainography report');
     }
   };
 
@@ -401,24 +464,22 @@ export default function CounselorStudentFormViewPage() {
             <div className="mb-6"><ActivityAnalyticsDashboard registrationId={registrationId} /></div>
           )}
 
-          {/* Brainography (read-only) */}
+          {/* Brainography */}
           {isEducationPlanning && activeView === 'brainography' && (
             <>
               <div className="bg-white rounded-xl shadow-sm border border-blue-200 p-6 mb-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Brainography Report</h3>
+                      <p className="text-sm text-gray-500">Upload the brainography report for this student</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Brainography Report</h3>
-                    <p className="text-sm text-gray-500">View the brainography report for this student</p>
-                  </div>
-                  <span className="ml-auto inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                    Read Only
-                  </span>
                 </div>
                 {brainographyDoc ? (
                   <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
@@ -437,16 +498,34 @@ export default function CounselorStudentFormViewPage() {
                       <div className="flex items-center gap-2">
                         <button onClick={handleBrainographyView} className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium">View</button>
                         <button onClick={handleBrainographyDownload} className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium">Download</button>
+                        <label className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium cursor-pointer">
+                          Re-upload
+                          <input ref={fileInputRef} type="file" className="hidden" onChange={handleBrainographyUpload} accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
+                        </label>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                    <p className="text-gray-500">No brainography report uploaded yet</p>
+                    <svg className="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p className="text-gray-600 mb-3">No brainography report uploaded yet</p>
+                    <label className={`inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium cursor-pointer ${uploadingBrainography ? 'opacity-50 pointer-events-none' : ''}`}>
+                      {uploadingBrainography ? (<><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>Uploading...</>) : 'Upload Brainography Report'}
+                      <input ref={fileInputRef} type="file" className="hidden" onChange={handleBrainographyUpload} accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" disabled={uploadingBrainography} />
+                    </label>
                   </div>
                 )}
               </div>
-              {brainographyData && <div className="mb-6"><BrainographyDataDisplay data={brainographyData} /></div>}
+              {brainographyDoc && !brainographyData && extractingBrainography && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6 text-center">
+                  <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                  <p className="text-sm font-medium text-blue-800">AI is extracting data from brainography report...</p>
+                  <p className="text-xs text-blue-600 mt-1">This may take a minute. Please wait.</p>
+                </div>
+              )}
+              {brainographyData && <div className="mb-6"><BrainographyDataDisplay data={brainographyData} canEdit onUpdate={handleUpdateBrainographyMeta} /></div>}
             </>
           )}
 

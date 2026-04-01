@@ -63,6 +63,7 @@ export default function ParentStudentRegistrationPage() {
   // Education Planning state
   const [brainographyDoc, setBrainographyDoc] = useState<BrainographyDoc | null>(null);
   const [brainographyData, setBrainographyData] = useState<BrainographyDataType | null>(null);
+  const [extractingBrainography, setExtractingBrainography] = useState(false);
   const [portfolios, setPortfolios] = useState<PortfolioItem[]>([]);
   const handlePortfolioDownload = usePortfolioDownload();
   const [eduPlanStats, setEduPlanStats] = useState<{
@@ -166,9 +167,22 @@ export default function ParentStudentRegistrationPage() {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(`${BRAINOGRAPHY_API_URL}/portfolio/${registrationId}/data`, { headers: { Authorization: `Bearer ${token}` } });
-      setBrainographyData(response.data.data.brainographyData || null);
-    } catch { /* silent */ }
+      const data = response.data.data.brainographyData || null;
+      setBrainographyData(data);
+      if (data) setExtractingBrainography(false);
+      return data;
+    } catch { /* silent */ return null; }
   };
+
+  useEffect(() => {
+    if (!brainographyDoc || brainographyData) { setExtractingBrainography(false); return; }
+    setExtractingBrainography(true);
+    const interval = setInterval(async () => {
+      const data = await fetchBrainographyData();
+      if (data) clearInterval(interval);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [brainographyDoc, brainographyData]);
 
   const fetchPortfolios = async () => {
     try {
@@ -435,6 +449,13 @@ export default function ParentStudentRegistrationPage() {
                   </div>
                 )}
               </div>
+              {brainographyDoc && !brainographyData && extractingBrainography && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6 text-center">
+                  <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                  <p className="text-sm font-medium text-blue-800">AI is extracting data from brainography report...</p>
+                  <p className="text-xs text-blue-600 mt-1">This may take a minute. Please wait.</p>
+                </div>
+              )}
               {brainographyData && <div className="mb-6"><BrainographyDataDisplay data={brainographyData} /></div>}
             </>
           )}

@@ -304,18 +304,27 @@ export default function FormSubSectionRenderer({
                             value={instanceValues?.[sortedFields[i].key]}
                             onChange={(key, value) => onChange(index, key, value)}
                             error={errors[index]?.[sortedFields[i].key]}
+                            allValues={instanceValues}
+                            isAdminEdit={isAdminEdit}
+                            readOnly={isInstanceReadOnly}
                           />
                           <FormFieldRenderer
                             field={sortedFields[i + 1]}
                             value={instanceValues?.[sortedFields[i + 1].key]}
                             onChange={(key, value) => onChange(index, key, value)}
                             error={errors[index]?.[sortedFields[i + 1].key]}
+                            allValues={instanceValues}
+                            isAdminEdit={isAdminEdit}
+                            readOnly={isInstanceReadOnly}
                           />
                           <FormFieldRenderer
                             field={sortedFields[i + 2]}
                             value={instanceValues?.[sortedFields[i + 2].key]}
                             onChange={(key, value) => onChange(index, key, value)}
                             error={errors[index]?.[sortedFields[i + 2].key]}
+                            allValues={instanceValues}
+                            isAdminEdit={isAdminEdit}
+                            readOnly={isInstanceReadOnly}
                           />
                         </div>
                       );
@@ -332,12 +341,18 @@ export default function FormSubSectionRenderer({
                               value={instanceValues?.[sortedFields[i].key]}
                               onChange={(key, value) => onChange(index, key, value)}
                               error={errors[index]?.[sortedFields[i].key]}
+                              allValues={instanceValues}
+                              isAdminEdit={isAdminEdit}
+                              readOnly={isInstanceReadOnly}
                             />
                             <FormFieldRenderer
                               field={sortedFields[i + 1]}
                               value={instanceValues?.[sortedFields[i + 1].key]}
                               onChange={(key, value) => onChange(index, key, value)}
                               error={errors[index]?.[sortedFields[i + 1].key]}
+                              allValues={instanceValues}
+                              isAdminEdit={isAdminEdit}
+                              readOnly={isInstanceReadOnly}
                             />
                           </div>
                         );
@@ -350,6 +365,9 @@ export default function FormSubSectionRenderer({
                               value={instanceValues?.[field.key]}
                               onChange={(key, value) => onChange(index, key, value)}
                               error={errors[index]?.[field.key]}
+                              allValues={instanceValues}
+                              isAdminEdit={isAdminEdit}
+                              readOnly={isInstanceReadOnly}
                             />
                           </div>
                         );
@@ -425,12 +443,18 @@ export default function FormSubSectionRenderer({
                             value={instanceValues?.[sortedFields[i].key]}
                             onChange={(key, value) => onChange(index, key, value)}
                             error={errors[index]?.[sortedFields[i].key]}
+                            allValues={instanceValues}
+                            isAdminEdit={isAdminEdit}
+                            readOnly={isInstanceReadOnly}
                           />
                           <FormFieldRenderer
                             field={sortedFields[i + 1]}
                             value={instanceValues?.[sortedFields[i + 1].key]}
                             onChange={(key, value) => onChange(index, key, value)}
                             error={errors[index]?.[sortedFields[i + 1].key]}
+                            allValues={instanceValues}
+                            isAdminEdit={isAdminEdit}
+                            readOnly={isInstanceReadOnly}
                           />
                         </div>
                       );
@@ -443,8 +467,9 @@ export default function FormSubSectionRenderer({
                             value={instanceValues?.[field.key]}
                             onChange={(key, value) => onChange(index, key, value)}
                             error={errors[index]?.[field.key]}
+                            allValues={instanceValues}
                             isAdminEdit={isAdminEdit}
-                          readOnly={isInstanceReadOnly}
+                            readOnly={isInstanceReadOnly}
                           />
                         </div>
                       );

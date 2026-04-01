@@ -109,6 +109,7 @@ function MyDetailsContent() {
 
   // Extracted data & Portfolio
   const [brainographyData, setBrainographyData] = useState<BrainographyDataType | null>(null);
+  const [extractingBrainography, setExtractingBrainography] = useState(false);
   const [portfolios, setPortfolios] = useState<PortfolioItem[]>([]);
   const handlePortfolioDownload = usePortfolioDownload();
 
@@ -298,11 +299,25 @@ function MyDetailsContent() {
       const response = await axios.get(`${BRAINOGRAPHY_API_URL}/portfolio/${registrationId}/data`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setBrainographyData(response.data.data.brainographyData || null);
+      const data = response.data.data.brainographyData || null;
+      setBrainographyData(data);
+      if (data) setExtractingBrainography(false);
+      return data;
     } catch (error) {
       // Silently fail
+      return null;
     }
   };
+
+  useEffect(() => {
+    if (!brainographyDoc || brainographyData) { setExtractingBrainography(false); return; }
+    setExtractingBrainography(true);
+    const interval = setInterval(async () => {
+      const data = await fetchBrainographyData();
+      if (data) clearInterval(interval);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [brainographyDoc, brainographyData]);
 
   const handleUpdateBrainographyMeta = async (field: 'standard' | 'board', value: string) => {
     try {
@@ -1119,6 +1134,13 @@ function MyDetailsContent() {
           </div>
         </div>
         {/* Extracted Brainography Data */}
+        {brainographyDoc && !brainographyData && extractingBrainography && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
+            <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+            <p className="text-sm font-medium text-blue-800">AI is extracting data from brainography report...</p>
+            <p className="text-xs text-blue-600 mt-1">This may take a minute. Please wait.</p>
+          </div>
+        )}
         {brainographyData && <BrainographyDataDisplay data={brainographyData} canEdit onUpdate={handleUpdateBrainographyMeta} />}
       </div>
     );

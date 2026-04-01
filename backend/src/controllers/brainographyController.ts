@@ -76,11 +76,11 @@ export const uploadBrainography = async (req: AuthRequest, res: Response): Promi
           message: 'Access denied. You are not the active Eduplan Coach for this registration.',
         });
       }
-    } else if (userRole !== USER_ROLE.SUPER_ADMIN) {
+    } else if (userRole !== USER_ROLE.SUPER_ADMIN && userRole !== USER_ROLE.ADMIN && userRole !== USER_ROLE.COUNSELOR) {
       fs.unlinkSync(file.path);
       return res.status(403).json({
         success: false,
-        message: 'Only Eduplan Coach or Super Admin can upload brainography reports',
+        message: 'Only Eduplan Coach, Super Admin, Admin, or Counselor can upload brainography reports',
       });
     }
 
