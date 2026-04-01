@@ -562,7 +562,7 @@ export default function EduplanCoachStudentFormEditPage() {
                 ))}
                 <button onClick={() => router.push(`/eduplan-coach/students/${studentId}/registration/${registrationId}/activity`)}
                   className="flex-1 flex items-center justify-center gap-1.5 px-4 py-4 text-sm font-semibold transition-colors border-b-2 border-transparent text-gray-700 hover:text-gray-900 hover:bg-gray-50">
-                  Student Activity
+                  Activity Management
                 </button>
               </div>
             </div>

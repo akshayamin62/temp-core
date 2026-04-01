@@ -387,7 +387,7 @@ function ActivityContent() {
               <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             </button>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">Student Activity</h1>
+              <h1 className="text-xl font-bold text-gray-800">Activity Management</h1>
               <p className="text-xs text-gray-400">Read-only view &middot; {selectedDate ? format(new Date(selectedDate + 'T12:00:00'), 'EEEE, MMMM d, yyyy') : 'No date selected'}</p>
             </div>
           </div>
@@ -931,7 +931,7 @@ export default function StudentActivityPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-gray-500 text-sm">Loading Student Activity...</p>
+          <p className="text-gray-500 text-sm">Loading Activity Management...</p>
         </div>
       </div>
     }>
