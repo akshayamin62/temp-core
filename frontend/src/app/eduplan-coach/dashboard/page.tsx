@@ -1,13 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { authAPI } from '@/lib/api';
-import { User, USER_ROLE } from '@/types';
+import { authAPI, teamMeetAPI } from '@/lib/api';
+import { User, USER_ROLE, TeamMeet, TEAMMEET_STATUS } from '@/types';
 import EduplanCoachLayout from '@/components/EduplanCoachLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 import { getFullName } from '@/utils/nameHelpers';
+import TeamMeetCalendar from '@/components/TeamMeetCalendar';
+import TeamMeetSidebar from '@/components/TeamMeetSidebar';
+import TeamMeetFormPanel from '@/components/TeamMeetFormPanel';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -17,8 +20,24 @@ export default function EduplanCoachDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [studentCount, setStudentCount] = useState(0);
 
+  // TeamMeet state
+  const [teamMeets, setTeamMeets] = useState<TeamMeet[]>([]);
+  const [selectedTeamMeet, setSelectedTeamMeet] = useState<TeamMeet | null>(null);
+  const [showTeamMeetPanel, setShowTeamMeetPanel] = useState(false);
+  const [teamMeetPanelMode, setTeamMeetPanelMode] = useState<'create' | 'view' | 'respond'>('create');
+  const [selectedTeamMeetDate, setSelectedTeamMeetDate] = useState<Date | undefined>(undefined);
+
   useEffect(() => {
     checkAuth();
+  }, []);
+
+  const fetchTeamMeets = useCallback(async () => {
+    try {
+      const response = await teamMeetAPI.getTeamMeetsForCalendar();
+      setTeamMeets(response.data.data.teamMeets);
+    } catch (error: any) {
+      console.error('Error fetching team meets:', error);
+    }
   }, []);
 
   const checkAuth = async () => {
@@ -34,6 +53,7 @@ export default function EduplanCoachDashboardPage() {
 
       setUser(userData);
       fetchStudentCount();
+      fetchTeamMeets();
     } catch (error) {
       toast.error('Please login to continue');
       router.push('/login');
@@ -52,6 +72,45 @@ export default function EduplanCoachDashboardPage() {
     } catch (error) {
       console.error('Error fetching students:', error);
     }
+  };
+
+  // TeamMeet handlers
+  const handleTeamMeetSelect = (teamMeet: TeamMeet) => {
+    setSelectedTeamMeet(teamMeet);
+    const currentUserId = user?.id || user?._id;
+    if (teamMeet.requestedTo._id === currentUserId && teamMeet.status === TEAMMEET_STATUS.PENDING_CONFIRMATION) {
+      setTeamMeetPanelMode('respond');
+    } else {
+      setTeamMeetPanelMode('view');
+    }
+    setShowTeamMeetPanel(true);
+  };
+
+  const handleTeamMeetDateSelect = (date: Date) => {
+    setSelectedTeamMeetDate(date);
+    setSelectedTeamMeet(null);
+    setTeamMeetPanelMode('create');
+    setShowTeamMeetPanel(true);
+  };
+
+  const handleScheduleTeamMeet = () => {
+    setSelectedTeamMeet(null);
+    setSelectedTeamMeetDate(undefined);
+    setTeamMeetPanelMode('create');
+    setShowTeamMeetPanel(true);
+  };
+
+  const handleTeamMeetSave = async () => {
+    setShowTeamMeetPanel(false);
+    setSelectedTeamMeet(null);
+    setSelectedTeamMeetDate(undefined);
+    await fetchTeamMeets();
+  };
+
+  const handleTeamMeetPanelClose = () => {
+    setShowTeamMeetPanel(false);
+    setSelectedTeamMeet(null);
+    setSelectedTeamMeetDate(undefined);
   };
 
   if (loading) {
@@ -131,8 +190,44 @@ export default function EduplanCoachDashboardPage() {
               </button>
             </div>
           </div>
+
+          {/* Team Meet Section */}
+          <div className="mt-8">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Calendar Section */}
+              <div className="lg:col-span-3">
+                <TeamMeetCalendar
+                  teamMeets={teamMeets}
+                  onTeamMeetSelect={handleTeamMeetSelect}
+                  onDateSelect={handleTeamMeetDateSelect}
+                  currentUserId={user?.id || user?._id}
+                />
+              </div>
+
+              {/* Sidebar Section */}
+              <div className="lg:col-span-1">
+                <TeamMeetSidebar
+                  teamMeets={teamMeets}
+                  onTeamMeetClick={handleTeamMeetSelect}
+                  onScheduleClick={handleScheduleTeamMeet}
+                  currentUserId={user?.id || user?._id}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </EduplanCoachLayout>
+
+      {/* TeamMeet Slide-in Panel */}
+      <TeamMeetFormPanel
+        teamMeet={selectedTeamMeet}
+        isOpen={showTeamMeetPanel}
+        onClose={handleTeamMeetPanelClose}
+        onSave={handleTeamMeetSave}
+        selectedDate={selectedTeamMeetDate}
+        mode={teamMeetPanelMode}
+        currentUserId={user?.id || user?._id}
+      />
     </>
   );
 }
