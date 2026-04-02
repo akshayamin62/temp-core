@@ -831,6 +831,14 @@ export const getAdmins = async (_req: Request, res: Response): Promise<Response>
       .select('_id firstName middleName lastName email')
       .sort({ lastName: 1 });
 
+    // Enrich with companyName from Admin model
+    const adminProfiles = await Admin.find({ userId: { $in: admins.map(a => a._id) } })
+      .select('userId companyName');
+    const companyMap: Record<string, string> = {};
+    adminProfiles.forEach((ap: any) => {
+      companyMap[ap.userId.toString()] = ap.companyName;
+    });
+
     return res.status(200).json({
       success: true,
       data: {
@@ -840,6 +848,7 @@ export const getAdmins = async (_req: Request, res: Response): Promise<Response>
           middleName: admin.middleName,
           lastName: admin.lastName,
           email: admin.email,
+          companyName: companyMap[admin._id.toString()] || undefined,
         })),
       },
     });

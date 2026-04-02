@@ -15,6 +15,7 @@ interface AdminData {
   middleName?: string;
   lastName?: string;
   email: string;
+  companyName?: string;
 }
 
 interface ReferrerData {
@@ -36,6 +37,7 @@ interface ReferrerData {
     lastName?: string;
     email: string;
   };
+  adminCompanyName?: string;
   email: string;
   mobileNumber?: string;
   referralSlug: string;
@@ -111,6 +113,7 @@ export default function SuperAdminReferrersPage() {
         middleName: u.middleName,
         lastName: u.lastName,
         email: u.email,
+        companyName: u.companyName,
       })));
     } catch (error: any) {
       console.error('Fetch admins error:', error);
@@ -261,7 +264,7 @@ export default function SuperAdminReferrersPage() {
               <option value="all">All Admins</option>
               {admins.map((admin) => (
                 <option key={admin._id} value={admin._id}>
-                  {[admin.firstName, admin.middleName, admin.lastName].filter(Boolean).join(' ')}
+                  {admin.companyName || [admin.firstName, admin.middleName, admin.lastName].filter(Boolean).join(' ')}
                 </option>
               ))}
             </select>
@@ -306,7 +309,7 @@ export default function SuperAdminReferrersPage() {
                       <option value="">-- Select Admin --</option>
                       {admins.map((admin) => (
                         <option key={admin._id} value={admin._id}>
-                          {[admin.firstName, admin.middleName, admin.lastName].filter(Boolean).join(' ')} ({admin.email})
+                          {admin.companyName || [admin.firstName, admin.middleName, admin.lastName].filter(Boolean).join(' ')} ({[admin.firstName, admin.middleName, admin.lastName].filter(Boolean).join(' ')})
                         </option>
                       ))}
                     </select>
@@ -443,9 +446,6 @@ export default function SuperAdminReferrersPage() {
                       Admin
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Phone
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -470,24 +470,24 @@ export default function SuperAdminReferrersPage() {
                           {referrer.userId.profilePicture ? (
                             <img src={`${BACKEND_URL}/uploads/${referrer.userId.profilePicture}`} alt="" className="w-10 h-10 rounded-full object-cover mr-3" />
                           ) : (
-                            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                              <span className="text-purple-600 font-semibold">
+                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-blue-600 font-semibold">
                                 {getInitials(referrer.userId)}
                               </span>
                             </div>
                           )}
-                          <span className="font-medium text-gray-900">
-                            {getFullName(referrer.userId)}
-                          </span>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {getFullName(referrer.userId)}
+                            </div>
+                            <div className="text-sm text-gray-500">{referrer.email}</div>
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-gray-900 text-sm">
-                          {referrer.adminId ? [referrer.adminId.firstName, referrer.adminId.middleName, referrer.adminId.lastName].filter(Boolean).join(' ') : 'N/A'}
+                          {referrer.adminCompanyName || (referrer.adminId ? [referrer.adminId.firstName, referrer.adminId.middleName, referrer.adminId.lastName].filter(Boolean).join(' ') : 'N/A')}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {referrer.email}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {referrer.mobileNumber || 'N/A'}
@@ -511,7 +511,7 @@ export default function SuperAdminReferrersPage() {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => copyReferralLink(referrer.referralSlug)}
-                            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors flex items-center gap-1"
+                            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors flex items-center gap-1"
                           >
                             {copiedSlug === referrer.referralSlug ? (
                               <>

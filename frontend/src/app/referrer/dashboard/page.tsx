@@ -88,24 +88,33 @@ export default function ReferrerDashboardPage() {
           </div>
 
           {/* Referral Link Card */}
-          <div className="mb-8 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-6 text-white shadow-lg">
-            <h3 className="text-lg font-semibold mb-2">Your Referral Link</h3>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 bg-white/20 backdrop-blur-sm rounded-lg px-4 py-3 font-mono text-sm truncate">
-                {typeof window !== 'undefined' ? window.location.origin : ''}/referral/{stats?.referralSlug || '...'}
+          <div className="mb-8 bg-white rounded-xl shadow-sm border border-gray-200 p-4 max-w-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+              <h3 className="font-semibold text-gray-900 text-sm">Referral Link</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 bg-blue-50 rounded-lg px-3 py-2">
+                <code className="text-xs text-blue-700 font-mono break-all">
+                  {typeof window !== 'undefined' ? window.location.origin : ''}/referral/{stats?.referralSlug || '...'}
+                </code>
               </div>
               <button
                 onClick={copyReferralLink}
-                className={`px-5 py-3 rounded-lg font-semibold transition-colors ${
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap ${
                   copied
-                    ? 'bg-green-500 text-white'
-                    : 'bg-white text-purple-600 hover:bg-gray-100'
+                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
                 }`}
               >
-                {copied ? 'Copied!' : 'Copy'}
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                {copied ? 'Copied!' : 'Copy URL'}
               </button>
             </div>
-            <p className="text-purple-200 text-sm mt-2">Share this link to refer new students</p>
           </div>
 
           {/* Stats Grid */}
@@ -142,8 +151,8 @@ export default function ReferrerDashboardPage() {
               onClick={() => router.push('/referrer/students')}
             >
               <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
                   </svg>

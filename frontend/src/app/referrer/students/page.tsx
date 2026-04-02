@@ -6,7 +6,8 @@ import { authAPI, referrerAPI } from '@/lib/api';
 import { User, USER_ROLE } from '@/types';
 import ReferrerLayout from '@/components/ReferrerLayout';
 import toast, { Toaster } from 'react-hot-toast';
-import { getFullName } from '@/utils/nameHelpers';
+import { getFullName, getInitials } from '@/utils/nameHelpers';
+import { BACKEND_URL } from '@/lib/ivyApi';
 
 interface StudentData {
   _id: string;
@@ -16,6 +17,7 @@ interface StudentData {
     middleName?: string;
     lastName?: string;
     email: string;
+    profilePicture?: string;
     isActive: boolean;
   };
   email: string;
@@ -125,8 +127,21 @@ export default function ReferrerStudentsPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {students.map((student) => (
                     <tr key={student._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                        {getFullName(student.userId) || 'N/A'}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          {student.userId.profilePicture ? (
+                            <img src={`${BACKEND_URL}/uploads/${student.userId.profilePicture}`} alt="" className="w-10 h-10 rounded-full object-cover mr-3" />
+                          ) : (
+                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-blue-600 font-semibold text-sm">
+                                {getInitials(student.userId)}
+                              </span>
+                            </div>
+                          )}
+                          <span className="font-medium text-gray-900">
+                            {getFullName(student.userId) || 'N/A'}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-gray-600">
                         {student.email}

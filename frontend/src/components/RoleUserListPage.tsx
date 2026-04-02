@@ -31,6 +31,7 @@ interface AdminOption {
   middleName?: string;
   lastName?: string;
   email: string;
+  companyName?: string;
 }
 
 export default function RoleUserListPage({
@@ -930,7 +931,7 @@ export default function RoleUserListPage({
                       <option value="">-- Select an Admin --</option>
                       {admins.map((admin) => (
                         <option key={admin._id} value={admin._id}>
-                          {getFullName(admin)} ({admin.email})
+                          {admin.companyName || getFullName(admin)} ({getFullName(admin)})
                         </option>
                       ))}
                     </select>

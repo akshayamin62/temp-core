@@ -236,6 +236,14 @@ export const getAllReferrersForSuperAdmin = async (req: AuthRequest, res: Respon
       .populate("adminId", "firstName middleName lastName email")
       .sort({ createdAt: -1 });
 
+    // Get companyName for each admin from Admin model
+    const adminUserIds = [...new Set(referrers.map((r: any) => r.adminId?._id?.toString()).filter(Boolean))];
+    const adminProfiles = await Admin.find({ userId: { $in: adminUserIds } }).select('userId companyName');
+    const companyMap: Record<string, string> = {};
+    adminProfiles.forEach((ap: any) => {
+      companyMap[ap.userId.toString()] = ap.companyName;
+    });
+
     const referrerIds = referrers.map((r) => r._id);
     const leadCounts = await Lead.aggregate([
       { $match: { referrerId: { $in: referrerIds } } },
@@ -254,6 +262,7 @@ export const getAllReferrersForSuperAdmin = async (req: AuthRequest, res: Respon
           _id: r._id,
           userId: r.userId,
           adminId: r.adminId,
+          adminCompanyName: r.adminId ? companyMap[r.adminId._id.toString()] : undefined,
           email: r.email,
           mobileNumber: r.mobileNumber,
           referralSlug: r.referralSlug,
@@ -712,7 +721,7 @@ export const getReferrerStudents = async (req: AuthRequest, res: Response): Prom
     }
 
     const students = await Student.find({ referrerId: referrer._id })
-      .populate("userId", "firstName middleName lastName email isActive")
+      .populate("userId", "firstName middleName lastName email profilePicture isActive")
       .sort({ createdAt: -1 });
 
     return res.json({

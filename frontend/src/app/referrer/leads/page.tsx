@@ -126,7 +126,7 @@ export default function ReferrerLeadsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -135,7 +135,7 @@ export default function ReferrerLeadsPage() {
             <select
               value={stageFilter}
               onChange={(e) => setStageFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All Stages</option>
               <option value="NEW">New</option>
@@ -147,7 +147,7 @@ export default function ReferrerLeadsPage() {
             </select>
             <button
               onClick={handleSearch}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Search
             </button>
@@ -191,7 +191,7 @@ export default function ReferrerLeadsPage() {
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
                           {lead.serviceTypes?.map((s: string) => (
-                            <span key={s} className="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full">{s}</span>
+                            <span key={s} className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">{s}</span>
                           ))}
                         </div>
                       </td>
