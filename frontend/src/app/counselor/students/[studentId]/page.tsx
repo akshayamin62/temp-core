@@ -305,6 +305,24 @@ export default function CounselorStudentDetailPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Source & Referral Info */}
+                <div className="flex items-center gap-4 pt-4 border-t border-gray-200 mt-4">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Source</p>
+                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${(student as any).referrerId ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
+                      {(student as any).referrerId ? 'Referral' : 'Enquiry Form'}
+                    </span>
+                  </div>
+                  {(student as any).referrerId && (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Referred By</p>
+                      <p className="font-medium text-purple-700">
+                        {[(student as any).referrerId?.userId?.firstName, (student as any).referrerId?.userId?.middleName, (student as any).referrerId?.userId?.lastName].filter(Boolean).join(' ') || 'Referrer'}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Service Registrations */}

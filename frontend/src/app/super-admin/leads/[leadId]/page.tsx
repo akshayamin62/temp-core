@@ -437,6 +437,22 @@ export default function SuperAdminLeadDetailPage() {
                   <span className="text-gray-500 text-sm">Not assigned</span>
                 )}
               </div>
+
+              {/* Source & Referral Card */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <h3 className="text-sm font-bold text-gray-900 mb-2">Source</h3>
+                <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${lead.source === 'Referral' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
+                  {lead.source || 'Direct'}
+                </span>
+                {(lead as any).referrerId && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs font-medium text-gray-500 mb-1">Referred By</p>
+                    <p className="text-purple-700 font-medium text-sm">
+                      {[(lead as any).referrerId?.userId?.firstName, (lead as any).referrerId?.userId?.middleName, (lead as any).referrerId?.userId?.lastName].filter(Boolean).join(' ') || 'Referrer'}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

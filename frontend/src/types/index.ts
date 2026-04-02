@@ -358,6 +358,7 @@ export interface Lead {
   year?: string;
   parentDetail?: LeadParentDetail;
   stage: LEAD_STAGE;
+  source?: string;
   conversionRequestId?: string;
   conversionStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt: string;

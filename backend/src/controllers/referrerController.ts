@@ -79,18 +79,21 @@ export const createReferrer = async (req: AuthRequest, res: Response): Promise<R
     });
     await newUser.save();
 
-    // Generate unique referral slug from name
-    const fullName = [firstName, lastName].filter(Boolean).join(" ");
-    const baseSlug = generateSlug(fullName);
-    const referralSlug = await getUniqueReferralSlug(baseSlug);
-
+    // Create referrer first, then generate slug with ObjectId for guaranteed uniqueness
     const newReferrer = new Referrer({
       userId: newUser._id,
       adminId: adminUserId,
       email: email.toLowerCase().trim(),
       mobileNumber: mobileNumber?.trim() || undefined,
-      referralSlug,
+      referralSlug: 'temp', // placeholder
     });
+    await newReferrer.save();
+
+    // Generate unique referral slug: name-referrerId
+    const fullName = [firstName, lastName].filter(Boolean).join(" ");
+    const baseSlug = generateSlug(fullName);
+    const referralSlug = `${baseSlug}-${newReferrer._id}`;
+    newReferrer.referralSlug = referralSlug;
     await newReferrer.save();
 
     return res.status(201).json({
@@ -213,6 +216,203 @@ export const toggleReferrerStatus = async (req: AuthRequest, res: Response): Pro
     });
   } catch (error: any) {
     console.error("Toggle referrer status error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to toggle referrer status",
+      error: error.message,
+    });
+  }
+};
+
+// ============= SUPER ADMIN ENDPOINTS =============
+
+/**
+ * Get all referrers across all admins (Super Admin)
+ */
+export const getAllReferrersForSuperAdmin = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const referrers = await Referrer.find()
+      .populate("userId", "firstName middleName lastName email profilePicture isActive isVerified")
+      .populate("adminId", "firstName middleName lastName email")
+      .sort({ createdAt: -1 });
+
+    const referrerIds = referrers.map((r) => r._id);
+    const leadCounts = await Lead.aggregate([
+      { $match: { referrerId: { $in: referrerIds } } },
+      { $group: { _id: "$referrerId", total: { $sum: 1 } } },
+    ]);
+    const countMap: Record<string, number> = {};
+    leadCounts.forEach((lc: any) => {
+      countMap[lc._id.toString()] = lc.total;
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "All referrers fetched successfully",
+      data: {
+        referrers: referrers.map((r: any) => ({
+          _id: r._id,
+          userId: r.userId,
+          adminId: r.adminId,
+          email: r.email,
+          mobileNumber: r.mobileNumber,
+          referralSlug: r.referralSlug,
+          isActive: r.isActive,
+          leadCount: countMap[r._id.toString()] || 0,
+          createdAt: r.createdAt,
+        })),
+      },
+    });
+  } catch (error: any) {
+    console.error("Get all referrers for super admin error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch referrers",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Create a referrer under a specific admin (Super Admin)
+ */
+export const createReferrerForSuperAdmin = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const { firstName, middleName, lastName, email, mobileNumber, adminId } = req.body;
+
+    if (!firstName || !lastName || !email) {
+      return res.status(400).json({
+        success: false,
+        message: "First name, last name, and email are required",
+      });
+    }
+
+    if (!mobileNumber || !mobileNumber.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number is required",
+      });
+    }
+
+    if (!adminId) {
+      return res.status(400).json({
+        success: false,
+        message: "Admin selection is required",
+      });
+    }
+
+    const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,5}[-\s.]?[0-9]{1,5}$/;
+    if (!phoneRegex.test(mobileNumber.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid phone number format",
+      });
+    }
+
+    // Verify adminId is a valid admin user
+    const adminUser = await User.findById(adminId);
+    if (!adminUser || adminUser.role !== USER_ROLE.ADMIN) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid admin selected",
+      });
+    }
+
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User with this email already exists",
+      });
+    }
+
+    const newUser = new User({
+      firstName: firstName.trim(),
+      middleName: middleName?.trim() || undefined,
+      lastName: lastName.trim(),
+      email: email.toLowerCase().trim(),
+      role: USER_ROLE.REFERRER,
+      isVerified: true,
+      isActive: true,
+    });
+    await newUser.save();
+
+    // Create referrer first, then generate slug with ObjectId for guaranteed uniqueness
+    const newReferrer = new Referrer({
+      userId: newUser._id,
+      adminId,
+      email: email.toLowerCase().trim(),
+      mobileNumber: mobileNumber?.trim() || undefined,
+      referralSlug: 'temp', // placeholder
+    });
+    await newReferrer.save();
+
+    // Generate unique referral slug: name-referrerId
+    const fullName = [firstName, lastName].filter(Boolean).join(" ");
+    const baseSlug = generateSlug(fullName);
+    const referralSlug = `${baseSlug}-${newReferrer._id}`;
+    newReferrer.referralSlug = referralSlug;
+    await newReferrer.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Referrer created successfully",
+      data: {
+        referrer: {
+          _id: newReferrer._id,
+          userId: newUser._id,
+          firstName: newUser.firstName,
+          middleName: newUser.middleName,
+          lastName: newUser.lastName,
+          email: newUser.email,
+          mobileNumber: newReferrer.mobileNumber,
+          referralSlug: newReferrer.referralSlug,
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error("Create referrer for super admin error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create referrer",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Toggle referrer status (Super Admin)
+ */
+export const toggleReferrerStatusForSuperAdmin = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const { referrerId } = req.params;
+
+    const referrer = await Referrer.findById(referrerId);
+    if (!referrer) {
+      return res.status(404).json({
+        success: false,
+        message: "Referrer not found",
+      });
+    }
+
+    const user = await User.findById(referrer.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    user.isActive = !user.isActive;
+    await user.save();
+
+    referrer.isActive = user.isActive;
+    await referrer.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Referrer ${referrer.isActive ? "activated" : "deactivated"} successfully`,
+      data: { isActive: referrer.isActive },
+    });
+  } catch (error: any) {
+    console.error("Toggle referrer status for super admin error:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to toggle referrer status",

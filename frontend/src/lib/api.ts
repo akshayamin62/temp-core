@@ -206,6 +206,21 @@ export const superAdminAPI = {
 
   updateRegistrationStatus: (registrationId: string, status: string) =>
     api.patch(`/super-admin/students/registrations/${registrationId}/status`, { status }),
+
+  // Referrer management
+  getReferrers: () => api.get('/super-admin/referrers'),
+  
+  createReferrer: (data: {
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    email: string;
+    mobileNumber: string;
+    adminId: string;
+  }) => api.post('/super-admin/referrer', data),
+  
+  toggleReferrerStatus: (referrerId: string) =>
+    api.patch(`/super-admin/referrer/${referrerId}/toggle-status`),
 };
 
 // Admin Student API (read-only access to students for admin/counselor)

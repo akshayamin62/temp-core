@@ -42,6 +42,11 @@ import { authenticate } from "../middleware/auth";
 import { authorize } from "../middleware/authorize";
 import { USER_ROLE } from "../types/roles";
 import { uploadAdminLogo } from "../middleware/upload";
+import {
+  getAllReferrersForSuperAdmin,
+  createReferrerForSuperAdmin,
+  toggleReferrerStatusForSuperAdmin,
+} from "../controllers/referrerController";
 
 const router = Router();
 
@@ -322,6 +327,30 @@ router.get("/eduplan-coaches/:coachUserId/students", getEduplanCoachStudentsForS
  * @access  Super Admin only
  */
 router.get("/eduplan-coaches/:coachUserId/team-meets", getEduplanCoachTeamMeetsForSuperAdmin);
+
+// ============= REFERRER ROUTES =============
+
+/**
+ * @route   GET /api/super-admin/referrers
+ * @desc    Get all referrers across all admins
+ * @access  Super Admin only
+ */
+router.get("/referrers", getAllReferrersForSuperAdmin);
+
+/**
+ * @route   POST /api/super-admin/referrer
+ * @desc    Create a new referrer under a specific admin
+ * @access  Super Admin only
+ * @body    firstName, lastName, email, mobileNumber, adminId
+ */
+router.post("/referrer", createReferrerForSuperAdmin);
+
+/**
+ * @route   PATCH /api/super-admin/referrer/:referrerId/toggle-status
+ * @desc    Toggle referrer active/inactive status
+ * @access  Super Admin only
+ */
+router.patch("/referrer/:referrerId/toggle-status", toggleReferrerStatusForSuperAdmin);
 
 export default router;
 
