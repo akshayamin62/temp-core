@@ -54,6 +54,7 @@ export default function SuperAdminStudentFormEditPage() {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
 
   const [formValues, setFormValues] = useState<any>({});
+  const [errors, setErrors] = useState<any>({});
   const [studentInfo, setStudentInfo] = useState<any>(null);
   const [serviceInfo, setServiceInfo] = useState<any>(null);
   const [planTier, setPlanTier] = useState<string | undefined>();
@@ -425,9 +426,59 @@ export default function SuperAdminStudentFormEditPage() {
     });
   };
 
+  const validateCurrentSection = (): boolean => {
+    const cs = formStructure[currentPartIndex];
+    if (!cs) return true;
+    const section = cs.sections?.[currentSectionIndex];
+    if (!section) return true;
+    const partKey = cs.part.key;
+    const sectionKey = section.key;
+    const sectionValues = formValues[partKey]?.[sectionKey] || {};
+    const newErrors: any = {};
+    let hasErrors = false;
+
+    section.subSections.forEach((subSection) => {
+      const subSectionValues = sectionValues[subSection.key] || [{}];
+      subSectionValues.forEach((instanceValues: any, index: number) => {
+        const visibleFields = subSection.fields.filter((f) => {
+          const eduLevel = instanceValues?.educationLevel;
+          const board = instanceValues?.board;
+          if (f.key === 'board' || f.key === 'boardFullName') {
+            if (eduLevel !== 'secondary_school' && eduLevel !== 'higher_secondary_school') return false;
+          }
+          if (f.key === 'boardFullName') {
+            if (board !== 'State Board' && board !== 'Other') return false;
+          }
+          if (f.key === 'fieldOfStudy' && eduLevel === 'secondary_school') return false;
+          return true;
+        });
+        visibleFields.forEach((field) => {
+          if (field.required) {
+            const value = instanceValues?.[field.key];
+            if (!value || (typeof value === 'string' && value.trim() === '')) {
+              if (!newErrors[subSection.key]) newErrors[subSection.key] = [];
+              if (!newErrors[subSection.key][index]) newErrors[subSection.key][index] = {};
+              newErrors[subSection.key][index][field.key] = `${field.label} is required`;
+              hasErrors = true;
+            }
+          }
+        });
+      });
+    });
+
+    setErrors(newErrors);
+    return !hasErrors;
+  };
+
   const handleSaveSection = async () => {
     const cs = formStructure[currentPartIndex];
     if (!cs) return;
+
+    if (!validateCurrentSection()) {
+      toast.error('Please fill all required fields');
+      return;
+    }
+
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
@@ -764,6 +815,7 @@ export default function SuperAdminStudentFormEditPage() {
                       userRole="SUPER_ADMIN"
                       readOnlyKeys={currentPart.key === 'PROFILE' && currentSection.title === 'Personal Details' ? ['firstName', 'middleName', 'lastName'] : undefined}
                       noDelete={currentPart.key === 'PROFILE' && currentSection.title === 'Parental Details'}
+                      errors={errors}
                     />
                   )}
                 </div>

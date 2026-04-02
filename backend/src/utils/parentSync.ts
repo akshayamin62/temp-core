@@ -123,6 +123,9 @@ export async function syncParentsFromFormAnswers(
     const qualification= (entry.parentQualification|| "").trim();
     const occupation   = (entry.parentOccupation   || "").trim();
 
+    // Skip entries with incomplete required fields to avoid Mongoose validation errors
+    if (!firstName || !lastName || !relationship || !mobileNumber) continue;
+
     const existingParent = existingParents[i];
 
     if (existingParent) {
