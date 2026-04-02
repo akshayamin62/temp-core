@@ -82,6 +82,12 @@ export default function FormSectionRenderer({
       {/* SubSections */}
       <div className="p-6 space-y-6 bg-white">
         
+        {section.key === 'academicQualification' && (
+          <div className="px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+            <strong>Note:</strong> Please add all your academic qualifications starting from 10th (Secondary School), 12th (Higher Secondary), and up to your highest degree.
+          </div>
+        )}
+
         {section.subSections
           .sort((a, b) => a.order - b.order)
           .map((subSection, idx) => {

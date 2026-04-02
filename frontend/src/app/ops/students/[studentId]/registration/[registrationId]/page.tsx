@@ -308,15 +308,8 @@ export default function StudentFormEditPage() {
       if (!newValues[partKey][sectionId]) newValues[partKey][sectionId] = {};
       if (!newValues[partKey][sectionId][subSectionId]) newValues[partKey][sectionId][subSectionId] = [];
 
-      // Add the new instance before the last one (if there are existing instances)
-      const instances = newValues[partKey][sectionId][subSectionId];
-      if (instances.length > 0) {
-        // Insert before the last element
-        instances.splice(instances.length - 1, 0, {});
-      } else {
-        // No existing instances, just add it
-        instances.push({});
-      }
+      // Add the new instance at the end
+      newValues[partKey][sectionId][subSectionId].push({});
       return newValues;
     });
   };
@@ -577,6 +570,7 @@ export default function StudentFormEditPage() {
                   registrationId={registrationId}
                   studentId={studentId}
                   userRole="OPS"
+                  noDelete={currentPart.key === 'PROFILE' && currentSection.title === 'Parental Details'}
                 />
               )}
             </div>

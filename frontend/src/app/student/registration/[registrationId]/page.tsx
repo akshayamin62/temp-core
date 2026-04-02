@@ -561,15 +561,8 @@ function MyDetailsContent() {
         });
       }
       
-      // Add the new instance before the last one (if there are existing instances)
-      const instances = newValues[partKey][sectionId][subSectionId];
-      if (instances.length > 0) {
-        // Insert before the last element
-        instances.splice(instances.length - 1, 0, newInstance);
-      } else {
-        // No existing instances, just add it
-        instances.push(newInstance);
-      }
+      // Add the new instance at the end
+      newValues[partKey][sectionId][subSectionId].push(newInstance);
       return newValues;
     });
   };
@@ -605,7 +598,21 @@ function MyDetailsContent() {
       const subSectionValues = sectionValues[subSection.key] || [{}];
       
       subSectionValues.forEach((instanceValues: any, index: number) => {
-        subSection.fields.forEach((field) => {
+        // Filter fields by visibility (same logic as FormSubSectionRenderer)
+        const visibleFields = subSection.fields.filter((f) => {
+          const eduLevel = instanceValues?.educationLevel;
+          const board = instanceValues?.board;
+          if (f.key === 'board' || f.key === 'boardFullName') {
+            if (eduLevel !== 'secondary_school' && eduLevel !== 'higher_secondary_school') return false;
+          }
+          if (f.key === 'boardFullName') {
+            if (board !== 'State Board' && board !== 'Other') return false;
+          }
+          if (f.key === 'fieldOfStudy' && eduLevel === 'secondary_school') return false;
+          return true;
+        });
+
+        visibleFields.forEach((field) => {
           if (field.required) {
             let value = instanceValues?.[field.key];
             
