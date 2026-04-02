@@ -8,6 +8,7 @@ export interface IStudent extends Document {
   mobileNumber?: string;
   intake?: string;
   year?: string;
+  referrerId?: mongoose.Types.ObjectId;
   convertedFromLeadId?: mongoose.Types.ObjectId;
   conversionDate?: Date;
   createdAt?: Date;
@@ -53,6 +54,11 @@ const studentSchema = new Schema<IStudent>(
       type: String,
       required: false,
       trim: true,
+    },
+    referrerId: {
+      type: Schema.Types.ObjectId,
+      ref: "Referrer",
+      required: false,
     },
     convertedFromLeadId: {
       type: Schema.Types.ObjectId,

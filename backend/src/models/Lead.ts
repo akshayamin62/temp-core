@@ -38,6 +38,7 @@ export interface ILead extends Document {
   parentDetail?: ILeadParentDetail;
   adminId: mongoose.Types.ObjectId;
   assignedCounselorId?: mongoose.Types.ObjectId;
+  referrerId?: mongoose.Types.ObjectId;
   stage: LEAD_STAGE;
   source: string;
   conversionRequestId?: mongoose.Types.ObjectId;
@@ -114,6 +115,11 @@ const leadSchema = new Schema<ILead>(
       type: String,
       enum: Object.values(LEAD_STAGE),
       default: LEAD_STAGE.NEW,
+    },
+    referrerId: {
+      type: Schema.Types.ObjectId,
+      ref: "Referrer",
+      default: null,
     },
     source: {
       type: String,

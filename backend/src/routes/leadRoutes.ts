@@ -18,6 +18,11 @@ import { USER_ROLE } from "../types/roles";
 
 const router = express.Router();
 
+import {
+  getReferralInfo,
+  submitReferralEnquiry,
+} from "../controllers/referrerController";
+
 // ============= PUBLIC ROUTES (No Auth Required) =============
 
 // Get admin info for enquiry form
@@ -25,6 +30,12 @@ router.get("/public/enquiry/:adminSlug/info", getAdminInfoBySlug);
 
 // Submit enquiry form
 router.post("/public/enquiry/:adminSlug/submit", submitEnquiry);
+
+// Get referral form info
+router.get("/public/referral/:referralSlug/info", getReferralInfo);
+
+// Submit referral enquiry form
+router.post("/public/referral/:referralSlug/submit", submitReferralEnquiry);
 
 // ============= ADMIN ROUTES =============
 

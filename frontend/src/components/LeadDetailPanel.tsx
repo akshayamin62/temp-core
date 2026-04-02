@@ -252,6 +252,14 @@ export default function LeadDetailPanel({
               {lead.stage}
             </span>
           </div>
+          {(lead as any).referrerId && (
+            <div className="bg-purple-50 rounded-lg p-3">
+              <p className="text-xs font-medium text-gray-500 uppercase">Referred By</p>
+              <p className="text-purple-700 font-medium mt-1 text-sm">
+                {[(lead as any).referrerId?.userId?.firstName, (lead as any).referrerId?.userId?.middleName, (lead as any).referrerId?.userId?.lastName].filter(Boolean).join(' ') || 'Referrer'}
+              </p>
+            </div>
+          )}
           <div className="bg-gray-50 rounded-lg p-3">
             <p className="text-xs font-medium text-gray-500 uppercase">Created</p>
             <p className="text-gray-900 font-medium mt-1 text-sm">

@@ -244,7 +244,11 @@ export const getLeadDetail = async (req: AuthRequest, res: Response): Promise<Re
         path: "assignedCounselorId",
         populate: { path: "userId", select: "firstName middleName lastName email" }
       })
-      .populate("adminId", "firstName middleName lastName email");
+      .populate("adminId", "firstName middleName lastName email")
+      .populate({
+        path: "referrerId",
+        populate: { path: "userId", select: "firstName middleName lastName" }
+      });
 
     if (!lead) {
       return res.status(404).json({

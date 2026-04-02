@@ -9,6 +9,7 @@ export enum USER_ROLE {
   ALUMNI = 'ALUMNI',
   SUPER_ADMIN = 'SUPER_ADMIN',
   SERVICE_PROVIDER = 'SERVICE_PROVIDER',
+  REFERRER = 'REFERRER',
 }
 
 export interface User {

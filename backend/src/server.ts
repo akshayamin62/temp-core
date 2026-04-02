@@ -28,6 +28,7 @@ import brainographyRoutes from "./routes/brainographyRoutes";
 import portfolioRoutes from "./routes/portfolioRoutes";
 import parentRoutes from "./routes/parentRoutes";
 import activityRoutes from "./routes/activityRoutes";
+import referrerRoutes from "./routes/referrerRoutes";
 import archiveRoutes from "./routes/archiveRoutes";
 import ivyLeagueRegistrationRoutes from "./routes/ivyLeagueRegistrationRoutes";
 import servicePlanRoutes from "./routes/servicePlanRoutes";
@@ -76,6 +77,7 @@ import "./models/ChatMessage";
 import "./models/StudentDocument";
 import "./models/COREDocumentField";
 import "./models/Lead";
+import "./models/Referrer";
 import "./models/FollowUp";
 import "./models/TeamMeet";
 import "./models/OpsSchedule";
@@ -169,7 +171,8 @@ app.use("/api/student-plan-discounts", studentPlanDiscountRoutes); // Student pl
 app.use("/api/invoices", invoiceRoutes); // Invoice management
 app.use("/api/ledger", ledgerRoutes); // Ledger / financial tracking
 app.use("/api/ivy-league-registration", ivyLeagueRegistrationRoutes); // Ivy League registration form routes
-app.use("/api", leadRoutes); // Lead routes (includes public, admin, counselor endpoints)
+app.use("/api/referrer", referrerRoutes); // Referrer authenticated routes
+app.use("/api", leadRoutes); // Lead routes (includes public, admin, counselor, referral endpoints)
 
 // Ivy League routes (all protected by authenticate middleware)
 app.use("/api/ivy/ivy-service", authenticate, ivyServiceRoutes);

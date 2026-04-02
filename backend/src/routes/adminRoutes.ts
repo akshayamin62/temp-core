@@ -8,6 +8,11 @@ import {
   getCounselorFollowUpSummary,
   getAdminStats
 } from "../controllers/adminController";
+import {
+  createReferrer,
+  getReferrers,
+  toggleReferrerStatus,
+} from "../controllers/referrerController";
 import { authenticate } from "../middleware/auth";
 import { authorize } from "../middleware/authorize";
 import { USER_ROLE } from "../types/roles";
@@ -67,6 +72,29 @@ router.get("/counselor/:counselorId/follow-up-summary", getCounselorFollowUpSumm
  * @access  Admin only
  */
 router.patch("/counselor/:counselorId/toggle-status", toggleCounselorStatus);
+
+// ============= REFERRER ROUTES =============
+
+/**
+ * @route   POST /api/admin/referrer
+ * @desc    Create a new Referrer
+ * @access  Admin only
+ */
+router.post("/referrer", createReferrer);
+
+/**
+ * @route   GET /api/admin/referrers
+ * @desc    Get all referrers created by this admin
+ * @access  Admin only
+ */
+router.get("/referrers", getReferrers);
+
+/**
+ * @route   PATCH /api/admin/referrer/:referrerId/toggle-status
+ * @desc    Toggle referrer active/inactive status
+ * @access  Admin only
+ */
+router.patch("/referrer/:referrerId/toggle-status", toggleReferrerStatus);
 
 export default router;
 

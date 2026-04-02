@@ -39,6 +39,8 @@ export default function DashboardPage() {
         router.push('/service-provider/dashboard');
       } else if (user.role === 'PARENT') {
         router.push('/parent/dashboard');
+      } else if (user.role === 'REFERRER') {
+        router.push('/referrer/dashboard');
       } else {
         fetchMyServices();
       }

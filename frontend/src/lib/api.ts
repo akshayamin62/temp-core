@@ -481,6 +481,20 @@ export const adminAPI = {
   
   getCounselorFollowUpSummary: (counselorId: string) => 
     api.get(`/admin/counselor/${counselorId}/follow-up-summary`),
+
+  // Referrer management
+  createReferrer: (data: {
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    email: string;
+    mobileNumber: string;
+  }) => api.post('/admin/referrer', data),
+
+  getReferrers: () => api.get('/admin/referrers'),
+
+  toggleReferrerStatus: (referrerId: string) =>
+    api.patch(`/admin/referrer/${referrerId}/toggle-status`),
 };
 
 // Lead API
@@ -543,6 +557,42 @@ export const leadAPI = {
     serviceTypes?: string;
     adminId?: string;
   }) => api.get('/super-admin/leads', { params }),
+};
+
+// Referral Public API (for public referral form)
+export const referralAPI = {
+  getReferralInfo: (referralSlug: string) =>
+    api.get(`/public/referral/${referralSlug}/info`),
+
+  submitReferralEnquiry: (referralSlug: string, data: {
+    name: string;
+    email: string;
+    mobileNumber: string;
+    city: string;
+    serviceTypes: string[];
+    intake?: string;
+    year?: string;
+    parentDetail?: {
+      firstName: string;
+      middleName?: string;
+      lastName: string;
+      relationship: string;
+      mobileNumber: string;
+      email: string;
+      qualification: string;
+      occupation: string;
+    };
+  }) => api.post(`/public/referral/${referralSlug}/submit`, data),
+};
+
+// Referrer API (for REFERRER role authenticated pages)
+export const referrerAPI = {
+  getDashboardStats: () => api.get('/referrer/dashboard-stats'),
+  getReferralLink: () => api.get('/referrer/referral-link'),
+  getLeads: (params?: { stage?: string; search?: string }) =>
+    api.get('/referrer/leads', { params }),
+  getLeadDetail: (leadId: string) => api.get(`/referrer/leads/${leadId}`),
+  getStudents: () => api.get('/referrer/students'),
 };
 
 // Follow-Up API
