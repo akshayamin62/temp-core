@@ -155,15 +155,15 @@ export default function ServicePlanDetailsView({
 
           <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full ">
                 <thead>
                   <tr className="bg-gradient-to-r from-blue-600 to-blue-700">
                     <th className="text-left px-6 py-5 min-w-[220px]">
-                      <span className="text-sm font-bold text-white uppercase tracking-wider">Features</span>
+                      <span className="text-lg font-bold text-white uppercase tracking-wider">Features</span>
                     </th>
                     {plans.map((plan) => (
                       <th key={plan.key} className="text-center px-4 py-5 min-w-[160px]">
-                        <p className="text-base font-bold text-white">{plan.name}</p>
+                        <p className="text-lg font-bold text-white">{plan.name}</p>
                         {plan.subtitle && (
                           <p className="text-[11px] text-blue-200 mt-0.5 font-medium">{plan.subtitle}</p>
                         )}
@@ -174,14 +174,14 @@ export default function ServicePlanDetailsView({
                 <tbody>
                   {features.map((feat, idx) => (
                     <tr key={idx} className={`border-b border-gray-100 last:border-0 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/80'} hover:bg-blue-50/50 transition-colors`}>
-                      <td className="px-6 py-4.5 align-top">
+                      <td className="px-6 py-4.5 align-top border-r border-gray-200 last:border-r-0">
                         <p className="text-sm font-semibold text-gray-900">{feat.area}</p>
                         {feat.description && (
                           <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{feat.description}</p>
                         )}
                       </td>
                       {plans.map((plan) => (
-                        <td key={plan.key} className="px-4 py-4.5 text-center align-middle">
+                        <td key={plan.key} className="px-4 py-4.5 text-center align-middle border-r border-gray-200 last:border-r-0">
                           {renderValue(feat.values?.[plan.key] || '—')}
                         </td>
                       ))}
@@ -191,7 +191,7 @@ export default function ServicePlanDetailsView({
                   {/* Register/Upgrade buttons as last table row */}
                   {onRegister && (
                     <tr className="bg-slate-50 border-t-2 border-gray-200">
-                      <td className="px-6 py-5 align-middle">
+                      <td className="px-6 py-5 align-middle border-r border-gray-200 last:border-r-0">
                         <p className="text-sm font-bold text-gray-700">Get Started</p>
                       </td>
                       {plans.map((plan) => {
@@ -202,7 +202,7 @@ export default function ServicePlanDetailsView({
                         const isLoading = registeringPlan === plan.key;
 
                         return (
-                          <td key={plan.key} className="px-4 py-5 text-center align-middle">
+                          <td key={plan.key} className="px-4 py-5 text-center align-middle border-r border-gray-200 last:border-r-0">
                             {isCurrent ? (
                               <span className="inline-block px-5 py-2.5 rounded-full font-bold text-sm text-white bg-blue-600">
                                 Current Plan
