@@ -39,7 +39,7 @@ router.post('/enquiry', authenticate, authorize(USER_ROLE.STUDENT), createSPEnqu
 router.get('/student-enquiries', authenticate, authorize(USER_ROLE.STUDENT), getStudentMyEnquiries);
 
 // Admin-facing routes (Super Admin, Admin, Parent can view student/SP data)
-router.get('/student/:studentId/enquiries', authenticate, authorize([USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.PARENT]), getStudentEnquiriesById);
+router.get('/student/:studentId/enquiries', authenticate, authorize([USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.PARENT, USER_ROLE.REFERRER]), getStudentEnquiriesById);
 router.get('/provider/:providerId/services', authenticate, authorize([USER_ROLE.SUPER_ADMIN]), getSPServicesById);
 router.get('/provider/:providerId/enquiries', authenticate, authorize([USER_ROLE.SUPER_ADMIN]), getSPEnquiriesById);
 router.get('/all', authenticate, authorize([USER_ROLE.SUPER_ADMIN]), getAllSPServicesForSuperAdmin);

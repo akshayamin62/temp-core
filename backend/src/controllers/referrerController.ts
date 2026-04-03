@@ -5,6 +5,9 @@ import Admin from "../models/Admin";
 import Referrer from "../models/Referrer";
 import Lead, { LEAD_STAGE, SERVICE_TYPE } from "../models/Lead";
 import Student from "../models/Student";
+import StudentServiceRegistration from "../models/StudentServiceRegistration";
+import StudentFormAnswer from "../models/StudentFormAnswer";
+import LeadStudentConversion from "../models/LeadStudentConversion";
 import { USER_ROLE } from "../types/roles";
 import { generateSlug } from "./leadController";
 
@@ -740,5 +743,148 @@ export const getReferrerStudents = async (req: AuthRequest, res: Response): Prom
   } catch (error: any) {
     console.error("Get referrer students error:", error);
     return res.status(500).json({ success: false, message: "Failed to fetch students" });
+  }
+};
+
+/**
+ * REFERRER: Get single student detail (read-only)
+ */
+export const getReferrerStudentDetail = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const userId = req.user?.userId;
+    const { studentId } = req.params;
+
+    const referrer = await Referrer.findOne({ userId });
+    if (!referrer) {
+      return res.status(404).json({ success: false, message: "Referrer profile not found" });
+    }
+
+    const student = await Student.findOne({ _id: studentId, referrerId: referrer._id })
+      .populate("userId", "firstName middleName lastName email isVerified isActive createdAt")
+      .populate({
+        path: "adminId",
+        select: "companyName mobileNumber",
+        populate: { path: "userId", select: "firstName middleName lastName email" },
+      })
+      .populate({
+        path: "counselorId",
+        select: "mobileNumber",
+        populate: { path: "userId", select: "firstName middleName lastName email" },
+      })
+      .lean()
+      .exec();
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Student not found or not referred by you" });
+    }
+
+    const registrations = await StudentServiceRegistration.find({ studentId })
+      .populate("serviceId", "name slug shortDescription")
+      .populate({
+        path: "primaryOpsId",
+        populate: { path: "userId", select: "firstName middleName lastName email" },
+      })
+      .populate({
+        path: "secondaryOpsId",
+        populate: { path: "userId", select: "firstName middleName lastName email" },
+      })
+      .populate({
+        path: "activeOpsId",
+        populate: { path: "userId", select: "firstName middleName lastName email" },
+      })
+      .lean()
+      .exec();
+
+    return res.json({
+      success: true,
+      data: { student, registrations },
+    });
+  } catch (error: any) {
+    console.error("Get referrer student detail error:", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch student details" });
+  }
+};
+
+/**
+ * REFERRER: Get student by lead ID (for converted leads)
+ */
+export const getReferrerStudentByLeadId = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const userId = req.user?.userId;
+    const { leadId } = req.params;
+
+    const referrer = await Referrer.findOne({ userId });
+    if (!referrer) {
+      return res.status(404).json({ success: false, message: "Referrer profile not found" });
+    }
+
+    // Verify the lead belongs to this referrer
+    const lead = await Lead.findOne({ _id: leadId, referrerId: referrer._id });
+    if (!lead) {
+      return res.status(404).json({ success: false, message: "Lead not found" });
+    }
+
+    const conversion = await LeadStudentConversion.findOne({
+      leadId,
+      status: "APPROVED",
+    });
+
+    if (!conversion || !conversion.createdStudentId) {
+      return res.status(404).json({ success: false, message: "No converted student found for this lead" });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        student: { _id: conversion.createdStudentId },
+      },
+    });
+  } catch (error: any) {
+    console.error("Get referrer student by lead error:", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch student" });
+  }
+};
+
+/**
+ * REFERRER: Get student form answers for a registration (read-only)
+ */
+export const getReferrerStudentFormAnswers = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const userId = req.user?.userId;
+    const { studentId, registrationId } = req.params;
+
+    const referrer = await Referrer.findOne({ userId });
+    if (!referrer) {
+      return res.status(404).json({ success: false, message: "Referrer profile not found" });
+    }
+
+    // Verify this student belongs to this referrer
+    const student = await Student.findOne({ _id: studentId, referrerId: referrer._id }).lean().exec();
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Student not found or not referred by you" });
+    }
+
+    const registration = await StudentServiceRegistration.findById(registrationId)
+      .populate("serviceId")
+      .lean()
+      .exec();
+
+    if (!registration) {
+      return res.status(404).json({ success: false, message: "Registration not found" });
+    }
+
+    const answers = await StudentFormAnswer.find({ studentId }).lean().exec();
+
+    return res.json({
+      success: true,
+      message: "Form answers fetched successfully",
+      data: {
+        registration,
+        answers,
+      },
+    });
+  } catch (error: any) {
+    console.error("Get referrer student form answers error:", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch form answers" });
   }
 };

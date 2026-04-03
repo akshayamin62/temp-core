@@ -12,6 +12,7 @@ export default function AdminLeadsPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [allLeads, setAllLeads] = useState<Lead[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [counselors, setCounselors] = useState<any[]>([]);
   const [enquiryFormUrl, setEnquiryFormUrl] = useState<string>('');
@@ -47,7 +48,15 @@ export default function AdminLeadsPage() {
       fetchCounselors();
       fetchEnquiryFormUrl();
     }
-  }, [user, stageFilter, serviceFilter, counselorFilter]);
+  }, [user, serviceFilter, counselorFilter]);
+
+  useEffect(() => {
+    let filtered = allLeads;
+    if (stageFilter) {
+      filtered = filtered.filter(l => l.stage === stageFilter);
+    }
+    setLeads(filtered);
+  }, [allLeads, stageFilter]);
 
   const checkAuth = async () => {
     try {
@@ -72,7 +81,6 @@ export default function AdminLeadsPage() {
   const fetchLeads = async () => {
     try {
       const params: any = {};
-      if (stageFilter) params.stage = stageFilter;
       if (serviceFilter) params.serviceTypes = serviceFilter;
       if (counselorFilter) params.assignedCounselorId = counselorFilter;
 
@@ -84,7 +92,7 @@ export default function AdminLeadsPage() {
         conversionStatus: l.conversionStatus,
         conversionRequestId: l.conversionRequestId
       })));
-      setLeads(fetchedLeads);
+      setAllLeads(fetchedLeads);
     } catch (error) {
       console.error('Error fetching leads:', error);
       toast.error('Failed to fetch leads');
@@ -253,14 +261,14 @@ export default function AdminLeadsPage() {
     }
   };
 
-  // Stats calculations
-  const totalLeads = leads.length;
-  const newLeads = leads.filter(l => l.stage === LEAD_STAGE.NEW).length;
-  const hotLeads = leads.filter(l => l.stage === LEAD_STAGE.HOT).length;
-  const warmLeads = leads.filter(l => l.stage === LEAD_STAGE.WARM).length;
-  const coldLeads = leads.filter(l => l.stage === LEAD_STAGE.COLD).length;
-  const convertedLeads = leads.filter(l => l.stage === LEAD_STAGE.CONVERTED).length;
-  const closedLeads = leads.filter(l => l.stage === LEAD_STAGE.CLOSED).length;
+  // Stats calculations (always from allLeads so they don't change on filter)
+  const totalLeads = allLeads.length;
+  const newLeads = allLeads.filter(l => l.stage === LEAD_STAGE.NEW).length;
+  const hotLeads = allLeads.filter(l => l.stage === LEAD_STAGE.HOT).length;
+  const warmLeads = allLeads.filter(l => l.stage === LEAD_STAGE.WARM).length;
+  const coldLeads = allLeads.filter(l => l.stage === LEAD_STAGE.COLD).length;
+  const convertedLeads = allLeads.filter(l => l.stage === LEAD_STAGE.CONVERTED).length;
+  const closedLeads = allLeads.filter(l => l.stage === LEAD_STAGE.CLOSED).length;
 
   // Filter leads by search query
   const filteredLeads = leads.filter(lead => {

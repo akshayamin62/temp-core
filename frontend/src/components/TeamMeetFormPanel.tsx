@@ -107,8 +107,8 @@ export default function TeamMeetFormPanel({
     if (isOpen && mode === 'create') {
       fetchParticipants();
     }
-    // Also fetch participants for invite feature in view/respond modes
-    if (isOpen && (mode === 'view' || mode === 'respond') && teamMeet) {
+    // Also fetch participants for invite feature in view/respond modes (skip for readOnly)
+    if (isOpen && !readOnly && (mode === 'view' || mode === 'respond') && teamMeet) {
       fetchInviteParticipants();
     }
   }, [isOpen, mode, teamMeet?._id]);

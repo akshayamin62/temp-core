@@ -55,7 +55,7 @@ interface ChatInfo {
 interface ProgramChatViewProps {
   program: Program;
   onClose: () => void;
-  userRole: 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN' | 'COUNSELOR' | 'PARENT' | 'EDUPLAN_COACH' | 'IVY_EXPERT';
+  userRole: 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN' | 'COUNSELOR' | 'PARENT' | 'EDUPLAN_COACH' | 'IVY_EXPERT' | 'REFERRER';
   isReadOnly?: boolean;
   chatType?: 'open' | 'private';
 }

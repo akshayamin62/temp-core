@@ -608,6 +608,10 @@ export const referrerAPI = {
     api.get('/referrer/leads', { params }),
   getLeadDetail: (leadId: string) => api.get(`/referrer/leads/${leadId}`),
   getStudents: () => api.get('/referrer/students'),
+  getStudentDetail: (studentId: string) => api.get(`/referrer/students/${studentId}`),
+  getStudentByLeadId: (leadId: string) => api.get(`/referrer/leads/${leadId}/student`),
+  getStudentFormAnswers: (studentId: string, registrationId: string) =>
+    api.get(`/referrer/students/${studentId}/registrations/${registrationId}/answers`),
 };
 
 // Follow-Up API

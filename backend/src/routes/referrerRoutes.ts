@@ -8,6 +8,9 @@ import {
   getReferrerLeads,
   getReferrerLeadDetail,
   getReferrerStudents,
+  getReferrerStudentDetail,
+  getReferrerStudentByLeadId,
+  getReferrerStudentFormAnswers,
 } from "../controllers/referrerController";
 
 const router = Router();
@@ -50,5 +53,26 @@ router.get("/leads/:leadId", getReferrerLeadDetail);
  * @access  Referrer only
  */
 router.get("/students", getReferrerStudents);
+
+/**
+ * @route   GET /api/referrer/students/:studentId
+ * @desc    Get single student detail (read-only)
+ * @access  Referrer only
+ */
+router.get("/students/:studentId", getReferrerStudentDetail);
+
+/**
+ * @route   GET /api/referrer/students/:studentId/registrations/:registrationId/answers
+ * @desc    Get student form answers for a registration (read-only)
+ * @access  Referrer only
+ */
+router.get("/students/:studentId/registrations/:registrationId/answers", getReferrerStudentFormAnswers);
+
+/**
+ * @route   GET /api/referrer/leads/:leadId/student
+ * @desc    Get student by lead ID (for converted leads)
+ * @access  Referrer only
+ */
+router.get("/leads/:leadId/student", getReferrerStudentByLeadId);
 
 export default router;

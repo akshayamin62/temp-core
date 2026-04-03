@@ -52,14 +52,14 @@ const imageFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilter
     "image/jpeg",
     "image/jpg",
     "image/png",
-    "image/gif",
     "image/webp",
+    "image/avif",
   ];
 
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Invalid file type. Only images (JPG, PNG, GIF, WEBP) are allowed."));
+    cb(new Error("Invalid file type. Only images (JPG, PNG, WEBP, AVIF) are allowed."));
   }
 };
 
