@@ -608,7 +608,7 @@ export const createOps = async (req: Request, res: Response): Promise<Response> 
 export const getAllOps = async (_req: Request, res: Response): Promise<Response> => {
   try {
     const ops = await Ops.find()
-      .populate('userId', 'firstName middleName lastName email isActive')
+      .populate('userId', 'firstName middleName lastName email profilePicture isActive')
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -639,7 +639,7 @@ export const getAllOps = async (_req: Request, res: Response): Promise<Response>
 export const getAllIvyExperts = async (_req: Request, res: Response): Promise<Response> => {
   try {
     const ivyExperts = await IvyExpert.find()
-      .populate('userId', 'firstName middleName lastName email isActive')
+      .populate('userId', 'firstName middleName lastName email profilePicture isActive')
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -715,7 +715,7 @@ export const getIvyExpertTeamMeetsForSuperAdmin = async (req: Request, res: Resp
 export const getAllEduplanCoaches = async (_req: Request, res: Response): Promise<Response> => {
   try {
     const eduplanCoaches = await EduplanCoach.find()
-      .populate('userId', 'firstName middleName lastName email isActive')
+      .populate('userId', 'firstName middleName lastName email profilePicture isActive')
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -1180,7 +1180,7 @@ export const getAdminCounselorsForSuperAdmin = async (req: Request, res: Respons
     }
 
     const counselors = await Counselor.find({ adminId: adminId })
-      .populate('userId', 'firstName middleName lastName name email isActive isVerified')
+      .populate('userId', 'firstName middleName lastName name email profilePicture isActive isVerified')
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -1277,7 +1277,7 @@ export const getAdminStudentsForSuperAdmin = async (req: Request, res: Response)
     }
 
     const students = await Student.find({ adminId: adminProfile._id })
-      .populate('userId', 'firstName middleName lastName email isVerified isActive createdAt')
+      .populate('userId', 'firstName middleName lastName email profilePicture isVerified isActive createdAt')
       .populate({
         path: 'adminId',
         populate: { path: 'userId', select: 'firstName middleName lastName email' }
@@ -1464,11 +1464,11 @@ export const getCounselorDetailForSuperAdmin = async (req: Request, res: Respons
 
     // Find counselor by _id first, then fallback to userId
     let counselor = await Counselor.findById(counselorId)
-      .populate('userId', 'firstName middleName lastName name email isActive isVerified');
+      .populate('userId', 'firstName middleName lastName name email profilePicture isActive isVerified');
 
     if (!counselor) {
       counselor = await Counselor.findOne({ userId: counselorId })
-        .populate('userId', 'firstName middleName lastName name email isActive isVerified');
+        .populate('userId', 'firstName middleName lastName name email profilePicture isActive isVerified');
     }
 
     if (!counselor) {

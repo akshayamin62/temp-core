@@ -426,7 +426,7 @@ export const getStudentProfileDataById = async (req: AuthRequest, res: Response)
   try {
     const { studentId } = req.params;
 
-    const student = await Student.findById(studentId).populate('userId', 'firstName middleName lastName email isVerified isActive');
+    const student = await Student.findById(studentId).populate('userId', 'firstName middleName lastName email profilePicture isVerified isActive');
     if (!student) {
       return res.status(404).json({ success: false, message: "Student not found" });
     }

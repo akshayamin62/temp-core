@@ -760,7 +760,7 @@ export const getReferrerStudentDetail = async (req: AuthRequest, res: Response):
     }
 
     const student = await Student.findOne({ _id: studentId, referrerId: referrer._id })
-      .populate("userId", "firstName middleName lastName email isVerified isActive createdAt")
+      .populate("userId", "firstName middleName lastName email profilePicture isVerified isActive createdAt")
       .populate({
         path: "adminId",
         select: "companyName mobileNumber",

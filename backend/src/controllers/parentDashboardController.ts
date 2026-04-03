@@ -31,7 +31,7 @@ export const getParentStudents = async (req: AuthRequest, res: Response): Promis
     }
 
     const students = await Student.find({ _id: { $in: parentDoc.studentIds } })
-      .populate('userId', 'firstName middleName lastName email isVerified isActive createdAt')
+      .populate('userId', 'firstName middleName lastName email profilePicture isVerified isActive createdAt')
       .populate({
         path: 'adminId',
         populate: { path: 'userId', select: 'firstName middleName lastName email' },
@@ -105,7 +105,7 @@ export const getParentStudentDetails = async (req: AuthRequest, res: Response): 
     }
 
     const student = await Student.findById(studentId)
-      .populate('userId', 'firstName middleName lastName email role isVerified isActive createdAt')
+      .populate('userId', 'firstName middleName lastName email role profilePicture isVerified isActive createdAt')
       .populate({
         path: 'adminId',
         populate: { path: 'userId', select: 'firstName middleName lastName email' },
