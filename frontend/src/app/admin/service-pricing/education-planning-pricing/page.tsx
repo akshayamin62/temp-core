@@ -176,7 +176,7 @@ export default function EducationPlanningPricingPage() {
                         <p className="text-xs text-gray-500 mt-0.5">
                           Base: ₹{basePrice.toLocaleString('en-IN')}
                           {price - basePrice >= 0
-                            ? <span className="text-green-600 font-semibold ml-2">+₹{(price - basePrice).toLocaleString('en-IN')} margin</span>
+                            ? <span className="text-blue-600 font-semibold ml-2">+₹{(price - basePrice).toLocaleString('en-IN')} margin</span>
                             : <span className="text-red-600 font-semibold ml-2">-₹{Math.abs(price - basePrice).toLocaleString('en-IN')} margin</span>
                           }
                         </p>

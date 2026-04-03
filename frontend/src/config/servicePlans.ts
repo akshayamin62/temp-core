@@ -24,21 +24,21 @@ export interface ServiceFeature {
 export const STUDY_ABROAD_PLANS: PlanConfig[] = [
   {
     key: 'PRO', name: 'PRO', subtitle: 'Essential',
-    borderColor: 'border-blue-400/60', headerGradient: 'bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700',
-    textColor: 'text-blue-700', iconBg: 'bg-blue-100', iconText: 'text-blue-600',
-    cellBg: 'bg-blue-50/30', badgeBg: 'bg-blue-600', glowColor: 'shadow-blue-200/50',
+    borderColor: 'border-blue-200', headerGradient: 'bg-blue-500',
+    textColor: 'text-blue-600', iconBg: 'bg-blue-50', iconText: 'text-blue-500',
+    cellBg: 'bg-blue-50/30', badgeBg: 'bg-blue-500', glowColor: 'shadow-blue-100/40',
   },
   {
     key: 'PREMIUM', name: 'PREMIUM', subtitle: 'Recommended',
-    borderColor: 'border-purple-400/60', headerGradient: 'bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-700',
-    textColor: 'text-purple-700', iconBg: 'bg-purple-100', iconText: 'text-purple-600',
-    cellBg: 'bg-purple-50/30', badgeBg: 'bg-purple-600', glowColor: 'shadow-purple-200/50',
+    borderColor: 'border-blue-300', headerGradient: 'bg-blue-600',
+    textColor: 'text-blue-700', iconBg: 'bg-blue-100', iconText: 'text-blue-600',
+    cellBg: 'bg-blue-50/40', badgeBg: 'bg-blue-600', glowColor: 'shadow-blue-200/40',
   },
   {
     key: 'PLATINUM', name: 'PLATINUM', subtitle: 'All-Inclusive',
-    borderColor: 'border-amber-400/60', headerGradient: 'bg-gradient-to-br from-amber-400 via-amber-500 to-orange-600',
-    textColor: 'text-amber-700', iconBg: 'bg-amber-100', iconText: 'text-amber-600',
-    cellBg: 'bg-amber-50/30', badgeBg: 'bg-amber-600', glowColor: 'shadow-amber-200/50',
+    borderColor: 'border-blue-400', headerGradient: 'bg-blue-700',
+    textColor: 'text-blue-800', iconBg: 'bg-blue-100', iconText: 'text-blue-700',
+    cellBg: 'bg-blue-50/50', badgeBg: 'bg-blue-700', glowColor: 'shadow-blue-200/50',
   },
 ];
 

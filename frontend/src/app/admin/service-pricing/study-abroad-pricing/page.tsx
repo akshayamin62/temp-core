@@ -109,8 +109,8 @@ export default function ServicePricingPage() {
                 const basePrice = basePricing ? (basePricing[plan.key] ?? 0) : 0;
                 const profit = basePricing ? sellingPrice - basePrice : null;
                 return (
-                  <div key={plan.key} className={`bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 ${plan.borderColor} p-6 relative overflow-hidden`}>
-                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-purple-500 to-amber-500" />
+                  <div key={plan.key} className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-slate-200 p-6 relative overflow-hidden">
+                    <div className={`absolute top-0 left-0 right-0 h-1.5 ${plan.badgeBg}`} />
                     <div className="flex items-center justify-between mb-4">
                       <div className={`w-11 h-11 ${plan.iconBg} ${plan.iconText} rounded-xl flex items-center justify-center shadow-sm`}>
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
@@ -121,7 +121,7 @@ export default function ServicePricingPage() {
                     <p className="text-sm text-gray-500 mt-1">Your selling price</p>
                     {profit !== null && (
                       <div className="mt-3 pt-3 border-t border-gray-100">
-                        <p className={`text-sm font-semibold ${profit >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                        <p className={`text-sm font-semibold ${profit >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
                           {profit >= 0 ? '↑' : '↓'} Your Margin: ₹{Math.abs(profit).toLocaleString('en-IN')}
                         </p>
                       </div>
@@ -151,7 +151,7 @@ export default function ServicePricingPage() {
                       <div className="mt-1.5 flex items-center gap-3 text-xs">
                         <span className="text-gray-500">Base: ₹{basePrice.toLocaleString('en-IN')}</span>
                         {profit !== null && (
-                          <span className={`font-semibold ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          <span className={`font-semibold ${profit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
                             Your Margin: {profit >= 0 ? '+' : ''}₹{profit.toLocaleString('en-IN')}
                           </span>
                         )}

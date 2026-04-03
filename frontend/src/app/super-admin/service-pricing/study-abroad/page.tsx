@@ -108,8 +108,8 @@ export default function SuperAdminStudyAbroadPricingPage() {
           {pricing && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
               {plans.map((plan) => (
-                <div key={plan.key} className={`bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 ${plan.borderColor} p-6 relative overflow-hidden`}>
-                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-purple-500 to-amber-500" />
+                <div key={plan.key} className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-slate-200 p-6 relative overflow-hidden">
+                  <div className={`absolute top-0 left-0 right-0 h-1.5 ${plan.badgeBg}`} />
                   <div className="flex items-center justify-between mb-4">
                     <div className={`w-11 h-11 ${plan.iconBg} ${plan.iconText} rounded-xl flex items-center justify-center shadow-sm`}>
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
