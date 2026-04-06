@@ -213,4 +213,4 @@ A comprehensive analysis of the Kareer Studio platform identified **36 bugs and 
 ---
 
 *Report generated: July 2025*
-*Kareer Studio Bug Analysis*
+*CORE Bug Analysis*

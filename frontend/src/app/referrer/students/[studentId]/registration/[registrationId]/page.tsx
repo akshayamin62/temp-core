@@ -259,11 +259,13 @@ export default function ReferrerStudentRegistrationPage() {
 
       const serviceSlug = typeof regServiceId === 'object' ? regServiceId.slug : '';
       const partConfigs = getServiceFormStructure(serviceSlug);
-      const structure: FormStructure[] = partConfigs.map(part => ({
-        part: { key: part.key as FormPartKey, title: part.title, description: part.description, order: part.order },
-        order: part.order,
-        sections: part.sections,
-      }));
+      const structure: FormStructure[] = partConfigs
+        .filter(part => !(studyAbroad && part.key === 'DOCUMENT'))
+        .map(part => ({
+          part: { key: part.key as FormPartKey, title: part.title, description: part.description, order: part.order },
+          order: part.order,
+          sections: part.sections,
+        }));
       setFormStructure(structure);
 
       const answers = registrationData.answers || [];
@@ -349,8 +351,6 @@ export default function ReferrerStudentRegistrationPage() {
                 {([
                   { key: 'dashboard' as ActiveView, label: 'Dashboard' },
                   { key: 'analytics' as ActiveView, label: 'Activity Analysis' },
-                  { key: 'brainography' as ActiveView, label: 'Brainography Analysis' },
-                  { key: 'portfolio' as ActiveView, label: 'Education Portfolio Generator' },
                   { key: 'payment' as ActiveView, label: 'Payment' },
                 ] as const).map((btn) => (
                   <button key={btn.key} onClick={() => setActiveView(btn.key)}
@@ -404,8 +404,8 @@ export default function ReferrerStudentRegistrationPage() {
             <div className="mb-6"><ActivityAnalyticsDashboard registrationId={registrationId} /></div>
           )}
 
-          {/* Brainography (read-only) */}
-          {isEducationPlanning && activeView === 'brainography' && (
+          {/* Brainography (hidden for referrer) */}
+          {false && isEducationPlanning && activeView === 'brainography' && (
             <>
               <div className="bg-white rounded-xl shadow-sm border border-blue-200 p-6 mb-6">
                 <div className="flex items-center gap-3 mb-4">
@@ -433,8 +433,8 @@ export default function ReferrerStudentRegistrationPage() {
                           </svg>
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900 text-sm">{brainographyDoc.fileName}</p>
-                          <p className="text-xs text-gray-500">{(brainographyDoc.fileSize / 1024).toFixed(1)} KB | Uploaded: {new Date(brainographyDoc.uploadedAt).toLocaleDateString('en-GB')} | Version: {brainographyDoc.version}</p>
+                          <p className="font-medium text-gray-900 text-sm">{brainographyDoc?.fileName}</p>
+                          <p className="text-xs text-gray-500">{((brainographyDoc?.fileSize ?? 0) / 1024).toFixed(1)} KB | Uploaded: {new Date(brainographyDoc?.uploadedAt ?? '').toLocaleDateString('en-GB')} | Version: {brainographyDoc?.version}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -456,12 +456,12 @@ export default function ReferrerStudentRegistrationPage() {
                   <p className="text-xs text-blue-600 mt-1">This may take a minute. Please wait.</p>
                 </div>
               )}
-              {brainographyData && <div className="mb-6"><BrainographyDataDisplay data={brainographyData} /></div>}
+              {brainographyData && <div className="mb-6"><BrainographyDataDisplay data={brainographyData!} /></div>}
             </>
           )}
 
-          {/* Portfolio (read-only) */}
-          {isEducationPlanning && activeView === 'portfolio' && (
+          {/* Portfolio (hidden for referrer) */}
+          {false && isEducationPlanning && activeView === 'portfolio' && (
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Education Portfolio</h3>
@@ -471,7 +471,7 @@ export default function ReferrerStudentRegistrationPage() {
                 </span>
               </div>
               {brainographyData ? (
-                <PortfolioSection registrationId={registrationId} brainographyData={brainographyData} portfolios={portfolios} onPortfoliosChange={fetchPortfolios} allowGenerate={false} />
+                <PortfolioSection registrationId={registrationId} brainographyData={brainographyData!} portfolios={portfolios} onPortfoliosChange={fetchPortfolios} allowGenerate={false} />
               ) : (
                 <div className="text-center py-16"><p className="text-sm text-gray-500">Brainography data not yet available.</p></div>
               )}
