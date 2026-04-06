@@ -8,8 +8,13 @@ import {
   toggleIvyTestQuestionActive,
   ivyTestQuestionImageUpload,
 } from '../controllers/ivyTestQuestion.controller';
+import { authorize } from '../middleware/authorize';
+import { USER_ROLE } from '../types/roles';
 
 const router = express.Router();
+
+// All test-question routes are SUPER_ADMIN only
+router.use(authorize(USER_ROLE.SUPER_ADMIN));
 
 // POST   /api/ivy/test-questions          — Create question (with optional image)
 router.post('/', ivyTestQuestionImageUpload, createIvyTestQuestion);

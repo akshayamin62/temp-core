@@ -7,8 +7,13 @@ import {
   recordViolation,
   getTestReview,
 } from '../controllers/ivyTestSession.controller';
+import { authorize } from '../middleware/authorize';
+import { USER_ROLE } from '../types/roles';
 
 const router = express.Router();
+
+// All test-session routes are STUDENT only
+router.use(authorize(USER_ROLE.STUDENT));
 
 // GET  /api/ivy/test-session/status           — Get / create test session
 router.get('/status', getTestStatus);
