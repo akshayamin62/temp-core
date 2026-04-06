@@ -1,9 +1,11 @@
 import { Router, Request, Response } from 'express';
 import grammarCheckService from '../services/grammarCheck.service';
+import { authorize } from '../middleware/authorize';
+import { USER_ROLE } from '../types/roles';
 
 const router = Router();
 
-router.post('/check', async (req: Request, res: Response) => {
+router.post('/check', authorize(USER_ROLE.IVY_EXPERT), async (req: Request, res: Response) => {
     try {
         const { text, language = 'en-US' } = req.body;
 

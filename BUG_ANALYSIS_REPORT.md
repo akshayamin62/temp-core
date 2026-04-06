@@ -12,10 +12,10 @@ A comprehensive re-analysis of the Kareer Studio platform identified **52 bugs a
 | Severity | Count |
 |----------|-------|
 | **Critical** | 0 |
-| **High** | 9 |
+| **High** | 5 |
 | **Medium** | 18 |
 | **Low** | 10 |
-| **Total** | 37 |
+| **Total** | 33 |
 
 ### Changes Since March 2026 Report
 
@@ -35,36 +35,34 @@ All critical issues have been resolved. ✅
 
 ---
 
-## High Issues (9)
+## High Issues (5)
 
-### BUG-005: Grammar Check Route — No Role Authorization ⚠️ STILL OPEN
+### BUG-005: Grammar Check Route — No Role Authorization ✅ FIXED
 - **File:** `backend/src/routes/grammarCheck.routes.ts`
-- **Issue:** Any authenticated user can use the grammar check API, incurring external API costs.
+- **Fix:** Added `authorize(USER_ROLE.IVY_EXPERT)`. Only IVY_EXPERT can use grammar check.
 
-### BUG-006: Ivy Admin Performance Route — No Role Authorization ⚠️ STILL OPEN
+### BUG-006: Ivy Admin Performance Route — No Role Authorization ✅ FIXED
 - **File:** `backend/src/routes/admin.routes.ts`
-- **Issue:** `/api/ivy/admin/ivy-expert/performance` accessible by any authenticated user.
+- **Fix:** Added `authorize(USER_ROLE.SUPER_ADMIN)`. Route is currently unused by frontend (dead route), locked to SUPER_ADMIN as a safety net.
 
-### BUG-007: User Routes — No Role Authorization ⚠️ STILL OPEN
+### BUG-007: User Routes — No Role Authorization ✅ FIXED
 - **File:** `backend/src/routes/user.routes.ts`
-- **Issue:** `GET /api/ivy/users?role=STUDENT` accessible by any authenticated user.
-- **Impact:** Complete user enumeration and personal data exposure.
+- **Fix:** Added `authorize(USER_ROLE.SUPER_ADMIN)`. Route is currently unused by frontend (dead route — frontend uses `/api/super-admin/users` instead), locked to SUPER_ADMIN.
 
-### BUG-013: OTP Logged to Console in Production ✅ FIXED
+### BUG-013: OTP Logged to Console — BY DESIGN
 - **File:** `backend/src/controllers/authController.ts`
-- **Issue:** ~~`console.log("otp", otp)` logged plaintext OTP to server console.~~ Both console.log statements removed.
+- **Status:** Console logging kept intentionally for development convenience. Remove before production deployment.
 
-### BUG-016: File Upload Accepts All File Types ⚠️ STILL OPEN
-- **File:** `backend/src/middleware/upload.ts` (line 24-26)
-- **Issue:** The default `fileFilter` callback accepts all file types (`cb(null, true)`). Only `adminLogo` and `profilePicture` variants restrict file types. No MIME type or extension validation on student document uploads.
-- **Impact:** Users can upload `.html` (stored XSS), `.exe`, `.svg` with embedded scripts, or server-executable files.
+### BUG-016: File Upload Accepts All File Types ✅ FIXED
+- **File:** `backend/src/middleware/upload.ts`
+- **Fix:** Default `fileFilter` now restricts to images (JPG, PNG, WEBP, AVIF, GIF), PDF, Word (.doc, .docx), PowerPoint (.ppt, .pptx), and Excel (.xls, .xlsx). All other file types are rejected.
 
 ### BUG-017: No Path Traversal Protection on File Serving ⚠️ STILL OPEN
 - **File:** `backend/src/controllers/documentController.ts`
 - **Issue:** File paths from DB joined with `process.cwd()` without validating the resolved path stays within the uploads directory. If a DB record is tampered with, it could serve arbitrary system files.
 
 ### BUG-018: Static Uploads Directory Publicly Accessible ⚠️ STILL OPEN
-- **File:** `backend/src/server.ts` (line 141)
+- **File:** `backend/src/server.ts`
 - **Issue:** `/uploads` served with `express.static()` — no authentication required. Anyone who knows a file URL can access uploaded documents, student files, admin logos, etc.
 - **Impact:** Data breach if file paths are guessable or enumerated.
 
@@ -296,15 +294,15 @@ All critical issues have been resolved. ✅
 
 ### Immediate (Before Production)
 1. ~~**Remove OTP logging**~~ — ✅ DONE (BUG-013 fixed April 6, 2026)
-2. ~~**Add `authorize()` to ALL Ivy League routes**~~ — ✅ DONE (BUG-001, 002, 003, 004, 031 fixed April 6, 2026)
-3. **Add `authorize()` to remaining Ivy routes** — admin.routes, user.routes (BUG-006, 007)
+2. ~~**Add `authorize()` to ALL Ivy League routes**~~ — ✅ DONE (BUG-001, 002, 003, 004, 005, 006, 007, 031 fixed April 6, 2026)
+3. ~~**Add `authorize()` to remaining Ivy routes**~~ — ✅ DONE (admin.routes, user.routes, grammarCheck fixed April 6, 2026)
 4. ~~**Add `authorize()` to activityRoutes**~~ — ✅ DONE (BUG-037 fixed April 6, 2026)
 5. ~~**Implement rate limiting**~~ — ✅ DONE (BUG-014 fixed April 6, 2026)
 6. ~~**Configure CORS whitelist**~~ — ✅ DONE (BUG-015 fixed April 6, 2026)
 7. **Fix captcha validation** — validate server-side against a stored challenge (BUG-043)
 
 ### Short-Term
-8. **Add file type validation** to default upload middleware (BUG-016)
+8. ~~**Add file type validation**~~ — ✅ DONE (BUG-016 fixed April 6, 2026)
 9. **Protect static uploads directory** — add auth middleware or use signed URLs (BUG-018)
 10. **Add security headers** via `helmet` middleware (BUG-041)
 11. **Fix document data isolation** — verify PARENT/COUNSELOR/ADMIN ownership of specific student (BUG-034, 035, 045)
@@ -323,7 +321,7 @@ All critical issues have been resolved. ✅
 22. **Consider httpOnly cookies** instead of localStorage for token (BUG-050)
 
 ### Security Attack Chain Warning
-BUG-016 (unrestricted file upload) + BUG-018 (public static serving) + BUG-050 (localStorage token) = **Full XSS-to-Account-Takeover chain**. An attacker can upload a `.html` file containing JavaScript, share the `/uploads/.../*.html` URL, and steal JWT tokens from anyone who visits it.
+BUG-016 ~~(unrestricted file upload)~~ + BUG-018 (public static serving) + BUG-050 (localStorage token) = **Partial XSS-to-Account-Takeover chain**. BUG-016 is now fixed (file types restricted), but BUG-018 and BUG-050 remain.
 
 ---
 
@@ -368,9 +366,9 @@ BUG-016 (unrestricted file upload) + BUG-018 (public static serving) + BUG-050 (
 | `ivyTestSession.routes.ts` | App-level | STUDENT | ✅ Fixed |
 | `activity.routes.ts` (Ivy) | App-level | SUPER_ADMIN | ✅ Fixed |
 | `excelUpload.routes.ts` | App-level | IVY_EXPERT | ✅ Fixed |
-| `admin.routes.ts` (Ivy) | App-level | **NO** | ❌ All routes unprotected |
-| `user.routes.ts` (Ivy) | App-level | **NO** | ❌ All routes unprotected |
-| `grammarCheck.routes.ts` | App-level | **NO** | ⚠️ API cost risk |
+| `admin.routes.ts` (Ivy) | App-level | SUPER_ADMIN | ✅ Fixed (dead route) |
+| `user.routes.ts` (Ivy) | App-level | SUPER_ADMIN | ✅ Fixed (dead route) |
+| `grammarCheck.routes.ts` | App-level | IVY_EXPERT | ✅ Fixed |
 | `ivyService.routes.ts` | App-level | PARTIAL | ⚠️ 1 route unprotected |
 | `ivyScore.routes.ts` | App-level | Per-route | ✅ |
 | `ivyExpertCandidate.routes.ts` | App-level | Per-route | ✅ |

@@ -18,9 +18,34 @@ const storage = multer.diskStorage({
   },
 });
 
-// File filter - allow all file types
+// File filter - allow images, PDF, Word, PowerPoint, Excel only
+const allowedMimes = [
+  // Images
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/avif',
+  'image/gif',
+  // PDF
+  'application/pdf',
+  // Word
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  // PowerPoint
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  // Excel
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+];
+
 const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  cb(null, true);
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only images (JPG, PNG, WEBP, AVIF, GIF), PDF, Word (.doc, .docx), PowerPoint (.ppt, .pptx), and Excel (.xls, .xlsx) files are allowed.'));
+  }
 };
 
 // Configure multer
