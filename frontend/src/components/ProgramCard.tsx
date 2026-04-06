@@ -27,6 +27,8 @@ interface Program {
   year?: string;
   status?: string;
   applicationOpenDate?: string;
+  createdAt?: string;
+  selectedAt?: string;
   createdBy?: {
     _id: string;
     firstName: string;
@@ -121,6 +123,16 @@ export default function ProgramCard({
             <p className="text-xs text-blue-600 mb-2">
               Created by: <span className="font-medium">{getFullName(program.createdBy)}</span>
             </p>
+          )}
+          {(program.createdAt || program.selectedAt) && (
+            <div className="flex items-center gap-3 mb-2 text-xs text-gray-500">
+              {program.createdAt && (
+                <span>Uploaded: <span className="font-medium">{new Date(program.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span></span>
+              )}
+              {program.selectedAt && (
+                <span>Applied: <span className="font-medium">{new Date(program.selectedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span></span>
+              )}
+            </div>
           )}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
             {program.campus && (

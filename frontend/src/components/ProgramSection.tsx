@@ -63,6 +63,7 @@ interface Program {
   registrationId?: string;
   isSelectedByStudent?: boolean;
   selectedAt?: string;
+  createdAt?: string;
   createdBy?: {
     _id: string;
     firstName: string;
@@ -565,6 +566,11 @@ export default function ProgramSection({
                         {getFullName(program.createdBy) && (
                           <p className="text-xs text-blue-600 mb-2">
                             Created by: <span className="font-medium">{getFullName(program.createdBy)}</span>
+                          </p>
+                        )}
+                        {program.createdAt && (
+                          <p className="text-xs text-gray-500 mb-2">
+                            Uploaded: <span className="font-medium">{new Date(program.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                           </p>
                         )}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
