@@ -5,6 +5,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import path from 'path';
+import rateLimit from 'express-rate-limit';
 import authRoutes from "./routes/authRoutes";
 import superAdminRoutes from "./routes/superAdminRoutes";
 import adminRoutes from "./routes/adminRoutes";
@@ -131,16 +132,69 @@ dotenv.config(); // already called at top — this line is now redundant, kept f
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// --- CORS whitelist ---
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://core.admitra.io',
+  'https://temp-core.admitra.io',
+  'https://www.core.admitra.io',
+  'https://www.temp-core.admitra.io',
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, server-to-server)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
+
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+
+// --- Rate Limiters ---
+// General API limiter: 100 requests per 15 minutes per IP
+const generalLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 50,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests. Please try again later.' },
+});
+
+// Auth limiter: 50 requests per 5 minutes per IP (signup, login)
+const authLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 50,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many authentication attempts. Please try again after 5 minutes.' },
+});
+
+// OTP verification limiter: 5 attempts per 10 minutes per IP
+const otpLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many OTP attempts. Please try again after 10 minutes.' },
+});
 
 // Serve uploaded files statically
 // Use getUploadBaseDir() for Vercel compatibility (/tmp/uploads on Vercel, ./uploads locally)
 import { getUploadBaseDir } from './utils/uploadDir';
 app.use('/uploads', express.static(getUploadBaseDir()));
 
-app.use("/api/auth", authRoutes);
+// OTP verify routes get the stricter limiter (5 attempts per 10 min) on top of authLimiter
+app.use("/api/auth/verify-otp", otpLimiter);
+app.use("/api/auth/verify-signup-otp", otpLimiter);
+
+app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/super-admin/students", superAdminStudentRoutes); // More specific route must come first
 app.use("/api/super-admin/ivy-league", authenticate, ivyLeagueAdminRoutes); // Ivy League admin routes
 app.use("/api/super-admin", superAdminRoutes);

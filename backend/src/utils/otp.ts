@@ -1,16 +1,14 @@
 /**
- * Generate a 4-digit OTP
+ * Generate a 6-digit OTP
  */
 export const generateOTP = (): string => {
-  return Math.floor(1000 + Math.random() * 9000).toString();
+  return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 /**
- * Hash OTP for storage (simple hash for 4-digit OTP)
+ * Hash OTP for storage
  */
 export const hashOTP = (otp: string): string => {
-  // Simple hash for OTP (you can use bcrypt if needed, but for 4-digit OTP this is sufficient)
-  // For better security, you might want to use bcrypt with lower rounds
   return Buffer.from(otp).toString('base64');
 };
 

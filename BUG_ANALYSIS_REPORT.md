@@ -11,11 +11,11 @@ A comprehensive re-analysis of the Kareer Studio platform identified **52 bugs a
 
 | Severity | Count |
 |----------|-------|
-| **Critical** | 2 |
-| **High** | 12 |
+| **Critical** | 0 |
+| **High** | 9 |
 | **Medium** | 18 |
 | **Low** | 10 |
-| **Total** | 42 |
+| **Total** | 37 |
 
 ### Changes Since March 2026 Report
 
@@ -25,25 +25,17 @@ A comprehensive re-analysis of the Kareer Studio platform identified **52 bugs a
 - **By Design:** BUG-038 (invoiceRoutes) and BUG-039 (ledgerRoutes) — accessible by all authenticated users associated with the student. Not a security issue.
 - **Dead Code:** BUG-010 (enrollmentRoutes.ts) and BUG-032 (notification.routes.ts) are NOT mounted in server.ts — unreachable
 - **New routes added:** `activityRoutes.ts`, `invoiceRoutes.ts`, `ledgerRoutes.ts`, `paymentRoutes.ts`, `servicePlanRoutes.ts`, `studentPlanDiscountRoutes.ts`, `coachingBatchRoutes.ts`, `ivyLeagueRegistrationRoutes.ts`, `referrerRoutes.ts`, `portfolioRoutes.ts`, `brainographyRoutes.ts`, `archiveRoutes.ts`, `spDocumentRoutes.ts`, `spServiceRoutes.ts`, `coreDocumentRoutes.ts`, `pointer` routes, `taskConversation.routes.ts`, `agentSuggestion.routes.ts`, `studentInterest.routes.ts`, `ivyExpertCandidate.routes.ts`
-- **New bugs found:** 16 new issues in new and existing code (8 subsequently fixed or reclassified)
+- **New bugs found:** 16 new issues in new and existing code (13 subsequently fixed or reclassified)
 
 ---
 
-## Critical Issues (2)
+## Critical Issues (0)
 
-### BUG-014: No Rate Limiting on Any Endpoint ⚠️ STILL OPEN
-- **File:** `backend/src/server.ts`
-- **Issue:** No rate limiting middleware anywhere. Login, signup, OTP verification are unprotected against brute force.
-- **Impact:** 4-digit OTP brute force (10,000 attempts), credential stuffing, API abuse, DoS.
-
-### BUG-015: CORS Allows All Origins ⚠️ STILL OPEN
-- **File:** `backend/src/server.ts` (line 134)
-- **Issue:** `app.use(cors())` with no configuration allows requests from any origin.
-- **Impact:** Any malicious website can make authenticated API calls if user has a valid token.
+All critical issues have been resolved. ✅
 
 ---
 
-## High Issues (12)
+## High Issues (9)
 
 ### BUG-005: Grammar Check Route — No Role Authorization ⚠️ STILL OPEN
 - **File:** `backend/src/routes/grammarCheck.routes.ts`
@@ -58,10 +50,9 @@ A comprehensive re-analysis of the Kareer Studio platform identified **52 bugs a
 - **Issue:** `GET /api/ivy/users?role=STUDENT` accessible by any authenticated user.
 - **Impact:** Complete user enumeration and personal data exposure.
 
-### BUG-013: OTP Logged to Console in Production ⚠️ STILL OPEN
-- **File:** `backend/src/controllers/authController.ts` (lines 97, 171)
-- **Issue:** `console.log("otp", otp)` logs plaintext OTP to server console during both signup and login flows.
-- **Impact:** Anyone with server log access can hijack accounts.
+### BUG-013: OTP Logged to Console in Production ✅ FIXED
+- **File:** `backend/src/controllers/authController.ts`
+- **Issue:** ~~`console.log("otp", otp)` logged plaintext OTP to server console.~~ Both console.log statements removed.
 
 ### BUG-016: File Upload Accepts All File Types ⚠️ STILL OPEN
 - **File:** `backend/src/middleware/upload.ts` (line 24-26)
@@ -92,10 +83,9 @@ A comprehensive re-analysis of the Kareer Studio platform identified **52 bugs a
 - **Issue:** No `helmet` middleware. Missing: `X-Content-Type-Options`, `X-Frame-Options`, `Strict-Transport-Security`, `Content-Security-Policy`.
 - **Impact:** XSS, clickjacking, MIME-sniffing attacks.
 
-### BUG-042: OTP Brute Force — No Attempt Limiting 🆕
-- **File:** `backend/src/controllers/authController.ts`
-- **Issue:** `verifyOTP` and `verifySignupOTP` have no attempt counter, no lockout, and no rate limit. A 4-digit OTP has only 10,000 combinations — trivially brute-forceable within the 10-minute expiry window.
-- **Impact:** Full account takeover.
+### BUG-042: OTP Brute Force — No Attempt Limiting ✅ FIXED
+- **File:** `backend/src/server.ts`
+- **Issue:** ~~No rate limit on OTP verification.~~ Fixed: OTP is now 6-digit (1,000,000 combinations). Rate limiter applied: 5 attempts per 10 minutes on `/verify-otp` and `/verify-signup-otp`, plus 20 attempts per 15 minutes on all `/api/auth` routes.
 
 ### BUG-043: Client-Side Captcha Bypass 🆕
 - **File:** `backend/src/controllers/authController.ts` (lines 73-80, 150-157)
@@ -266,15 +256,15 @@ A comprehensive re-analysis of the Kareer Studio platform identified **52 bugs a
 
 ### BUG-008: Ivy League Admin Routes — No Route-Level Auth → ✅ FIXED (April 6, 2026)
 - **File:** `backend/src/routes/ivyLeagueAdmin.routes.ts`
-- **Fix:** Added `authorize(USER_ROLE.SUPER_ADMIN)` at router level. All 9 endpoints now restricted to SUPER_ADMIN only.
+- **Fix:** Per-route authorization: SUPER_ADMIN only for stats, ivy-experts list, convert-to-student, assign-expert. SUPER_ADMIN + IVY_EXPERT for candidates, students, test-result, interview.
 
 ### BUG-031: Ivy League Admin Routes — No SUPER_ADMIN Authorization → ✅ FIXED (April 6, 2026)
 - **File:** `backend/src/routes/ivyLeagueAdmin.routes.ts`
-- **Fix:** Same as BUG-008. Router-level `authorize(USER_ROLE.SUPER_ADMIN)` added.
+- **Fix:** Same as BUG-008. Per-route `authorize()` added with SUPER_ADMIN and IVY_EXPERT access.
 
-### BUG-037: Activity Routes (Study Abroad) → ✅ FIXED (April 6, 2026)
+### BUG-037: Activity Routes (Education Planning) → ✅ FIXED (April 6, 2026)
 - **File:** `backend/src/routes/activityRoutes.ts`
-- **Fix:** Added per-route `authorize()` with role-based split: read routes allow STUDENT, OPS, COUNSELOR, ADMIN, SUPER_ADMIN, PARENT, REFERRER; write/delete routes restricted to STUDENT, OPS, COUNSELOR, ADMIN, SUPER_ADMIN.
+- **Fix:** Per-route `authorize()` with 3-way role split: read access for all associated roles (STUDENT, SUPER_ADMIN, EDUPLAN_COACH, OPS, COUNSELOR, ADMIN, PARENT, REFERRER); activity write (monthly focus, planner) for STUDENT only; feedback write/delete for SUPER_ADMIN and EDUPLAN_COACH only.
 
 ### BUG-038: Invoice Routes → BY DESIGN (Not a bug)
 - **File:** `backend/src/routes/invoiceRoutes.ts`
@@ -284,17 +274,33 @@ A comprehensive re-analysis of the Kareer Studio platform identified **52 bugs a
 - **File:** `backend/src/routes/ledgerRoutes.ts`
 - **Status:** Ledger data accessible by all authenticated users associated with the student. Intentional design.
 
+### BUG-014: No Rate Limiting on Any Endpoint → ✅ FIXED (April 6, 2026)
+- **File:** `backend/src/server.ts`
+- **Fix:** Installed `express-rate-limit`. Applied 3-tier rate limiting: general API (100 req/15min), auth endpoints (20 req/15min), OTP verification (5 req/10min).
+
+### BUG-015: CORS Allows All Origins → ✅ FIXED (April 6, 2026)
+- **File:** `backend/src/server.ts`
+- **Fix:** Configured CORS whitelist: `localhost:3000`, `localhost:3001`, `https://core.admitra.io`, `https://temp-core.admitra.io` and www variants. Credentials enabled.
+
+### BUG-013: OTP Logged to Console → ✅ FIXED (April 6, 2026)
+- **File:** `backend/src/controllers/authController.ts`
+- **Fix:** Removed both `console.log("otp", otp)` statements from signup and login flows.
+
+### BUG-042: OTP Brute Force → ✅ FIXED (April 6, 2026)
+- **File:** `backend/src/utils/otp.ts`, `backend/src/server.ts`
+- **Fix:** OTP upgraded from 4-digit to 6-digit (1,000,000 combinations). Rate limiter added: 5 attempts per 10 minutes on verify endpoints.
+
 ---
 
 ## Recommended Priority Actions
 
 ### Immediate (Before Production)
-1. **Remove OTP logging** — `console.log("otp", otp)` in authController.ts (BUG-013)
+1. ~~**Remove OTP logging**~~ — ✅ DONE (BUG-013 fixed April 6, 2026)
 2. ~~**Add `authorize()` to ALL Ivy League routes**~~ — ✅ DONE (BUG-001, 002, 003, 004, 031 fixed April 6, 2026)
 3. **Add `authorize()` to remaining Ivy routes** — admin.routes, user.routes (BUG-006, 007)
 4. ~~**Add `authorize()` to activityRoutes**~~ — ✅ DONE (BUG-037 fixed April 6, 2026)
-5. **Implement rate limiting** on auth endpoints using `express-rate-limit` (BUG-014)
-6. **Configure CORS whitelist** — restrict to frontend domain(s) (BUG-015)
+5. ~~**Implement rate limiting**~~ — ✅ DONE (BUG-014 fixed April 6, 2026)
+6. ~~**Configure CORS whitelist**~~ — ✅ DONE (BUG-015 fixed April 6, 2026)
 7. **Fix captcha validation** — validate server-side against a stored challenge (BUG-043)
 
 ### Short-Term

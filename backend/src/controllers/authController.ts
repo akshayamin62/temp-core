@@ -94,7 +94,7 @@ export const signup = async (req: SignupRequest, res: Response): Promise<Respons
       });
     }
 
-    // Generate 4-digit OTP
+    // Generate 6-digit OTP
     const otp = generateOTP();
     const hashedOTP = hashOTP(otp);
     const otpExpires = getOTPExpiration(10); // 10 minutes

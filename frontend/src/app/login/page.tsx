@@ -331,7 +331,7 @@ export default function LoginPage() {
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Enter OTP</h3>
                 <p className="text-gray-600">
-                  We sent a 4-digit code to <span className="font-semibold">{email}</span>
+                  We sent a 6-digit code to <span className="font-semibold">{email}</span>
                 </p>
               </div>
 
@@ -351,21 +351,21 @@ export default function LoginPage() {
                     name="otp"
                     type="text"
                     required
-                    maxLength={4}
-                    pattern="[0-9]{4}"
+                    maxLength={6}
+                    pattern="[0-9]{6}"
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     className="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400 text-center text-2xl font-bold tracking-widest"
-                    placeholder="0000"
+                    placeholder="000000"
                   />
                 </div>
-                <p className="mt-2 text-xs text-gray-500">Check your email for the 4-digit code</p>
+                <p className="mt-2 text-xs text-gray-500">Check your email for the 6-digit code</p>
               </div>
 
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={loading || otp.length !== 4}
+                disabled={loading || otp.length !== 6}
                 className="w-full py-3 px-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none btn-glow"
               >
                 {loading ? (
