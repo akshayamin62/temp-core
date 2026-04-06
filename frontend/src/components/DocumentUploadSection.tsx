@@ -425,10 +425,17 @@ export default function DocumentUploadSection({
                 {fieldDocuments.map((document) => (
                   <div key={document._id} className="border-2 border-blue-100 rounded-xl p-5 bg-gradient-to-r from-white to-blue-50/30 shadow-sm hover:shadow-lg hover:border-blue-300 transition-all duration-200">
                     <div className="flex items-center justify-between gap-4">
-                      {/* Document Name */}
+                      {/* Document Name + Upload Date */}
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                        <h5 className="text-base font-semibold text-gray-900 truncate">{document.documentName}</h5>
+                        <div className="min-w-0">
+                          <h5 className="text-base font-semibold text-gray-900 truncate">{document.documentName}</h5>
+                          {document.uploadedAt && (
+                            <p className="text-xs text-gray-500">
+                              Uploaded: <span className="font-medium">{new Date(document.uploadedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                            </p>
+                          )}
+                        </div>
                       </div>
                       
                       {/* Status Badge */}
