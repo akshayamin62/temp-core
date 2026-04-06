@@ -13,6 +13,7 @@ import { USER_ROLE } from "../types/roles";
 import mongoose from "mongoose";
 import { generateOTP } from "../utils/otp";
 import { sendStudentAccountCreatedEmail } from "../utils/email";
+import { sendWhatsAppRegistrationMessage } from "../utils/whatsapp";
 
 /**
  * Helper function to parse full name into first, middle, and last name
@@ -196,8 +197,6 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
     const userId = req.user?.userId;
     const userRole = req.user?.role;
 
-    console.log('🔍 Approve Conversion Request:', { conversionId, userId, userRole });
-
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -207,8 +206,6 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
 
     // Get conversion request
     const conversion = await LeadStudentConversion.findById(conversionId);
-    console.log('📄 Conversion found:', conversion ? 'Yes' : 'No', conversion?._id);
-    
     if (!conversion) {
       return res.status(404).json({
         success: false,
@@ -226,7 +223,6 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
     // Check admin authorization
     if (userRole === USER_ROLE.ADMIN) {
       const admin = await Admin.findOne({ userId });
-      console.log('👤 Admin check:', { userId, adminFound: !!admin, adminId: admin?._id, conversionAdminId: conversion.adminId });
       if (!admin || admin._id.toString() !== conversion.adminId.toString()) {
         return res.status(403).json({
           success: false,
@@ -237,7 +233,6 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
 
     // Get lead details
     const lead = await Lead.findById(conversion.leadId);
-    console.log('📧 Lead found:', { leadId: conversion.leadId, found: !!lead, email: lead?.email });
     if (!lead) {
       return res.status(404).json({
         success: false,
@@ -247,7 +242,6 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
 
     // Get admin details
     const admin = await Admin.findById(conversion.adminId);
-    console.log('👨‍💼 Admin found:', { adminId: conversion.adminId, found: !!admin });
     if (!admin) {
       return res.status(404).json({
         success: false,
@@ -309,6 +303,17 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
       } catch (emailError) {
         console.error("⚠️ Failed to send account creation email:", emailError);
         // Continue with conversion even if email fails
+      }
+
+      // Send WhatsApp registration message
+      if (lead.mobileNumber) {
+        try {
+          await sendWhatsAppRegistrationMessage(lead.mobileNumber, lead.name, lead.email);
+          console.log('✅ WhatsApp registration message sent to:', lead.mobileNumber);
+        } catch (whatsappError) {
+          console.error("⚠️ Failed to send WhatsApp message:", whatsappError);
+          // Continue with conversion even if WhatsApp fails
+        }
       }
     } else {
       newUser = existingUser;
