@@ -13,9 +13,9 @@ Comprehensive security audit of the Kareer Studio platform. All critical and hig
 |----------|-------|
 | **Critical** | 0 |
 | **High** | 0 |
-| **Medium** | 10 |
+| **Medium** | 7 |
 | **Low** | 8 |
-| **Total** | 18 |
+| **Total** | 15 |
 
 ---
 
@@ -34,7 +34,7 @@ The following bugs have been fixed, reclassified, or closed. Details removed for
 | BUG-007 | user.routes — no authorize | ✅ Fixed (SUPER_ADMIN, dead route) |
 | BUG-008 | ivyLeagueAdmin — no route auth | ✅ Fixed (per-route authorize) |
 | BUG-009 | ivyService /:serviceId — no authorize | ✅ Fixed (9 connected roles) |
-| BUG-010 | enrollmentRoutes — missing auth | ⚪ Dead code (not mounted) |
+| BUG-010 | enrollmentRoutes — missing auth | ⚪ Dead code (deleted) |
 | BUG-011 | document upload — no authorize | ✅ Fixed (SUPER_ADMIN, OPS, STUDENT) |
 | BUG-012 | isVerified check disabled | ✅ By design |
 | BUG-013 | OTP logged to console | ✅ Fixed (removed) |
@@ -46,7 +46,7 @@ The following bugs have been fixed, reclassified, or closed. Details removed for
 | BUG-019 | Sensitive fields not excluded | ✅ Fixed (select: false on otp/otpExpires) |
 | BUG-021 | Race condition in form saves | ✅ Fixed (findOneAndUpdate atomic upsert) |
 | BUG-022 | Race condition in doc upload | ✅ Fixed (findOneAndUpdate atomic upsert) |
-| BUG-023 | Enrollment status — no validation | ⚪ Dead code (not mounted) |
+| BUG-023 | Enrollment status — no validation | ⚪ Dead code (deleted) |
 | BUG-025 | Client-side-only auth guards | ✅ Won't fix (by design) |
 | BUG-029 | PARENT missing from dashboard | ✅ Fixed |
 | BUG-031 | ivyLeagueAdmin — no SUPER_ADMIN | ✅ Fixed (same as BUG-008) |
@@ -59,35 +59,20 @@ The following bugs have been fixed, reclassified, or closed. Details removed for
 | BUG-042 | OTP brute force | ✅ Fixed (6-digit + rate limit) |
 | BUG-043 | Client-side captcha bypass | ✅ Fixed (server-side math captcha) |
 | BUG-044 | TeamMeet routes too permissive | ✅ By design (route order fixed) |
+| BUG-020 | No CSRF protection | ✅ By design (Authorization header, not cookies) |
+| BUG-033 | Pointer 1 routes overly permissive | ✅ Fixed (removed ADMIN/COUNSELOR from write/delete) |
+| BUG-034 | ADMIN/COUNSELOR/PARENT see any docs | ✅ By design (permission granted) |
+| BUG-035 | Document download data isolation | ✅ By design (permission granted) |
+| BUG-045 | Document upload no ownership | ✅ Fixed (ownership check for STUDENT/OPS) |
 
 ---
 
-## Medium Issues (10 open)
-
-### BUG-020: No CSRF Protection ⚠️
-- **File:** `backend/src/server.ts`
-- **Issue:** No CSRF protection middleware. Currently mitigated by CORS whitelist (BUG-015 fixed) and `Authorization` header pattern (not cookie-based), but still a gap.
+## Medium Issues (7 open)
 
 ### BUG-027: `readOnly` Query Param Client-Controlled ⚠️
 - **File:** `frontend/src/app/ivy-league/student/layout.tsx`, `frontend/src/app/ivy-league/student/useStudentService.ts`
 - **Issue:** `readOnly` is entirely a URL query parameter (`?readOnly=true`) parsed client-side. No backend enforcement. Any user can remove it to get write access.
 - **Impact:** Privilege escalation for users who should only have read-only access.
-
-### BUG-033: Pointer 1 Routes — Overly Permissive ⚠️
-- **File:** `backend/src/routes/pointer1.routes.ts`
-- **Issue:** STUDENT can delete academic sections/subsections/subjects/projects. Write/delete routes include ADMIN and COUNSELOR in addition to IVY_EXPERT/STUDENT/SUPER_ADMIN.
-
-### BUG-034: ADMIN/COUNSELOR/PARENT Can See Any Student's Documents ⚠️
-- **File:** `backend/src/controllers/documentController.ts`
-- **Issue:** Only STUDENT and OPS roles have ownership checks in `getDocuments`, `downloadDocument`, `viewDocument`. COUNSELOR, PARENT, ADMIN, and other roles fall through to the default case and are implicitly allowed access to any student's documents without relationship verification.
-
-### BUG-035: Document Download — Same Data Isolation Issue ⚠️
-- **File:** `backend/src/controllers/documentController.ts`
-- **Issue:** Same problem as BUG-034 for `downloadDocument` and `viewDocument`.
-
-### BUG-045: Document Upload — No Ownership Validation ⚠️
-- **File:** `backend/src/controllers/documentController.ts`
-- **Issue:** `uploadDocument` verifies the registration exists but does not check that `req.user` is the student who owns the registration, or an assigned OPS. Any authorized user (SUPER_ADMIN/OPS/STUDENT) can upload documents to any registration by providing a valid `registrationId`.
 
 ### BUG-046: Service Plan Routes — Missing Authorization ⚠️
 - **File:** `backend/src/routes/servicePlanRoutes.ts`
@@ -146,18 +131,16 @@ The following bugs have been fixed, reclassified, or closed. Details removed for
 ## Recommended Priority Actions
 
 ### Next (Short-Term)
-1. **Fix document data isolation** — verify PARENT/COUNSELOR/ADMIN ownership of specific student (BUG-034, 035, 045)
-2. **Restrict SP profile update** to SERVICE_PROVIDER role (BUG-048)
-3. **Add role checks to service plan and discount routes** (BUG-046, 047)
-4. **Fix authorize role leak** — remove role from 403 response (BUG-051)
-5. **Sanitize error messages** — return generic "Server error" instead of `error.message` (BUG-052)
+1. **Restrict SP profile update** to SERVICE_PROVIDER role (BUG-048)
+2. **Add role checks to service plan and discount routes** (BUG-046, 047)
+3. **Fix authorize role leak** — remove role from 403 response (BUG-051)
+4. **Sanitize error messages** — return generic "Server error" instead of `error.message` (BUG-052)
 
 ### Medium-Term
-6. **Add CSRF protection** (BUG-020) — low priority since auth uses `Authorization` header, not cookies
-7. **Enforce `readOnly` server-side** on Ivy League routes (BUG-027)
-8. **Add role verification** to Ivy League student pages (BUG-049)
-9. **Add atomic parent sync** with MongoDB transactions (BUG-024)
-10. **Consider httpOnly cookies** instead of localStorage for token (BUG-050)
+5. **Enforce `readOnly` server-side** on Ivy League routes (BUG-027)
+6. **Add role verification** to Ivy League student pages (BUG-049)
+7. **Add atomic parent sync** with MongoDB transactions (BUG-024)
+8. **Consider httpOnly cookies** instead of localStorage for token (BUG-050)
 
 ### Low Priority (Code Quality)
 11. **Fix SP profile request type** (BUG-036)
@@ -213,7 +196,7 @@ The following bugs have been fixed, reclassified, or closed. Details removed for
 | `ivyService.routes.ts` | App-level | Per-route | ✅ |
 | `ivyScore.routes.ts` | App-level | Per-route | ✅ |
 | `ivyExpertCandidate.routes.ts` | App-level | Per-route | ✅ |
-| `pointer1.routes.ts` | App-level | Per-route | ⚠️ Broad roles |
+| `pointer1.routes.ts` | App-level | Per-route | ✅ Fixed |
 | `pointer5.routes.ts` | App-level | Per-route | ✅ |
 | `pointer6.routes.ts` | App-level | Per-route | ✅ |
 | `pointer234Activity.routes.ts` | App-level | Per-route | ✅ |

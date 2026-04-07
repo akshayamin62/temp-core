@@ -37,6 +37,31 @@ export const uploadDocument = async (req: AuthRequest, res: Response) => {
 
     const studentId = registration.studentId;
 
+    // Ownership check
+    const userRole = req.user!.role;
+    const userId = req.user!.userId;
+
+    if (userRole === 'STUDENT') {
+      const student = await Student.findById(studentId);
+      if (!student || student.userId.toString() !== userId) {
+        fs.unlinkSync(file.path);
+        return res.status(403).json({ success: false, message: 'Access denied' });
+      }
+    } else if (userRole === 'OPS') {
+      const opsRecord = await Ops.findOne({ userId });
+      const opsId = opsRecord?._id?.toString();
+      const hasAccess = opsId && (
+        registration.primaryOpsId?.toString() === opsId ||
+        registration.secondaryOpsId?.toString() === opsId ||
+        registration.activeOpsId?.toString() === opsId
+      );
+      if (!hasAccess) {
+        fs.unlinkSync(file.path);
+        return res.status(403).json({ success: false, message: 'Access denied' });
+      }
+    }
+    // SUPER_ADMIN has global access — no check needed
+
     // Create student directory
     const studentDir = path.join(getUploadBaseDir(), studentId.toString());
     ensureDir(studentDir);
@@ -51,7 +76,6 @@ export const uploadDocument = async (req: AuthRequest, res: Response) => {
     fs.renameSync(file.path, finalPath);
 
     // Determine status based on uploader role
-    const userRole = req.user!.role;
     const documentStatus = (userRole === 'SUPER_ADMIN' || userRole === 'OPS') 
       ? DocumentStatus.APPROVED 
       : DocumentStatus.PENDING;
