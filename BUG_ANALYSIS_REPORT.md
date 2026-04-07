@@ -13,9 +13,9 @@ Comprehensive security audit of the Kareer Studio platform. All critical and hig
 |----------|-------|
 | **Critical** | 0 |
 | **High** | 0 |
-| **Medium** | 4 |
+| **Medium** | 2 |
 | **Low** | 8 |
-| **Total** | 12 |
+| **Total** | 10 |
 
 ---
 
@@ -67,18 +67,20 @@ The following bugs have been fixed, reclassified, or closed. Details removed for
 | BUG-027 | readOnly client-controlled | ✅ Fixed (removed ADMIN/COUNSELOR from all Ivy write routes) |
 | BUG-046 | Service plan routes no authorize | ✅ Fixed (authorize with connected roles) |
 | BUG-047 | Student plan discount no authorize | ✅ Fixed (authorize with connected roles) |
+| BUG-048 | SP profile update not role-restricted | ✅ Fixed (authorize SERVICE_PROVIDER) |
+| BUG-049 | Ivy League pages no role verification | ✅ Fixed (role gate in layout) |
 
 ---
 
-## Medium Issues (4 open)
+## Medium Issues (2 open)
 
-### BUG-048: Auth Routes — SP Profile Update Not Role-Restricted ⚠️
-- **File:** `backend/src/routes/authRoutes.ts`
-- **Issue:** `PUT /sp-profile` has `authenticate` but no `authorize(USER_ROLE.SERVICE_PROVIDER)`. Any authenticated user can update service provider profile fields.
+### BUG-051: Authorize Middleware Leaks User Role ⚠️
+- **File:** `backend/src/middleware/authorize.ts`
+- **Issue:** 403 response includes `"Your role: ${userRole}"`. Attacker can discover their role and what roles each endpoint requires.
 
-### BUG-049: Ivy League Student Pages — No Role Verification ⚠️
-- **File:** `frontend/src/app/ivy-league/student/layout.tsx`
-- **Issue:** Layout renders the full navigation sidebar without verifying the logged-in user's identity or role. No role gate exists — any authenticated user navigating to `/ivy-league/student/*` sees full content.
+### BUG-052: Error Messages Leak Internal Details ⚠️
+- **Files:** Multiple controllers
+- **Issue:** `error.message` returned in 500 responses. Could leak DB schema names, field names, and stack info.
 
 ---
 
@@ -104,14 +106,6 @@ The following bugs have been fixed, reclassified, or closed. Details removed for
 - **File:** `frontend/src/lib/api.ts`
 - **Issue:** JWT token stored in `localStorage`. If XSS exists anywhere, the token can be stolen. Risk significantly reduced since BUG-016 (file type filter) and BUG-018 (authenticated uploads) are now fixed.
 
-### BUG-051: Authorize Middleware Leaks User Role ⚠️
-- **File:** `backend/src/middleware/authorize.ts`
-- **Issue:** 403 response includes `"Your role: ${userRole}"`. Attacker can discover their role and what roles each endpoint requires.
-
-### BUG-052: Error Messages Leak Internal Details ⚠️
-- **Files:** Multiple controllers
-- **Issue:** `error.message` returned in 500 responses. Could leak DB schema names, field names, and stack info.
-
 ### BUG-053: Coaching Batch List — No Authorization ⚠️
 - **File:** `backend/src/routes/coachingBatchRoutes.ts`
 - **Issue:** `GET /` has no `authorize()`. Any authenticated user can list active batches. Low risk — likely intentional.
@@ -121,19 +115,17 @@ The following bugs have been fixed, reclassified, or closed. Details removed for
 ## Recommended Priority Actions
 
 ### Next (Short-Term)
-1. **Restrict SP profile update** to SERVICE_PROVIDER role (BUG-048)
-2. **Fix authorize role leak** — remove role from 403 response (BUG-051)
-3. **Sanitize error messages** — return generic "Server error" instead of `error.message` (BUG-052)
+1. **Fix authorize role leak** — remove role from 403 response (BUG-051)
+2. **Sanitize error messages** — return generic "Server error" instead of `error.message` (BUG-052)
 
 ### Medium-Term
-4. **Add role verification** to Ivy League student pages (BUG-049)
-5. **Add atomic parent sync** with MongoDB transactions (BUG-024)
-6. **Consider httpOnly cookies** instead of localStorage for token (BUG-050)
+3. **Add atomic parent sync** with MongoDB transactions (BUG-024)
+4. **Consider httpOnly cookies** instead of localStorage for token (BUG-050)
 
 ### Low Priority (Code Quality)
-11. **Fix SP profile request type** (BUG-036)
-12. **Standardize redirect destinations** (BUG-030)
-13. **Reduce content flash** on page load (BUG-028)
+5. **Fix SP profile request type** (BUG-036)
+6. **Standardize redirect destinations** (BUG-030)
+7. **Reduce content flash** on page load (BUG-028)
 
 ---
 
@@ -141,7 +133,7 @@ The following bugs have been fixed, reclassified, or closed. Details removed for
 
 | Route File | authenticate | authorize | Status |
 |---|---|---|---|
-| `authRoutes.ts` | Per-route | NO | ⚠️ SP profile unprotected |
+| `authRoutes.ts` | Per-route | Per-route | ✅ Fixed |
 | `superAdminRoutes.ts` | Router-level | SUPER_ADMIN | ✅ |
 | `superAdminStudentRoutes.ts` | Router-level | 4 roles | ✅ |
 | `adminRoutes.ts` | Router-level | ADMIN | ✅ |

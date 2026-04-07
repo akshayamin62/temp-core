@@ -13,6 +13,8 @@ import {
   validateSignup,
 } from "../middleware/validate";
 import { authenticate } from "../middleware/auth";
+import { authorize } from "../middleware/authorize";
+import { USER_ROLE } from "../types/roles";
 import { uploadProfilePicture } from "../middleware/upload";
 import { generateCaptchaChallenge } from "../utils/captcha";
 
@@ -32,7 +34,7 @@ router.post("/verify-otp", verifyOTP); // Verify OTP and login
 
 // Protected routes (require authentication)
 router.get("/profile", authenticate, getProfile);
-router.put("/sp-profile", authenticate, updateSPProfile);
+router.put("/sp-profile", authenticate, authorize(USER_ROLE.SERVICE_PROVIDER), updateSPProfile);
 router.post("/profile-picture", authenticate, uploadProfilePicture.single('profilePicture'), uploadProfilePic);
 router.delete("/profile-picture", authenticate, removeProfilePic);
 

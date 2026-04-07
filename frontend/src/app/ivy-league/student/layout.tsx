@@ -1,10 +1,22 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import axios from 'axios';
 import { IVY_API_URL } from '@/lib/ivyApi';
+import { authAPI } from '@/lib/api';
+import { USER_ROLE } from '@/types';
+
+const ALLOWED_ROLES: string[] = [
+    USER_ROLE.STUDENT,
+    USER_ROLE.IVY_EXPERT,
+    USER_ROLE.SUPER_ADMIN,
+    USER_ROLE.ADMIN,
+    USER_ROLE.COUNSELOR,
+    USER_ROLE.PARENT,
+    USER_ROLE.REFERRER,
+];
 
 function StudentSidebar() {
     const pathname = usePathname();
@@ -194,6 +206,30 @@ function StudentSidebar() {
 }
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
+    const router = useRouter();
+    const [authorized, setAuthorized] = useState(false);
+
+    useEffect(() => {
+        authAPI.getProfile()
+            .then((res) => {
+                const role = res.data?.data?.user?.role;
+                if (role && ALLOWED_ROLES.includes(role)) {
+                    setAuthorized(true);
+                } else {
+                    router.push('/');
+                }
+            })
+            .catch(() => {
+                router.push('/login');
+            });
+    }, [router]);
+
+    if (!authorized) {
+        return <div className="flex min-h-screen items-center justify-center bg-[#FBFBFE]">
+            <div className="w-10 h-10 border-4 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>;
+    }
+
     return (
         <div className="flex bg-[#FBFBFE] min-h-screen">
             <Suspense fallback={<div className="w-72 bg-white border-r animate-pulse"></div>}>
