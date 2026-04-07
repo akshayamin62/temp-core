@@ -6,6 +6,6 @@ import { USER_ROLE } from '../types/roles';
 const router = express.Router();
 
 router.get('/conversation', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT]), getTaskConversation);
-router.post('/conversation/message', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), messageFileUploadMiddleware, addTaskMessage);
+router.post('/conversation/message', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), messageFileUploadMiddleware, addTaskMessage);
 
 export default router;

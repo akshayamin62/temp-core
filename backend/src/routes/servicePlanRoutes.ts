@@ -17,8 +17,8 @@ import { USER_ROLE } from '../types/roles';
 
 const router = Router();
 
-// Any authenticated user - get a student's plan tiers (must be before /:serviceSlug routes)
-router.get('/student/:studentId/plan-tiers', authenticate, getStudentPlanTiers);
+// Connected roles - get a student's plan tiers (must be before /:serviceSlug routes)
+router.get('/student/:studentId/plan-tiers', authenticate, authorize([USER_ROLE.STUDENT, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.OPS, USER_ROLE.PARENT, USER_ROLE.REFERRER, USER_ROLE.SUPER_ADMIN, USER_ROLE.IVY_EXPERT, USER_ROLE.EDUPLAN_COACH]), getStudentPlanTiers);
 
 // Student or Counselor - get pricing for their admin
 router.get('/:serviceSlug/pricing', authenticate, authorize([USER_ROLE.STUDENT, USER_ROLE.COUNSELOR]), getPricingForStudent);
@@ -36,8 +36,8 @@ router.get('/:serviceSlug/admin/base-pricing', authenticate, authorize([USER_ROL
 router.get('/:serviceSlug/admin/pricing', authenticate, authorize([USER_ROLE.ADMIN]), getAdminPricing);
 router.put('/:serviceSlug/admin/pricing', authenticate, authorize([USER_ROLE.ADMIN]), setAdminPricing);
 
-// Any authenticated user - get a specific admin's pricing (for viewing plans)
-router.get('/:serviceSlug/admin/:adminId/pricing', authenticate, getAdminPricingByAdminId);
+// Connected roles - get a specific admin's pricing (for viewing plans)
+router.get('/:serviceSlug/admin/:adminId/pricing', authenticate, authorize([USER_ROLE.STUDENT, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.OPS, USER_ROLE.PARENT, USER_ROLE.REFERRER, USER_ROLE.SUPER_ADMIN, USER_ROLE.IVY_EXPERT, USER_ROLE.EDUPLAN_COACH]), getAdminPricingByAdminId);
 
 // Super Admin - get/set base pricing
 router.get('/:serviceSlug/super-admin/pricing', authenticate, authorize([USER_ROLE.SUPER_ADMIN]), getSuperAdminPricing);

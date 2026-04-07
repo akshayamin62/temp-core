@@ -13,9 +13,9 @@ Comprehensive security audit of the Kareer Studio platform. All critical and hig
 |----------|-------|
 | **Critical** | 0 |
 | **High** | 0 |
-| **Medium** | 7 |
+| **Medium** | 4 |
 | **Low** | 8 |
-| **Total** | 15 |
+| **Total** | 12 |
 
 ---
 
@@ -64,23 +64,13 @@ The following bugs have been fixed, reclassified, or closed. Details removed for
 | BUG-034 | ADMIN/COUNSELOR/PARENT see any docs | ✅ By design (permission granted) |
 | BUG-035 | Document download data isolation | ✅ By design (permission granted) |
 | BUG-045 | Document upload no ownership | ✅ Fixed (ownership check for STUDENT/OPS) |
+| BUG-027 | readOnly client-controlled | ✅ Fixed (removed ADMIN/COUNSELOR from all Ivy write routes) |
+| BUG-046 | Service plan routes no authorize | ✅ Fixed (authorize with connected roles) |
+| BUG-047 | Student plan discount no authorize | ✅ Fixed (authorize with connected roles) |
 
 ---
 
-## Medium Issues (7 open)
-
-### BUG-027: `readOnly` Query Param Client-Controlled ⚠️
-- **File:** `frontend/src/app/ivy-league/student/layout.tsx`, `frontend/src/app/ivy-league/student/useStudentService.ts`
-- **Issue:** `readOnly` is entirely a URL query parameter (`?readOnly=true`) parsed client-side. No backend enforcement. Any user can remove it to get write access.
-- **Impact:** Privilege escalation for users who should only have read-only access.
-
-### BUG-046: Service Plan Routes — Missing Authorization ⚠️
-- **File:** `backend/src/routes/servicePlanRoutes.ts`
-- **Issue:** `GET /student/:studentId/plan-tiers` and `GET /:serviceSlug/admin/:adminId/pricing` have no `authorize()`. Any authenticated user can query any student's plan tiers or any admin's pricing.
-
-### BUG-047: Student Plan Discount Route — Missing Authorization ⚠️
-- **File:** `backend/src/routes/studentPlanDiscountRoutes.ts`
-- **Issue:** `GET /student/:studentId` has no `authorize()`. Any authenticated user can view any student's discount information.
+## Medium Issues (4 open)
 
 ### BUG-048: Auth Routes — SP Profile Update Not Role-Restricted ⚠️
 - **File:** `backend/src/routes/authRoutes.ts`
@@ -132,15 +122,13 @@ The following bugs have been fixed, reclassified, or closed. Details removed for
 
 ### Next (Short-Term)
 1. **Restrict SP profile update** to SERVICE_PROVIDER role (BUG-048)
-2. **Add role checks to service plan and discount routes** (BUG-046, 047)
-3. **Fix authorize role leak** — remove role from 403 response (BUG-051)
-4. **Sanitize error messages** — return generic "Server error" instead of `error.message` (BUG-052)
+2. **Fix authorize role leak** — remove role from 403 response (BUG-051)
+3. **Sanitize error messages** — return generic "Server error" instead of `error.message` (BUG-052)
 
 ### Medium-Term
-5. **Enforce `readOnly` server-side** on Ivy League routes (BUG-027)
-6. **Add role verification** to Ivy League student pages (BUG-049)
-7. **Add atomic parent sync** with MongoDB transactions (BUG-024)
-8. **Consider httpOnly cookies** instead of localStorage for token (BUG-050)
+4. **Add role verification** to Ivy League student pages (BUG-049)
+5. **Add atomic parent sync** with MongoDB transactions (BUG-024)
+6. **Consider httpOnly cookies** instead of localStorage for token (BUG-050)
 
 ### Low Priority (Code Quality)
 11. **Fix SP profile request type** (BUG-036)
@@ -177,8 +165,8 @@ The following bugs have been fixed, reclassified, or closed. Details removed for
 | `activityRoutes.ts` | Router-level | Per-route | ✅ |
 | `coachingBatchRoutes.ts` | Per-route | PARTIAL | ⚠️ GET / unprotected |
 | `paymentRoutes.ts` | Per-route | Per-route | ✅ |
-| `servicePlanRoutes.ts` | Per-route | PARTIAL | ⚠️ 2 routes unprotected |
-| `studentPlanDiscountRoutes.ts` | Per-route | PARTIAL | ⚠️ 1 route unprotected |
+| `servicePlanRoutes.ts` | Per-route | Per-route | ✅ Fixed |
+| `studentPlanDiscountRoutes.ts` | Per-route | Per-route | ✅ Fixed |
 | `invoiceRoutes.ts` | Per-route | All auth users | ✅ By Design |
 | `ledgerRoutes.ts` | Per-route | All auth users | ✅ By Design |
 | `opsScheduleRoutes.ts` | Per-route + Router | Per-route | ✅ |
