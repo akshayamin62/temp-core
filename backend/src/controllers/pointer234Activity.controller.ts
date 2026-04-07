@@ -79,7 +79,7 @@ export const selectActivitiesHandler = async (req: Request, res: Response): Prom
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to select activities',
+      message: 'Failed to select activities',
     });
   }
 };
@@ -110,7 +110,7 @@ export const getStudentActivitiesHandler = async (req: Request, res: Response): 
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to get student activities',
+      message: 'Failed to get student activities',
     });
   }
 };
@@ -171,7 +171,7 @@ export const uploadProofHandler = async (req: Request, res: Response): Promise<v
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to upload proof',
+      message: 'Failed to upload proof',
     });
   }
 };
@@ -222,7 +222,7 @@ export const evaluateActivityHandler = async (req: Request, res: Response): Prom
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to evaluate activity',
+      message: 'Failed to evaluate activity',
     });
   }
 };
@@ -271,7 +271,7 @@ export const updateWeightagesHandler = async (req: Request, res: Response): Prom
     console.error('Update weightages error:', error);
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to update weightages',
+      message: 'Failed to update weightages',
     });
   }
 };

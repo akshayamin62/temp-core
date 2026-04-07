@@ -78,7 +78,7 @@ export const selectActivitiesHandler = async (req: Request, res: Response): Prom
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to save activities',
+      message: 'Failed to save activities',
     });
   }
 };
@@ -112,7 +112,7 @@ export const getStudentActivitiesHandler = async (req: Request, res: Response): 
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to fetch activities',
+      message: 'Failed to fetch activities',
     });
   }
 };
@@ -154,7 +154,7 @@ export const uploadProofHandler = async (req: Request, res: Response): Promise<v
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to upload proof',
+      message: 'Failed to upload proof',
     });
   }
 };
@@ -198,7 +198,7 @@ export const evaluateActivityHandler = async (req: Request, res: Response): Prom
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to evaluate activity',
+      message: 'Failed to evaluate activity',
     });
   }
 };
@@ -238,7 +238,7 @@ export const uploadIvyExpertDocumentsHandler = async (req: Request, res: Respons
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to upload documents',
+      message: 'Failed to upload documents',
     });
   }
 };
@@ -290,7 +290,7 @@ export const updateDocumentTaskStatusHandler = async (req: Request, res: Respons
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to update task status',
+      message: 'Failed to update task status',
     });
   }
 };
@@ -335,7 +335,7 @@ export const updateWeightagesHandler = async (req: Request, res: Response): Prom
     console.error('Update weightages error:', error);
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to update weightages',
+      message: 'Failed to update weightages',
     });
   }
 };
@@ -378,7 +378,7 @@ export const getPointerActivityScoreHandler = async (req: Request, res: Response
     console.error('Get pointer activity score error:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to get pointer activity score',
+      message: 'Failed to get pointer activity score',
     });
   }
 };
@@ -416,7 +416,7 @@ export const setDeadlineHandler = async (req: Request, res: Response): Promise<v
     console.error('Set deadline error:', error);
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to set deadline',
+      message: 'Failed to set deadline',
     });
   }
 };

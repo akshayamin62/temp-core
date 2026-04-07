@@ -25,7 +25,7 @@ export const getStudentInterestData = async (req: Request, res: Response): Promi
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to fetch student interest',
+      message: 'Failed to fetch student interest',
     });
   }
 };
@@ -63,7 +63,7 @@ export const patchStudentInterest = async (req: Request, res: Response): Promise
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to update student interest',
+      message: 'Failed to update student interest',
     });
   }
 };

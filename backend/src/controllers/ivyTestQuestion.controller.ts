@@ -85,7 +85,7 @@ export const createIvyTestQuestion = async (req: Request, res: Response): Promis
     res.json({ success: true, message: 'Question created successfully', data: question });
   } catch (error: any) {
     console.error('Error creating ivy test question:', error);
-    res.status(500).json({ success: false, message: error.message || 'Failed to create question' });
+    res.status(500).json({ success: false, message: 'Failed to create question' });
   }
 };
 
@@ -109,7 +109,7 @@ export const getIvyTestQuestions = async (req: Request, res: Response): Promise<
     res.json({ success: true, data: questions, sectionCounts });
   } catch (error: any) {
     console.error('Error fetching ivy test questions:', error);
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch questions' });
+    res.status(500).json({ success: false, message: 'Failed to fetch questions' });
   }
 };
 
@@ -124,7 +124,7 @@ export const getIvyTestQuestionById = async (req: Request, res: Response): Promi
     res.json({ success: true, data: question });
   } catch (error: any) {
     console.error('Error fetching ivy test question:', error);
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch question' });
+    res.status(500).json({ success: false, message: 'Failed to fetch question' });
   }
 };
 
@@ -175,7 +175,7 @@ export const updateIvyTestQuestion = async (req: Request, res: Response): Promis
     res.json({ success: true, message: 'Question updated successfully', data: question });
   } catch (error: any) {
     console.error('Error updating ivy test question:', error);
-    res.status(500).json({ success: false, message: error.message || 'Failed to update question' });
+    res.status(500).json({ success: false, message: 'Failed to update question' });
   }
 };
 
@@ -199,7 +199,7 @@ export const deleteIvyTestQuestion = async (req: Request, res: Response): Promis
     res.json({ success: true, message: 'Question deleted successfully' });
   } catch (error: any) {
     console.error('Error deleting ivy test question:', error);
-    res.status(500).json({ success: false, message: error.message || 'Failed to delete question' });
+    res.status(500).json({ success: false, message: 'Failed to delete question' });
   }
 };
 
@@ -222,6 +222,6 @@ export const toggleIvyTestQuestionActive = async (req: Request, res: Response): 
     });
   } catch (error: any) {
     console.error('Error toggling ivy test question:', error);
-    res.status(500).json({ success: false, message: error.message || 'Failed to toggle question' });
+    res.status(500).json({ success: false, message: 'Failed to toggle question' });
   }
 };

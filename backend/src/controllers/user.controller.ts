@@ -22,7 +22,7 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
   } catch (error: any) {
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to fetch users',
+      message: 'Failed to fetch users',
     });
   }
 };

@@ -140,7 +140,6 @@ export const saveFormAnswers = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to save form answers",
-      error: error.message,
     });
   }
 };
@@ -200,7 +199,6 @@ export const getFormAnswers = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch form answers",
-      error: error.message,
     });
   }
 };
@@ -261,7 +259,6 @@ export const getProgress = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch progress",
-      error: error.message,
     });
   }
 };
@@ -310,7 +307,6 @@ export const deleteFormAnswers = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to delete form answers",
-      error: error.message,
     });
   }
 };
@@ -349,7 +345,6 @@ export const getStudentProfileData = async (req: AuthRequest, res: Response) => 
     return res.status(500).json({
       success: false,
       message: "Failed to fetch profile data",
-      error: error.message,
     });
   }
 };
@@ -417,7 +412,6 @@ export const saveStudentProfileData = async (req: AuthRequest, res: Response) =>
     return res.status(500).json({
       success: false,
       message: "Failed to save profile data",
-      error: error.message,
     });
   }
 };
@@ -456,7 +450,6 @@ export const getStudentProfileDataById = async (req: AuthRequest, res: Response)
     return res.status(500).json({
       success: false,
       message: "Failed to fetch student profile data",
-      error: error.message,
     });
   }
 };
@@ -527,7 +520,6 @@ export const saveStudentProfileDataById = async (req: AuthRequest, res: Response
     return res.status(500).json({
       success: false,
       message: "Failed to save profile data",
-      error: error.message,
     });
   }
 };

@@ -29,7 +29,7 @@ export const getStudentIvyScore = async (req: Request, res: Response) => {
         console.error('Error fetching Ivy score:', error);
         return res.status(500).json({
             success: false,
-            message: error.message || 'Failed to fetch Ivy score',
+            message: 'Failed to fetch Ivy score',
         });
     }
 };
@@ -53,7 +53,7 @@ export const getMyIvyScore = async (req: Request, res: Response) => {
         return res.status(200).json({ success: true, data: scoreCard });
     } catch (error: any) {
         console.error('Error fetching my Ivy score:', error);
-        return res.status(500).json({ success: false, message: error.message || 'Failed to fetch Ivy score' });
+        return res.status(500).json({ success: false, message: 'Failed to fetch Ivy score' });
     }
 };
 
@@ -80,7 +80,7 @@ export const recalculateIvyScore = async (req: Request, res: Response) => {
         console.error('Error recalculating Ivy score:', error);
         return res.status(500).json({
             success: false,
-            message: error.message || 'Failed to recalculate Ivy score',
+            message: 'Failed to recalculate Ivy score',
         });
     }
 };

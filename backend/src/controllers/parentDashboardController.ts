@@ -74,7 +74,6 @@ export const getParentStudents = async (req: AuthRequest, res: Response): Promis
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch students',
-      error: error.message,
     });
   }
 };
@@ -158,7 +157,6 @@ export const getParentStudentDetails = async (req: AuthRequest, res: Response): 
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch student details',
-      error: error.message,
     });
   }
 };
@@ -213,7 +211,6 @@ export const getParentStudentFormAnswers = async (req: AuthRequest, res: Respons
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch form answers',
-      error: error.message,
     });
   }
 };

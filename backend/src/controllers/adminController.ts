@@ -101,7 +101,6 @@ export const createCounselor = async (req: AuthRequest, res: Response): Promise<
     return res.status(500).json({
       success: false,
       message: 'Failed to create counselor',
-      error: error.message,
     });
   }
 };
@@ -143,7 +142,6 @@ export const getCounselors = async (req: AuthRequest, res: Response): Promise<Re
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch counselors',
-      error: error.message,
     });
   }
 };
@@ -200,7 +198,6 @@ export const toggleCounselorStatus = async (req: AuthRequest, res: Response): Pr
     return res.status(500).json({
       success: false,
       message: 'Failed to toggle counselor status',
-      error: error.message,
     });
   }
 };
@@ -260,7 +257,6 @@ export const getCounselorDetail = async (req: AuthRequest, res: Response): Promi
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch counselor detail',
-      error: error.message,
     });
   }
 };
@@ -311,7 +307,6 @@ export const getCounselorFollowUps = async (req: AuthRequest, res: Response): Pr
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch counselor follow-ups',
-      error: error.message,
     });
   }
 };
@@ -389,7 +384,6 @@ export const getCounselorFollowUpSummary = async (req: AuthRequest, res: Respons
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch follow-up summary',
-      error: error.message,
     });
   }
 };
@@ -429,7 +423,6 @@ export const getAdminStats = async (req: AuthRequest, res: Response): Promise<Re
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch stats',
-      error: error.message,
     });
   }
 };

@@ -41,7 +41,6 @@ export const getStudentPrefill = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch student details",
-      error: error.message,
     });
   }
 };
@@ -114,7 +113,6 @@ export const submitIvyLeagueRegistration = async (req: AuthRequest, res: Respons
     return res.status(500).json({
       success: false,
       message: "Failed to submit registration",
-      error: error.message,
     });
   }
 };
@@ -146,7 +144,6 @@ export const getRegistrationStatus = async (req: AuthRequest, res: Response) => 
     return res.status(500).json({
       success: false,
       message: "Failed to check registration status",
-      error: error.message,
     });
   }
 };

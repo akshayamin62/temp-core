@@ -82,7 +82,7 @@ export const getTaskConversation = async (req: Request, res: Response): Promise<
     res.json({ success: true, data: conversation });
   } catch (error: any) {
     console.error('Error fetching task conversation:', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -204,6 +204,6 @@ export const addTaskMessage = async (req: Request, res: Response): Promise<void>
     res.json({ success: true, data: conversation });
   } catch (error: any) {
     console.error('Error adding task message:', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };

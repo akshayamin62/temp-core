@@ -597,7 +597,6 @@ export const createOps = async (req: Request, res: Response): Promise<Response> 
     return res.status(500).json({
       success: false,
       message: "Error creating ops",
-      error: error.message,
     });
   }
 };
@@ -628,7 +627,6 @@ export const getAllOps = async (_req: Request, res: Response): Promise<Response>
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch ops',
-      error: error.message,
     });
   }
 };
@@ -659,7 +657,6 @@ export const getAllIvyExperts = async (_req: Request, res: Response): Promise<Re
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch ivy experts',
-      error: error.message,
     });
   }
 };
@@ -705,7 +702,7 @@ export const getIvyExpertTeamMeetsForSuperAdmin = async (req: Request, res: Resp
     });
   } catch (error: any) {
     console.error('Get Ivy Expert team meets for super admin error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch Ivy Expert team meets', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch Ivy Expert team meets' });
   }
 };
 
@@ -735,7 +732,6 @@ export const getAllEduplanCoaches = async (_req: Request, res: Response): Promis
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch eduplan coaches',
-      error: error.message,
     });
   }
 };
@@ -817,7 +813,6 @@ export const createAdmin = async (req: Request, res: Response): Promise<Response
     return res.status(500).json({
       success: false,
       message: 'Failed to create admin',
-      error: error.message,
     });
   }
 };
@@ -857,7 +852,6 @@ export const getAdmins = async (_req: Request, res: Response): Promise<Response>
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch admins',
-      error: error.message,
     });
   }
 };
@@ -908,7 +902,6 @@ export const getAdminDetails = async (req: Request, res: Response): Promise<Resp
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch admin details',
-      error: error.message,
     });
   }
 };
@@ -1100,7 +1093,6 @@ export const createUserByRole = async (req: Request, res: Response): Promise<Res
     return res.status(500).json({
       success: false,
       message: 'Failed to create user',
-      error: error.message,
     });
   }
 };
@@ -1163,7 +1155,7 @@ export const getAdminDashboardStats = async (req: Request, res: Response): Promi
     });
   } catch (error: any) {
     console.error('Get admin dashboard stats error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch admin dashboard stats', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch admin dashboard stats' });
   }
 };
 
@@ -1197,7 +1189,7 @@ export const getAdminCounselorsForSuperAdmin = async (req: Request, res: Respons
     });
   } catch (error: any) {
     console.error('Get admin counselors error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch admin counselors', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch admin counselors' });
   }
 };
 
@@ -1255,7 +1247,7 @@ export const getAdminLeadsForSuperAdmin = async (req: Request, res: Response): P
     });
   } catch (error: any) {
     console.error('Get admin leads error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch admin leads', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch admin leads' });
   }
 };
 
@@ -1333,7 +1325,7 @@ export const getAdminStudentsForSuperAdmin = async (req: Request, res: Response)
     });
   } catch (error: any) {
     console.error('Get admin students error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch admin students', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch admin students' });
   }
 };
 
@@ -1378,7 +1370,7 @@ export const getAdminTeamMeetsForSuperAdmin = async (req: Request, res: Response
     });
   } catch (error: any) {
     console.error('Get admin team meets error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch admin team meets', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch admin team meets' });
   }
 };
 
@@ -1449,7 +1441,7 @@ export const getAllLeadsForSuperAdmin = async (req: Request, res: Response): Pro
     });
   } catch (error: any) {
     console.error('Get all leads for super admin error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch leads', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch leads' });
   }
 };
 
@@ -1500,7 +1492,7 @@ export const getCounselorDetailForSuperAdmin = async (req: Request, res: Respons
     });
   } catch (error: any) {
     console.error('Get counselor detail for super admin error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch counselor detail', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch counselor detail' });
   }
 };
 
@@ -1527,7 +1519,7 @@ export const getCounselorFollowUpsForSuperAdmin = async (req: Request, res: Resp
     return res.status(200).json({ success: true, data: { followUps } });
   } catch (error: any) {
     console.error('Get counselor follow-ups for super admin error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch counselor follow-ups', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch counselor follow-ups' });
   }
 };
 
@@ -1592,7 +1584,7 @@ export const getCounselorFollowUpSummaryForSuperAdmin = async (req: Request, res
     });
   } catch (error: any) {
     console.error('Get counselor follow-up summary for super admin error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch follow-up summary', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch follow-up summary' });
   }
 };
 
@@ -1625,7 +1617,7 @@ export const getCounselorTeamMeetsForSuperAdmin = async (req: Request, res: Resp
     return res.status(200).json({ success: true, data: { teamMeets } });
   } catch (error: any) {
     console.error('Get counselor team meets for super admin error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch counselor team meets', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch counselor team meets' });
   }
 };
 
@@ -1656,7 +1648,7 @@ export const getOpsDetailForSuperAdmin = async (req: Request, res: Response): Pr
       },
     });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: 'Failed to fetch ops details', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch ops details' });
   }
 };
 
@@ -1689,7 +1681,7 @@ export const getOpsSchedulesForSuperAdmin = async (req: Request, res: Response):
       data: { schedules },
     });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: 'Failed to fetch ops schedules', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch ops schedules' });
   }
 };
 
@@ -1761,7 +1753,7 @@ export const getOpsScheduleSummaryForSuperAdmin = async (req: Request, res: Resp
       data: { today, missed, tomorrow, counts },
     });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: 'Failed to fetch ops schedule summary', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch ops schedule summary' });
   }
 };
 
@@ -1830,7 +1822,7 @@ export const getOpsStudentsForSuperAdmin = async (req: Request, res: Response): 
       data: { students: studentsWithServices },
     });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: 'Failed to fetch ops students', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch ops students' });
   }
 };
 
@@ -1875,7 +1867,7 @@ export const getOpsTeamMeetsForSuperAdmin = async (req: Request, res: Response):
     });
   } catch (error: any) {
     console.error('Get OPS team meets for super admin error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch OPS team meets', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch OPS team meets' });
   }
 };
 
@@ -1918,7 +1910,6 @@ export const getServiceProviderDetail = async (req: Request, res: Response): Pro
     return res.status(500).json({
       success: false,
       message: "Failed to fetch service provider details",
-      error: error.message,
     });
   }
 };
@@ -1950,7 +1941,7 @@ export const getEduplanCoachDetailForSuperAdmin = async (req: Request, res: Resp
       },
     });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: 'Failed to fetch eduplan coach details', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch eduplan coach details' });
   }
 };
 
@@ -2020,7 +2011,7 @@ export const getEduplanCoachStudentsForSuperAdmin = async (req: Request, res: Re
       data: { students: studentsWithServices },
     });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: 'Failed to fetch eduplan coach students', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch eduplan coach students' });
   }
 };
 
@@ -2065,7 +2056,7 @@ export const getEduplanCoachTeamMeetsForSuperAdmin = async (req: Request, res: R
     });
   } catch (error: any) {
     console.error('Get eduplan coach team meets for super admin error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch eduplan coach team meets', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch eduplan coach team meets' });
   }
 };
 
@@ -2304,7 +2295,7 @@ export const editUserByRole = async (req: Request, res: Response): Promise<Respo
     if (error.code === 11000) {
       return res.status(400).json({ success: false, message: 'Email already exists in role profile' });
     }
-    return res.status(500).json({ success: false, message: 'Failed to update user', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to update user' });
   }
 };
 
@@ -2348,6 +2339,6 @@ export const getUserWithProfile = async (req: Request, res: Response): Promise<R
     });
   } catch (error: any) {
     console.error('Get user with profile error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch user profile', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch user profile' });
   }
 };

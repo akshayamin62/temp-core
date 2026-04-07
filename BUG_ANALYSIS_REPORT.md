@@ -13,9 +13,9 @@ Comprehensive security audit of the Kareer Studio platform. All critical and hig
 |----------|-------|
 | **Critical** | 0 |
 | **High** | 0 |
-| **Medium** | 2 |
+| **Medium** | 0 |
 | **Low** | 8 |
-| **Total** | 10 |
+| **Total** | 8 |
 
 ---
 
@@ -69,18 +69,8 @@ The following bugs have been fixed, reclassified, or closed. Details removed for
 | BUG-047 | Student plan discount no authorize | ✅ Fixed (authorize with connected roles) |
 | BUG-048 | SP profile update not role-restricted | ✅ Fixed (authorize SERVICE_PROVIDER) |
 | BUG-049 | Ivy League pages no role verification | ✅ Fixed (role gate in layout) |
-
----
-
-## Medium Issues (2 open)
-
-### BUG-051: Authorize Middleware Leaks User Role ⚠️
-- **File:** `backend/src/middleware/authorize.ts`
-- **Issue:** 403 response includes `"Your role: ${userRole}"`. Attacker can discover their role and what roles each endpoint requires.
-
-### BUG-052: Error Messages Leak Internal Details ⚠️
-- **Files:** Multiple controllers
-- **Issue:** `error.message` returned in 500 responses. Could leak DB schema names, field names, and stack info.
+| BUG-051 | Authorize middleware leaks user role | ✅ Fixed (generic 403 message) |
+| BUG-052 | Error messages leak internal details | ✅ Fixed (generic error messages in all controllers) |
 
 ---
 
@@ -115,17 +105,13 @@ The following bugs have been fixed, reclassified, or closed. Details removed for
 ## Recommended Priority Actions
 
 ### Next (Short-Term)
-1. **Fix authorize role leak** — remove role from 403 response (BUG-051)
-2. **Sanitize error messages** — return generic "Server error" instead of `error.message` (BUG-052)
-
-### Medium-Term
-3. **Add atomic parent sync** with MongoDB transactions (BUG-024)
-4. **Consider httpOnly cookies** instead of localStorage for token (BUG-050)
+1. **Add atomic parent sync** with MongoDB transactions (BUG-024)
+2. **Consider httpOnly cookies** instead of localStorage for token (BUG-050)
 
 ### Low Priority (Code Quality)
-5. **Fix SP profile request type** (BUG-036)
-6. **Standardize redirect destinations** (BUG-030)
-7. **Reduce content flash** on page load (BUG-028)
+3. **Fix SP profile request type** (BUG-036)
+4. **Standardize redirect destinations** (BUG-030)
+5. **Reduce content flash** on page load (BUG-028)
 
 ---
 

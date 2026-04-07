@@ -36,7 +36,6 @@ export const getStudentProfile = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch student profile",
-      error: error.message,
     });
   }
 };
@@ -74,7 +73,6 @@ export const updateStudentProfile = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to update student profile",
-      error: error.message,
     });
   }
 };
@@ -102,7 +100,6 @@ export const deleteStudentProfile = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to delete student profile",
-      error: error.message,
     });
   }
 };

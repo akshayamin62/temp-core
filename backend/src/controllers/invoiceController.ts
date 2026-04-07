@@ -18,7 +18,7 @@ export const getInvoicesByRegistration = async (req: AuthRequest, res: Response)
     });
   } catch (error: any) {
     console.error('Error fetching invoices:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -38,7 +38,7 @@ export const getInvoicesByStudent = async (req: AuthRequest, res: Response): Pro
     });
   } catch (error: any) {
     console.error('Error fetching student invoices:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -59,7 +59,7 @@ export const getInvoice = async (req: AuthRequest, res: Response): Promise<Respo
     });
   } catch (error: any) {
     console.error('Error fetching invoice:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -80,6 +80,6 @@ export const getInvoiceByNumber = async (req: AuthRequest, res: Response): Promi
     });
   } catch (error: any) {
     console.error('Error fetching invoice:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };

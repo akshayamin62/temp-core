@@ -19,7 +19,7 @@ export const getLedgerByRegistration = async (req: AuthRequest, res: Response): 
     });
   } catch (error: any) {
     console.error('Error fetching ledger:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -55,6 +55,6 @@ export const getLedgersByStudent = async (req: AuthRequest, res: Response): Prom
     });
   } catch (error: any) {
     console.error('Error fetching student ledgers:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };

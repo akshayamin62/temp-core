@@ -27,7 +27,6 @@ export const getAllServices = async (_req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch services",
-      error: error.message,
     });
   }
 };
@@ -128,7 +127,6 @@ export const getMyServices = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch registered services",
-      error: error.message,
     });
   }
 };
@@ -222,7 +220,6 @@ export const registerForService = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to register for service",
-      error: error.message,
     });
   }
 };
@@ -254,7 +251,6 @@ export const getServiceForm = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch service form",
-      error: error.message,
     });
   }
 };
@@ -337,7 +333,6 @@ export const getRegistrationDetails = async (
     return res.status(500).json({
       success: false,
       message: "Failed to fetch registration details",
-      error: error.message,
     });
   }
 };

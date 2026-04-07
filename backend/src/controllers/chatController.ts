@@ -158,7 +158,7 @@ export const getOrCreateChat = async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     console.error('Get or create chat error:', error);
-    return res.status(500).json({ message: 'Server error', error: error.message });
+    return res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -250,7 +250,7 @@ export const getChatMessages = async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     console.error('Get chat messages error:', error);
-    return res.status(500).json({ message: 'Server error', error: error.message });
+    return res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -426,7 +426,7 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     console.error('Send message error:', error);
-    return res.status(500).json({ message: 'Server error', error: error.message });
+    return res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -500,7 +500,7 @@ export const getMyChatsList = async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     console.error('Get my chats list error:', error);
-    return res.status(500).json({ message: 'Server error', error: error.message });
+    return res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -658,7 +658,7 @@ export const uploadChatDocument = async (req: AuthRequest, res: Response) => {
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
-    return res.status(500).json({ message: 'Server error', error: error.message });
+    return res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -786,7 +786,7 @@ export const saveChatDocumentToExtra = async (req: AuthRequest, res: Response) =
     });
   } catch (error: any) {
     console.error('Save chat document to extra error:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 

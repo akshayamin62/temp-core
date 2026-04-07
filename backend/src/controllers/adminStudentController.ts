@@ -116,7 +116,6 @@ export const getAdminStudents = async (req: AuthRequest, res: Response): Promise
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch students',
-      error: error.message,
     });
   }
 };
@@ -231,7 +230,6 @@ export const getAdminStudentDetails = async (req: AuthRequest, res: Response): P
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch student details',
-      error: error.message,
     });
   }
 };
@@ -320,7 +318,6 @@ export const getAdminStudentFormAnswers = async (req: AuthRequest, res: Response
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch form answers',
-      error: error.message,
     });
   }
 };
@@ -387,7 +384,6 @@ export const getStudentByLeadId = async (req: AuthRequest, res: Response): Promi
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch student',
-      error: error.message,
     });
   }
 };

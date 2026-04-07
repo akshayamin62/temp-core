@@ -25,7 +25,7 @@ export const getUnreadCounts = async (req: Request, res: Response) => {
   } catch (error: any) {
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to get unread counts',
+      message: 'Failed to get unread counts',
     });
   }
 };
@@ -50,7 +50,7 @@ export const markPointerAsRead = async (req: Request, res: Response) => {
   } catch (error: any) {
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to mark as read',
+      message: 'Failed to mark as read',
     });
   }
 };
@@ -78,7 +78,7 @@ export const getNotificationsByPointer = async (req: Request, res: Response) => 
   } catch (error: any) {
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to get notifications',
+      message: 'Failed to get notifications',
     });
   }
 };
@@ -108,7 +108,7 @@ export const getTaskUnreadCount = async (req: Request, res: Response) => {
   } catch (error: any) {
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to get task unread count',
+      message: 'Failed to get task unread count',
     });
   }
 };
@@ -138,7 +138,7 @@ export const markTaskAsRead = async (req: Request, res: Response) => {
   } catch (error: any) {
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to mark task notifications as read',
+      message: 'Failed to mark task notifications as read',
     });
   }
 };
@@ -163,7 +163,7 @@ export const getBulkTaskUnreadCounts = async (req: Request, res: Response) => {
   } catch (error: any) {
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to get bulk task unread counts',
+      message: 'Failed to get bulk task unread counts',
     });
   }
 };

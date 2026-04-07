@@ -230,7 +230,6 @@ export const getAllStudents = async (req: AuthRequest, res: Response): Promise<R
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch students',
-      error: error.message,
     });
   }
 };
@@ -420,7 +419,6 @@ export const getStudentDetails = async (req: AuthRequest, res: Response): Promis
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch student details',
-      error: error.message,
     });
   }
 };
@@ -561,7 +559,6 @@ export const getStudentFormAnswers = async (req: AuthRequest, res: Response): Pr
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch form answers',
-      error: error.message,
     });
   }
 };
@@ -661,7 +658,6 @@ export const updateStudentFormAnswers = async (req: AuthRequest, res: Response):
     return res.status(500).json({
       success: false,
       message: 'Failed to update form answers',
-      error: error.message,
     });
   }
 };
@@ -695,7 +691,6 @@ export const getStudentsWithRegistrations = async (req: AuthRequest, res: Respon
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch students',
-      error: error.message,
     });
   }
 };
@@ -860,7 +855,6 @@ export const assignOps = async (req: AuthRequest, res: Response): Promise<Respon
     return res.status(500).json({
       success: false,
       message: 'Failed to assign role',
-      error: error.message,
     });
   }
 };
@@ -1264,7 +1258,6 @@ export const updateRegistrationStatus = async (req: AuthRequest, res: Response):
     return res.status(500).json({
       success: false,
       message: 'Failed to update registration status',
-      error: error.message,
     });
   }
 };

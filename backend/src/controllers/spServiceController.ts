@@ -39,7 +39,7 @@ export const createSPService = async (req: AuthRequest, res: Response): Promise<
 
     res.status(201).json({ success: true, data: { service } });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to create service' });
+    res.status(500).json({ success: false, message: 'Failed to create service' });
   }
 };
 
@@ -55,7 +55,7 @@ export const getMySPServices = async (req: AuthRequest, res: Response): Promise<
     const services = await SPService.find({ serviceProviderId: sp._id }).sort({ createdAt: -1 });
     res.json({ success: true, data: { services } });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch services' });
+    res.status(500).json({ success: false, message: 'Failed to fetch services' });
   }
 };
 
@@ -82,7 +82,7 @@ export const updateSPService = async (req: AuthRequest, res: Response): Promise<
 
     res.json({ success: true, data: { service } });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to update service' });
+    res.status(500).json({ success: false, message: 'Failed to update service' });
   }
 };
 
@@ -105,7 +105,7 @@ export const deleteSPService = async (req: AuthRequest, res: Response): Promise<
 
     res.json({ success: true, message: 'Service deleted successfully' });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to delete service' });
+    res.status(500).json({ success: false, message: 'Failed to delete service' });
   }
 };
 
@@ -160,7 +160,7 @@ export const uploadSPServiceThumbnail = async (req: AuthRequest, res: Response):
     if (req.file) {
       try { fs.unlinkSync(req.file.path); } catch {}
     }
-    res.status(500).json({ success: false, message: error.message || 'Failed to upload thumbnail' });
+    res.status(500).json({ success: false, message: 'Failed to upload thumbnail' });
   }
 };
 
@@ -179,7 +179,7 @@ export const getMySPEnquiries = async (req: AuthRequest, res: Response): Promise
 
     res.json({ success: true, data: { enquiries } });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch enquiries' });
+    res.status(500).json({ success: false, message: 'Failed to fetch enquiries' });
   }
 };
 
@@ -213,7 +213,7 @@ export const updateSPEnquiryStatus = async (req: AuthRequest, res: Response): Pr
 
     res.json({ success: true, data: { enquiry } });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to update enquiry' });
+    res.status(500).json({ success: false, message: 'Failed to update enquiry' });
   }
 };
 
@@ -249,7 +249,7 @@ export const getAllSPServicesForStudents = async (req: AuthRequest, res: Respons
 
     res.json({ success: true, data: { services } });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch services' });
+    res.status(500).json({ success: false, message: 'Failed to fetch services' });
   }
 };
 
@@ -293,7 +293,7 @@ export const createSPEnquiry = async (req: AuthRequest, res: Response): Promise<
 
     res.status(201).json({ success: true, data: { enquiry } });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to send enquiry' });
+    res.status(500).json({ success: false, message: 'Failed to send enquiry' });
   }
 };
 
@@ -314,7 +314,7 @@ export const getStudentMyEnquiries = async (req: AuthRequest, res: Response): Pr
 
     res.json({ success: true, data: { enquiries } });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch enquiries' });
+    res.status(500).json({ success: false, message: 'Failed to fetch enquiries' });
   }
 };
 
@@ -332,7 +332,7 @@ export const getStudentEnquiriesById = async (req: AuthRequest, res: Response): 
 
     res.json({ success: true, data: { enquiries } });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch student enquiries' });
+    res.status(500).json({ success: false, message: 'Failed to fetch student enquiries' });
   }
 };
 
@@ -352,7 +352,7 @@ export const getSPServicesById = async (req: AuthRequest, res: Response): Promis
 
     res.json({ success: true, data: { services } });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch SP services' });
+    res.status(500).json({ success: false, message: 'Failed to fetch SP services' });
   }
 };
 
@@ -375,7 +375,7 @@ export const getSPEnquiriesById = async (req: AuthRequest, res: Response): Promi
 
     res.json({ success: true, data: { enquiries } });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch SP enquiries' });
+    res.status(500).json({ success: false, message: 'Failed to fetch SP enquiries' });
   }
 };
 
@@ -401,6 +401,6 @@ export const getAllSPServicesForSuperAdmin = async (req: AuthRequest, res: Respo
 
     res.json({ success: true, data: { services } });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch services' });
+    res.status(500).json({ success: false, message: 'Failed to fetch services' });
   }
 };

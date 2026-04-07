@@ -71,7 +71,7 @@ export const uploadAcademicDocumentHandler = async (req: Request, res: Response)
             data: doc,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -105,7 +105,7 @@ export const evaluateAcademicHandler = async (req: Request, res: Response): Prom
             data: evaluation,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -129,7 +129,7 @@ export const getAcademicStatusHandler = async (req: Request, res: Response): Pro
             data,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -154,7 +154,7 @@ export const getAcademicDataHandler = async (req: Request, res: Response): Promi
             data,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -174,7 +174,7 @@ export const addSectionHandler = async (req: Request, res: Response): Promise<vo
             data,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -202,7 +202,7 @@ export const addSubSectionHandler = async (req: Request, res: Response): Promise
             data,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -222,7 +222,7 @@ export const updateSubSectionHandler = async (req: Request, res: Response): Prom
             data,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -251,7 +251,7 @@ export const addSubjectHandler = async (req: Request, res: Response): Promise<vo
             data,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -271,7 +271,7 @@ export const updateSubjectHandler = async (req: Request, res: Response): Promise
             data,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -301,7 +301,7 @@ export const addProjectHandler = async (req: Request, res: Response): Promise<vo
             data,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -329,7 +329,7 @@ export const updateProjectHandler = async (req: Request, res: Response): Promise
             data,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -349,7 +349,7 @@ export const deleteSectionHandler = async (req: Request, res: Response): Promise
             data,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -369,7 +369,7 @@ export const deleteSubSectionHandler = async (req: Request, res: Response): Prom
             data,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -389,7 +389,7 @@ export const deleteSubjectHandler = async (req: Request, res: Response): Promise
             data,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -409,7 +409,7 @@ export const deleteProjectHandler = async (req: Request, res: Response): Promise
             data,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -429,7 +429,7 @@ export const updateWeightagesHandler = async (req: Request, res: Response): Prom
             data,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -450,7 +450,7 @@ export const getAcademicExcellenceScoreHandler = async (req: Request, res: Respo
             data: scoreData,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -483,7 +483,7 @@ export const uploadSubSectionFileHandler = async (req: Request, res: Response): 
             data,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -504,6 +504,6 @@ export const deleteSubSectionFileHandler = async (req: Request, res: Response): 
             data,
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: 'Server error' });
     }
 };

@@ -28,7 +28,7 @@ export const createIvyService = async (req: Request, res: Response): Promise<voi
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to create Ivy League service',
+      message: 'Failed to create Ivy League service',
     });
   }
 };
@@ -50,7 +50,7 @@ export const getMyStudentsHandler = async (req: Request, res: Response): Promise
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to fetch students',
+      message: 'Failed to fetch students',
     });
   }
 };
@@ -73,7 +73,7 @@ export const getStudentsForIvyExpertHandler = async (req: Request, res: Response
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to fetch students',
+      message: 'Failed to fetch students',
     });
   }
 };
@@ -103,7 +103,7 @@ export const getStudentsForIvyExpertByUserIdHandler = async (req: Request, res: 
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to fetch students',
+      message: 'Failed to fetch students',
     });
   }
 };
@@ -127,7 +127,7 @@ export const updateInterestHandler = async (req: Request, res: Response): Promis
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to update interest',
+      message: 'Failed to update interest',
     });
   }
 };
@@ -149,7 +149,7 @@ export const getServiceDetailsHandler = async (req: Request, res: Response): Pro
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to fetch service details',
+      message: 'Failed to fetch service details',
     });
   }
 };
@@ -177,7 +177,7 @@ export const getServiceByStudentIdHandler = async (req: Request, res: Response):
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to fetch service for student',
+      message: 'Failed to fetch service for student',
     });
   }
 };
@@ -197,7 +197,7 @@ export const getMyServiceHandler = async (req: Request, res: Response): Promise<
     }
     res.status(200).json({ success: true, data: service });
   } catch (error: any) {
-    res.status(400).json({ success: false, message: error.message || 'Failed to fetch service' });
+    res.status(400).json({ success: false, message: 'Failed to fetch service' });
   }
 };
 

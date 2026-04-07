@@ -82,7 +82,6 @@ export const getStudentPrograms = async (req: AuthRequest, res: Response): Promi
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch programs',
-      error: error.message,
     });
   }
 };
@@ -178,7 +177,6 @@ export const getOpsStudentPrograms = async (req: AuthRequest, res: Response): Pr
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch programs',
-      error: error.message,
     });
   }
 };
@@ -220,7 +218,6 @@ export const getOpsPrograms = async (req: AuthRequest, res: Response): Promise<R
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch programs',
-      error: error.message,
     });
   }
 };
@@ -367,7 +364,6 @@ export const createProgram = async (req: AuthRequest, res: Response): Promise<Re
     return res.status(500).json({
       success: false,
       message: 'Failed to create program',
-      error: error.message,
     });
   }
 };
@@ -442,7 +438,6 @@ export const selectProgram = async (req: AuthRequest, res: Response): Promise<Re
     return res.status(500).json({
       success: false,
       message: 'Failed to select program',
-      error: error.message,
     });
   }
 };
@@ -497,7 +492,6 @@ export const removeProgram = async (req: AuthRequest, res: Response): Promise<Re
     return res.status(500).json({
       success: false,
       message: 'Failed to remove program',
-      error: error.message,
     });
   }
 };
@@ -550,7 +544,6 @@ export const updateProgramSelection = async (req: AuthRequest, res: Response): P
     return res.status(500).json({
       success: false,
       message: 'Failed to update program',
-      error: error.message,
     });
   }
 };
@@ -683,7 +676,6 @@ export const updateProgramStatus = async (req: AuthRequest, res: Response): Prom
     return res.status(500).json({
       success: false,
       message: 'Failed to update program status',
-      error: error.message,
     });
   }
 };
@@ -766,7 +758,6 @@ export const getSuperAdminStudentPrograms = async (req: AuthRequest, res: Respon
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch programs',
-      error: error.message,
     });
   }
 };
@@ -816,7 +807,6 @@ export const getStudentAppliedPrograms = async (req: AuthRequest, res: Response)
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch applied programs',
-      error: error.message,
     });
   }
 };
@@ -966,8 +956,7 @@ export const uploadProgramsFromExcel = async (req: AuthRequest & { file?: Expres
         programs.push(program);
       } catch (error: any) {
         errors.push({
-          row: i + 2,
-          error: error.message || 'Failed to create program',
+          row: i + 2 || 'Failed to create program',
         });
       }
     }
@@ -986,7 +975,6 @@ export const uploadProgramsFromExcel = async (req: AuthRequest & { file?: Expres
     return res.status(500).json({
       success: false,
       message: 'Failed to upload programs from Excel',
-      error: error.message,
     });
   }
 };
@@ -1070,7 +1058,6 @@ export const uploadQsRankingExcel = async (req: AuthRequest & { file?: Express.M
     return res.status(500).json({
       success: false,
       message: 'Failed to upload QS ranking file',
-      error: error.message,
     });
   }
 };
@@ -1118,7 +1105,6 @@ export const deleteAvailableProgram = async (req: AuthRequest, res: Response): P
     return res.status(500).json({
       success: false,
       message: 'Failed to delete program',
-      error: error.message,
     });
   }
 };

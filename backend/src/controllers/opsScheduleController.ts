@@ -58,7 +58,6 @@ export const getMySchedules = async (req: AuthRequest, res: Response): Promise<a
     res.status(500).json({
       success: false,
       message: "Failed to fetch schedules",
-      error: error.message,
     });
   }
 };
@@ -153,7 +152,6 @@ export const getScheduleSummary = async (req: AuthRequest, res: Response): Promi
     res.status(500).json({
       success: false,
       message: "Failed to fetch schedule summary",
-      error: error.message,
     });
   }
 };
@@ -193,7 +191,6 @@ export const getMyStudents = async (req: AuthRequest, res: Response): Promise<an
     res.status(500).json({
       success: false,
       message: "Failed to fetch students",
-      error: error.message,
     });
   }
 };
@@ -263,7 +260,6 @@ export const createSchedule = async (req: AuthRequest, res: Response): Promise<a
     res.status(500).json({
       success: false,
       message: "Failed to create schedule",
-      error: error.message,
     });
   }
 };
@@ -351,7 +347,6 @@ export const updateSchedule = async (req: AuthRequest, res: Response): Promise<a
     res.status(500).json({
       success: false,
       message: "Failed to update schedule",
-      error: error.message,
     });
   }
 };
@@ -397,7 +392,6 @@ export const deleteSchedule = async (req: AuthRequest, res: Response): Promise<a
     res.status(500).json({
       success: false,
       message: "Failed to delete schedule",
-      error: error.message,
     });
   }
 };
@@ -448,7 +442,6 @@ export const getScheduleById = async (req: AuthRequest, res: Response): Promise<
     res.status(500).json({
       success: false,
       message: "Failed to fetch schedule",
-      error: error.message,
     });
   }
 };
@@ -512,7 +505,6 @@ export const getMyOpsTasksAsStudent = async (req: AuthRequest, res: Response): P
     res.status(500).json({
       success: false,
       message: "Failed to fetch OPS tasks",
-      error: error.message,
     });
   }
 };
@@ -541,7 +533,6 @@ export const getStudentOpsTasksById = async (req: AuthRequest, res: Response): P
     res.status(500).json({
       success: false,
       message: "Failed to fetch OPS tasks",
-      error: error.message,
     });
   }
 };

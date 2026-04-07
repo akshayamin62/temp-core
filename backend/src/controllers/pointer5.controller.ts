@@ -79,7 +79,7 @@ export const createTaskHandler = async (req: Request, res: Response): Promise<an
         console.error('Error creating task:', error);
         res.status(500).json({
             success: false,
-            message: error.message || 'Failed to create task',
+            message: 'Failed to create task',
         });
     }
 };
@@ -120,7 +120,7 @@ export const updateTaskHandler = async (req: Request, res: Response): Promise<an
         console.error('Error updating task:', error);
         res.status(500).json({
             success: false,
-            message: error.message || 'Failed to update task',
+            message: 'Failed to update task',
         });
     }
 };
@@ -148,7 +148,7 @@ export const deleteTaskHandler = async (req: Request, res: Response): Promise<an
         console.error('Error deleting task:', error);
         res.status(500).json({
             success: false,
-            message: error.message || 'Failed to delete task',
+            message: 'Failed to delete task',
         });
     }
 };
@@ -176,7 +176,7 @@ export const getTasksHandler = async (req: Request, res: Response): Promise<any>
         console.error('Error fetching tasks:', error);
         res.status(500).json({
             success: false,
-            message: error.message || 'Failed to fetch tasks',
+            message: 'Failed to fetch tasks',
         });
     }
 };
@@ -210,7 +210,7 @@ export const submitResponseHandler = async (req: Request, res: Response): Promis
         console.error('Error submitting response:', error);
         res.status(500).json({
             success: false,
-            message: error.message || 'Failed to submit response',
+            message: 'Failed to submit response',
         });
     }
 };
@@ -262,7 +262,7 @@ export const evaluateSubmissionHandler = async (req: Request, res: Response): Pr
         console.error('Error evaluating submission:', error);
         res.status(500).json({
             success: false,
-            message: error.message || 'Failed to evaluate submission',
+            message: 'Failed to evaluate submission',
         });
     }
 };
@@ -290,7 +290,7 @@ export const getStatusHandler = async (req: Request, res: Response): Promise<any
         console.error('Error fetching status:', error);
         res.status(500).json({
             success: false,
-            message: error.message || 'Failed to fetch status',
+            message: 'Failed to fetch status',
         });
     }
 };
@@ -318,7 +318,7 @@ export const getScoreHandler = async (req: Request, res: Response): Promise<any>
         console.error('Error calculating score:', error);
         res.status(500).json({
             success: false,
-            message: error.message || 'Failed to calculate score',
+            message: 'Failed to calculate score',
         });
     }
 };

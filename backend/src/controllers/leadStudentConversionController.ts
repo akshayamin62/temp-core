@@ -504,8 +504,7 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
     console.error("❌ Error message:", error.message);
     return res.status(500).json({
       success: false,
-      message: error.message || "Failed to approve conversion",
-      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      message: "Failed to approve conversion",
     });
   }
 };

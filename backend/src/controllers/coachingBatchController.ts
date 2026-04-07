@@ -14,7 +14,7 @@ export const getBatches = async (req: Request, res: Response): Promise<void> => 
     const batches = await CoachingBatch.find(filter).sort({ batchDate: 1 }).lean();
     res.json({ success: true, data: { batches } });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch batches' });
+    res.status(500).json({ success: false, message: 'Failed to fetch batches' });
   }
 };
 
@@ -24,7 +24,7 @@ export const getAllBatches = async (_req: AuthRequest, res: Response): Promise<v
     const batches = await CoachingBatch.find().sort({ planKey: 1, batchDate: 1 }).lean();
     res.json({ success: true, data: { batches } });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch batches' });
+    res.status(500).json({ success: false, message: 'Failed to fetch batches' });
   }
 };
 
@@ -41,7 +41,7 @@ export const createBatch = async (req: AuthRequest, res: Response): Promise<void
     const batch = await CoachingBatch.create({ planKey, batchDate, timeFrom, timeTo });
     res.status(201).json({ success: true, data: { batch } });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to create batch' });
+    res.status(500).json({ success: false, message: 'Failed to create batch' });
   }
 };
 
@@ -62,7 +62,7 @@ export const updateBatch = async (req: AuthRequest, res: Response): Promise<void
     }
     res.json({ success: true, data: { batch } });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to update batch' });
+    res.status(500).json({ success: false, message: 'Failed to update batch' });
   }
 };
 
@@ -77,6 +77,6 @@ export const deleteBatch = async (req: AuthRequest, res: Response): Promise<void
     }
     res.json({ success: true, message: 'Batch deleted successfully' });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to delete batch' });
+    res.status(500).json({ success: false, message: 'Failed to delete batch' });
   }
 };

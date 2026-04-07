@@ -224,7 +224,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<Resp
     });
   } catch (error: any) {
     console.error('Error creating order:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -375,7 +375,7 @@ export const verifyPayment = async (req: AuthRequest, res: Response): Promise<Re
     });
   } catch (error: any) {
     console.error('Error verifying payment:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -409,7 +409,7 @@ export const requestInstallment = async (req: AuthRequest, res: Response): Promi
     return createOrder(req, res);
   } catch (error: any) {
     console.error('Error requesting installment:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -480,7 +480,7 @@ export const createMiscCollection = async (req: AuthRequest, res: Response): Pro
     });
   } catch (error: any) {
     console.error('Error creating misc collection:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -510,7 +510,7 @@ export const getPaymentsByRegistration = async (req: AuthRequest, res: Response)
     });
   } catch (error: any) {
     console.error('Error fetching payments:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -536,7 +536,7 @@ export const getPaymentsByStudent = async (req: AuthRequest, res: Response): Pro
     });
   } catch (error: any) {
     console.error('Error fetching student payments:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -575,7 +575,7 @@ export const getPaymentHistory = async (req: AuthRequest, res: Response): Promis
     });
   } catch (error: any) {
     console.error('Error fetching payment history:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -636,7 +636,7 @@ export const initializePayment = async (req: AuthRequest, res: Response): Promis
     });
   } catch (error: any) {
     console.error('Error initializing payment:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -694,7 +694,7 @@ export const setPrice = async (req: AuthRequest, res: Response): Promise<Respons
     });
   } catch (error: any) {
     console.error('Error setting price:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -839,7 +839,7 @@ export const createRegistrationOrder = async (req: AuthRequest, res: Response): 
     });
   } catch (error: any) {
     console.error('Error creating registration order:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -1098,7 +1098,7 @@ export const verifyRegistrationPayment = async (req: AuthRequest, res: Response)
     });
   } catch (error: any) {
     console.error('Error verifying registration payment:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -1245,7 +1245,7 @@ export const createUpgradeOrder = async (req: AuthRequest, res: Response): Promi
     });
   } catch (error: any) {
     console.error('Error creating upgrade order:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -1490,6 +1490,6 @@ export const verifyUpgradePayment = async (req: AuthRequest, res: Response): Pro
     });
   } catch (error: any) {
     console.error('Error verifying upgrade payment:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };

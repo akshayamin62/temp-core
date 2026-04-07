@@ -277,7 +277,7 @@ export const extractBrainographyData = async (req: AuthRequest, res: Response): 
     console.error('Extract brainography data error:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to extract brainography data',
+      message: 'Failed to extract brainography data',
     });
   }
 };
@@ -410,7 +410,7 @@ export const generateBothReports = async (req: AuthRequest, res: Response): Prom
     console.error('Generate both reports error:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to generate reports',
+      message: 'Failed to generate reports',
     });
   }
 };

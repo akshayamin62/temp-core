@@ -70,7 +70,7 @@ export const getPricingForStudent = async (req: AuthRequest, res: Response): Pro
       data: { pricing: pricing.prices, discounts: discountMap },
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch pricing' });
+    res.status(500).json({ success: false, message: 'Failed to fetch pricing' });
   }
 };
 
@@ -184,7 +184,7 @@ export const registerServicePlan = async (req: AuthRequest, res: Response): Prom
       data: { registration: populated },
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to register' });
+    res.status(500).json({ success: false, message: 'Failed to register' });
   }
 };
 
@@ -208,7 +208,7 @@ export const getAdminPricing = async (req: AuthRequest, res: Response): Promise<
       },
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch pricing' });
+    res.status(500).json({ success: false, message: 'Failed to fetch pricing' });
   }
 };
 
@@ -248,7 +248,7 @@ export const setAdminPricing = async (req: AuthRequest, res: Response): Promise<
       data: { pricing: savedPrices },
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to update pricing' });
+    res.status(500).json({ success: false, message: 'Failed to update pricing' });
   }
 };
 
@@ -266,7 +266,7 @@ export const getSuperAdminPricing = async (req: AuthRequest, res: Response): Pro
       },
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch super admin pricing' });
+    res.status(500).json({ success: false, message: 'Failed to fetch super admin pricing' });
   }
 };
 
@@ -300,7 +300,7 @@ export const setSuperAdminPricing = async (req: AuthRequest, res: Response): Pro
       data: { pricing: savedPrices },
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to update base pricing' });
+    res.status(500).json({ success: false, message: 'Failed to update base pricing' });
   }
 };
 
@@ -316,7 +316,7 @@ export const getBasePricingForAdmin = async (req: AuthRequest, res: Response): P
       },
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch base pricing' });
+    res.status(500).json({ success: false, message: 'Failed to fetch base pricing' });
   }
 };
 
@@ -344,7 +344,7 @@ export const getAdminPricingByAdminId = async (req: AuthRequest, res: Response):
       },
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch admin pricing' });
+    res.status(500).json({ success: false, message: 'Failed to fetch admin pricing' });
   }
 };
 
@@ -517,7 +517,7 @@ export const upgradePlanTier = async (req: AuthRequest, res: Response): Promise<
       },
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to upgrade plan' });
+    res.status(500).json({ success: false, message: 'Failed to upgrade plan' });
   }
 };
 
@@ -552,6 +552,6 @@ export const getStudentPlanTiers = async (req: AuthRequest, res: Response): Prom
 
     res.json({ success: true, data: { planTiers, coachingPlanTiers, studentName, adminId } });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Failed to fetch student plan tiers' });
+    res.status(500).json({ success: false, message: 'Failed to fetch student plan tiers' });
   }
 };

@@ -90,10 +90,9 @@ export const uploadExcelFile = async (req: Request, res: Response): Promise<void
     });
   } catch (error: any) {
     console.error('Excel upload error:', error);
-    const errorMessage = error.message || 'Failed to process Excel file';
     res.status(500).json({
       success: false,
-      message: errorMessage,
+      message: 'Failed to process Excel file',
     });
   }
 };

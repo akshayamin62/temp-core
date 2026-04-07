@@ -86,7 +86,7 @@ export const createActivity = async (req: Request, res: Response): Promise<void>
     console.error('Error creating activity:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to create activity',
+      message: 'Failed to create activity',
     });
   }
 };
@@ -111,7 +111,7 @@ export const getActivities = async (req: Request, res: Response): Promise<void> 
     console.error('Error fetching activities:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to fetch activities',
+      message: 'Failed to fetch activities',
     });
   }
 };
@@ -139,7 +139,7 @@ export const getActivityById = async (req: Request, res: Response): Promise<void
     console.error('Error fetching activity:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to fetch activity',
+      message: 'Failed to fetch activity',
     });
   }
 };
@@ -177,7 +177,7 @@ export const deleteActivity = async (req: Request, res: Response): Promise<void>
     console.error('Error deleting activity:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to delete activity',
+      message: 'Failed to delete activity',
     });
   }
 };

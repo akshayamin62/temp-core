@@ -15,7 +15,7 @@ export const getIvyExpertPerformanceHandler = async (_req: Request, res: Respons
         console.error('Error fetching Ivy Expert performance:', error);
         res.status(500).json({
             success: false,
-            message: error.message || 'Failed to fetch Ivy Expert performance',
+            message: 'Failed to fetch Ivy Expert performance',
         });
     }
 };

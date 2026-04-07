@@ -91,7 +91,7 @@ export const setStudentPlanDiscount = async (req: AuthRequest, res: Response): P
     });
   } catch (error: any) {
     console.error('Error setting student plan discount:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -133,7 +133,7 @@ export const getStudentPlanDiscounts = async (req: AuthRequest, res: Response): 
     });
   } catch (error: any) {
     console.error('Error fetching student plan discounts:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -161,6 +161,6 @@ export const removeStudentPlanDiscount = async (req: AuthRequest, res: Response)
     });
   } catch (error: any) {
     console.error('Error removing student plan discount:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };

@@ -120,7 +120,6 @@ export const createReferrer = async (req: AuthRequest, res: Response): Promise<R
     return res.status(500).json({
       success: false,
       message: "Failed to create referrer",
-      error: error.message,
     });
   }
 };
@@ -172,7 +171,6 @@ export const getReferrers = async (req: AuthRequest, res: Response): Promise<Res
     return res.status(500).json({
       success: false,
       message: "Failed to fetch referrers",
-      error: error.message,
     });
   }
 };
@@ -222,7 +220,6 @@ export const toggleReferrerStatus = async (req: AuthRequest, res: Response): Pro
     return res.status(500).json({
       success: false,
       message: "Failed to toggle referrer status",
-      error: error.message,
     });
   }
 };
@@ -280,7 +277,6 @@ export const getAllReferrersForSuperAdmin = async (req: AuthRequest, res: Respon
     return res.status(500).json({
       success: false,
       message: "Failed to fetch referrers",
-      error: error.message,
     });
   }
 };
@@ -387,7 +383,6 @@ export const createReferrerForSuperAdmin = async (req: AuthRequest, res: Respons
     return res.status(500).json({
       success: false,
       message: "Failed to create referrer",
-      error: error.message,
     });
   }
 };
@@ -428,7 +423,6 @@ export const toggleReferrerStatusForSuperAdmin = async (req: AuthRequest, res: R
     return res.status(500).json({
       success: false,
       message: "Failed to toggle referrer status",
-      error: error.message,
     });
   }
 };

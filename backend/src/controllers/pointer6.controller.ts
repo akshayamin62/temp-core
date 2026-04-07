@@ -74,7 +74,7 @@ export const uploadCourseListHandler = async (req: Request, res: Response): Prom
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to upload course list',
+      message: 'Failed to upload course list',
     });
   }
 };
@@ -117,7 +117,7 @@ export const uploadCertificatesHandler = async (req: Request, res: Response): Pr
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to upload certificates',
+      message: 'Failed to upload certificates',
     });
   }
 };
@@ -170,7 +170,7 @@ export const evaluatePointer6Handler = async (req: Request, res: Response): Prom
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to evaluate Pointer 6',
+      message: 'Failed to evaluate Pointer 6',
     });
   }
 };
@@ -201,7 +201,7 @@ export const getPointer6StatusHandler = async (req: Request, res: Response): Pro
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to get Pointer 6 status',
+      message: 'Failed to get Pointer 6 status',
     });
   }
 };
@@ -239,7 +239,7 @@ export const replaceCertificateHandler = async (req: Request, res: Response): Pr
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to replace certificate',
+      message: 'Failed to replace certificate',
     });
   }
 };
@@ -264,7 +264,7 @@ export const deleteCertificateHandler = async (req: Request, res: Response): Pro
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to delete certificate',
+      message: 'Failed to delete certificate',
     });
   }
 };
@@ -312,7 +312,7 @@ export const evaluateCertificateHandler = async (req: Request, res: Response): P
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to evaluate certificate',
+      message: 'Failed to evaluate certificate',
     });
   }
 };
@@ -353,7 +353,7 @@ export const getPointer6ScoreHandler = async (req: Request, res: Response): Prom
     console.error('Get pointer6 score error:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to get pointer6 score',
+      message: 'Failed to get pointer6 score',
     });
   }
 };
@@ -396,7 +396,7 @@ export const selectCourseHandler = async (req: Request, res: Response): Promise<
     console.error('Select course error:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to select course',
+      message: 'Failed to select course',
     });
   }
 };
@@ -424,7 +424,7 @@ export const unselectCourseHandler = async (req: Request, res: Response): Promis
     console.error('Unselect course error:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to unselect course',
+      message: 'Failed to unselect course',
     });
   }
 };
@@ -466,7 +466,7 @@ export const uploadCourseCertificateHandler = async (req: Request, res: Response
     console.error('Upload course certificate error:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to upload certificate',
+      message: 'Failed to upload certificate',
     });
   }
 };
@@ -507,7 +507,7 @@ export const scoreCourseCertificateHandler = async (req: Request, res: Response)
     console.error('Score course certificate error:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to score certificate',
+      message: 'Failed to score certificate',
     });
   }
 };
@@ -532,7 +532,7 @@ export const getPointer6CourseScoreHandler = async (req: Request, res: Response)
     console.error('Get pointer6 course score error:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to get pointer6 course score',
+      message: 'Failed to get pointer6 course score',
     });
   }
 };
