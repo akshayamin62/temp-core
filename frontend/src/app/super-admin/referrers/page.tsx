@@ -7,7 +7,7 @@ import { User, USER_ROLE } from '@/types';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
-import { BACKEND_URL } from '@/lib/ivyApi';
+import AuthImage from '@/components/AuthImage';
 
 interface AdminData {
   _id: string;
@@ -467,15 +467,18 @@ export default function SuperAdminReferrersPage() {
                     <tr key={referrer._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          {referrer.userId.profilePicture ? (
-                            <img src={`${BACKEND_URL}/uploads/${referrer.userId.profilePicture}`} alt="" className="w-10 h-10 rounded-full object-cover mr-3" />
-                          ) : (
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                              <span className="text-blue-600 font-semibold">
-                                {getInitials(referrer.userId)}
-                              </span>
-                            </div>
-                          )}
+                          <AuthImage
+                            path={referrer.userId.profilePicture}
+                            alt=""
+                            className="w-10 h-10 rounded-full object-cover mr-3"
+                            fallback={
+                              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                <span className="text-blue-600 font-semibold">
+                                  {getInitials(referrer.userId)}
+                                </span>
+                              </div>
+                            }
+                          />
                           <div>
                             <div className="text-sm font-medium text-gray-900">
                               {getFullName(referrer.userId)}

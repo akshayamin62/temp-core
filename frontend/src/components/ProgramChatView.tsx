@@ -3,8 +3,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { chatAPI } from '@/lib/api';
 import toast from 'react-hot-toast';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
+import { fetchBlobUrl } from '@/lib/useBlobUrl';
+import AuthImage from '@/components/AuthImage';
 
 interface Program {
   _id: string;
@@ -82,6 +82,16 @@ export default function ProgramChatView({ program, onClose, userRole, isReadOnly
   // Document preview modal state
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<{ fileName: string; filePath: string; mimeType: string } | null>(null);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!previewDoc) {
+      setPreviewBlobUrl(null);
+      return;
+    }
+    const path = previewDoc.filePath.startsWith('/') ? previewDoc.filePath : `/${previewDoc.filePath}`;
+    fetchBlobUrl(path).then(url => setPreviewBlobUrl(url)).catch(() => setPreviewBlobUrl(null));
+  }, [previewDoc]);
 
   useEffect(() => {
     const user = localStorage.getItem('user');
@@ -256,6 +266,16 @@ export default function ProgramChatView({ program, onClose, userRole, isReadOnly
     setPreviewModalOpen(true);
   };
 
+  const handleDocDownload = async (filePath: string) => {
+    try {
+      const path = filePath.startsWith('/') ? filePath : `/${filePath}`;
+      const blobUrl = await fetchBlobUrl(path);
+      window.open(blobUrl, '_blank');
+    } catch {
+      toast.error('Failed to load document');
+    }
+  };
+
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'STUDENT': return 'bg-blue-100 text-blue-800';
@@ -353,30 +373,34 @@ export default function ProgramChatView({ program, onClose, userRole, isReadOnly
             <div className="flex-1 overflow-auto p-6 bg-gray-50">
               {previewDoc.mimeType.includes('image') ? (
                 <div className="flex items-center justify-center">
-                  <img
-                    src={`${API_BASE}/${previewDoc.filePath}`}
+                  <AuthImage
+                    path={previewDoc.filePath}
                     alt={previewDoc.fileName}
                     className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
                   />
                 </div>
               ) : previewDoc.mimeType.includes('pdf') ? (
-                <iframe
-                  src={`${API_BASE}/${previewDoc.filePath}`}
-                  className="w-full h-[70vh] rounded-lg shadow-lg"
-                  title={previewDoc.fileName}
-                />
+                previewBlobUrl ? (
+                  <iframe
+                    src={previewBlobUrl}
+                    className="w-full h-[70vh] rounded-lg shadow-lg"
+                    title={previewDoc.fileName}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-[70vh]">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+                  </div>
+                )
               ) : (
                 <div className="flex flex-col items-center justify-center h-64 space-y-4">
                   <div className="shrink-0">{getFileIcon(previewDoc.mimeType)}</div>
                   <p className="text-gray-600">Preview not available for this file type</p>
-                  <a
-                    href={`${API_BASE}/${previewDoc.filePath}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={() => handleDocDownload(previewDoc.filePath)}
                     className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Download File
-                  </a>
+                  </button>
                 </div>
               )}
             </div>
@@ -487,14 +511,12 @@ export default function ProgramChatView({ program, onClose, userRole, isReadOnly
                             </div>
                           </div>
                           <div className="flex border-t border-gray-100">
-                            <a
-                              href={`${API_BASE}/${msg.documentMeta.filePath}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              onClick={() => handleDocDownload(msg.documentMeta!.filePath)}
                               className="flex-1 text-center text-xs font-medium text-blue-600 hover:bg-blue-50 py-2 transition-colors"
                             >
                               Download
-                            </a>
+                            </button>
                             {canSaveToExtra && chatType === 'open' && (
                               <>
                                 <div className="w-px bg-gray-100" />

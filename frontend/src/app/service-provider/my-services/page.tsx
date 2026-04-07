@@ -6,8 +6,8 @@ import { authAPI, spServiceAPI } from '@/lib/api';
 import { User, USER_ROLE, SPServiceListing } from '@/types';
 import ServiceProviderLayout from '@/components/ServiceProviderLayout';
 import toast, { Toaster } from 'react-hot-toast';
-
-const BACKEND_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
+import AuthImage from '@/components/AuthImage';
+import { fetchBlobUrl } from '@/lib/useBlobUrl';
 
 export default function SPMyServicesPage() {
   const router = useRouter();
@@ -116,7 +116,11 @@ export default function SPMyServicesPage() {
       priceType: service.priceType,
     });
     setThumbnailFile(null);
-    setThumbnailPreview(service.thumbnail ? `${BACKEND_URL}/${service.thumbnail.replace(/^\//, '')}` : null);
+    if (service.thumbnail) {
+      fetchBlobUrl(`/uploads/${service.thumbnail.replace(/^\//, '').replace(/^uploads\//, '')}`).then(url => setThumbnailPreview(url)).catch(() => setThumbnailPreview(null));
+    } else {
+      setThumbnailPreview(null);
+    }
     setShowForm(true);
   };
 
@@ -331,11 +335,10 @@ export default function SPMyServicesPage() {
                 <div key={service._id} className={`bg-white rounded-xl shadow-sm border-2 overflow-hidden transition-all ${service.isActive ? 'border-gray-200' : 'border-red-200 bg-red-50/30'}`}>
                   {service.thumbnail && (
                     <div className="h-40 w-full overflow-hidden bg-gray-100">
-                      <img
-                        src={`${BACKEND_URL}/${service.thumbnail.replace(/^\//, '')}`}
+                      <AuthImage
+                        path={service.thumbnail}
                         alt={service.title}
                         className="w-full h-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }}
                       />
                     </div>
                   )}

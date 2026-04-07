@@ -6,8 +6,7 @@ import { authAPI, spServiceAPI } from '@/lib/api';
 import { User, USER_ROLE, SPEnquiryItem } from '@/types';
 import AdminLayout from '@/components/AdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
-
-const BACKEND_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
+import AuthImage from '@/components/AuthImage';
 
 const statusColors: Record<string, { bg: string; text: string }> = {
   New: { bg: 'bg-blue-100', text: 'text-blue-700' },
@@ -175,29 +174,26 @@ export default function StudentEnquiriesPage() {
                   <div key={enquiry._id} className="bg-white rounded-xl shadow-sm border-2 border-gray-200 overflow-hidden">
                     {svc?.thumbnail && (
                       <div className="h-40 w-full overflow-hidden bg-gray-100">
-                        <img
-                          src={`${BACKEND_URL}/${svc.thumbnail.replace(/^\//, '')}`}
+                        <AuthImage
+                          path={svc.thumbnail}
                           alt={svc.title || ''}
                           className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }}
                         />
                       </div>
                     )}
                     <div className="p-6">
                       {sp && (
                         <div className="flex items-center gap-3 mb-4">
-                          {sp.companyLogo ? (
-                            <img
-                              src={`${BACKEND_URL}/${sp.companyLogo.replace(/^\//, '')}`}
-                              alt={sp.companyName || ''}
-                              className="w-10 h-10 rounded-lg object-cover border border-gray-200"
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                            />
-                          ) : (
-                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                              <span className="text-blue-600 font-bold text-sm">{sp.companyName?.charAt(0) || 'S'}</span>
-                            </div>
-                          )}
+                          <AuthImage
+                            path={sp.companyLogo}
+                            alt={sp.companyName || ''}
+                            className="w-10 h-10 rounded-lg object-cover border border-gray-200"
+                            fallback={
+                              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <span className="text-blue-600 font-bold text-sm">{sp.companyName?.charAt(0) || 'S'}</span>
+                              </div>
+                            }
+                          />
                           <div>
                             <p className="font-semibold text-gray-900 text-sm">{sp.companyName || 'Service Provider'}</p>
                             {(sp.city || sp.state) && (

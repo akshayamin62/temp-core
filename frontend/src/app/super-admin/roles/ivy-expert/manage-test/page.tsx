@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import ivyApi from "@/lib/ivyApi";
+import AuthImage from '@/components/AuthImage';
+import { fetchBlobUrl } from '@/lib/useBlobUrl';
 
 /* ────────────────────────── Types ─────────────────────────────────── */
 
@@ -52,11 +54,6 @@ const EMPTY_FORM = {
   correctOption: "A",
   options: OPTION_LABELS.map((l) => ({ label: l, text: "" })),
 };
-
-/* ──────────────────────── BACKEND URL ────────────────────────────── */
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL
-  ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, "")
-  : "http://localhost:5000";
 
 /* ──────────────────────── Component ──────────────────────────────── */
 
@@ -396,7 +393,7 @@ export default function ManageTestPage() {
                   {/* Existing image in edit mode */}
                   {existingImageUrl && !imagePreview && (
                     <div className="relative">
-                      <img src={`${BACKEND_URL}${existingImageUrl}`} alt="Current" className="h-24 rounded-lg border border-gray-200 object-contain" />
+                      <AuthImage path={existingImageUrl} alt="Current" className="h-24 rounded-lg border border-gray-200 object-contain" />
                       <span className="absolute -top-2 -left-2 text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded-full font-semibold">Current</span>
                     </div>
                   )}
@@ -644,8 +641,8 @@ export default function ManageTestPage() {
                       {q.questionImageUrl && (
                         <div>
                           <p className="text-sm font-medium text-gray-500 mb-1">Image</p>
-                          <img
-                            src={`${BACKEND_URL}${q.questionImageUrl}`}
+                          <AuthImage
+                            path={q.questionImageUrl}
                             alt="Question"
                             className="max-h-48 rounded-lg border border-gray-200 object-contain"
                           />

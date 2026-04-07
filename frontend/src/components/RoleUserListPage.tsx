@@ -8,6 +8,7 @@ import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
 import { BACKEND_URL } from '@/lib/ivyApi';
+import AuthImage from '@/components/AuthImage';
 
 interface RoleUserListPageProps {
   role: string;
@@ -555,39 +556,34 @@ export default function RoleUserListPage({
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             {((isAdminRole || roleEnum === USER_ROLE.SERVICE_PROVIDER) && user.companyLogo) ? (
-                              <img
-                                src={`${BACKEND_URL}/${user.companyLogo.replace(/^\//, '')}`}
+                              <AuthImage
+                                path={user.companyLogo}
                                 alt={user.companyName || 'Company Logo'}
                                 className="w-10 h-10 rounded-full object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  const fallback = target.nextElementSibling as HTMLElement;
-                                  if (fallback) fallback.style.display = 'flex';
-                                }}
+                                fallback={
+                                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                    <span className="text-blue-600 font-semibold">
+                                      {user.companyName?.charAt(0).toUpperCase() || getInitials(user)}
+                                    </span>
+                                  </div>
+                                }
                               />
-                            ) : user.profilePicture ? (
-                              <img
-                                src={`${BACKEND_URL}/uploads/${user.profilePicture}`}
+                            ) : (
+                              <AuthImage
+                                path={user.profilePicture}
                                 alt=""
                                 className="w-10 h-10 rounded-full object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  const fallback = target.nextElementSibling as HTMLElement;
-                                  if (fallback) fallback.style.display = 'flex';
-                                }}
+                                fallback={
+                                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                    <span className="text-blue-600 font-semibold">
+                                      {(isAdminRole || roleEnum === USER_ROLE.SERVICE_PROVIDER) && user.companyName
+                                        ? user.companyName.charAt(0).toUpperCase()
+                                        : getInitials(user)}
+                                    </span>
+                                  </div>
+                                }
                               />
-                            ) : null}
-                            <div className={`w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center ${
-                              ((isAdminRole || roleEnum === USER_ROLE.SERVICE_PROVIDER) && user.companyLogo) || user.profilePicture ? 'hidden' : ''
-                            }`}>
-                              <span className="text-blue-600 font-semibold">
-                                {(isAdminRole || roleEnum === USER_ROLE.SERVICE_PROVIDER) && user.companyName
-                                  ? user.companyName.charAt(0).toUpperCase()
-                                  : getInitials(user)}
-                              </span>
-                            </div>
+                            )}
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">
                                 {isAdminRole && user.companyName 

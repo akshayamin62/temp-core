@@ -27,7 +27,7 @@ const router = Router();
 // All routes require authentication
 router.use(authenticate);
 
-// ADMIN, COUNSELOR, and SUPER_ADMIN can access TeamMeet features
+// BY DESIGN: All authenticated roles can create, cancel, reschedule, and complete team meetings
 router.use(authorize([USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN, USER_ROLE.STUDENT, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT, USER_ROLE.PARENT, USER_ROLE.REFERRER]));
 
 /**
@@ -76,6 +76,13 @@ router.get("/participants", getParticipants);
  * @access  Admin, Counselor, Super Admin, OPS
  */
 router.get("/student/:studentId", authorize([USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT, USER_ROLE.PARENT, USER_ROLE.REFERRER]), getTeamMeetsForStudent);
+
+/**
+ * @route   GET /api/team-meets/counselor/:counselorId
+ * @desc    Get all TeamMeets for a specific counselor
+ * @access  All authenticated roles (controlled by router-level authorize)
+ */
+router.get("/counselor/:counselorId", getTeamMeetsForCounselor);
 
 /**
  * @route   GET /api/team-meets/:teamMeetId/attachment
@@ -143,12 +150,5 @@ router.patch("/:teamMeetId/invite", inviteToTeamMeet);
  * @body    invitedUserId
  */
 router.patch("/:teamMeetId/remove-invite", removeInviteFromTeamMeet);
-
-/**
- * @route   GET /api/team-meets/counselor/:counselorId
- * @desc    Admin-only: Get all TeamMeets for a specific counselor (read-only)
- * @access  Admin only
- */
-router.get("/counselor/:counselorId", getTeamMeetsForCounselor);
 
 export default router;

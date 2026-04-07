@@ -22,6 +22,7 @@ import TeamMeetSidebar from '@/components/TeamMeetSidebar';
 import TeamMeetFormPanel from '@/components/TeamMeetFormPanel';
 import OpsScheduleFormPanel from '@/components/OpsScheduleFormPanel';
 import CounselorLayout from '@/components/CounselorLayout';
+import { fetchBlobUrl } from '@/lib/useBlobUrl';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -213,10 +214,15 @@ export default function CounselorStudentFormViewPage() {
     }
   };
 
-  const handleBrainographyView = () => {
+  const handleBrainographyView = async () => {
     if (!brainographyDoc) return;
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
-    window.open(`${baseUrl}/${brainographyDoc.filePath}`, '_blank');
+    try {
+      const path = brainographyDoc.filePath.startsWith('/') ? brainographyDoc.filePath : `/${brainographyDoc.filePath}`;
+      const blobUrl = await fetchBlobUrl(path);
+      window.open(blobUrl, '_blank');
+    } catch {
+      toast.error('Failed to load document');
+    }
   };
 
   const handleBrainographyDownload = async () => {

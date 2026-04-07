@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import ivyApi, { BACKEND_URL } from '@/lib/ivyApi';
+import ivyApi from '@/lib/ivyApi';
+import AuthImage from '@/components/AuthImage';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell,
@@ -417,8 +418,8 @@ export default function TestReviewPage() {
                   {/* Question image */}
                   {q.questionImageUrl && (
                     <div className="mb-4 bg-gray-100 rounded-xl p-3 flex items-center justify-center">
-                      <img
-                        src={`${BACKEND_URL}${q.questionImageUrl}`}
+                      <AuthImage
+                        path={q.questionImageUrl}
                         alt="Question"
                         className="max-h-48 object-contain rounded"
                       />

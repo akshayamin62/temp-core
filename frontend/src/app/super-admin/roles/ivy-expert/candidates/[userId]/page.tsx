@@ -7,7 +7,7 @@ import { User, USER_ROLE } from '@/types';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
-import { BACKEND_URL } from '@/lib/ivyApi';
+import AuthImage from '@/components/AuthImage';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell,
@@ -694,11 +694,11 @@ export default function CandidateDetailPage() {
                                   {/* Image */}
                                   {q.questionImageUrl && (
                                     <div className="mb-3">
-                                      <img
-                                        src={q.questionImageUrl.startsWith('http') ? q.questionImageUrl : `${BACKEND_URL}${q.questionImageUrl}`}
-                                        alt={`Q${q.questionNumber}`}
-                                        className="max-h-48 rounded-lg border"
-                                      />
+                                      {q.questionImageUrl.startsWith('http') ? (
+                                        <img src={q.questionImageUrl} alt={`Q${q.questionNumber}`} className="max-h-48 rounded-lg border" />
+                                      ) : (
+                                        <AuthImage path={q.questionImageUrl} alt={`Q${q.questionNumber}`} className="max-h-48 rounded-lg border" />
+                                      )}
                                     </div>
                                   )}
 

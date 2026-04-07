@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { User } from '@/types';
 import { useState } from 'react';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
-import { BACKEND_URL } from '@/lib/ivyApi';
+import AuthImage from '@/components/AuthImage';
 
 interface ReferrerLayoutProps {
   children: React.ReactNode;
@@ -118,13 +118,16 @@ export default function ReferrerLayout({ children, user }: ReferrerLayoutProps) 
         <div className="border-t border-gray-200 p-4">
           {sidebarOpen ? (
             <div className="mb-3 flex items-center gap-2">
-              {user?.profilePicture ? (
-                <img src={`${BACKEND_URL}/uploads/${user.profilePicture}`} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-              ) : (
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-blue-600 font-semibold text-sm">{getInitials(user)}</span>
-                </div>
-              )}
+              <AuthImage
+                path={user?.profilePicture}
+                alt=""
+                className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                fallback={
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-blue-600 font-semibold text-sm">{getInitials(user)}</span>
+                  </div>
+                }
+              />
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{getFullName(user)}</p>
                 <p className="text-xs text-gray-500 truncate">{user.email}</p>
@@ -132,13 +135,16 @@ export default function ReferrerLayout({ children, user }: ReferrerLayoutProps) 
             </div>
           ) : (
             <div className="mb-3 flex justify-center">
-              {user?.profilePicture ? (
-                <img src={`${BACKEND_URL}/uploads/${user.profilePicture}`} alt="" className="w-8 h-8 rounded-full object-cover" />
-              ) : (
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold text-sm">{getInitials(user)}</span>
-                </div>
-              )}
+              <AuthImage
+                path={user?.profilePicture}
+                alt=""
+                className="w-8 h-8 rounded-full object-cover"
+                fallback={
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600 font-semibold text-sm">{getInitials(user)}</span>
+                  </div>
+                }
+              />
             </div>
           )}
           <button

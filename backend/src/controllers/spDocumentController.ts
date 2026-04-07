@@ -6,7 +6,7 @@ import ServiceProvider from "../models/ServiceProvider";
 import User from "../models/User";
 import fs from "fs";
 import path from "path";
-import { getUploadBaseDir, ensureDir } from "../utils/uploadDir";
+import { getUploadBaseDir, ensureDir, validateFilePath } from "../utils/uploadDir";
 
 // Upload SP document
 export const uploadSPDocument = async (req: AuthRequest, res: Response) => {
@@ -317,7 +317,12 @@ export const viewSPDocument = async (req: AuthRequest, res: Response): Promise<v
     }
 
     const filePath = path.join(process.cwd(), document.filePath);
-    if (!fs.existsSync(filePath)) {
+    const safePath = validateFilePath(filePath);
+    if (!safePath) {
+      res.status(403).json({ success: false, message: "Access denied: invalid file path" });
+      return;
+    }
+    if (!fs.existsSync(safePath)) {
       res.status(404).json({
         success: false,
         message: "File not found on server",
@@ -331,7 +336,7 @@ export const viewSPDocument = async (req: AuthRequest, res: Response): Promise<v
       `inline; filename="${document.fileName}"`
     );
 
-    const fileStream = fs.createReadStream(filePath);
+    const fileStream = fs.createReadStream(safePath);
     fileStream.on("error", (error): void => {
       console.warn("File stream error:", error);
       if (!res.headersSent) {
@@ -380,14 +385,18 @@ export const downloadSPDocument = async (req: AuthRequest, res: Response) => {
     }
 
     const filePath = path.join(process.cwd(), document.filePath);
-    if (!fs.existsSync(filePath)) {
+    const safePath = validateFilePath(filePath);
+    if (!safePath) {
+      return res.status(403).json({ success: false, message: "Access denied: invalid file path" });
+    }
+    if (!fs.existsSync(safePath)) {
       return res.status(404).json({
         success: false,
         message: "File not found on server",
       });
     }
 
-    return res.download(filePath, document.fileName);
+    return res.download(safePath, document.fileName);
   } catch (error: any) {
     console.warn("Download SP document error:", error);
     return res.status(500).json({

@@ -6,8 +6,7 @@ import { authAPI, spServiceAPI } from '@/lib/api';
 import { User, USER_ROLE, SPServiceListing } from '@/types';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
-
-const BACKEND_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
+import AuthImage from '@/components/AuthImage';
 
 export default function SPServicesPage() {
   const router = useRouter();
@@ -154,11 +153,10 @@ export default function SPServicesPage() {
                 <div key={svc._id} className="bg-white rounded-xl shadow-sm border-2 border-gray-200 overflow-hidden">
                   {svc.thumbnail && (
                     <div className="h-40 w-full overflow-hidden bg-gray-100">
-                      <img
-                        src={`${BACKEND_URL}/${svc.thumbnail.replace(/^\//, '')}`}
+                      <AuthImage
+                        path={svc.thumbnail}
                         alt={svc.title || ''}
                         className="w-full h-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }}
                       />
                     </div>
                   )}

@@ -18,7 +18,7 @@ import { USER_ROLE } from "../types/roles";
 import { createZohoMeeting, deleteZohoMeeting } from "../utils/zohoMeeting";
 import { sendMeetingPendingEmail, sendMeetingScheduledEmail, sendMeetingConfirmedEmail } from "../utils/email";
 import { sendMeetingRequestSms } from "../utils/sms";
-import { getUploadBaseDir, ensureDir } from "../utils/uploadDir";
+import { getUploadBaseDir, ensureDir, validateFilePath } from "../utils/uploadDir";
 
 /**
  * Helper: Get start and end of a day
@@ -1583,12 +1583,17 @@ export const downloadTeamMeetAttachment = async (
     }
 
     const filePath = path.join(process.cwd(), teamMeet.attachmentUrl);
-    if (!fs.existsSync(filePath)) {
+    const safePath = validateFilePath(filePath);
+    if (!safePath) {
+      res.status(403).json({ success: false, message: "Access denied: invalid file path" });
+      return;
+    }
+    if (!fs.existsSync(safePath)) {
       res.status(404).json({ success: false, message: "File not found on server" });
       return;
     }
 
-    res.download(filePath, teamMeet.attachmentName || "attachment");
+    res.download(safePath, teamMeet.attachmentName || "attachment");
   } catch (error) {
     console.error("Error downloading team meet attachment:", error);
     res.status(500).json({ success: false, message: "Failed to download attachment" });

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import ivyApi from '@/lib/ivyApi';
-import { BACKEND_URL } from '@/lib/ivyApi';
+import AuthImage from '@/components/AuthImage';
 
 /* ── Section metadata (must match parent page) ─────────────────────── */
 const SECTION_META: Record<string, { label: string; color: string; icon: string }> = {
@@ -350,8 +350,8 @@ export default function SectionTestPage() {
               {/* Question image */}
               {currentQ.questionImageUrl && (
                 <div className="mb-6 bg-gray-900 rounded-xl p-4 flex items-center justify-center">
-                  <img
-                    src={`${BACKEND_URL}${currentQ.questionImageUrl}`}
+                  <AuthImage
+                    path={currentQ.questionImageUrl}
                     alt="Question"
                     className="max-h-64 object-contain rounded"
                   />

@@ -14,8 +14,15 @@ import {
 } from "../middleware/validate";
 import { authenticate } from "../middleware/auth";
 import { uploadProfilePicture } from "../middleware/upload";
+import { generateCaptchaChallenge } from "../utils/captcha";
 
 const router = Router();
+
+// Captcha endpoint — returns a math question + token
+router.get("/captcha", (_req, res) => {
+  const { token, question } = generateCaptchaChallenge();
+  res.json({ success: true, data: { token, question } });
+});
 
 // Public routes
 router.post("/signup", validateSignup, signup);

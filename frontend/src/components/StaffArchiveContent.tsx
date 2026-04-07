@@ -6,7 +6,7 @@ import { authAPI, archiveAPI, adminAPI } from '@/lib/api';
 import { User, USER_ROLE } from '@/types';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
-import { BACKEND_URL } from '@/lib/ivyApi';
+import AuthImage from '@/components/AuthImage';
 
 interface StaffArchiveContentProps {
   allowedRoles: string[];
@@ -270,13 +270,16 @@ export default function StaffArchiveContent({ allowedRoles, Layout, studentDetai
                       <tr key={`${item.type}-${item._id}`} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            {item.profilePicture ? (
-                              <img src={`${BACKEND_URL}/uploads/${item.profilePicture}`} alt="" className="w-10 h-10 rounded-full object-cover mr-3" />
-                            ) : (
-                              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
-                                <span className="text-red-600 font-semibold text-sm">{getInitials(item.userId)}</span>
-                              </div>
-                            )}
+                            <AuthImage
+                              path={item.profilePicture}
+                              alt=""
+                              className="w-10 h-10 rounded-full object-cover mr-3"
+                              fallback={
+                                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                                  <span className="text-red-600 font-semibold text-sm">{getInitials(item.userId)}</span>
+                                </div>
+                              }
+                            />
                             <div>
                               <div className="font-medium text-gray-900">{item.name || 'N/A'}</div>
                               <div className="text-sm text-gray-500">

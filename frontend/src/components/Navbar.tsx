@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getFullName } from '@/utils/nameHelpers';
-import { BACKEND_URL } from '@/lib/ivyApi';
+import AuthImage from '@/components/AuthImage';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -164,11 +164,12 @@ export default function Navbar() {
                     aria-label="User menu"
                     aria-expanded={profileDropdownOpen}
                   >
-                    {userProfilePic ? (
-                      <img src={`${BACKEND_URL}/uploads/${userProfilePic}`} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      userName ? userName.charAt(0).toUpperCase() : 'U'
-                    )}
+                    <AuthImage
+                      path={userProfilePic}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      fallback={userName ? userName.charAt(0).toUpperCase() : 'U'}
+                    />
                   </button>
                   
                   {/* Dropdown Menu */}

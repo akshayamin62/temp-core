@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authAPI } from '@/lib/api';
-import { BACKEND_URL } from '@/lib/ivyApi';
+import AuthImage from '@/components/AuthImage';
 import axios from 'axios';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
@@ -488,7 +488,7 @@ function CandidateProfileContent() {
                                 <p className="text-sm font-medium text-gray-900 mb-3">{q.questionText}</p>
                                 {q.questionImageUrl && (
                                   <div className="mb-3">
-                                    <img src={q.questionImageUrl.startsWith('http') ? q.questionImageUrl : `${BACKEND_URL}${q.questionImageUrl}`} alt={`Q${q.questionNumber}`} className="max-h-48 rounded-lg border" />
+                                    {q.questionImageUrl.startsWith('http') ? <img src={q.questionImageUrl} alt={`Q${q.questionNumber}`} className="max-h-48 rounded-lg border" /> : <AuthImage path={q.questionImageUrl} alt={`Q${q.questionNumber}`} className="max-h-48 rounded-lg border" />}
                                   </div>
                                 )}
                                 <div className="space-y-2 mb-3">

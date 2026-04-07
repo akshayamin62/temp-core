@@ -45,7 +45,10 @@ api.interceptors.response.use(
 
 // API functions
 export const authAPI = {
-  signup: (data: { firstName: string; middleName?: string; lastName: string; email: string; mobileNumber?: string; role: string; captcha: string; captchaInput: string }) =>
+  getCaptcha: () =>
+    api.get('/auth/captcha'),
+  
+  signup: (data: { firstName: string; middleName?: string; lastName: string; email: string; mobileNumber?: string; role: string; captchaToken: string; captchaAnswer: string }) =>
     api.post('/auth/signup', data),
   
   verifySignupOTP: (data: { 
@@ -68,7 +71,7 @@ export const authAPI = {
   }) =>
     api.post('/auth/verify-signup-otp', data),
   
-  login: (data: { email: string; captcha: string; captchaInput: string }) =>
+  login: (data: { email: string; captchaToken: string; captchaAnswer: string }) =>
     api.post('/auth/login', data),
   
   verifyOTP: (data: { email: string; otp: string }) =>

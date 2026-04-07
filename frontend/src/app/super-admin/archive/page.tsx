@@ -8,7 +8,7 @@ import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
-import { BACKEND_URL } from '@/lib/ivyApi';
+import AuthImage from '@/components/AuthImage';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -296,13 +296,16 @@ export default function SuperAdminArchivePage() {
                       <tr key={u._id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            {u.profilePicture ? (
-                              <img src={`${BACKEND_URL}/uploads/${u.profilePicture}`} alt="" className="w-10 h-10 rounded-full object-cover mr-3" />
-                            ) : (
-                              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
-                                <span className="text-red-600 font-semibold text-sm">{getInitials(u)}</span>
-                              </div>
-                            )}
+                            <AuthImage
+                              path={u.profilePicture}
+                              alt=""
+                              className="w-10 h-10 rounded-full object-cover mr-3"
+                              fallback={
+                                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                                  <span className="text-red-600 font-semibold text-sm">{getInitials(u)}</span>
+                                </div>
+                              }
+                            />
                             <div>
                               <div className="font-medium text-gray-900">{getFullName(u) || 'N/A'}</div>
                               <div className="text-sm text-gray-500">

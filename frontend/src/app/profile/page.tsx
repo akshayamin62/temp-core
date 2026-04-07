@@ -8,7 +8,7 @@ import { SectionConfig } from '@/config/formConfig';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
 import FormSectionRenderer from '@/components/FormSectionRenderer';
-import { BACKEND_URL } from '@/lib/ivyApi';
+import AuthImage from '@/components/AuthImage';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -124,7 +124,7 @@ export default function ProfilePage() {
     }
   };
 
-  const profilePicUrl = user?.profilePicture ? `${BACKEND_URL}/uploads/${user.profilePicture}` : null;
+
 
   const handleFieldChange = (
     sectionId: string,
@@ -287,8 +287,8 @@ export default function ProfilePage() {
             <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-t-2xl p-6">
               <div className="flex items-center">
                 <div className="relative">
-                  {profilePicUrl ? (
-                    <img src={profilePicUrl} alt="Profile" className="w-16 h-16 rounded-2xl object-cover shadow-xl" />
+                  {user?.profilePicture ? (
+                    <AuthImage path={user.profilePicture} alt="Profile" className="w-16 h-16 rounded-2xl object-cover shadow-xl" />
                   ) : (
                     <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-2xl font-bold shadow-xl text-white">
                       {getInitials(user)}
@@ -302,9 +302,9 @@ export default function ProfilePage() {
                   <p className="text-blue-100">{user?.email}</p>
                   <div className="flex gap-2 mt-2">
                     <button onClick={() => fileInputRef.current?.click()} disabled={uploadingPic} className="px-3 py-1 text-xs font-medium bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors">
-                      {profilePicUrl ? 'Change Photo' : 'Upload Photo'}
+                      {user?.profilePicture ? 'Change Photo' : 'Upload Photo'}
                     </button>
-                    {profilePicUrl && (
+                    {user?.profilePicture && (
                       <button onClick={handleRemoveProfilePic} disabled={uploadingPic} className="px-3 py-1 text-xs font-medium bg-red-500/30 hover:bg-red-500/50 text-white rounded-lg transition-colors">
                         Remove
                       </button>
@@ -404,8 +404,8 @@ export default function ProfilePage() {
             <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-t-2xl p-8">
               <div className="flex items-center">
                 <div className="relative">
-                  {profilePicUrl ? (
-                    <img src={profilePicUrl} alt="Profile" className="w-20 h-20 rounded-2xl object-cover shadow-xl" />
+                  {user?.profilePicture ? (
+                    <AuthImage path={user.profilePicture} alt="Profile" className="w-20 h-20 rounded-2xl object-cover shadow-xl" />
                   ) : (
                     <div className={`w-20 h-20 rounded-2xl bg-white flex items-center justify-center text-3xl font-bold shadow-xl ${user?.role ? `bg-gradient-to-br ${getRoleBadgeColor(user.role)}` : 'bg-gradient-to-br from-blue-500 to-cyan-500'} text-white`}>
                       {getInitials(user)}
@@ -419,9 +419,9 @@ export default function ProfilePage() {
                   <p className="text-blue-100 text-lg">{user?.email}</p>
                   <div className="flex gap-2 mt-2">
                     <button onClick={() => fileInputRef.current?.click()} disabled={uploadingPic} className="px-3 py-1.5 text-xs font-medium bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors">
-                      {profilePicUrl ? 'Change Photo' : 'Upload Photo'}
+                      {user?.profilePicture ? 'Change Photo' : 'Upload Photo'}
                     </button>
-                    {profilePicUrl && (
+                    {user?.profilePicture && (
                       <button onClick={handleRemoveProfilePic} disabled={uploadingPic} className="px-3 py-1.5 text-xs font-medium bg-red-500/30 hover:bg-red-500/50 text-white rounded-lg transition-colors">
                         Remove
                       </button>

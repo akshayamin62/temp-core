@@ -8,25 +8,6 @@ import { USER_ROLE } from '@/types';
 import toast, { Toaster } from 'react-hot-toast';
 import { Country, State, City, ICountry, IState, ICity } from 'country-state-city';
 
-// Generate random captcha
-const generateCaptcha = (length: number = 6): string => {
-  const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ2345689';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
-};
-
-// Simple hash function for captcha
-const hashCaptcha = async (captcha: string): Promise<string> => {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(captcha.toUpperCase());
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-};
-
 export default function SignupPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -55,8 +36,9 @@ export default function SignupPage() {
   const [selectedState, setSelectedState] = useState<IState | null>(null);
   const [selectedCity, setSelectedCity] = useState<ICity | null>(null);
   const [otp, setOtp] = useState('');
-  const [captcha, setCaptcha] = useState('');
-  const [captchaInput, setCaptchaInput] = useState('');
+  const [captchaQuestion, setCaptchaQuestion] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [step, setStep] = useState<'signup' | 'verify-otp'>('signup');
   const [loading, setLoading] = useState(false);
   const [userEmail, setUserEmail] = useState('');
@@ -78,25 +60,26 @@ export default function SignupPage() {
     coachingTests: string[];
   } | null>(null);
 
-  // Generate and store hashed captcha in localStorage on mount
+  // Fetch captcha from server
+  const fetchCaptcha = async () => {
+    try {
+      const res = await authAPI.getCaptcha();
+      setCaptchaToken(res.data.data.token);
+      setCaptchaQuestion(res.data.data.question);
+      setCaptchaAnswer('');
+    } catch {
+      toast.error('Failed to load captcha');
+    }
+  };
+
   useEffect(() => {
     if (step === 'signup') {
-      const initCaptcha = async () => {
-        const newCaptcha = generateCaptcha();
-        setCaptcha(newCaptcha);
-        const hashed = await hashCaptcha(newCaptcha);
-        localStorage.setItem('signup_captcha', hashed);
-      };
-      initCaptcha();
+      fetchCaptcha();
     }
   }, [step]);
 
-  const handleRegenerateCaptcha = async () => {
-    const newCaptcha = generateCaptcha();
-    setCaptcha(newCaptcha);
-    const hashed = await hashCaptcha(newCaptcha);
-    localStorage.setItem('signup_captcha', hashed);
-    setCaptchaInput('');
+  const handleRegenerateCaptcha = () => {
+    fetchCaptcha();
     toast.success('Captcha regenerated!');
   };
 
@@ -108,25 +91,23 @@ export default function SignupPage() {
       return;
     }
 
-    const storedCaptchaHash = localStorage.getItem('signup_captcha');
-    if (!storedCaptchaHash || !captcha) {
+    if (!captchaToken || !captchaQuestion) {
       toast.error('Please wait for captcha to load');
       return;
     }
 
-    if (!captchaInput) {
-      toast.error('Please enter the captcha');
+    if (!captchaAnswer) {
+      toast.error('Please enter the captcha answer');
       return;
     }
 
     setLoading(true);
 
     try {
-      const captchaInputHash = await hashCaptcha(captchaInput);
       const response = await authAPI.signup({ 
         ...formData, 
-        captcha: storedCaptchaHash,
-        captchaInput: captchaInputHash
+        captchaToken,
+        captchaAnswer
       });
       const message = response.data.message || 'OTP sent to your email!';
       toast.success(message, { duration: 4000 });
@@ -153,13 +134,13 @@ export default function SignupPage() {
         });
       }
       
-      localStorage.removeItem('signup_captcha'); // Clear captcha after use
+      localStorage.removeItem('signup_captcha');
       setStep('verify-otp');
     } catch (error: any) {
       const message = error.response?.data?.message || 'Signup failed. Please try again.';
       toast.error(message);
-      // Regenerate captcha on error
-      handleRegenerateCaptcha();
+      // Regenerate captcha on error (old token is consumed)
+      fetchCaptcha();
     } finally {
       setLoading(false);
     }
@@ -691,78 +672,25 @@ export default function SignupPage() {
             {/* Captcha Section */}
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-2">
-                Verification Code
+                Solve to verify
               </label>
               <div className="space-y-3">
-                {/* Display Captcha */}
-                {captcha ? (
-                  <div className="bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 border-2 border-gray-500 rounded-xl p-6 relative overflow-hidden">
-                    {/* Multiple background patterns for noise */}
-                    <div className="absolute inset-0 opacity-20" style={{
-                      backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0,0,0,.08) 8px, rgba(0,0,0,.08) 16px), repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(0,0,0,.05) 8px, rgba(0,0,0,.05) 16px)',
-                    }}></div>
-                    {/* Random dots for additional noise */}
-                    <div className="absolute inset-0">
-                      {[...Array(30)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="absolute rounded-full bg-gray-600 opacity-20"
-                          style={{
-                            width: `${Math.random() * 3 + 1}px`,
-                            height: `${Math.random() * 3 + 1}px`,
-                            left: `${Math.random() * 100}%`,
-                            top: `${Math.random() * 100}%`,
-                          }}
-                        />
-                      ))}
-                    </div>
-                    {/* Random lines for distraction */}
-                    <div className="absolute inset-0">
-                      {[...Array(5)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="absolute bg-gray-500 opacity-15"
-                          style={{
-                            width: '100%',
-                            height: '1px',
-                            top: `${Math.random() * 100}%`,
-                            transform: `rotate(${Math.random() * 20 - 10}deg)`,
-                          }}
-                        />
-                      ))}
-                    </div>
+                {/* Display Math Question */}
+                {captchaQuestion ? (
+                  <div className="bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 border-2 border-gray-400 rounded-xl p-4 relative overflow-hidden">
                     <div className="flex items-center justify-center relative">
                       <span 
-                        className="text-3xl font-bold text-gray-800 select-none"
-                        style={{ 
-                          fontFamily: 'monospace',
-                          letterSpacing: '0.6em',
-                          textShadow: '3px 3px 5px rgba(0,0,0,0.2), -2px -2px 3px rgba(255,255,255,0.7), 1px -1px 2px rgba(0,0,0,0.1)',
-                          transform: 'skewX(-8deg)',
-                          filter: 'blur(0.3px)',
-                        }}
+                        className="text-2xl font-bold text-gray-800 select-none tracking-wide"
+                        style={{ fontFamily: 'monospace' }}
                       >
-                        {captcha.split('').map((char, index) => (
-                          <span 
-                            key={index}
-                            style={{
-                              display: 'inline-block',
-                              transform: `rotate(${(index % 2 === 0 ? 1 : -1) * (Math.random() * 15 + 8)}deg) translateY(${(index % 2 === 0 ? 1 : -1) * 3}px) scaleX(${0.9 + Math.random() * 0.3})`,
-                              fontSize: `${0.85 + Math.random() * 0.3}em`,
-                              color: `rgb(${50 + Math.random() * 100}, ${50 + Math.random() * 100}, ${50 + Math.random() * 100})`,
-                              textShadow: `${Math.random() * 2}px ${Math.random() * 2}px 3px rgba(0,0,0,0.3)`,
-                            }}
-                          >
-                            {char}
-                          </span>
-                        ))}
+                        {captchaQuestion}
                       </span>
                     </div>
                   </div>
                 ) : null}
 
-                {/* Captcha Input */}
-                {captcha && (
+                {/* Captcha Answer Input */}
+                {captchaQuestion && (
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                       <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -770,19 +698,18 @@ export default function SignupPage() {
                       </svg>
                     </div>
                     <input
-                      type="text"
+                      type="number"
                       required
-                      value={captchaInput}
-                      onChange={(e) => setCaptchaInput(e.target.value.toUpperCase())}
-                      maxLength={6}
-                      className="block w-full pl-12 pr-4 py-3.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 uppercase tracking-widest text-center font-semibold bg-gray-50 hover:bg-white"
-                      placeholder="Enter captcha"
+                      value={captchaAnswer}
+                      onChange={(e) => setCaptchaAnswer(e.target.value)}
+                      className="block w-full pl-12 pr-4 py-3.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400 text-center font-semibold bg-gray-50 hover:bg-white"
+                      placeholder="Your answer"
                     />
                   </div>
                 )}
 
                 {/* Regenerate Button */}
-                  {captcha && (
+                  {captchaQuestion && (
                     <button
                       type="button"
                       onClick={handleRegenerateCaptcha}
@@ -791,7 +718,7 @@ export default function SignupPage() {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
-                      Regenerate Captcha
+                      New Question
                     </button>
                   )}
               </div>
@@ -884,9 +811,8 @@ export default function SignupPage() {
                 onClick={() => {
                   setStep('signup');
                   setOtp('');
-                  setCaptcha('');
-                  setCaptchaInput('');
-                  localStorage.removeItem('signup_captcha');
+                  setCaptchaAnswer('');
+                  fetchCaptcha();
                 }}
                 className="w-full py-2 px-4 text-gray-600 hover:text-gray-800 font-medium rounded-xl transition-colors"
               >

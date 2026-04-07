@@ -4,6 +4,7 @@ dotenv.config(); // MUST be first — loads .env before any other module reads p
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
+import helmet from 'helmet';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 import authRoutes from "./routes/authRoutes";
@@ -132,6 +133,12 @@ dotenv.config(); // already called at top — this line is now redundant, kept f
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// --- Security Headers (helmet) ---
+app.use(helmet({
+  contentSecurityPolicy: false, // Disabled — frontend is a separate origin; re-enable with proper directives for production
+  crossOriginEmbedderPolicy: false, // Allow cross-origin resources (fonts, images, etc.)
+}));
+
 // --- CORS whitelist ---
 const allowedOrigins = [
   'http://localhost:3000',
@@ -185,10 +192,12 @@ const otpLimiter = rateLimit({
   message: { success: false, message: 'Too many OTP attempts. Please try again after 10 minutes.' },
 });
 
-// Serve uploaded files statically
-// Use getUploadBaseDir() for Vercel compatibility (/tmp/uploads on Vercel, ./uploads locally)
+// Serve uploaded files
+// Company logos under /uploads/admin are public (needed for enquiry/referral pages)
+// Everything else requires authentication
 import { getUploadBaseDir } from './utils/uploadDir';
-app.use('/uploads', express.static(getUploadBaseDir()));
+app.use('/uploads/admin', express.static(path.join(getUploadBaseDir(), 'admin')));
+app.use('/uploads', authenticate, express.static(getUploadBaseDir()));
 
 // OTP verify routes get the stricter limiter (5 attempts per 10 min) on top of authLimiter
 app.use("/api/auth/verify-otp", otpLimiter);

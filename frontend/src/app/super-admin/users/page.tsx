@@ -7,7 +7,7 @@ import { User, USER_ROLE } from '@/types';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
-import { BACKEND_URL } from '@/lib/ivyApi';
+import AuthImage from '@/components/AuthImage';
 
 interface UserStats {
   total: number;
@@ -315,15 +315,18 @@ export default function UserManagementPage() {
                       <tr key={user._id || user.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            {user.profilePicture ? (
-                              <img src={`${BACKEND_URL}/uploads/${user.profilePicture}`} alt="" className="w-10 h-10 rounded-full object-cover" />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                <span className="text-blue-600 font-semibold">
-                                  {getInitials(user)}
-                                </span>
-                              </div>
-                            )}
+                            <AuthImage
+                              path={user.profilePicture}
+                              alt=""
+                              className="w-10 h-10 rounded-full object-cover"
+                              fallback={
+                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                  <span className="text-blue-600 font-semibold">
+                                    {getInitials(user)}
+                                  </span>
+                                </div>
+                              }
+                            />
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">{getFullName(user)}</div>
                               <div className="text-sm text-gray-500">{user.email}</div>

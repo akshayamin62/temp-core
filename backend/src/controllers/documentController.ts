@@ -9,7 +9,7 @@ import User from "../models/User";
 import { sendDocumentRejectionEmail } from "../utils/email";
 import fs from "fs";
 import path from "path";
-import { getUploadBaseDir, ensureDir } from '../utils/uploadDir';
+import { getUploadBaseDir, ensureDir, validateFilePath } from '../utils/uploadDir';
 
 // Upload document (auto-save)
 export const uploadDocument = async (req: AuthRequest, res: Response) => {
@@ -303,14 +303,18 @@ export const downloadDocument = async (req: AuthRequest, res: Response) => {
 
     // Stream file
     const filePath = path.join(process.cwd(), document.filePath);
-    if (!fs.existsSync(filePath)) {
+    const safePath = validateFilePath(filePath);
+    if (!safePath) {
+      return res.status(403).json({ success: false, message: "Access denied: invalid file path" });
+    }
+    if (!fs.existsSync(safePath)) {
       return res.status(404).json({
         success: false,
         message: "File not found on server",
       });
     }
 
-    return res.download(filePath, document.fileName);
+    return res.download(safePath, document.fileName);
   } catch (error: any) {
     console.warn("Download document error:", error);
     return res.status(500).json({
@@ -385,7 +389,12 @@ export const viewDocument = async (req: AuthRequest, res: Response): Promise<voi
 
     // Stream file for viewing
     const filePath = path.join(process.cwd(), document.filePath);
-    if (!fs.existsSync(filePath)) {
+    const safePath = validateFilePath(filePath);
+    if (!safePath) {
+      res.status(403).json({ success: false, message: "Access denied: invalid file path" });
+      return;
+    }
+    if (!fs.existsSync(safePath)) {
       res.status(404).json({
         success: false,
         message: "File not found on server",
@@ -397,7 +406,7 @@ export const viewDocument = async (req: AuthRequest, res: Response): Promise<voi
     res.setHeader('Content-Type', document.mimeType);
     res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
     
-    const fileStream = fs.createReadStream(filePath);
+    const fileStream = fs.createReadStream(safePath);
     fileStream.on('error', (error): void => {
       console.warn("File stream error:", error);
       if (!res.headersSent) {

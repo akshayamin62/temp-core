@@ -9,7 +9,7 @@ import User from '../models/User';
 import { USER_ROLE } from '../types/roles';
 import fs from 'fs';
 import path from 'path';
-import { getUploadBaseDir, ensureDir } from '../utils/uploadDir';
+import { getUploadBaseDir, ensureDir, validateFilePath } from '../utils/uploadDir';
 import { runBrainographyExtraction } from './portfolioController';
 
 const BRAINOGRAPHY_DOC_KEY = 'brainography_report';
@@ -217,8 +217,13 @@ export const downloadBrainography = async (req: AuthRequest, res: Response): Pro
     }
 
     const filePath = path.join(process.cwd(), document.filePath);
+    const safePath = validateFilePath(filePath);
+    if (!safePath) {
+      res.status(403).json({ success: false, message: 'Access denied: invalid file path' });
+      return;
+    }
     
-    if (!fs.existsSync(filePath)) {
+    if (!fs.existsSync(safePath)) {
       res.status(404).json({
         success: false,
         message: 'File not found on server',
@@ -226,7 +231,7 @@ export const downloadBrainography = async (req: AuthRequest, res: Response): Pro
       return;
     }
 
-    res.download(filePath, document.fileName);
+    res.download(safePath, document.fileName);
   } catch (error: any) {
     console.error('Download brainography error:', error);
     res.status(500).json({

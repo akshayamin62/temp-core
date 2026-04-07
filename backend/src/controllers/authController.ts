@@ -20,6 +20,7 @@ import {
   isOTPExpired,
   getOTPExpiration,
 } from "../utils/otp";
+import { verifyCaptcha } from "../utils/captcha";
 
 interface SignupRequest extends Request {
   body: {
@@ -29,16 +30,16 @@ interface SignupRequest extends Request {
     email: string;
     mobileNumber?: string;
     role: USER_ROLE;
-    captcha: string;
-    captchaInput: string;
+    captchaToken: string;
+    captchaAnswer: string;
   };
 }
 
 interface LoginRequest extends Request {
   body: {
     email: string;
-    captcha: string;
-    captchaInput: string;
+    captchaToken: string;
+    captchaAnswer: string;
   };
 }
 
@@ -66,19 +67,20 @@ interface VerifyOTPRequest extends Request {
 
 export const signup = async (req: SignupRequest, res: Response): Promise<Response> => {
   try {
-    const { firstName, middleName, lastName, email, mobileNumber, role, captcha, captchaInput } = req.body;
+    const { firstName, middleName, lastName, email, mobileNumber, role, captchaToken, captchaAnswer } = req.body;
 
     const emailKey = email.toLowerCase().trim();
 
-    // Verify captcha (comparing hashed values)
-    if (!captcha || !captchaInput) {
+    // Verify server-side captcha
+    if (!captchaToken || !captchaAnswer) {
       return res.status(400).json({
         success: false,
         message: "Captcha is required",
       });
     }
 
-    if (captcha !== captchaInput) {
+    const answerNum = parseInt(captchaAnswer, 10);
+    if (isNaN(answerNum) || !verifyCaptcha(captchaToken, answerNum)) {
       return res.status(401).json({
         success: false,
         message: "Invalid captcha. Please try again.",
@@ -160,19 +162,20 @@ export const signup = async (req: SignupRequest, res: Response): Promise<Respons
 // Request OTP for login
 export const login = async (req: LoginRequest, res: Response): Promise<Response> => {
   try {
-    const { email, captcha, captchaInput } = req.body;
+    const { email, captchaToken, captchaAnswer } = req.body;
 
     const emailKey = email.toLowerCase().trim();
 
-    // Verify captcha (comparing hashed values)
-    if (!captcha || !captchaInput) {
+    // Verify server-side captcha
+    if (!captchaToken || !captchaAnswer) {
       return res.status(400).json({
         success: false,
         message: "Captcha is required",
       });
     }
 
-    if (captcha !== captchaInput) {
+    const answerNum = parseInt(captchaAnswer, 10);
+    if (isNaN(answerNum) || !verifyCaptcha(captchaToken, answerNum)) {
       return res.status(401).json({
         success: false,
         message: "Invalid captcha. Please try again.",

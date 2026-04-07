@@ -8,6 +8,7 @@ import { User, USER_ROLE, SPDocument, SPDocumentStatus, ServiceProviderProfile }
 import { SP_DOCUMENTS_CONFIG, SPDocumentField } from '@/config/spDocumentsConfig';
 import { getFullName } from '@/utils/nameHelpers';
 import ServiceProviderLayout from '@/components/ServiceProviderLayout';
+import AuthImage from '@/components/AuthImage';
 import toast, { Toaster } from 'react-hot-toast';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
@@ -217,7 +218,6 @@ export default function ServiceProviderProfilePage() {
 
   if (!user) return null;
 
-  const logoUrl = spProfile?.companyLogo ? `${BASE_URL}/${spProfile.companyLogo.replace(/^\//, '')}` : null;
 
   return (
     <ServiceProviderLayout user={user}>
@@ -234,8 +234,8 @@ export default function ServiceProviderProfilePage() {
             <h2 className="text-lg font-bold text-gray-900">Account Information</h2>
             {/* Logo Upload */}
             <div className="flex items-center space-x-3">
-              {logoUrl && (
-                <img src={logoUrl} alt="Logo" className="w-14 h-14 rounded-lg object-cover border border-gray-200" />
+              {spProfile?.companyLogo && (
+                <AuthImage path={spProfile.companyLogo} alt="Logo" className="w-14 h-14 rounded-lg object-cover border border-gray-200" />
               )}
               <div>
                 <input
@@ -254,7 +254,7 @@ export default function ServiceProviderProfilePage() {
                   disabled={uploadingLogo}
                   className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
                 >
-                  {uploadingLogo ? 'Uploading...' : logoUrl ? 'Change Logo' : 'Upload Logo'}
+                  {uploadingLogo ? 'Uploading...' : spProfile?.companyLogo ? 'Change Logo' : 'Upload Logo'}
                 </button>
               </div>
             </div>

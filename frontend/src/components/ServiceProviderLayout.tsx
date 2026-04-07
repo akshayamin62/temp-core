@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { authAPI } from '@/lib/api';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
 import { BACKEND_URL } from '@/lib/ivyApi';
+import AuthImage from '@/components/AuthImage';
 
 interface ServiceProviderLayoutProps {
   children: React.ReactNode;
@@ -107,24 +108,18 @@ export default function ServiceProviderLayout({ children, user: userProp }: Serv
         <div className="h-16 border-b border-gray-200 flex items-center justify-between px-4">
           {sidebarOpen && (
             <div className="flex items-center gap-2">
-              {spProfile?.companyLogo ? (
-                <img
-                  src={`${BACKEND_URL}/${spProfile.companyLogo.replace(/^\//, '')}`}
-                  alt="Company Logo"
-                  className="w-8 h-8 rounded-lg object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const fallback = target.nextElementSibling as HTMLElement;
-                    if (fallback) fallback.style.display = 'flex';
-                  }}
-                />
-              ) : null}
-              <div className={`w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center ${spProfile?.companyLogo ? 'hidden' : ''}`}>
-                <span className="text-white font-bold text-sm">
-                  {spProfile?.companyName?.charAt(0) || 'S'}
-                </span>
-              </div>
+              <AuthImage
+                path={spProfile?.companyLogo}
+                alt="Company Logo"
+                className="w-8 h-8 rounded-lg object-cover"
+                fallback={
+                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">
+                      {spProfile?.companyName?.charAt(0) || 'S'}
+                    </span>
+                  </div>
+                }
+              />
               <span className="font-semibold text-gray-900 truncate">
                 {spProfile?.companyName || 'Service Provider'}
               </span>
@@ -177,13 +172,16 @@ export default function ServiceProviderLayout({ children, user: userProp }: Serv
         <div className="border-t border-gray-200 p-4">
           {sidebarOpen ? (
             <div className="mb-3 flex items-center gap-2">
-              {user?.profilePicture ? (
-                <img src={`${BACKEND_URL}/uploads/${user.profilePicture}`} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-              ) : (
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-blue-600 font-semibold text-sm">{user ? getInitials(user) : 'S'}</span>
-                </div>
-              )}
+              <AuthImage
+                path={user?.profilePicture}
+                alt=""
+                className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                fallback={
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-blue-600 font-semibold text-sm">{user ? getInitials(user) : 'S'}</span>
+                  </div>
+                }
+              />
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{user ? getFullName(user) : 'Service Provider'}</p>
                 <p className="text-xs text-gray-500 truncate">{user?.email || ''}</p>
@@ -191,13 +189,16 @@ export default function ServiceProviderLayout({ children, user: userProp }: Serv
             </div>
           ) : (
             <div className="mb-3 flex justify-center">
-              {user?.profilePicture ? (
-                <img src={`${BACKEND_URL}/uploads/${user.profilePicture}`} alt="" className="w-8 h-8 rounded-full object-cover" />
-              ) : (
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold text-sm">{user ? getInitials(user) : 'S'}</span>
-                </div>
-              )}
+              <AuthImage
+                path={user?.profilePicture}
+                alt=""
+                className="w-8 h-8 rounded-full object-cover"
+                fallback={
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600 font-semibold text-sm">{user ? getInitials(user) : 'S'}</span>
+                  </div>
+                }
+              />
             </div>
           )}
           <button

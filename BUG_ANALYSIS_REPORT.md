@@ -12,15 +12,16 @@ A comprehensive re-analysis of the Kareer Studio platform identified **52 bugs a
 | Severity | Count |
 |----------|-------|
 | **Critical** | 0 |
-| **High** | 5 |
+| **High** | 3 |
 | **Medium** | 18 |
 | **Low** | 10 |
-| **Total** | 33 |
+| **Total** | 31 |
 
 ### Changes Since March 2026 Report
 
 - **Fixed:** BUG-029 (PARENT dashboard redirect now handled)
 - **Fixed (April 6, 2026):** BUG-001 (ivyTestQuestion — added SUPER_ADMIN authorize), BUG-002 (ivyTestSession — added STUDENT authorize), BUG-003 (activity.routes — added SUPER_ADMIN authorize), BUG-004 (excelUpload — added IVY_EXPERT authorize), BUG-031 (ivyLeagueAdmin — added SUPER_ADMIN authorize), BUG-037 (activityRoutes — added per-route role authorization)
+- **Fixed (April 2026):** BUG-005 (grammarCheck — IVY_EXPERT authorize), BUG-006 (admin.routes — SUPER_ADMIN), BUG-007 (user.routes — SUPER_ADMIN), BUG-013 (OTP console.log removed, upgraded to 6-digit), BUG-014 (rate limiting), BUG-015 (CORS whitelist), BUG-016 (file upload type restriction), BUG-017 (path traversal protection via validateFilePath), BUG-018 (authenticated uploads + AuthImage component)
 - **By Design:** BUG-012 (`isVerified` check intentionally disabled — unverified users can sign in, inactive users cannot)
 - **By Design:** BUG-038 (invoiceRoutes) and BUG-039 (ledgerRoutes) — accessible by all authenticated users associated with the student. Not a security issue.
 - **Dead Code:** BUG-010 (enrollmentRoutes.ts) and BUG-032 (notification.routes.ts) are NOT mounted in server.ts — unreachable
@@ -35,7 +36,7 @@ All critical issues have been resolved. ✅
 
 ---
 
-## High Issues (5)
+## High Issues (3 open, 4 fixed)
 
 ### BUG-005: Grammar Check Route — No Role Authorization ✅ FIXED
 - **File:** `backend/src/routes/grammarCheck.routes.ts`
@@ -57,14 +58,16 @@ All critical issues have been resolved. ✅
 - **File:** `backend/src/middleware/upload.ts`
 - **Fix:** Default `fileFilter` now restricts to images (JPG, PNG, WEBP, AVIF, GIF), PDF, Word (.doc, .docx), PowerPoint (.ppt, .pptx), and Excel (.xls, .xlsx). All other file types are rejected.
 
-### BUG-017: No Path Traversal Protection on File Serving ⚠️ STILL OPEN
-- **File:** `backend/src/controllers/documentController.ts`
+### BUG-017: No Path Traversal Protection on File Serving ✅ FIXED (April 2026)
+- **File:** `backend/src/controllers/documentController.ts`, `brainographyController.ts`, `portfolioController.ts`, `spDocumentController.ts`, `teamMeetController.ts`
 - **Issue:** File paths from DB joined with `process.cwd()` without validating the resolved path stays within the uploads directory. If a DB record is tampered with, it could serve arbitrary system files.
+- **Fix:** Added `validateFilePath()` utility in `uploadDir.ts` that uses `path.resolve()` + `.startsWith()` to ensure all file paths stay within the uploads directory. Applied to all 6 file-serving functions: `downloadDocument`, `viewDocument`, `downloadBrainography`, `downloadPortfolio`, `viewSPDocument`, `downloadSPDocument`, `downloadTeamMeetAttachment`. Returns 403 if path traversal detected.
 
-### BUG-018: Static Uploads Directory Publicly Accessible ⚠️ STILL OPEN
-- **File:** `backend/src/server.ts`
+### BUG-018: Static Uploads Directory Publicly Accessible ✅ FIXED (April 2026)
+- **File:** `backend/src/server.ts`, `frontend/src/components/AuthImage.tsx` (new)
 - **Issue:** `/uploads` served with `express.static()` — no authentication required. Anyone who knows a file URL can access uploaded documents, student files, admin logos, etc.
 - **Impact:** Data breach if file paths are guessable or enumerated.
+- **Fix:** Split express.static into two routes: `/uploads/admin` (public — for company logos on enquiry/referral pages) and `/uploads` (authenticated via `authenticate` middleware). Created `AuthImage` component that uses `useBlobUrl` hook to fetch profile pictures via authenticated blob URLs. Updated all 14 layout/navbar components and ~25 page components to use `AuthImage` instead of direct `<img src>` for profile pictures. Frontend TypeScript compilation verified with zero errors.
 
 ### BUG-025: Client-Side-Only Auth Guards ⚠️ STILL OPEN
 - **Files:** All frontend page files
@@ -172,7 +175,7 @@ All critical issues have been resolved. ✅
 ### BUG-050: Token Stored in localStorage 🆕
 - **File:** `frontend/src/lib/api.ts` (line 16)
 - **Issue:** JWT token stored in `localStorage`, making it accessible to any JavaScript running on the page. If XSS exists anywhere (e.g., via uploaded `.html` files served from `/uploads`), the token can be stolen.
-- **Impact:** Combined with BUG-016 (unrestricted file uploads) and BUG-018 (public static serving), this creates a full XSS-to-account-takeover chain.
+- **Impact:** Combined with BUG-016 ~~(unrestricted file uploads)~~ and BUG-018 ~~(public static serving)~~ (both now fixed), this risk is significantly reduced. Only the localStorage token exposure remains.
 
 ---
 
@@ -303,7 +306,7 @@ All critical issues have been resolved. ✅
 
 ### Short-Term
 8. ~~**Add file type validation**~~ — ✅ DONE (BUG-016 fixed April 6, 2026)
-9. **Protect static uploads directory** — add auth middleware or use signed URLs (BUG-018)
+9. ~~**Protect static uploads directory**~~ — ✅ DONE (BUG-018 fixed April 2026: express.static split + AuthImage component)
 10. **Add security headers** via `helmet` middleware (BUG-041)
 11. **Fix document data isolation** — verify PARENT/COUNSELOR/ADMIN ownership of specific student (BUG-034, 035, 045)
 12. **Restrict SP profile update** to SERVICE_PROVIDER role (BUG-048)
@@ -313,7 +316,7 @@ All critical issues have been resolved. ✅
 ### Medium-Term
 15. **Implement Next.js middleware** for server-side route protection (BUG-025)
 16. **Add CSRF protection** (BUG-020)
-17. **Add path traversal protection** on document serving (BUG-017)
+17. ~~**Add path traversal protection**~~ — ✅ DONE (BUG-017 fixed April 2026: validateFilePath in all controllers)
 18. **Fix race conditions** with optimistic locking or `findOneAndUpdate` (BUG-021, 022)
 19. **Add atomic parent sync** with MongoDB transactions (BUG-024)
 20. **Enforce `readOnly` server-side** on Ivy League routes (BUG-027)
@@ -321,7 +324,7 @@ All critical issues have been resolved. ✅
 22. **Consider httpOnly cookies** instead of localStorage for token (BUG-050)
 
 ### Security Attack Chain Warning
-BUG-016 ~~(unrestricted file upload)~~ + BUG-018 (public static serving) + BUG-050 (localStorage token) = **Partial XSS-to-Account-Takeover chain**. BUG-016 is now fixed (file types restricted), but BUG-018 and BUG-050 remain.
+BUG-016 ~~(unrestricted file upload)~~ + BUG-018 ~~(public static serving)~~ + BUG-050 (localStorage token) = **Partial XSS-to-Account-Takeover chain**. BUG-016 and BUG-018 are now fixed (file types restricted + authenticated uploads). Only BUG-050 (localStorage token) remains — consider httpOnly cookies for full mitigation.
 
 ---
 

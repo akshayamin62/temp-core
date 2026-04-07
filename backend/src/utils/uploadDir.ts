@@ -17,6 +17,20 @@ export const getUploadBaseDir = (): string => {
  * Ensure a directory exists, creating it if necessary.
  * Wraps mkdirSync in a try-catch for serverless environments.
  */
+/**
+ * Validate that a resolved file path stays within the uploads directory.
+ * Prevents path traversal attacks (e.g. ../../etc/passwd).
+ * Returns the safe resolved path or null if traversal detected.
+ */
+export const validateFilePath = (filePath: string): string | null => {
+  const uploadsBase = path.resolve(getUploadBaseDir());
+  const resolved = path.resolve(filePath);
+  if (!resolved.startsWith(uploadsBase + path.sep) && resolved !== uploadsBase) {
+    return null;
+  }
+  return resolved;
+};
+
 export const ensureDir = (dirPath: string): void => {
   try {
     if (!fs.existsSync(dirPath)) {

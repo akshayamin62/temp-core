@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { parentAPI } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
-import { BACKEND_URL } from '@/lib/ivyApi';
+import AuthImage from '@/components/AuthImage';
 
 interface ParentDetail {
   _id: string;
@@ -61,13 +61,16 @@ export default function IvyExpertParentDetailPage() {
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center mb-6">
-            {parent.userId.profilePicture ? (
-              <img src={`${BACKEND_URL}/uploads/${parent.userId.profilePicture}`} alt="" className="w-16 h-16 rounded-full object-cover mr-4" />
-            ) : (
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mr-4">
-                <span className="text-purple-600 font-bold text-xl">{getInitials(parent.userId)}</span>
-              </div>
-            )}
+            <AuthImage
+              path={parent.userId.profilePicture}
+              alt=""
+              className="w-16 h-16 rounded-full object-cover mr-4"
+              fallback={
+                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                  <span className="text-purple-600 font-bold text-xl">{getInitials(parent.userId)}</span>
+                </div>
+              }
+            />
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{getFullName(parent.userId)}</h1>
               <p className="text-gray-600">{parent.userId.email}</p>

@@ -20,6 +20,7 @@ import TeamMeetFormPanel from '@/components/TeamMeetFormPanel';
 import OpsScheduleCalendar from '@/components/OpsScheduleCalendar';
 import OpsScheduleFormPanel from '@/components/OpsScheduleFormPanel';
 import CoachingClassCards, { ClassTiming } from '@/components/CoachingClassCards';
+import { fetchBlobUrl } from '@/lib/useBlobUrl';
 
 const BRAINOGRAPHY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -266,10 +267,15 @@ function MyDetailsContent() {
     }
   };
 
-  const handleBrainographyView = () => {
+  const handleBrainographyView = async () => {
     if (!brainographyDoc) return;
-    const baseUrl = BRAINOGRAPHY_API_URL.replace('/api', '') || 'http://localhost:5000';
-    window.open(`${baseUrl}/${brainographyDoc.filePath}`, '_blank');
+    try {
+      const path = brainographyDoc.filePath.startsWith('/') ? brainographyDoc.filePath : `/${brainographyDoc.filePath}`;
+      const blobUrl = await fetchBlobUrl(path);
+      window.open(blobUrl, '_blank');
+    } catch {
+      toast.error('Failed to load document');
+    }
   };
 
   const handleBrainographyDownload = async () => {

@@ -5,6 +5,26 @@ import axios from 'axios';
 import { useStudentService } from '../useStudentService';
 import { IVY_API_URL } from '@/lib/ivyApi';
 import IvyLeagueApplicantInfoPanel from '@/components/IvyLeagueApplicantInfoPanel';
+import AuthImage from '@/components/AuthImage';
+import { useBlobUrl, fetchBlobUrl } from '@/lib/useBlobUrl';
+
+function AuthFilePreview({ filePath, mimeType, originalName }: { filePath: string; mimeType: string; originalName: string }) {
+  const { blobUrl, loading } = useBlobUrl(filePath);
+
+  if (mimeType.startsWith('image/')) {
+    return <AuthImage path={filePath} alt={originalName} className="max-w-full h-auto max-h-[500px] object-contain mx-auto block rounded" />;
+  }
+  if (mimeType === 'application/pdf') {
+    if (loading || !blobUrl) return <div className="flex items-center justify-center h-[600px]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
+    return <iframe src={blobUrl} className="w-full h-[600px] rounded" title={originalName} />;
+  }
+  return (
+    <div className="py-6 text-center">
+      <p className="text-gray-500 text-sm mb-3">Preview not available for this file type.</p>
+      <button onClick={async () => { try { const url = await fetchBlobUrl(filePath); window.open(url, '_blank'); } catch { /* ignore */ } }} className="px-4 py-2 bg-brand-600 text-white text-sm font-bold rounded-lg hover:bg-brand-700">Download File</button>
+    </div>
+  );
+}
 
 interface Subject {
     _id?: string;
@@ -847,7 +867,6 @@ function Pointer1Content() {
                                                     {subSection.files && subSection.files.length > 0 ? (
                                                         <div className="space-y-2">
                                                             {subSection.files.map((file) => {
-                                                                const fileUrl = `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:5000'}${file.filePath}`;
                                                                 const isPreviewing = previewFileIds.has(file._id!);
                                                                 return (
                                                                     <div key={file._id} className="rounded-lg border border-gray-200 overflow-hidden">
@@ -889,16 +908,7 @@ function Pointer1Content() {
                                                                         </div>
                                                                         {isPreviewing && (
                                                                             <div className="border-t border-gray-200 bg-white p-2">
-                                                                                {file.mimeType.startsWith('image/') ? (
-                                                                                    <img src={fileUrl} alt={file.originalName} className="max-w-full h-auto max-h-[500px] object-contain mx-auto block rounded" />
-                                                                                ) : file.mimeType === 'application/pdf' ? (
-                                                                                    <iframe src={fileUrl} className="w-full h-[600px] rounded" title={file.originalName} />
-                                                                                ) : (
-                                                                                    <div className="py-6 text-center">
-                                                                                        <p className="text-gray-500 text-sm mb-3">Preview not available for this file type.</p>
-                                                                                        <a href={fileUrl} download className="px-4 py-2 bg-brand-600 text-white text-sm font-bold rounded-lg hover:bg-brand-700">Download File</a>
-                                                                                    </div>
-                                                                                )}
+                                                                                <AuthFilePreview filePath={file.filePath} mimeType={file.mimeType} originalName={file.originalName} />
                                                                             </div>
                                                                         )}
                                                                     </div>

@@ -7,6 +7,7 @@ import { spDocumentAPI } from '@/lib/spDocumentAPI';
 import { User, USER_ROLE, SPDocument, SPDocumentStatus } from '@/types';
 import { SP_DOCUMENTS_CONFIG } from '@/config/spDocumentsConfig';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
+import AuthImage from '@/components/AuthImage';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName } from '@/utils/nameHelpers';
 
@@ -208,7 +209,6 @@ export default function ServiceProviderDetailPage() {
   }
 
   const fullName = getFullName(user);
-  const logoUrl = serviceProvider.companyLogo ? `${BASE_URL}/${serviceProvider.companyLogo.replace(/^\//, '')}` : null;
 
   return (
     <>
@@ -228,8 +228,8 @@ export default function ServiceProviderDetailPage() {
                 Back to Service Providers
               </button>
               <div className="flex items-center space-x-4">
-                {logoUrl ? (
-                  <img src={logoUrl} alt="Company Logo" className="w-14 h-14 rounded-full object-cover border-2 border-blue-200" />
+                {serviceProvider.companyLogo ? (
+                  <AuthImage path={serviceProvider.companyLogo} alt="Company Logo" className="w-14 h-14 rounded-full object-cover border-2 border-blue-200" />
                 ) : null}
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900">{fullName}</h1>
@@ -309,8 +309,8 @@ export default function ServiceProviderDetailPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">Company Information</h2>
-              {logoUrl && (
-                <img src={logoUrl} alt="Logo" className="w-16 h-16 rounded-lg object-cover border border-gray-200" />
+              {serviceProvider.companyLogo && (
+                <AuthImage path={serviceProvider.companyLogo} alt="Logo" className="w-16 h-16 rounded-lg object-cover border border-gray-200" />
               )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
