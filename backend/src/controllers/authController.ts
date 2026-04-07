@@ -183,7 +183,7 @@ export const login = async (req: LoginRequest, res: Response): Promise<Response>
     }
 
     // Find user by email
-    const user = await User.findOne({ email: emailKey });
+    const user = await User.findOne({ email: emailKey }).select('+otp +otpExpires');
     if (!user) {
       // Don't reveal if user exists (security best practice)
       return res.status(200).json({
@@ -261,7 +261,7 @@ export const verifySignupOTP = async (req: VerifyOTPRequest, res: Response): Pro
     }
 
     // Find user by email
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+otp +otpExpires');
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -404,7 +404,7 @@ export const verifyOTP = async (req: VerifyOTPRequest, res: Response): Promise<R
     }
 
     // Find user by email
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+otp +otpExpires');
     if (!user) {
       return res.status(401).json({
         success: false,

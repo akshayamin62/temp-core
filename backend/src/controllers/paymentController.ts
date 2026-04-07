@@ -9,6 +9,12 @@ import Student from '../models/Student';
 import StudentPlanDiscount from '../models/StudentPlanDiscount';
 import ServicePricing from '../models/ServicePricing';
 import User from '../models/User';
+import Admin from '../models/Admin';
+import Counselor from '../models/Counselor';
+import Ops from '../models/Ops';
+import Parent from '../models/Parent';
+import Referrer from '../models/Referrer';
+import EduplanCoach from '../models/EduplanCoach';
 import { USER_ROLE } from '../types/roles';
 import { sendServiceRegistrationEmailToSuperAdmin } from '../utils/email';
 import {
@@ -19,6 +25,60 @@ import {
 } from '../services/paymentService';
 import { LedgerEntryType } from '../models/Ledger';
 import Ledger from '../models/Ledger';
+
+// Verify requesting user is connected to the student
+const verifyStudentAccess = async (userId: string, role: string, studentId: string): Promise<boolean> => {
+  switch (role) {
+    case USER_ROLE.SUPER_ADMIN:
+      return true;
+    case USER_ROLE.STUDENT: {
+      const student = await Student.findById(studentId).select('userId').lean();
+      return student?.userId?.toString() === userId;
+    }
+    case USER_ROLE.ADMIN: {
+      const admin = await Admin.findOne({ userId }).select('_id').lean();
+      if (!admin) return false;
+      const student = await Student.findOne({ _id: studentId, adminId: admin._id }).select('_id').lean();
+      return !!student;
+    }
+    case USER_ROLE.COUNSELOR: {
+      const counselor = await Counselor.findOne({ userId }).select('_id').lean();
+      if (!counselor) return false;
+      const student = await Student.findOne({ _id: studentId, counselorId: counselor._id }).select('_id').lean();
+      return !!student;
+    }
+    case USER_ROLE.OPS: {
+      const ops = await Ops.findOne({ userId }).select('_id').lean();
+      if (!ops) return false;
+      const reg = await StudentServiceRegistration.findOne({
+        studentId,
+        $or: [{ primaryOpsId: ops._id }, { secondaryOpsId: ops._id }, { activeOpsId: ops._id }],
+      }).select('_id').lean();
+      return !!reg;
+    }
+    case USER_ROLE.PARENT: {
+      const parent = await Parent.findOne({ userId }).select('studentIds').lean();
+      return parent?.studentIds?.some((id: any) => id.toString() === studentId) ?? false;
+    }
+    case USER_ROLE.REFERRER: {
+      const referrer = await Referrer.findOne({ userId }).select('_id').lean();
+      if (!referrer) return false;
+      const student = await Student.findOne({ _id: studentId, referrerId: referrer._id }).select('_id').lean();
+      return !!student;
+    }
+    case USER_ROLE.EDUPLAN_COACH: {
+      const coach = await EduplanCoach.findOne({ userId }).select('_id').lean();
+      if (!coach) return false;
+      const reg = await StudentServiceRegistration.findOne({
+        studentId,
+        $or: [{ primaryEduplanCoachId: coach._id }, { secondaryEduplanCoachId: coach._id }, { activeEduplanCoachId: coach._id }],
+      }).select('_id').lean();
+      return !!reg;
+    }
+    default:
+      return false;
+  }
+};
 
 // ===== Create Razorpay Order =====
 
@@ -430,6 +490,16 @@ export const getPaymentsByRegistration = async (req: AuthRequest, res: Response)
   try {
     const { registrationId } = req.params;
 
+    // Verify the requesting user is connected to this registration's student
+    const registration = await StudentServiceRegistration.findById(registrationId).select('studentId').lean();
+    if (!registration) {
+      return res.status(404).json({ success: false, message: 'Registration not found' });
+    }
+    const hasAccess = await verifyStudentAccess(req.user!.userId, req.user!.role, registration.studentId.toString());
+    if (!hasAccess) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+
     const payments = await Payment.find({ registrationId })
       .sort({ createdAt: -1 })
       .lean();
@@ -449,6 +519,11 @@ export const getPaymentsByRegistration = async (req: AuthRequest, res: Response)
 export const getPaymentsByStudent = async (req: AuthRequest, res: Response): Promise<Response> => {
   try {
     const { studentId } = req.params;
+
+    const hasAccess = await verifyStudentAccess(req.user!.userId, req.user!.role, studentId);
+    if (!hasAccess) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
 
     const payments = await Payment.find({ studentId })
       .sort({ createdAt: -1 })
@@ -470,6 +545,11 @@ export const getPaymentsByStudent = async (req: AuthRequest, res: Response): Pro
 export const getPaymentHistory = async (req: AuthRequest, res: Response): Promise<Response> => {
   try {
     const { studentId } = req.params;
+
+    const hasAccess = await verifyStudentAccess(req.user!.userId, req.user!.role, studentId);
+    if (!hasAccess) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
 
     const payments = await Payment.find({ studentId })
       .sort({ createdAt: -1 })

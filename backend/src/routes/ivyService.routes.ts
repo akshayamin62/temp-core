@@ -22,7 +22,7 @@ router.get('/ivy-expert/:ivyExpertId/students', authorize([USER_ROLE.IVY_EXPERT,
 // GET /api/ivy/ivy-service/student/:studentId - Get service for a student
 router.get('/student/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT]), getServiceByStudentIdHandler);
 // GET /api/ivy/ivy-service/:serviceId - Get service details
-router.get('/:serviceId', getServiceDetailsHandler);
+router.get('/:serviceId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.REFERRER]), getServiceDetailsHandler);
 
 // PUT /api/ivy/ivy-service/:serviceId/interest - Update student interest
 router.put('/:serviceId/interest', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), updateInterestHandler);

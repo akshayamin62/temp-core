@@ -51,10 +51,12 @@ const userSchema = new Schema<IUser>(
     otp: {
       type: String,
       default: undefined,
+      select: false,
     },
     otpExpires: {
       type: Date,
       default: undefined,
+      select: false,
     },
   },
   { 

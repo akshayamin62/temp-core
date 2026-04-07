@@ -1638,7 +1638,7 @@ export const getOpsDetailForSuperAdmin = async (req: Request, res: Response): Pr
   try {
     const { opsUserId } = req.params;
 
-    const opsUser = await User.findById(opsUserId).select('-password');
+    const opsUser = await User.findById(opsUserId).select('-password -emailVerificationToken -passwordResetToken');
     if (!opsUser || opsUser.role !== USER_ROLE.OPS) {
       return res.status(404).json({ success: false, message: 'OPS user not found' });
     }
@@ -1932,7 +1932,7 @@ export const getEduplanCoachDetailForSuperAdmin = async (req: Request, res: Resp
   try {
     const { coachUserId } = req.params;
 
-    const coachUser = await User.findById(coachUserId).select('-password');
+    const coachUser = await User.findById(coachUserId).select('-password -emailVerificationToken -passwordResetToken');
     if (!coachUser || coachUser.role !== USER_ROLE.EDUPLAN_COACH) {
       return res.status(404).json({ success: false, message: 'Eduplan Coach user not found' });
     }

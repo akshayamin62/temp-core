@@ -63,62 +63,51 @@ export const uploadDocument = async (req: AuthRequest, res: Response) => {
     let document;
     
     if (!allowMultiple) {
-      // Check for existing document (single file field)
-      const existingDoc = await StudentDocument.findOne({
-        registrationId,
-        documentKey,
-      });
+      // Atomic findOneAndUpdate to prevent race conditions with concurrent uploads
+      const updateFields = {
+        fileName: finalFilename,
+        filePath: `uploads/${studentId}/${finalFilename}`,
+        fileSize: file.size,
+        mimeType: file.mimetype,
+        uploadedAt: new Date(),
+        uploadedBy: new mongoose.Types.ObjectId(req.user!.userId),
+        uploadedByRole: req.user!.role as any,
+        status: documentStatus,
+        approvedBy: (userRole === 'SUPER_ADMIN' || userRole === 'OPS') 
+          ? new mongoose.Types.ObjectId(req.user!.userId) 
+          : undefined,
+        approvedAt: (userRole === 'SUPER_ADMIN' || userRole === 'OPS') 
+          ? new Date() 
+          : undefined,
+      };
 
+      const existingDoc = await StudentDocument.findOneAndUpdate(
+        { registrationId, documentKey },
+        {
+          $set: updateFields,
+          $inc: { version: 1 },
+          $setOnInsert: {
+            registrationId,
+            studentId,
+            documentCategory: category,
+            documentName,
+            documentKey,
+            isCustomField: isCustomField === "true" || isCustomField === true,
+          },
+        },
+        { upsert: true, new: false } // return OLD doc to get previous filePath
+      );
+
+      // Delete old file if we replaced an existing document
       if (existingDoc) {
-        // Delete old file
         const oldFilePath = path.join(process.cwd(), existingDoc.filePath);
         if (fs.existsSync(oldFilePath)) {
-          fs.unlinkSync(oldFilePath);
+          try { fs.unlinkSync(oldFilePath); } catch { /* old file cleanup is best-effort */ }
         }
-
-        // Update with new file
-        existingDoc.fileName = finalFilename;
-        existingDoc.filePath = `uploads/${studentId}/${finalFilename}`;
-        existingDoc.fileSize = file.size;
-        existingDoc.mimeType = file.mimetype;
-        existingDoc.uploadedAt = new Date();
-        existingDoc.uploadedBy = new mongoose.Types.ObjectId(req.user!.userId);
-        existingDoc.uploadedByRole = req.user!.role as any;
-        existingDoc.status = documentStatus;
-        existingDoc.version += 1;
-        existingDoc.approvedBy = (userRole === 'SUPER_ADMIN' || userRole === 'OPS') 
-          ? new mongoose.Types.ObjectId(req.user!.userId) 
-          : undefined;
-        existingDoc.approvedAt = (userRole === 'SUPER_ADMIN' || userRole === 'OPS') 
-          ? new Date() 
-          : undefined;
-
-        document = await existingDoc.save();
-      } else {
-        // Create new document
-        document = await StudentDocument.create({
-          registrationId,
-          studentId,
-          documentCategory: category,
-          documentName,
-          documentKey,
-          fileName: finalFilename,
-          filePath: `uploads/${studentId}/${finalFilename}`,
-          fileSize: file.size,
-          mimeType: file.mimetype,
-          uploadedBy: new mongoose.Types.ObjectId(req.user!.userId),
-          uploadedByRole: req.user!.role,
-          status: documentStatus,
-          isCustomField: isCustomField === "true" || isCustomField === true,
-          version: 1,
-          approvedBy: (userRole === 'SUPER_ADMIN' || userRole === 'OPS') 
-            ? new mongoose.Types.ObjectId(req.user!.userId) 
-            : undefined,
-          approvedAt: (userRole === 'SUPER_ADMIN' || userRole === 'OPS') 
-            ? new Date() 
-            : undefined,
-        });
       }
+
+      // Fetch the updated document
+      document = await StudentDocument.findOne({ registrationId, documentKey });
     } else {
       // Always create new document for multiple file fields
       document = await StudentDocument.create({

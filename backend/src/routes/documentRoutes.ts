@@ -36,6 +36,7 @@ router.delete("/fields/:fieldId", authorize(USER_ROLE.SUPER_ADMIN), deleteDocume
 // Upload document (auto-save)
 router.post(
   "/upload",
+  authorize(USER_ROLE.SUPER_ADMIN, USER_ROLE.OPS, USER_ROLE.STUDENT),
   upload.single("file"),
   handleMulterError,
   uploadDocument
