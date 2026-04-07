@@ -10,6 +10,7 @@ export default function AdminUsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'pending'>('all');
   
   // Filters
@@ -24,9 +25,13 @@ export default function AdminUsersPage() {
       const user = JSON.parse(userStr);
       if (user.role?.toUpperCase() !== 'ADMIN') {
         toast.error('Access denied');
-        router.push('/dashboard');
+        router.push('/');
         return;
       }
+      setAuthChecked(true);
+    } else {
+      router.push('/login');
+      return;
     }
     fetchUsers();
   }, [roleFilter, verifiedFilter, activeFilter, searchDebounce, activeTab]);
@@ -95,6 +100,14 @@ export default function AdminUsersPage() {
       toast.error('Failed to delete user');
     }
   };
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <AdminLayout>

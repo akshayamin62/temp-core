@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -39,7 +39,7 @@ export default function StudentServiceProvidersPage() {
       const profileRes = await authAPI.getProfile();
       const userData = profileRes.data.data.user;
       if (userData.role !== USER_ROLE.STUDENT) {
-        router.push('/dashboard');
+        router.push('/');
         return;
       }
       setUser(userData);
@@ -167,7 +167,7 @@ export default function StudentServiceProvidersPage() {
             </button>
           </div>
 
-          {/* â”€â”€ Browse Services Tab â”€â”€ */}
+          {/* ── Browse Services Tab ── */}
           {activeTab === 'browse' && (
             <>
               {/* Stats */}
@@ -337,7 +337,7 @@ export default function StudentServiceProvidersPage() {
                             <p className="text-lg font-bold text-gray-900">
                               {service.priceType === 'Contact for Price'
                                 ? 'Contact for Price'
-                                : `${service.priceType}: ₹${service.price?.toLocaleString()}`}
+                                : `${service.priceType}: ?${service.price?.toLocaleString()}`}
                             </p>
                           </div>
 
@@ -369,7 +369,7 @@ export default function StudentServiceProvidersPage() {
             </>
           )}
 
-          {/* â”€â”€ My Enquiries Tab â”€â”€ */}
+          {/* ── My Enquiries Tab ── */}
           {activeTab === 'my-services' && (
             <>
               {myEnquiries.length === 0 ? (
@@ -458,7 +458,7 @@ export default function StudentServiceProvidersPage() {
                               <p className="text-lg font-bold text-gray-900">
                                 {svc.priceType === 'Contact for Price'
                                   ? 'Contact for Price'
-                                  : `${svc.priceType}: ₹${svc.price?.toLocaleString()}`}
+                                  : `${svc.priceType}: ?${svc.price?.toLocaleString()}`}
                               </p>
                             </div>
                           )}

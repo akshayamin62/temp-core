@@ -194,7 +194,7 @@ export default function StudentPaymentPage() {
       try {
         const res = await authAPI.getProfile();
         const u = res.data.data.user;
-        if (u.role !== USER_ROLE.STUDENT) { router.push('/dashboard'); return; }
+        if (u.role !== USER_ROLE.STUDENT) { router.push('/'); return; }
         setUser(u);
         const regRes = await serviceAPI.getMyServices();
         const regs = regRes.data.data.registrations || [];

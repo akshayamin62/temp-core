@@ -17,7 +17,7 @@ export default function AdminAlumniPage() {
     if (!token) { router.push('/login'); return; }
     authAPI.getProfile().then(res => {
       const u = res.data.data.user;
-      if (u.role !== USER_ROLE.ADMIN) { router.push('/login'); return; }
+      if (u.role !== USER_ROLE.ADMIN) { router.push('/'); return; }
       setUser(u);
       setLoading(false);
     }).catch(() => router.push('/login'));

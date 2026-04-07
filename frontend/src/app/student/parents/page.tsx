@@ -29,7 +29,7 @@ export default function StudentParentsPage() {
     if (!token) { router.push('/login'); return; }
     authAPI.getProfile().then(res => {
       const u = res.data.data.user;
-      if (u.role !== USER_ROLE.STUDENT) { router.push('/student/registration'); return; }
+      if (u.role !== USER_ROLE.STUDENT) { router.push('/'); return; }
       setUser(u);
       fetchParents();
     }).catch(() => router.push('/login'));

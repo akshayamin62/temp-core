@@ -27,7 +27,7 @@ export default function AdminDashboard() {
       
       if (user.role?.toUpperCase() !== 'ADMIN') {
         toast.error('Access denied. Admin only.');
-        router.push('/dashboard');
+        router.push('/');
         return;
       }
       

@@ -27,7 +27,7 @@ export default function AllServicesPage() {
       const profileRes = await authAPI.getProfile();
       const userData = profileRes.data.data.user;
       if (userData.role !== USER_ROLE.SUPER_ADMIN) {
-        router.push('/dashboard');
+        router.push('/');
         return;
       }
       setUser(userData);

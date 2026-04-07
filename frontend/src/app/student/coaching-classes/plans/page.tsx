@@ -29,7 +29,7 @@ export default function StudentCoachingClassesPlansPage() {
         const response = await authAPI.getProfile();
         const userData = response.data.data.user;
         if (userData.role !== USER_ROLE.STUDENT) {
-          router.push('/dashboard');
+          router.push('/');
           return;
         }
         setUser(userData);

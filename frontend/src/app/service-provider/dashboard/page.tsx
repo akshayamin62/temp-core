@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -29,7 +29,7 @@ export default function ServiceProviderDashboard() {
       const userData = response.data.data.user;
 
       if (userData.role !== USER_ROLE.SERVICE_PROVIDER) {
-        router.push('/dashboard');
+        router.push('/');
         return;
       }
 
@@ -238,4 +238,3 @@ export default function ServiceProviderDashboard() {
     </ServiceProviderLayout>
   );
 }
-

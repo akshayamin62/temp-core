@@ -7,6 +7,7 @@ import ServiceProvider from "../models/ServiceProvider";
 import { USER_ROLE } from "../types/roles";
 import { generateToken } from "../utils/jwt";
 import { Request } from "express";
+import { AuthRequest } from "../middleware/auth";
 import path from "path";
 import fs from "fs";
 import { getUploadBaseDir } from "../utils/uploadDir";
@@ -579,9 +580,9 @@ export const getProfile = async (
 /**
  * Update Service Provider Profile (bank details, etc.)
  */
-export const updateSPProfile = async (req: Request, res: Response): Promise<Response> => {
+export const updateSPProfile = async (req: AuthRequest, res: Response): Promise<Response> => {
   try {
-    const userId = (req as any).user?.userId;
+    const userId = req.user?.userId;
     if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }

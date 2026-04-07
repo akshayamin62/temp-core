@@ -57,7 +57,7 @@ export default function ServiceProviderProfilePage() {
       const userData = response.data.data.user;
 
       if (userData.role !== USER_ROLE.SERVICE_PROVIDER) {
-        router.push('/dashboard');
+        router.push('/');
         return;
       }
 
