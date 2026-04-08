@@ -478,6 +478,66 @@ export const verifyOTP = async (req: VerifyOTPRequest, res: Response): Promise<R
   }
 };
 
+// Resend OTP (for both signup and login)
+export const resendOTP = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { email, purpose } = req.body as { email: string; purpose?: 'signup' | 'login' };
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    const emailKey = email.toLowerCase().trim();
+    const user = await User.findOne({ email: emailKey }).select('+otp +otpExpires');
+
+    if (!user) {
+      // Don't reveal if user exists
+      return res.status(200).json({
+        success: true,
+        message: "If an account exists with this email, a new OTP has been sent.",
+      });
+    }
+
+    // Rate limit: check if OTP was sent less than 60 seconds ago
+    if (user.otpExpires) {
+      // OTP expiry is set to 10 min from creation. So creation time = otpExpires - 10min
+      const otpCreatedAt = new Date(user.otpExpires.getTime() - 10 * 60 * 1000);
+      const secondsSinceLastOTP = (Date.now() - otpCreatedAt.getTime()) / 1000;
+      if (secondsSinceLastOTP < 60) {
+        const waitSeconds = Math.ceil(60 - secondsSinceLastOTP);
+        return res.status(429).json({
+          success: false,
+          message: `Please wait ${waitSeconds} seconds before requesting a new code.`,
+        });
+      }
+    }
+
+    // Generate new OTP
+    const otp = generateOTP();
+    const hashedOTP = hashOTP(otp);
+    const otpExpires = getOTPExpiration(10);
+    console.log("resend otp", otp);
+
+    user.otp = hashedOTP;
+    user.otpExpires = otpExpires;
+    await user.save();
+
+    const fullName = [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' ');
+    await sendOTPEmail(user.email, fullName, otp, purpose || 'login');
+
+    return res.status(200).json({
+      success: true,
+      message: "A new OTP has been sent to your email.",
+    });
+  } catch (err: any) {
+    console.error("Resend OTP error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error. Please try again later.",
+    });
+  }
+};
+
 // Get current user profile (protected route)
 export const getProfile = async (
   req: Request,

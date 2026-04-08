@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authAPI } from '@/lib/api';
@@ -15,6 +15,42 @@ export default function LoginPage() {
   const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [step, setStep] = useState<'request' | 'verify'>('request');
   const [loading, setLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(60);
+  const [resending, setResending] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startResendTimer = useCallback(() => {
+    setResendTimer(60);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setResendTimer(prev => {
+        if (prev <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, []);
+
+  const handleResendOTP = async () => {
+    if (resendTimer > 0 || resending) return;
+    setResending(true);
+    try {
+      await authAPI.resendOTP({ email, purpose: 'login' });
+      toast.success('A new OTP has been sent to your email.');
+      startResendTimer();
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to resend OTP.';
+      toast.error(message);
+    } finally {
+      setResending(false);
+    }
+  };
 
   // Fetch captcha from server
   const fetchCaptcha = async () => {
@@ -68,6 +104,7 @@ export default function LoginPage() {
       const message = response.data.message || 'OTP sent to your email!';
       toast.success(message, { duration: 4000 });
       setStep('verify');
+      startResendTimer();
     } catch (error: any) {
       const message = error.response?.data?.message || 'Failed to send OTP. Please try again.';
       toast.error(message);
@@ -285,6 +322,28 @@ export default function LoginPage() {
                 </div>
                 <p className="mt-2 text-xs text-gray-500">Check your email for the 6-digit code</p>
               </div>
+
+              {/* Resend OTP */}
+              <button
+                type="button"
+                onClick={handleResendOTP}
+                disabled={resendTimer > 0 || resending}
+                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {resending ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Sending...
+                  </span>
+                ) : resendTimer > 0 ? (
+                  `Resend OTP (${resendTimer}s)`
+                ) : (
+                  'Resend OTP'
+                )}
+              </button>
 
               {/* Submit Button */}
               <button

@@ -77,6 +77,9 @@ export const authAPI = {
   verifyOTP: (data: { email: string; otp: string }) =>
     api.post('/auth/verify-otp', data),
   
+  resendOTP: (data: { email: string; purpose: 'signup' | 'login' }) =>
+    api.post('/auth/resend-otp', data),
+  
   getProfile: () =>
     api.get('/auth/profile'),
 

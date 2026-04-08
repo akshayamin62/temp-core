@@ -165,16 +165,16 @@ app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
 // --- Rate Limiters ---
-// General API limiter: 100 requests per 15 minutes per IP
+// General API limiter: 100 requests per 5 minutes per IP
 const generalLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
-  max: 50,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many requests. Please try again later.' },
 });
 
-// Auth limiter: 50 requests per 5 minutes per IP (signup, login)
+// Auth limiter: 100 requests per 5 minutes per IP (signup, login)
 const authLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   max: 100,

@@ -4,6 +4,7 @@ import {
   login,
   verifyOTP,
   verifySignupOTP,
+  resendOTP,
   getProfile,
   updateSPProfile,
   uploadProfilePic,
@@ -31,6 +32,7 @@ router.post("/signup", validateSignup, signup);
 router.post("/verify-signup-otp", verifySignupOTP); // Verify OTP during signup
 router.post("/login", login); // Request OTP for login
 router.post("/verify-otp", verifyOTP); // Verify OTP and login
+router.post("/resend-otp", resendOTP); // Resend OTP (signup or login)
 
 // Protected routes (require authentication)
 router.get("/profile", authenticate, getProfile);
