@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { IVY_API_URL } from '@/lib/ivyApi';
+import AuthImage from '@/components/AuthImage';
 
 interface IvyCandidate {
   _id: string;
@@ -12,6 +13,7 @@ interface IvyCandidate {
   middleName?: string;
   lastName: string;
   email: string;
+  profilePicture?: string;
   schoolName: string;
   curriculum: string;
   currentGrade: string;
@@ -215,11 +217,18 @@ function IvyCandidatesContent() {
                   <tr key={c._id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mr-3">
-                          <span className="text-amber-600 font-semibold text-sm">
-                            {c.firstName?.charAt(0)?.toUpperCase() || ''}{c.lastName?.charAt(0)?.toUpperCase() || ''}
-                          </span>
-                        </div>
+                        <AuthImage
+                          path={c.profilePicture}
+                          alt={`${c.firstName} ${c.lastName}`}
+                          className="w-10 h-10 rounded-full object-cover mr-3"
+                          fallback={
+                            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mr-3">
+                              <span className="text-amber-600 font-semibold text-sm">
+                                {c.firstName?.charAt(0)?.toUpperCase() || ''}{c.lastName?.charAt(0)?.toUpperCase() || ''}
+                              </span>
+                            </div>
+                          }
+                        />
                         <div>
                           <div className="font-medium text-gray-900">{getCandidateName(c)}</div>
                           <div className="text-sm text-gray-500">{c.email}</div>

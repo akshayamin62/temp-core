@@ -7,6 +7,7 @@ import { User, USER_ROLE, SERVICE_TYPE } from '@/types';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
+import AuthImage from '@/components/AuthImage';
 
 interface StudentData {
   _id: string;
@@ -16,6 +17,7 @@ interface StudentData {
     middleName?: string;
     lastName?: string;
     email: string;
+    profilePicture?: string;
     isActive: boolean;
     isVerified: boolean;
     createdAt: string;
@@ -214,11 +216,18 @@ export default function SuperAdminOpsStudentsPage() {
                       <tr key={student._id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                              <span className="text-blue-600 font-semibold text-sm">
-                                {student.userId ? getInitials(student.userId) : '?'}
-                              </span>
-                            </div>
+                            <AuthImage
+                              path={student.userId?.profilePicture}
+                              alt={student.userId ? getFullName(student.userId) : ''}
+                              className="w-10 h-10 rounded-full object-cover mr-3"
+                              fallback={
+                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                  <span className="text-blue-600 font-semibold text-sm">
+                                    {student.userId ? getInitials(student.userId) : '?'}
+                                  </span>
+                                </div>
+                              }
+                            />
                             <div>
                               <div className="font-medium text-gray-900">
                                 {student.userId ? getFullName(student.userId) : 'N/A'}

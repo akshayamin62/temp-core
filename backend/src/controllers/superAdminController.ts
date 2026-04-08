@@ -1783,7 +1783,7 @@ export const getOpsStudentsForSuperAdmin = async (req: Request, res: Response): 
     })
       .populate({
         path: 'userId',
-        select: 'firstName middleName lastName email isActive isVerified createdAt',
+        select: 'firstName middleName lastName email profilePicture isActive isVerified createdAt',
       })
       .populate({
         path: 'adminId',

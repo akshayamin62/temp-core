@@ -678,7 +678,7 @@ export const getStudentsWithRegistrations = async (req: AuthRequest, res: Respon
     }
 
     const students = await Student.find(query)
-      .populate('userId', 'firstName middleName lastName email')
+      .populate('userId', 'firstName middleName lastName email profilePicture')
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -1010,7 +1010,7 @@ export const sendMessageToStudent = async (req: AuthRequest, res: Response): Pro
 
     // Get student info with user details
     const student = await Student.findById(studentId)
-      .populate('userId', 'firstName middleName lastName email');
+      .populate('userId', 'firstName middleName lastName email profilePicture');
     if (!student) {
       return res.status(404).json({
         success: false,

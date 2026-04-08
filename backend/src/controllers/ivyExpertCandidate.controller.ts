@@ -96,10 +96,11 @@ export const getMyIvyCandidates = async (req: AuthRequest, res: Response): Promi
     const candidatesWithStatus = await Promise.all(
       candidates.map(async (reg: any) => {
         const testSession = await IvyTestSession.findOne({ studentId: reg.userId }).lean();
-        const user = await User.findById(reg.userId).select('email').lean();
+        const user = await User.findById(reg.userId).select('email profilePicture').lean();
         return {
           ...reg,
           email: (user as any)?.email || '',
+          profilePicture: (user as any)?.profilePicture || null,
           testStatus: testSession ? testSession.status : 'not-started',
           totalScore: testSession?.totalScore ?? null,
           maxScore: testSession?.maxScore ?? 120,
@@ -136,7 +137,7 @@ export const getMyIvyStudents = async (req: AuthRequest, res: Response): Promise
       activeIvyExpertId: ivyExpertId,
     }).populate({
       path: 'studentId',
-      populate: { path: 'userId', select: 'firstName middleName lastName email' },
+      populate: { path: 'userId', select: 'firstName middleName lastName email profilePicture' },
     }).lean();
 
     if (ssrs.length === 0) {
@@ -167,6 +168,7 @@ export const getMyIvyStudents = async (req: AuthRequest, res: Response): Promise
           middleName: (registration as any)?.middleName || userDoc?.middleName || '',
           lastName: (registration as any)?.lastName || userDoc?.lastName || '',
           email: userDoc?.email || '',
+          profilePicture: userDoc?.profilePicture || null,
           schoolName: (registration as any)?.schoolName || '',
           curriculum: (registration as any)?.curriculum || '',
           currentGrade: (registration as any)?.currentGrade || '',

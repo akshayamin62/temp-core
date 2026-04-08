@@ -100,9 +100,16 @@ export default function IvyExpertParentDetailPage() {
               {parent.studentIds.map((s: any) => (
                 <div key={s._id} className="flex items-center justify-between py-3">
                   <div className="flex items-center">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                      <span className="text-blue-600 font-semibold text-sm">{getInitials(s.userId)}</span>
-                    </div>
+                    <AuthImage
+                      path={s.userId?.profilePicture}
+                      alt={getFullName(s.userId)}
+                      className="w-10 h-10 rounded-full object-cover mr-3"
+                      fallback={
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                          <span className="text-blue-600 font-semibold text-sm">{getInitials(s.userId)}</span>
+                        </div>
+                      }
+                    />
                     <div>
                       <p className="font-medium text-gray-900">{getFullName(s.userId)}</p>
                       <p className="text-sm text-gray-500">{s.userId.email}</p>

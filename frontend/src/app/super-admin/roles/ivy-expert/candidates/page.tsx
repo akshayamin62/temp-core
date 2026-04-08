@@ -7,6 +7,7 @@ import { User, USER_ROLE } from '@/types';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
+import AuthImage from '@/components/AuthImage';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -29,6 +30,7 @@ interface IvyCandidate {
   maxScore: number;
   completedSections: number;
   createdAt: string;
+  profilePicture?: string;
   assignedIvyExpertId?: string | null;
   assignedExpertName?: string | null;
 }
@@ -357,11 +359,18 @@ export default function IvyCandidatesPage() {
                       <tr key={c._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                              <span className="text-blue-600 font-semibold text-sm">
-                                {c.firstName?.charAt(0)?.toUpperCase() || ''}{c.lastName?.charAt(0)?.toUpperCase() || ''}
-                              </span>
-                            </div>
+                            <AuthImage
+                              path={c.profilePicture}
+                              alt={`${c.firstName} ${c.lastName}`}
+                              className="w-10 h-10 rounded-full object-cover"
+                              fallback={
+                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                  <span className="text-blue-600 font-semibold text-sm">
+                                    {c.firstName?.charAt(0)?.toUpperCase() || ''}{c.lastName?.charAt(0)?.toUpperCase() || ''}
+                                  </span>
+                                </div>
+                              }
+                            />
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">{getCandidateName(c)}</div>
                               <div className="text-sm text-gray-500">{c.email}</div>

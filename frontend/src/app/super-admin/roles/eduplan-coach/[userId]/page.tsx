@@ -10,6 +10,7 @@ import TeamMeetCalendar from '@/components/TeamMeetCalendar';
 import TeamMeetSidebar from '@/components/TeamMeetSidebar';
 import TeamMeetFormPanel from '@/components/TeamMeetFormPanel';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
+import AuthImage from '@/components/AuthImage';
 
 interface StudentData {
   _id: string;
@@ -161,11 +162,18 @@ export default function SuperAdminEduplanCoachDashboardPage() {
               </svg>
             </button>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                <span className="text-lg font-bold text-blue-600">
-                  {getInitials(coachUser) || 'E'}
-                </span>
-              </div>
+              <AuthImage
+                path={coachUser?.profilePicture}
+                alt={getFullName(coachUser) || 'Eduplan Coach'}
+                className="w-10 h-10 rounded-lg object-cover"
+                fallback={
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <span className="text-lg font-bold text-blue-600">
+                      {getInitials(coachUser) || 'E'}
+                    </span>
+                  </div>
+                }
+              />
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">
                   {getFullName(coachUser) || 'Eduplan Coach Dashboard'}

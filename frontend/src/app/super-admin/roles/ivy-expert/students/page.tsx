@@ -7,6 +7,7 @@ import { User, USER_ROLE } from '@/types';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
+import AuthImage from '@/components/AuthImage';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -30,6 +31,7 @@ interface IvyStudent {
   maxScore: number;
   completedSections: number;
   createdAt: string;
+  profilePicture?: string;
 }
 
 export default function IvyStudentsPage() {
@@ -248,11 +250,18 @@ export default function IvyStudentsPage() {
                       <tr key={s._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                              <span className="text-green-600 font-semibold text-sm">
-                                {s.firstName?.charAt(0)?.toUpperCase() || ''}{s.lastName?.charAt(0)?.toUpperCase() || ''}
-                              </span>
-                            </div>
+                            <AuthImage
+                              path={s.profilePicture}
+                              alt={`${s.firstName} ${s.lastName}`}
+                              className="w-10 h-10 rounded-full object-cover"
+                              fallback={
+                                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                  <span className="text-green-600 font-semibold text-sm">
+                                    {s.firstName?.charAt(0)?.toUpperCase() || ''}{s.lastName?.charAt(0)?.toUpperCase() || ''}
+                                  </span>
+                                </div>
+                              }
+                            />
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">{getFullName(s)}</div>
                               <div className="text-sm text-gray-500">{s.email}</div>

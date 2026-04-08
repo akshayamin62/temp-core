@@ -149,7 +149,7 @@ export const getIvyStudents = async (req: AuthRequest, res: Response): Promise<v
       activeIvyExpertId: { $ne: null },
     }).populate({
       path: 'studentId',
-      populate: { path: 'userId', select: 'firstName middleName lastName email' },
+      populate: { path: 'userId', select: 'firstName middleName lastName email profilePicture' },
     }).lean();
 
     // Build results from SSRs directly (not filtered through IvyLeagueRegistration)

@@ -8,6 +8,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
 import CounselorLayout from '@/components/CounselorLayout';
 import StudentProfileModal from '@/components/StudentProfileModal';
+import AuthImage from '@/components/AuthImage';
 
 
 interface StudentDetails {
@@ -18,6 +19,7 @@ interface StudentDetails {
     middleName?: string;
     lastName: string;
     email: string;
+    profilePicture?: string;
     role: string;
     isVerified: boolean;
     isActive: boolean;
@@ -34,6 +36,7 @@ interface StudentDetails {
       middleName?: string;
       lastName: string;
       email: string;
+    profilePicture?: string;
     };
   };
   counselorId?: {
@@ -45,6 +48,7 @@ interface StudentDetails {
       middleName?: string;
       lastName: string;
       email: string;
+    profilePicture?: string;
     };
   };
   intake?: string;
@@ -219,11 +223,18 @@ export default function CounselorStudentDetailPage() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center">
+                    <AuthImage
+                  path={student.userId.profilePicture}
+                  alt={getFullName(student.userId)}
+                  className="w-16 h-16 rounded-full object-cover mr-4"
+                  fallback={
                     <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mr-4">
                       <span className="text-blue-600 font-bold text-xl">
                         {getInitials(student.userId)}
                       </span>
                     </div>
+                  }
+                />
                     <div>
                       <h1 className="text-2xl font-bold text-gray-900">{getFullName(student.userId)}</h1>
                       <p className="text-gray-600">{student.userId.email}</p>

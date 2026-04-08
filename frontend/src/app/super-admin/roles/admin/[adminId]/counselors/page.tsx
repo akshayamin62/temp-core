@@ -7,6 +7,7 @@ import { User, USER_ROLE } from '@/types';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
+import AuthImage from '@/components/AuthImage';
 
 interface CounselorData {
   _id: string;
@@ -16,6 +17,7 @@ interface CounselorData {
     middleName?: string;
     lastName: string;
     email: string;
+    profilePicture?: string;
     isVerified: boolean;
     isActive: boolean;
   };
@@ -193,11 +195,18 @@ export default function SuperAdminAdminCounselorsPage() {
                       <tr key={counselor._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                              <span className="text-blue-600 font-semibold text-sm">
-                                {getInitials(counselor.userId)}
-                              </span>
-                            </div>
+                            <AuthImage
+                              path={counselor.userId?.profilePicture}
+                              alt={getFullName(counselor.userId)}
+                              className="w-8 h-8 rounded-full object-cover mr-3"
+                              fallback={
+                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                  <span className="text-blue-600 font-semibold text-sm">
+                                    {getInitials(counselor.userId)}
+                                  </span>
+                                </div>
+                              }
+                            />
                             <span className="text-sm font-medium text-gray-900">{getFullName(counselor.userId) || 'N/A'}</span>
                           </div>
                         </td>
