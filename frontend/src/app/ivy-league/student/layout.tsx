@@ -8,6 +8,8 @@ import { IVY_API_URL } from '@/lib/ivyApi';
 import { authAPI } from '@/lib/api';
 import { USER_ROLE } from '@/types';
 
+const REFERRER_ROLE = USER_ROLE.REFERRER;
+
 const ALLOWED_ROLES: string[] = [
     USER_ROLE.STUDENT,
     USER_ROLE.IVY_EXPERT,
@@ -27,6 +29,14 @@ function StudentSidebar() {
     const readOnly = searchParams.get('readOnly') === 'true';
     
     const [studentInfo, setStudentInfo] = useState<{ firstName: string; lastName: string; email: string } | null>(null);
+    const [userRole, setUserRole] = useState<string>('');
+
+    useEffect(() => {
+        authAPI.getProfile().then(res => {
+            const role = res.data?.data?.user?.role || '';
+            setUserRole(role);
+        }).catch(() => {});
+    }, []);
 
     useEffect(() => {
         const fetchStudentInfo = async () => {
@@ -152,7 +162,7 @@ function StudentSidebar() {
             </div>
 
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                {navItems.map((item) => {
+                {(readOnly && userRole === REFERRER_ROLE ? navItems.filter(item => item.name === 'Dashboard') : navItems).map((item) => {
                     const active = isActive(item.href);
                     
                     return (

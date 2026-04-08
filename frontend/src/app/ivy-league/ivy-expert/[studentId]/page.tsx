@@ -117,7 +117,7 @@ function IvyExpertStudentDetail({ params }: { params: Promise<{ studentId: strin
 
   const handleViewService = (registration: Registration) => {
     if (registration.serviceId.name === 'Ivy League Admissions' || registration.serviceId.slug === 'ivy-league') {
-      router.push(`/ivy-league/ivy-expert?studentId=${studentId}&studentIvyServiceId=${serviceId || registration._id}`);
+      router.push(`/ivy-league/ivy-expert?studentId=${studentId}&studentIvyServiceId=${serviceId || registration._id}&userId=${student?.userId?._id || ''}`);
     }
   };
 

@@ -80,7 +80,7 @@ router.delete('/academic/project', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.ST
 router.put('/academic/weightages', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), updateWeightagesHandler);
 
 // GET /api/pointer1/academic/score/:studentId - Get academic excellence score
-router.get('/academic/score/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT]), getAcademicExcellenceScoreHandler);
+router.get('/academic/score/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.REFERRER]), getAcademicExcellenceScoreHandler);
 
 // POST /api/pointer1/academic/subsection/file - Upload file to informal sub-section
 router.post('/academic/subsection/file', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), subSectionFileUploadMiddleware, uploadSubSectionFileHandler);

@@ -134,11 +134,11 @@ export default function ReferrerStudentDetailPage() {
   };
 
   const handleViewFormData = (registrationId: string, serviceName?: string) => {
-    if (serviceName?.toLowerCase().includes('ivy league')) {
-      router.push(`/ivy-league?studentId=${studentId}&readOnly=true`);
-    } else {
-      router.push(`/referrer/students/${studentId}/registration/${registrationId}`);
+    if (serviceName === 'Ivy League Preparation' && student?.userId?._id) {
+      router.push(`/ivy-league/student?studentId=${student.userId._id}&readOnly=true`);
+      return;
     }
+    router.push(`/referrer/students/${studentId}/registration/${registrationId}`);
   };
 
   const getStatusBadge = (isActive: boolean) => {

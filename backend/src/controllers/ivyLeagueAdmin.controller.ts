@@ -7,6 +7,7 @@ import Service from '../models/Service';
 import User from '../models/ivy/User';
 import IvyExpert from '../models/IvyExpert';
 import Student from '../models/Student';
+import { USER_ROLE } from '../types/roles';
 
 /* ── Helper: get Ivy League service ID ─────────────────────────────── */
 let _ivyServiceId: any = null;
@@ -66,6 +67,7 @@ export const getIvyLeagueStats = async (req: AuthRequest, res: Response): Promis
 export const getIvyCandidates = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const serviceId = await getIvyServiceId();
+    const isStudent = req.user?.role === USER_ROLE.STUDENT;
 
     // Get all assigned student user IDs
     let assignedUserIds: string[] = [];
@@ -84,7 +86,9 @@ export const getIvyCandidates = async (req: AuthRequest, res: Response): Promise
     }
 
     // All registrations
-    const registrations = await IvyLeagueRegistration.find().lean();
+    const registrations = await IvyLeagueRegistration.find(
+      isStudent ? { userId: req.user!.userId } : {}
+    ).lean();
 
     // Filter to those NOT assigned
     const candidates = registrations.filter(
@@ -138,6 +142,7 @@ export const getIvyCandidates = async (req: AuthRequest, res: Response): Promise
 export const getIvyStudents = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const serviceId = await getIvyServiceId();
+    const isStudent = req.user?.role === USER_ROLE.STUDENT;
     if (!serviceId) {
       res.json({ success: true, students: [] });
       return;
@@ -195,7 +200,12 @@ export const getIvyStudents = async (req: AuthRequest, res: Response): Promise<v
       })
     );
 
-    res.json({ success: true, students: studentsWithStatus });
+    // If STUDENT role, only return their own record
+    const finalStudents = isStudent
+      ? studentsWithStatus.filter((s: any) => s.userId === req.user!.userId)
+      : studentsWithStatus;
+
+    res.json({ success: true, students: finalStudents });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message || 'Failed to get students' });
   }
@@ -208,6 +218,12 @@ export const getIvyStudents = async (req: AuthRequest, res: Response): Promise<v
 export const getStudentTestResult = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { userId } = req.params;
+
+    // STUDENT role can only access their own test result
+    if (req.user?.role === USER_ROLE.STUDENT && req.user.userId !== userId) {
+      res.status(403).json({ success: false, message: 'Access denied' });
+      return;
+    }
     const IvyTestQuestion = (await import('../models/ivy/IvyTestQuestion')).default;
 
     const session = await IvyTestSession.findOne({ studentId: userId });
@@ -434,6 +450,12 @@ export const saveInterviewData = async (req: AuthRequest, res: Response): Promis
 export const getInterviewData = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { userId } = req.params;
+
+    // STUDENT role can only access their own interview data
+    if (req.user?.role === USER_ROLE.STUDENT && req.user.userId !== userId) {
+      res.status(403).json({ success: false, message: 'Access denied' });
+      return;
+    }
 
     const session = await IvyTestSession.findOne({ studentId: userId })
       .select('studentInterview parentInterview')
