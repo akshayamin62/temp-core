@@ -765,6 +765,10 @@ export const getReferrerStudentDetail = async (req: AuthRequest, res: Response):
         select: "mobileNumber",
         populate: { path: "userId", select: "firstName middleName lastName email" },
       })
+      .populate({
+        path: "advisoryId",
+        populate: { path: "userId", select: "firstName middleName lastName email" },
+      })
       .lean()
       .exec();
 

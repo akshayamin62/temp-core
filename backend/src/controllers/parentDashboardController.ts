@@ -117,6 +117,10 @@ export const getParentStudentDetails = async (req: AuthRequest, res: Response): 
         path: 'referrerId',
         populate: { path: 'userId', select: 'firstName middleName lastName' },
       })
+      .populate({
+        path: 'advisoryId',
+        populate: { path: 'userId', select: 'firstName middleName lastName email' },
+      })
       .lean()
       .exec();
 

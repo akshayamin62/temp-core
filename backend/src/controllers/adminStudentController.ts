@@ -159,6 +159,13 @@ export const getAdminStudentDetails = async (req: AuthRequest, res: Response): P
           select: 'firstName middleName lastName'
         }
       })
+      .populate({
+        path: 'advisoryId',
+        populate: {
+          path: 'userId',
+          select: 'firstName middleName lastName name email'
+        }
+      })
       .lean()
       .exec();
 

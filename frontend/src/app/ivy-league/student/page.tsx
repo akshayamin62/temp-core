@@ -601,6 +601,22 @@ function IvyScoreContent() {
                             </div>
                         )}
 
+                        {/* Advisory */}
+                        {serviceData.studentId?.advisoryId && (
+                            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                                        <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                    </div>
+                                    <h5 className="font-black text-gray-900 uppercase tracking-tight text-sm">Advisory</h5>
+                                </div>
+                                <p className="text-sm font-bold text-gray-900 mb-1">{serviceData.studentId.advisoryId.firstName} {serviceData.studentId.advisoryId.lastName}</p>
+                                <p className="text-xs text-gray-600 mb-1">{serviceData.studentId.advisoryId.email}</p>
+                            </div>
+                        )}
+
                         {/* Ivy Expert */}
                         {serviceData.activeIvyExpertId && (
                             <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">

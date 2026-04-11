@@ -51,6 +51,16 @@ interface StudentDetails {
       email: string;
     };
   };
+  advisoryId?: {
+    _id: string;
+    userId: {
+      _id: string;
+      firstName: string;
+      middleName?: string;
+      lastName: string;
+      email: string;
+    };
+  };
   intake?: string;
   year?: string;
   createdAt: string;
@@ -442,6 +452,7 @@ export default function StudentDetailPage() {
                   {student.mobileNumber || 'Not provided'}
                 </p>
               </div>
+              {student.adminId && (
               <div>
                 <p className="text-sm text-gray-600 mb-1">Admin</p>
                 <p className="font-medium text-gray-900">
@@ -454,6 +465,8 @@ export default function StudentDetailPage() {
                   <p className="text-sm text-gray-500">{student.adminId.mobileNumber}</p>
                 )}
               </div>
+              )}
+              {student.adminId && (
               <div>
                 <p className="text-sm text-gray-600 mb-1">Counselor</p>
                 <p className="font-medium text-gray-900">
@@ -466,6 +479,18 @@ export default function StudentDetailPage() {
                   <p className="text-sm text-gray-500">{student.counselorId.mobileNumber}</p>
                 )}
               </div>
+              )}
+              {student.advisoryId && (
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Advisory</p>
+                <p className="font-medium text-gray-900">
+                  {getFullName(student.advisoryId?.userId) || 'N/A'}
+                </p>
+                {student.advisoryId?.userId?.email && (
+                  <p className="text-sm text-gray-500">{student.advisoryId.userId.email}</p>
+                )}
+              </div>
+              )}
               <div>
                 <p className="text-sm text-gray-600 mb-1">Joined Date</p>
                 <p className="font-medium text-gray-900">
@@ -1010,7 +1035,7 @@ export default function StudentDetailPage() {
                 </svg>
                 Student Service Enquiry
               </button>
-              {student.adminId?._id && (
+              {(student.adminId?._id || student.advisoryId?._id) && (
                 <button
                   onClick={() => router.push('/service-plans/view?studentId=' + studentId)}
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"

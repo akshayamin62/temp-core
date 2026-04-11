@@ -812,7 +812,25 @@ export const getAdvisoryStudentDetail = async (req: AuthRequest, res: Response):
     }
 
     const student = await Student.findOne({ _id: studentId, advisoryId: advisory._id })
-      .populate("userId", "firstName middleName lastName email isActive isVerified profilePicture mobileNumber");
+      .populate("userId", "firstName middleName lastName email isActive isVerified profilePicture mobileNumber createdAt")
+      .populate({
+        path: "adminId",
+        populate: { path: "userId", select: "firstName middleName lastName email" },
+      })
+      .populate({
+        path: "counselorId",
+        populate: { path: "userId", select: "firstName middleName lastName email" },
+      })
+      .populate({
+        path: "advisoryId",
+        populate: { path: "userId", select: "firstName middleName lastName email" },
+      })
+      .populate({
+        path: "referrerId",
+        populate: { path: "userId", select: "firstName middleName lastName" },
+      })
+      .lean()
+      .exec();
 
     if (!student) {
       return res.status(404).json({ success: false, message: "Student not found" });
@@ -820,7 +838,21 @@ export const getAdvisoryStudentDetail = async (req: AuthRequest, res: Response):
 
     // Get service registrations
     const registrations = await StudentServiceRegistration.find({ studentId: student._id })
-      .populate("serviceId");
+      .populate("serviceId", "name slug shortDescription icon")
+      .populate({
+        path: "primaryOpsId",
+        populate: { path: "userId", select: "firstName middleName lastName email" },
+      })
+      .populate({
+        path: "secondaryOpsId",
+        populate: { path: "userId", select: "firstName middleName lastName email" },
+      })
+      .populate({
+        path: "activeOpsId",
+        populate: { path: "userId", select: "firstName middleName lastName email" },
+      })
+      .lean()
+      .exec();
 
     return res.json({ success: true, data: { student, registrations } });
   } catch (error: any) {

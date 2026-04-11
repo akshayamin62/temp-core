@@ -267,6 +267,13 @@ export const getStudentDetails = async (req: AuthRequest, res: Response): Promis
           select: 'firstName middleName lastName'
         }
       })
+      .populate({
+        path: 'advisoryId',
+        populate: {
+          path: 'userId',
+          select: 'firstName middleName lastName email'
+        }
+      })
       .lean()
       .exec();
 

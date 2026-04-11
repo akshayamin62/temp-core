@@ -25,8 +25,39 @@ interface StudentDetail {
     createdAt?: string;
   };
   mobileNumber?: string;
-  adminId?: string;
-  advisoryId?: string;
+  adminId?: {
+    _id: string;
+    companyName?: string;
+    mobileNumber?: string;
+    userId: {
+      _id: string;
+      firstName: string;
+      middleName?: string;
+      lastName: string;
+      email: string;
+    };
+  };
+  counselorId?: {
+    _id: string;
+    mobileNumber?: string;
+    userId: {
+      _id: string;
+      firstName: string;
+      middleName?: string;
+      lastName: string;
+      email: string;
+    };
+  };
+  advisoryId?: {
+    _id: string;
+    userId: {
+      _id: string;
+      firstName: string;
+      middleName?: string;
+      lastName: string;
+      email: string;
+    };
+  };
   convertedFromLeadId?: string;
   intake?: string;
   year?: string;
@@ -194,7 +225,7 @@ export default function AdvisoryStudentDetailPage() {
   };
 
   const pendingTransfer = transfers.find((t) => t.status === 'PENDING');
-  const canTransfer = !student?.adminId && !pendingTransfer;
+  const canTransfer = !student?.adminId?._id && !pendingTransfer;
 
   if (!user) {
     return (
@@ -246,7 +277,7 @@ export default function AdvisoryStudentDetailPage() {
                       Transfer Student
                     </button>
                   )}
-                  {student.adminId && (
+                  {student.adminId?._id && (
                     <span className="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-sm font-medium">
                       Transferred to Admin
                     </span>
@@ -307,7 +338,7 @@ export default function AdvisoryStudentDetailPage() {
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Transfer Status</p>
                     <p className="font-medium text-gray-900">
-                      {student.adminId ? (
+                      {student.adminId?._id ? (
                         <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Transferred</span>
                       ) : pendingTransfer ? (
                         <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Pending Transfer</span>

@@ -53,6 +53,16 @@ interface StudentDetails {
     profilePicture?: string;
     };
   };
+  advisoryId?: {
+    _id: string;
+    userId: {
+      _id: string;
+      firstName: string;
+      middleName?: string;
+      lastName: string;
+      email: string;
+    };
+  };
   intake?: string;
   year?: string;
   createdAt: string;
@@ -229,6 +239,7 @@ export default function StudentDetailPage() {
                   {student.mobileNumber || 'Not provided'}
                 </p>
               </div>
+              {student.adminId && (
               <div>
                 <p className="text-sm text-gray-600 mb-1">Admin</p>
                 <p className="font-medium text-gray-900">
@@ -241,6 +252,8 @@ export default function StudentDetailPage() {
                   <p className="text-sm text-gray-500">{student.adminId.mobileNumber}</p>
                 )}
               </div>
+              )}
+              {student.adminId && (
               <div>
                 <p className="text-sm text-gray-600 mb-1">Counselor</p>
                 <p className="font-medium text-gray-900">
@@ -253,6 +266,18 @@ export default function StudentDetailPage() {
                   <p className="text-sm text-gray-500">{student.counselorId.mobileNumber}</p>
                 )}
               </div>
+              )}
+              {student.advisoryId && (
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Advisory</p>
+                <p className="font-medium text-gray-900">
+                  {getFullName(student.advisoryId?.userId) || 'N/A'}
+                </p>
+                {student.advisoryId?.userId?.email && (
+                  <p className="text-sm text-gray-500">{student.advisoryId.userId.email}</p>
+                )}
+              </div>
+              )}
               <div>
                 <p className="text-sm text-gray-600 mb-1">Joined Date</p>
                 <p className="font-medium text-gray-900">
@@ -360,7 +385,7 @@ export default function StudentDetailPage() {
           </div>
 
           {/* Service Plans */}
-          {student && student.adminId?._id && (
+          {student && (student.adminId?._id || student.advisoryId?._id) && (
             <div className="mt-6">
               <button
                 onClick={() => router.push('/service-plans/view?studentId=' + studentId)}
