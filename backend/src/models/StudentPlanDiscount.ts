@@ -7,7 +7,8 @@ export enum PlanDiscountType {
 
 export interface IStudentPlanDiscount extends Document {
   studentId: mongoose.Types.ObjectId;
-  adminId: mongoose.Types.ObjectId;
+  adminId?: mongoose.Types.ObjectId;
+  advisoryId?: mongoose.Types.ObjectId;
   serviceSlug: string;
   planTier: string;
 
@@ -33,7 +34,12 @@ const studentPlanDiscountSchema = new Schema<IStudentPlanDiscount>(
     adminId: {
       type: Schema.Types.ObjectId,
       ref: 'Admin',
-      required: true,
+      default: undefined,
+    },
+    advisoryId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Advisory',
+      default: undefined,
     },
     serviceSlug: {
       type: String,
@@ -81,5 +87,6 @@ const studentPlanDiscountSchema = new Schema<IStudentPlanDiscount>(
 // One active discount per student per service per plan
 studentPlanDiscountSchema.index({ studentId: 1, serviceSlug: 1, planTier: 1 });
 studentPlanDiscountSchema.index({ adminId: 1, studentId: 1 });
+studentPlanDiscountSchema.index({ advisoryId: 1, studentId: 1 });
 
 export default mongoose.model<IStudentPlanDiscount>('StudentPlanDiscount', studentPlanDiscountSchema);

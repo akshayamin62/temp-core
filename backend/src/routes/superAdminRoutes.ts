@@ -37,6 +37,10 @@ import {
   getIvyExpertTeamMeetsForSuperAdmin,
   editUserByRole,
   getUserWithProfile,
+  getAdvisories,
+  getAdvisoryDetails,
+  updateAdvisoryServices,
+  toggleAdvisoryStatus,
 } from "../controllers/superAdminController";
 import { authenticate } from "../middleware/auth";
 import { authorize } from "../middleware/authorize";
@@ -110,7 +114,7 @@ router.get("/users/:userId/profile", getUserWithProfile);
  * @desc    Edit user profile + role-specific fields
  * @access  Super Admin only
  */
-router.put("/users/:userId/edit", editUserByRole);
+router.put("/users/:userId/edit", uploadAdminLogo.single('companyLogo'), editUserByRole);
 
 /**
  * @route   DELETE /api/super-admin/users/:userId
@@ -351,6 +355,36 @@ router.post("/referrer", createReferrerForSuperAdmin);
  * @access  Super Admin only
  */
 router.patch("/referrer/:referrerId/toggle-status", toggleReferrerStatusForSuperAdmin);
+
+// ============= ADVISORY ROUTES =============
+
+/**
+ * @route   GET /api/super-admin/advisories
+ * @desc    Get all advisories with lead/student counts
+ * @access  Super Admin only
+ */
+router.get("/advisories", getAdvisories);
+
+/**
+ * @route   GET /api/super-admin/advisories/:id
+ * @desc    Get advisory details
+ * @access  Super Admin only
+ */
+router.get("/advisories/:id", getAdvisoryDetails);
+
+/**
+ * @route   PATCH /api/super-admin/advisories/:id/services
+ * @desc    Update advisory allowed services
+ * @access  Super Admin only
+ */
+router.patch("/advisories/:id/services", updateAdvisoryServices);
+
+/**
+ * @route   PATCH /api/super-admin/advisories/:id/toggle-status
+ * @desc    Toggle advisory active/inactive status
+ * @access  Super Admin only
+ */
+router.patch("/advisories/:id/toggle-status", toggleAdvisoryStatus);
 
 export default router;
 

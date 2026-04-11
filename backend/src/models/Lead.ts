@@ -36,7 +36,8 @@ export interface ILead extends Document {
   intake?: string;
   year?: string;
   parentDetail?: ILeadParentDetail;
-  adminId: mongoose.Types.ObjectId;
+  adminId?: mongoose.Types.ObjectId;
+  advisoryId?: mongoose.Types.ObjectId;
   assignedCounselorId?: mongoose.Types.ObjectId;
   referrerId?: mongoose.Types.ObjectId;
   stage: LEAD_STAGE;
@@ -104,7 +105,12 @@ const leadSchema = new Schema<ILead>(
     adminId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
+    },
+    advisoryId: {
+      type: Schema.Types.ObjectId,
+      ref: "Advisory",
+      default: null,
     },
     assignedCounselorId: {
       type: Schema.Types.ObjectId,
@@ -141,6 +147,7 @@ const leadSchema = new Schema<ILead>(
 
 // Index for faster queries
 leadSchema.index({ adminId: 1, stage: 1 });
+leadSchema.index({ advisoryId: 1, stage: 1 });
 leadSchema.index({ assignedCounselorId: 1, stage: 1 });
 leadSchema.index({ email: 1, adminId: 1 });
 

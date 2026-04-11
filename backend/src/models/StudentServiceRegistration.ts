@@ -10,6 +10,7 @@ export enum ServiceRegistrationStatus {
 export interface IStudentServiceRegistration extends Document {
   studentId: mongoose.Types.ObjectId;
   serviceId: mongoose.Types.ObjectId;
+  registeredViaAdvisoryId?: mongoose.Types.ObjectId; // Advisory who registered this service
   // For Study Abroad service - OPS role
   primaryOpsId?: mongoose.Types.ObjectId;
   secondaryOpsId?: mongoose.Types.ObjectId;
@@ -76,6 +77,11 @@ const studentServiceRegistrationSchema = new Schema<IStudentServiceRegistration>
       type: Schema.Types.ObjectId,
       ref: "Service",
       required: true,
+    },
+    registeredViaAdvisoryId: {
+      type: Schema.Types.ObjectId,
+      ref: "Advisory",
+      required: false,
     },
     // For Study Abroad service - OPS role
     primaryOpsId: {

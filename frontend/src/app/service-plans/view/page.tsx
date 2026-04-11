@@ -40,7 +40,7 @@ function ServicePlansViewContent() {
   const [planDiscounts, setPlanDiscounts] = useState<Record<string, Record<string, PlanDiscountInfo>>>({});
   const [discountForm, setDiscountForm] = useState<{ planKey: string; type: string; value: string; reason: string } | null>(null);
   const [savingDiscount, setSavingDiscount] = useState(false);
-  const isAdmin = user?.role === USER_ROLE.ADMIN || user?.role === 'admin';
+  const isAdmin = user?.role === USER_ROLE.ADMIN || user?.role === USER_ROLE.ADVISORY || user?.role === 'admin';
 
   useEffect(() => {
     const init = async () => {
@@ -62,7 +62,14 @@ function ServicePlansViewContent() {
             if (data.coachingPlanTiers) setCoachingRegisteredClasses(data.coachingPlanTiers);
             if (data.studentName) setStudentName(data.studentName);
             if (data.adminId) setAdminId(data.adminId);
-          } catch { /* ignore */ }
+            else if (data.advisoryId) setAdminId(data.advisoryId);
+          } catch (err: any) {
+            if (err?.response?.status === 403) {
+              toast.error('You do not have access to this student');
+              router.push('/');
+              return;
+            }
+          }
 
           // Fetch student plan discounts
           try {
@@ -90,15 +97,23 @@ function ServicePlansViewContent() {
       let p: Record<string, number> | null = null;
 
       if (adminId) {
-        const pricingRes = await servicePlanAPI.getAdminPricingById(slug, adminId);
-        p = pricingRes.data.data.pricing || null;
+        try {
+          const pricingRes = await servicePlanAPI.getAdminPricingById(slug, adminId);
+          p = pricingRes.data.data.pricing || null;
+        } catch {
+          // Will fall through to own-pricing fallback
+        }
       }
 
-      // Fallback: if logged-in admin is viewing and student admin pricing lookup returned empty,
-      // fetch own admin pricing directly.
+      // Fallback: if logged-in admin/advisory is viewing and student pricing lookup returned empty,
+      // fetch own admin/advisory pricing directly.
       if (!p && isAdmin) {
-        const ownPricingRes = await servicePlanAPI.getAdminPricing(slug);
-        p = ownPricingRes.data.data.pricing || null;
+        try {
+          const ownPricingRes = await servicePlanAPI.getAdminPricing(slug);
+          p = ownPricingRes.data.data.pricing || null;
+        } catch {
+          // Own pricing also unavailable
+        }
       }
 
       if (p) setPricing(p);

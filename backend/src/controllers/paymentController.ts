@@ -10,6 +10,7 @@ import StudentPlanDiscount from '../models/StudentPlanDiscount';
 import ServicePricing from '../models/ServicePricing';
 import User from '../models/User';
 import Admin from '../models/Admin';
+import Advisory from '../models/Advisory';
 import Counselor from '../models/Counselor';
 import Ops from '../models/Ops';
 import Parent from '../models/Parent';
@@ -39,6 +40,12 @@ const verifyStudentAccess = async (userId: string, role: string, studentId: stri
       const admin = await Admin.findOne({ userId }).select('_id').lean();
       if (!admin) return false;
       const student = await Student.findOne({ _id: studentId, adminId: admin._id }).select('_id').lean();
+      return !!student;
+    }
+    case USER_ROLE.ADVISORY: {
+      const advisory = await Advisory.findOne({ userId }).select('_id').lean();
+      if (!advisory) return false;
+      const student = await Student.findOne({ _id: studentId, advisoryId: advisory._id }).select('_id').lean();
       return !!student;
     }
     case USER_ROLE.COUNSELOR: {
@@ -100,9 +107,10 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<Resp
       return res.status(404).json({ success: false, message: 'Service not found' });
     }
 
-    // Get student's adminId
+    // Get student's adminId/advisoryId
     const student = await Student.findById(registration.studentId).lean();
     const adminId = student?.adminId?.toString();
+    const advisoryId = student?.advisoryId?.toString();
 
     // Auto-initialize payment model if not set
     if (!registration.paymentModel) {
@@ -188,6 +196,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<Resp
       registrationId: registration._id,
       studentId: registration.studentId,
       adminId,
+      advisoryId,
       razorpayOrderId: order.id,
       amountInr,
       currency: 'INR',
@@ -282,9 +291,10 @@ export const verifyPayment = async (req: AuthRequest, res: Response): Promise<Re
       const serviceName = service?.name || 'Service';
       const serviceSlug = service?.slug || '';
 
-      // Get student's adminId for invoice
+      // Get student's adminId/advisoryId for invoice
       const student = await Student.findById(registration.studentId).lean();
       const adminId = student?.adminId?.toString() || payment.adminId?.toString();
+      const advisoryId = student?.advisoryId?.toString() || payment.advisoryId?.toString();
 
       // Update payment totals (GST-inclusive)
       registration.totalPaid = (registration.totalPaid || 0) + payment.amountInr;
@@ -337,6 +347,7 @@ export const verifyPayment = async (req: AuthRequest, res: Response): Promise<Re
         paymentId: payment._id.toString(),
         studentId: registration.studentId.toString(),
         adminId,
+        advisoryId,
         serviceName,
         serviceSlug,
         planTier: registration.planTier || 'Standard',
@@ -454,7 +465,8 @@ export const createMiscCollection = async (req: AuthRequest, res: Response): Pro
     // Create Payment record
     const payment = await Payment.create({
       studentId,
-      adminId: req.user?.userId,
+      adminId: student.adminId,
+      advisoryId: student.advisoryId,
       razorpayOrderId: order.id,
       amountInr: amount,
       currency: 'INR',
@@ -751,6 +763,12 @@ export const createRegistrationOrder = async (req: AuthRequest, res: Response): 
         const pricesObj = pricing.prices as unknown as Record<string, number>;
         basePrice = pricesObj[planTier] || 0;
       }
+    } else if (student.advisoryId) {
+      const pricing = await ServicePricing.findOne({ advisoryId: student.advisoryId, serviceSlug }).lean();
+      if (pricing && pricing.prices) {
+        const pricesObj = pricing.prices as unknown as Record<string, number>;
+        basePrice = pricesObj[planTier] || 0;
+      }
     }
     if (basePrice <= 0) {
       return res.status(400).json({ success: false, message: 'Pricing not available for this plan' });
@@ -812,6 +830,7 @@ export const createRegistrationOrder = async (req: AuthRequest, res: Response): 
     const payment = await Payment.create({
       studentId: student._id,
       adminId: student.adminId,
+      advisoryId: student.advisoryId,
       razorpayOrderId: order.id,
       amountInr: chargeNow,
       currency: 'INR',
@@ -902,6 +921,7 @@ export const verifyRegistrationPayment = async (req: AuthRequest, res: Response)
     }
 
     const adminId = student.adminId?.toString();
+    const advisoryId = student.advisoryId?.toString();
     const GST_RATE = 18;
     const netBase = Math.max(0, basePrice - discountAmt);
 
@@ -958,6 +978,7 @@ export const verifyRegistrationPayment = async (req: AuthRequest, res: Response)
         paymentId: payment._id.toString(),
         studentId: studId,
         adminId,
+        advisoryId,
         serviceName: service.name,
         serviceSlug,
         planTier,
@@ -972,6 +993,7 @@ export const verifyRegistrationPayment = async (req: AuthRequest, res: Response)
         registrationId: regId,
         studentId: studId,
         adminId,
+        advisoryId,
         serviceName: service.name,
         serviceSlug,
         planTier,
@@ -1016,6 +1038,7 @@ export const verifyRegistrationPayment = async (req: AuthRequest, res: Response)
         registrationId: regId,
         studentId: studId,
         adminId,
+        advisoryId,
         serviceName: service.name,
         serviceSlug,
         planTier,
@@ -1029,6 +1052,7 @@ export const verifyRegistrationPayment = async (req: AuthRequest, res: Response)
         paymentId: payment._id.toString(),
         studentId: studId,
         adminId,
+        advisoryId,
         serviceName: service.name,
         serviceSlug,
         planTier,
@@ -1138,8 +1162,13 @@ export const createUpgradeOrder = async (req: AuthRequest, res: Response): Promi
     // Get pricing for both plans
     let newBasePrice = 0;
     let oldBasePrice = 0;
-    if (student.adminId) {
-      const pricing = await ServicePricing.findOne({ adminId: student.adminId, serviceSlug }).lean();
+    const pricingQuery = student.adminId
+      ? { adminId: student.adminId, serviceSlug }
+      : student.advisoryId
+        ? { advisoryId: student.advisoryId, serviceSlug }
+        : null;
+    if (pricingQuery) {
+      const pricing = await ServicePricing.findOne(pricingQuery).lean();
       if (pricing?.prices) {
         const pricesObj = pricing.prices as unknown as Record<string, number>;
         newBasePrice = pricesObj[newPlanTier] || 0;
@@ -1218,6 +1247,7 @@ export const createUpgradeOrder = async (req: AuthRequest, res: Response): Promi
     const payment = await Payment.create({
       studentId: student._id,
       adminId: student.adminId,
+      advisoryId: student.advisoryId,
       registrationId: registration._id,
       razorpayOrderId: order.id,
       amountInr: upgradeDifference,
@@ -1309,6 +1339,7 @@ export const verifyUpgradePayment = async (req: AuthRequest, res: Response): Pro
     if (!registration) return res.status(404).json({ success: false, message: 'Registration not found' });
 
     const adminId = student.adminId?.toString();
+    const advisoryId = student.advisoryId?.toString();
     const regId = registration._id.toString();
     const studId = (student._id as any).toString();
 
@@ -1392,6 +1423,7 @@ export const verifyUpgradePayment = async (req: AuthRequest, res: Response): Pro
       paymentId: payment._id.toString(),
       studentId: studId,
       adminId,
+      advisoryId,
       serviceName: service.name,
       serviceSlug,
       planTier: newPlanTier,
@@ -1406,6 +1438,7 @@ export const verifyUpgradePayment = async (req: AuthRequest, res: Response): Pro
         registrationId: regId,
         studentId: studId,
         adminId,
+        advisoryId,
         serviceName: service.name,
         serviceSlug,
         planTier: newPlanTier,

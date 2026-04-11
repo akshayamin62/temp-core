@@ -121,7 +121,7 @@ export const superAdminAPI = {
   getUserWithProfile: (userId: string) =>
     api.get(`/super-admin/users/${userId}/profile`),
 
-  editUserByRole: (userId: string, data: Record<string, any>) =>
+  editUserByRole: (userId: string, data: Record<string, any> | FormData) =>
     api.put(`/super-admin/users/${userId}/edit`, data),
 
   deleteUser: (userId: string) => api.delete(`/super-admin/users/${userId}`),
@@ -227,6 +227,14 @@ export const superAdminAPI = {
   
   toggleReferrerStatus: (referrerId: string) =>
     api.patch(`/super-admin/referrer/${referrerId}/toggle-status`),
+
+  // Advisory management
+  getAdvisories: () => api.get('/super-admin/advisories'),
+  getAdvisoryDetails: (id: string) => api.get(`/super-admin/advisories/${id}`),
+  updateAdvisoryServices: (id: string, data: { allowedServices: string[] }) =>
+    api.patch(`/super-admin/advisories/${id}/services`, data),
+  toggleAdvisoryStatus: (id: string) =>
+    api.patch(`/super-admin/advisories/${id}/toggle-status`),
 };
 
 // Admin Student API (read-only access to students for admin/counselor)
@@ -1004,6 +1012,57 @@ export const invoiceAPI = {
 export const ledgerAPI = {
   getLedgerByRegistration: (registrationId: string) => api.get(`/ledger/registration/${registrationId}`),
   getLedgersByStudent: (studentId: string) => api.get(`/ledger/student/${studentId}`),
+};
+
+// ===== Advisory APIs =====
+export const advisoryAPI = {
+  // Dashboard
+  getDashboardStats: () => api.get('/advisory/dashboard'),
+  
+  // Leads
+  getLeads: (params?: Record<string, string>) => api.get('/advisory/leads', { params }),
+  getLeadDetail: (leadId: string) => api.get(`/advisory/leads/${leadId}`),
+  updateLeadStage: (leadId: string, data: { stage: string }) => api.patch(`/advisory/leads/${leadId}/stage`, data),
+  
+  // Follow-ups
+  createFollowUp: (data: Record<string, unknown>) => api.post('/advisory/follow-ups', data),
+  getFollowUps: (params?: Record<string, string>) => api.get('/advisory/follow-ups', { params }),
+  getFollowUpSummary: () => api.get('/advisory/follow-ups/summary'),
+  updateFollowUp: (followUpId: string, data: Record<string, unknown>) => api.patch(`/advisory/follow-ups/${followUpId}`, data),
+  getLeadFollowUpHistory: (leadId: string) => api.get(`/advisory/leads/${leadId}/follow-ups`),
+  
+  // Lead Conversion
+  convertLead: (leadId: string, data: Record<string, unknown>) => api.post(`/advisory/leads/${leadId}/convert`, data),
+  
+  // Students
+  getStudents: () => api.get('/advisory/students'),
+  getStudentDetail: (studentId: string) => api.get(`/advisory/students/${studentId}`),
+  
+  // Student Transfer
+  initiateTransfer: (studentId: string, data: { interestedServices: string[] }) =>
+    api.post(`/advisory/students/${studentId}/transfer`, data),
+  getTransfers: () => api.get('/advisory/transfers'),
+  cancelTransfer: (transferId: string) => api.post(`/advisory/transfers/${transferId}/cancel`),
+  
+  // Parents
+  getParents: () => api.get('/advisory/parents'),
+  
+  // Service Pricing
+  getPricing: (serviceSlug: string) => api.get(`/advisory/service-pricing/${serviceSlug}`),
+  setPricing: (serviceSlug: string, data: Record<string, unknown>) =>
+    api.put(`/advisory/service-pricing/${serviceSlug}`, data),
+  
+  // Enquiry Form URL
+  getEnquiryFormUrl: () => api.get('/advisory/enquiry-form-url'),
+};
+
+// ===== Admin Transfer APIs =====
+export const adminTransferAPI = {
+  getPendingTransfers: () => api.get('/admin/transfers/pending'),
+  getTransfers: () => api.get('/admin/transfers'),
+  approveTransfer: (transferId: string) => api.post(`/admin/transfers/${transferId}/approve`),
+  rejectTransfer: (transferId: string, data: { reason: string }) =>
+    api.post(`/admin/transfers/${transferId}/reject`, data),
 };
 
 export default api;

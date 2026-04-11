@@ -223,7 +223,7 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
     // Check admin authorization
     if (userRole === USER_ROLE.ADMIN) {
       const admin = await Admin.findOne({ userId });
-      if (!admin || admin._id.toString() !== conversion.adminId.toString()) {
+      if (!admin || admin._id.toString() !== conversion.adminId?.toString()) {
         return res.status(403).json({
           success: false,
           message: "You can only approve conversions for your organization"
@@ -545,7 +545,7 @@ export const rejectConversion = async (req: AuthRequest, res: Response): Promise
     // Check admin authorization
     if (userRole === USER_ROLE.ADMIN) {
       const admin = await Admin.findOne({ userId });
-      if (!admin || admin._id.toString() !== conversion.adminId.toString()) {
+      if (!admin || admin._id.toString() !== conversion.adminId?.toString()) {
         return res.status(403).json({
           success: false,
           message: "You can only reject conversions for your organization"

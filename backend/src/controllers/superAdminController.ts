@@ -5,6 +5,7 @@ import Ops from "../models/Ops";
 import IvyExpert from "../models/IvyExpert";
 import EduplanCoach from "../models/EduplanCoach";
 import Admin from "../models/Admin";
+import Advisory from "../models/Advisory";
 import Counselor from "../models/Counselor";
 import Lead, { LEAD_STAGE } from "../models/Lead";
 import Student from "../models/Student";
@@ -91,6 +92,23 @@ export const getAllUsers = async (req: Request, res: Response): Promise<Response
             if (spProfile) {
               userObj.companyName = spProfile.companyName;
               userObj.companyLogo = spProfile.companyLogo;
+            }
+          }
+          return userObj;
+        })
+      );
+    }
+
+    // If filtering by ADVISORY role, include advisory profile data
+    if (role && String(role).toUpperCase() === 'ADVISORY') {
+      enrichedUsers = await Promise.all(
+        users.map(async (user: any) => {
+          const userObj = user.toObject();
+          if (userObj.role === USER_ROLE.ADVISORY) {
+            const advisoryProfile = await Advisory.findOne({ userId: user._id }).select('companyName companyLogo');
+            if (advisoryProfile) {
+              userObj.companyName = advisoryProfile.companyName;
+              userObj.companyLogo = advisoryProfile.companyLogo;
             }
           }
           return userObj;
@@ -947,6 +965,30 @@ export const createUserByRole = async (req: Request, res: Response): Promise<Res
       });
     }
 
+    // For ADVISORY role, companyName and allowedServices are required
+    if (role === USER_ROLE.ADVISORY && !companyName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Company name is required for Advisory creation',
+      });
+    }
+
+    if (role === USER_ROLE.ADVISORY) {
+      let allowedServices = req.body.allowedServices;
+      // FormData sends arrays as JSON strings — parse if needed
+      if (typeof allowedServices === 'string') {
+        try { allowedServices = JSON.parse(allowedServices); } catch { allowedServices = null; }
+      }
+      if (!allowedServices || !Array.isArray(allowedServices) || allowedServices.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'At least one allowed service is required for Advisory creation',
+        });
+      }
+      // Store parsed array back for later use
+      req.body.allowedServices = allowedServices;
+    }
+
     // Validate role is allowed
     const allowedRoles = [
       USER_ROLE.ADMIN,
@@ -954,6 +996,7 @@ export const createUserByRole = async (req: Request, res: Response): Promise<Res
       USER_ROLE.EDUPLAN_COACH,
       USER_ROLE.IVY_EXPERT,
       USER_ROLE.COUNSELOR,
+      USER_ROLE.ADVISORY,
     ];
 
     if (!allowedRoles.includes(role as USER_ROLE)) {
@@ -1003,6 +1046,12 @@ export const createUserByRole = async (req: Request, res: Response): Promise<Res
     });
 
     await newUser.save();
+
+    // Set company logo as profile picture for admin/advisory roles
+    if (companyLogo && (role === USER_ROLE.ADMIN || role === USER_ROLE.ADVISORY)) {
+      newUser.profilePicture = companyLogo;
+      await newUser.save();
+    }
 
     let enquiryFormSlug: string | undefined;
 
@@ -1071,6 +1120,33 @@ export const createUserByRole = async (req: Request, res: Response): Promise<Res
         mobileNumber: phoneNumber?.trim() || undefined,
       });
       await newCounselor.save();
+    }
+
+    // If creating ADVISORY role, create Advisory profile with slug and allowedServices
+    if (role === USER_ROLE.ADVISORY) {
+      const { allowedServices } = req.body;
+      let baseSlug: string;
+      if (customSlug) {
+        baseSlug = generateSlug(customSlug);
+      } else if (companyName) {
+        baseSlug = generateSlug(companyName);
+      } else {
+        const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
+        baseSlug = generateSlug(fullName);
+      }
+      enquiryFormSlug = await getUniqueSlug(baseSlug);
+
+      const newAdvisory = new Advisory({
+        userId: newUser._id,
+        email: email.toLowerCase().trim(),
+        mobileNumber: phoneNumber?.trim() || undefined,
+        companyName: companyName.trim(),
+        companyLogo: companyLogo || undefined,
+        address: address?.trim() || undefined,
+        enquiryFormSlug: enquiryFormSlug,
+        allowedServices: allowedServices,
+      });
+      await newAdvisory.save();
     }
 
     return res.status(201).json({
@@ -2176,6 +2252,12 @@ export const editUserByRole = async (req: Request, res: Response): Promise<Respo
       if (body.companyName !== undefined) adminUpdate.companyName = body.companyName.trim();
       if (body.address !== undefined) adminUpdate.address = body.address.trim();
       if (body.enquiryFormSlug !== undefined) adminUpdate.enquiryFormSlug = body.enquiryFormSlug.toLowerCase().trim();
+      // Handle company logo upload
+      if ((req as any).file) {
+        const logoPath = `/uploads/admin/${(req as any).file.filename}`;
+        adminUpdate.companyLogo = logoPath;
+        await User.findByIdAndUpdate(userId, { profilePicture: logoPath });
+      }
       if (Object.keys(adminUpdate).length > 0) {
         await Admin.findOneAndUpdate({ userId }, adminUpdate, { new: true, runValidators: false });
       }
@@ -2280,6 +2362,32 @@ export const editUserByRole = async (req: Request, res: Response): Promise<Respo
         }
         }
       }
+    } else if (role === USER_ROLE.ADVISORY) {
+      const advisoryUpdate: any = {};
+      if (email !== undefined) advisoryUpdate.email = email.toLowerCase().trim();
+      if (mobileNumber !== undefined) advisoryUpdate.mobileNumber = mobileNumber.trim();
+      if (body.companyName !== undefined) advisoryUpdate.companyName = body.companyName.trim();
+      if (body.address !== undefined) advisoryUpdate.address = body.address.trim();
+      if (body.enquiryFormSlug !== undefined) advisoryUpdate.enquiryFormSlug = body.enquiryFormSlug.toLowerCase().trim();
+      if (body.allowedServices !== undefined) {
+        let services = body.allowedServices;
+        if (typeof services === 'string') {
+          try { services = JSON.parse(services); } catch { services = null; }
+        }
+        if (Array.isArray(services) && services.length > 0) {
+          advisoryUpdate.allowedServices = services;
+        }
+      }
+      // Handle company logo upload
+      if ((req as any).file) {
+        const logoPath = `/uploads/admin/${(req as any).file.filename}`;
+        advisoryUpdate.companyLogo = logoPath;
+        // Also update user profile picture
+        await User.findByIdAndUpdate(userId, { profilePicture: logoPath });
+      }
+      if (Object.keys(advisoryUpdate).length > 0) {
+        await Advisory.findOneAndUpdate({ userId }, advisoryUpdate, { new: true, runValidators: false });
+      }
     }
 
     // Fetch updated user
@@ -2329,6 +2437,8 @@ export const getUserWithProfile = async (req: Request, res: Response): Promise<R
       }
     } else if (role === USER_ROLE.ADMIN) {
       profile = await Admin.findOne({ userId });
+    } else if (role === USER_ROLE.ADVISORY) {
+      profile = await Advisory.findOne({ userId });
     } else if (role === USER_ROLE.SERVICE_PROVIDER) {
       profile = await ServiceProvider.findOne({ userId });
     }
@@ -2340,5 +2450,141 @@ export const getUserWithProfile = async (req: Request, res: Response): Promise<R
   } catch (error: any) {
     console.error('Get user with profile error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch user profile' });
+  }
+};
+
+/**
+ * Get all advisories (Super Admin)
+ */
+export const getAdvisories = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const advisories = await Advisory.find()
+      .populate('userId', 'firstName middleName lastName email role isActive')
+      .sort({ createdAt: -1 });
+
+    // Get lead and student counts for each advisory
+    const data = await Promise.all(
+      advisories.map(async (advisory) => {
+        const [leadCount, studentCount] = await Promise.all([
+          Lead.countDocuments({ advisoryId: advisory._id }),
+          Student.countDocuments({ advisoryId: advisory._id }),
+        ]);
+        return {
+          ...advisory.toObject(),
+          leadCount,
+          studentCount,
+        };
+      })
+    );
+
+    return res.status(200).json({ success: true, data });
+  } catch (error: any) {
+    console.error('Get advisories error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch advisories' });
+  }
+};
+
+/**
+ * Get advisory details (Super Admin)
+ */
+export const getAdvisoryDetails = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { id } = req.params;
+
+    const advisory = await Advisory.findById(id)
+      .populate('userId', 'firstName middleName lastName email role isActive');
+
+    if (!advisory) {
+      return res.status(404).json({ success: false, message: 'Advisory not found' });
+    }
+
+    const [leadCount, studentCount, transferCount] = await Promise.all([
+      Lead.countDocuments({ advisoryId: advisory._id }),
+      Student.countDocuments({ advisoryId: advisory._id }),
+      (await import('../models/StudentTransfer')).default.countDocuments({ fromAdvisoryId: advisory._id }),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        ...advisory.toObject(),
+        leadCount,
+        studentCount,
+        transferCount,
+      },
+    });
+  } catch (error: any) {
+    console.error('Get advisory details error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch advisory details' });
+  }
+};
+
+/**
+ * Update advisory allowed services (Super Admin)
+ */
+export const updateAdvisoryServices = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { id } = req.params;
+    let allowedServices = req.body.allowedServices;
+
+    // FormData sends arrays as JSON strings — parse if needed
+    if (typeof allowedServices === 'string') {
+      try { allowedServices = JSON.parse(allowedServices); } catch { allowedServices = null; }
+    }
+
+    if (!allowedServices || !Array.isArray(allowedServices) || allowedServices.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one allowed service is required',
+      });
+    }
+
+    const advisory = await Advisory.findByIdAndUpdate(
+      id,
+      { allowedServices },
+      { new: true }
+    ).populate('userId', 'firstName middleName lastName email role isActive');
+
+    if (!advisory) {
+      return res.status(404).json({ success: false, message: 'Advisory not found' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Advisory services updated successfully',
+      data: advisory,
+    });
+  } catch (error: any) {
+    console.error('Update advisory services error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to update advisory services' });
+  }
+};
+
+/**
+ * Toggle advisory active status (Super Admin)
+ */
+export const toggleAdvisoryStatus = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { id } = req.params;
+
+    const advisory = await Advisory.findById(id);
+    if (!advisory) {
+      return res.status(404).json({ success: false, message: 'Advisory not found' });
+    }
+
+    advisory.isActive = !advisory.isActive;
+    await advisory.save();
+
+    // Also toggle the user's isActive status
+    await User.findByIdAndUpdate(advisory.userId, { isActive: advisory.isActive });
+
+    return res.status(200).json({
+      success: true,
+      message: `Advisory ${advisory.isActive ? 'activated' : 'deactivated'} successfully`,
+      data: advisory,
+    });
+  } catch (error: any) {
+    console.error('Toggle advisory status error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to toggle advisory status' });
   }
 };

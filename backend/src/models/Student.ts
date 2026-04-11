@@ -4,6 +4,7 @@ export interface IStudent extends Document {
   userId: mongoose.Types.ObjectId;
   adminId?: mongoose.Types.ObjectId;
   counselorId?: mongoose.Types.ObjectId;
+  advisoryId?: mongoose.Types.ObjectId;
   email?: string;
   mobileNumber?: string;
   intake?: string;
@@ -55,6 +56,11 @@ const studentSchema = new Schema<IStudent>(
       required: false,
       trim: true,
     },
+    advisoryId: {
+      type: Schema.Types.ObjectId,
+      ref: "Advisory",
+      required: false,
+    },
     referrerId: {
       type: Schema.Types.ObjectId,
       ref: "Referrer",
@@ -78,6 +84,7 @@ const studentSchema = new Schema<IStudent>(
 studentSchema.index({ email: 1 });
 studentSchema.index({ adminId: 1 });
 studentSchema.index({ counselorId: 1 });
+studentSchema.index({ advisoryId: 1 });
 
 export default mongoose.model<IStudent>("Student", studentSchema);
 

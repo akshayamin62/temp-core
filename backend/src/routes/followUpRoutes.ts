@@ -38,7 +38,7 @@ router.get(
 
 router.get(
   "/check-availability",
-  authorize([USER_ROLE.COUNSELOR, USER_ROLE.ADMIN]),
+  authorize([USER_ROLE.COUNSELOR, USER_ROLE.ADMIN, USER_ROLE.ADVISORY]),
   checkTimeSlotAvailability
 );
 
@@ -50,13 +50,13 @@ router.get(
 
 router.get(
   "/:followUpId",
-  authorize([USER_ROLE.COUNSELOR, USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN]),
+  authorize([USER_ROLE.COUNSELOR, USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADVISORY]),
   getFollowUpById
 );
 
 router.patch(
   "/:followUpId",
-  authorize([USER_ROLE.COUNSELOR, USER_ROLE.ADMIN]),
+  authorize([USER_ROLE.COUNSELOR, USER_ROLE.ADMIN, USER_ROLE.ADVISORY]),
   updateFollowUp
 );
 

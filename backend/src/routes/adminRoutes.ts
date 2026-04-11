@@ -13,6 +13,12 @@ import {
   getReferrers,
   toggleReferrerStatus,
 } from "../controllers/referrerController";
+import {
+  getPendingTransfers,
+  getAdminTransfers,
+  approveTransfer,
+  rejectTransfer,
+} from "../controllers/studentTransferController";
 import { authenticate } from "../middleware/auth";
 import { authorize } from "../middleware/authorize";
 import { USER_ROLE } from "../types/roles";
@@ -95,6 +101,36 @@ router.get("/referrers", getReferrers);
  * @access  Admin only
  */
 router.patch("/referrer/:referrerId/toggle-status", toggleReferrerStatus);
+
+// ============= STUDENT TRANSFER ROUTES =============
+
+/**
+ * @route   GET /api/admin/transfers/pending
+ * @desc    Get pending student transfers for this admin
+ * @access  Admin only
+ */
+router.get("/transfers/pending", getPendingTransfers);
+
+/**
+ * @route   GET /api/admin/transfers
+ * @desc    Get all student transfers for this admin
+ * @access  Admin only
+ */
+router.get("/transfers", getAdminTransfers);
+
+/**
+ * @route   POST /api/admin/transfers/:transferId/approve
+ * @desc    Approve a student transfer
+ * @access  Admin only
+ */
+router.post("/transfers/:transferId/approve", approveTransfer);
+
+/**
+ * @route   POST /api/admin/transfers/:transferId/reject
+ * @desc    Reject a student transfer
+ * @access  Admin only
+ */
+router.post("/transfers/:transferId/reject", rejectTransfer);
 
 export default router;
 

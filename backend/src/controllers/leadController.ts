@@ -2,6 +2,7 @@ import { Response } from "express";
 import { AuthRequest } from "../types/auth";
 import Lead, { LEAD_STAGE, SERVICE_TYPE } from "../models/Lead";
 import Admin from "../models/Admin";
+import Advisory from "../models/Advisory";
 import Counselor from "../models/Counselor";
 // import User from "../models/User";
 import { USER_ROLE } from "../types/roles";
@@ -28,7 +29,7 @@ export const getUniqueSlug = async (baseSlug: string): Promise<string> => {
   let slug = baseSlug;
   let counter = 1;
   
-  while (await Admin.findOne({ enquiryFormSlug: slug })) {
+  while (await Admin.findOne({ enquiryFormSlug: slug }) || await Advisory.findOne({ enquiryFormSlug: slug })) {
     slug = `${baseSlug}-${counter}`;
     counter++;
   }
@@ -62,19 +63,26 @@ export const submitEnquiry = async (req: Request, res: Response): Promise<Respon
       }
     }
 
-    // Find admin by slug
+    // Find admin or advisory by slug
     const admin = await Admin.findOne({ enquiryFormSlug: adminSlug.toLowerCase() });
-    if (!admin) {
+    const advisory = !admin ? await Advisory.findOne({ enquiryFormSlug: adminSlug.toLowerCase(), isActive: true }) : null;
+
+    if (!admin && !advisory) {
       return res.status(404).json({
         success: false,
         message: "Invalid enquiry form link",
       });
     }
 
-    // Check for duplicate lead (same email for same admin within last 24 hours)
+    // Determine owner ID for duplicate check
+    const ownerFilter = admin
+      ? { adminId: admin.userId }
+      : { advisoryId: advisory!._id };
+
+    // Check for duplicate lead (same email for same owner within last 24 hours)
     const existingLead = await Lead.findOne({
       email: email.toLowerCase(),
-      adminId: admin.userId,
+      ...ownerFilter,
       createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
     });
 
@@ -84,6 +92,9 @@ export const submitEnquiry = async (req: Request, res: Response): Promise<Respon
         message: "You have already submitted an enquiry recently. Please wait 24 hours before submitting again.",
       });
     }
+
+    // If advisory, validate that serviceTypes are within advisory's allowed services
+    // (optional: client may send any, but we filter server-side)
 
     // Create lead
     const newLead = new Lead({
@@ -106,7 +117,7 @@ export const submitEnquiry = async (req: Request, res: Response): Promise<Respon
           occupation: parentDetail.occupation?.trim(),
         },
       }),
-      adminId: admin.userId,
+      ...(admin ? { adminId: admin.userId } : { advisoryId: advisory!._id }),
       stage: LEAD_STAGE.NEW,
       source: "Enquiry Form",
     });
@@ -136,6 +147,41 @@ export const getAdminInfoBySlug = async (req: Request, res: Response): Promise<R
     const admin = await Admin.findOne({ enquiryFormSlug: adminSlug.toLowerCase() })
       .populate("userId", "firstName middleName lastName");
 
+    // Try advisory if admin not found
+    if (!admin) {
+      const advisory = await Advisory.findOne({ enquiryFormSlug: adminSlug.toLowerCase(), isActive: true })
+        .populate("userId", "firstName middleName lastName");
+
+      if (!advisory) {
+        return res.status(404).json({
+          success: false,
+          message: "Invalid enquiry form link",
+        });
+      }
+
+      const slugToServiceType: Record<string, string> = {
+        'study-abroad': SERVICE_TYPE.CAREER_FOCUS_STUDY_ABROAD,
+        'ivy-league': SERVICE_TYPE.IVY_LEAGUE_ADMISSION,
+        'education-planning': SERVICE_TYPE.EDUCATION_PLANNING,
+        'coaching-classes': SERVICE_TYPE.COACHING_CLASSES,
+      };
+      const allowedServiceTypes = advisory.allowedServices
+        .map((slug: string) => slugToServiceType[slug])
+        .filter(Boolean);
+
+      return res.json({
+        success: true,
+        data: {
+          adminName: [(advisory.userId as any)?.firstName, (advisory.userId as any)?.middleName, (advisory.userId as any)?.lastName].filter(Boolean).join(' ') || "Kareer Studio",
+          companyName: advisory.companyName || "Kareer Studio",
+          companyLogo: advisory.companyLogo || null,
+          services: allowedServiceTypes,
+          ownerType: 'advisory',
+          allowedServices: advisory.allowedServices,
+        },
+      });
+    }
+
     if (!admin) {
       return res.status(404).json({
         success: false,
@@ -150,6 +196,7 @@ export const getAdminInfoBySlug = async (req: Request, res: Response): Promise<R
         companyName: admin.companyName || "Kareer Studio",
         companyLogo: admin.companyLogo || null,
         services: Object.values(SERVICE_TYPE),
+        ownerType: 'admin',
       },
     });
   } catch (error: any) {
@@ -257,9 +304,17 @@ export const getLeadDetail = async (req: AuthRequest, res: Response): Promise<Re
       });
     }
 
-    // Check access: Admin can access their own leads, Counselor can access assigned leads
+    // Check access: Admin can access their own leads, Counselor can access assigned leads, Advisory can access their leads
     if (userRole === USER_ROLE.ADMIN) {
-      if (lead.adminId._id.toString() !== userId) {
+      if (lead.adminId?._id?.toString() !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied",
+        });
+      }
+    } else if (userRole === USER_ROLE.ADVISORY) {
+      const advisory = await Advisory.findOne({ userId });
+      if (!advisory || !lead.advisoryId || lead.advisoryId.toString() !== advisory._id.toString()) {
         return res.status(403).json({
           success: false,
           message: "Access denied",
@@ -307,7 +362,7 @@ export const assignLeadToCounselor = async (req: AuthRequest, res: Response): Pr
     }
 
     // Check lead belongs to this admin
-    if (lead.adminId.toString() !== adminUserId) {
+    if (lead.adminId?.toString() !== adminUserId) {
       return res.status(403).json({
         success: false,
         message: "Access denied",
@@ -402,7 +457,15 @@ export const updateLeadStage = async (req: AuthRequest, res: Response): Promise<
 
     // Check access
     if (userRole === USER_ROLE.ADMIN) {
-      if (lead.adminId.toString() !== userId) {
+      if (lead.adminId?.toString() !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied",
+        });
+      }
+    } else if (userRole === USER_ROLE.ADVISORY) {
+      const advisory = await Advisory.findOne({ userId });
+      if (!advisory || !lead.advisoryId || lead.advisoryId.toString() !== advisory._id.toString()) {
         return res.status(403).json({
           success: false,
           message: "Access denied",

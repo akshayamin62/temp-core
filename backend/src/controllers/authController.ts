@@ -2,6 +2,7 @@ import { Response } from "express";
 import User from "../models/User";
 import Student from "../models/Student";
 import Admin from "../models/Admin";
+import Advisory from "../models/Advisory";
 import Alumni from "../models/Alumni";
 import ServiceProvider from "../models/ServiceProvider";
 import { USER_ROLE } from "../types/roles";
@@ -621,6 +622,22 @@ export const getProfile = async (
         // Also include companyLogo and companyName in user object for easy access
         responseData.user.companyName = sp.companyName;
         responseData.user.companyLogo = sp.companyLogo;
+      }
+    }
+
+    // If user is an ADVISORY, include advisory profile data
+    if (user.role === USER_ROLE.ADVISORY) {
+      const advisory = await Advisory.findOne({ userId: user._id });
+      if (advisory) {
+        responseData.advisory = {
+          companyName: advisory.companyName,
+          companyLogo: advisory.companyLogo,
+          address: advisory.address,
+          enquiryFormSlug: advisory.enquiryFormSlug,
+          allowedServices: advisory.allowedServices,
+        };
+        responseData.user.companyName = advisory.companyName;
+        responseData.user.companyLogo = advisory.companyLogo;
       }
     }
 

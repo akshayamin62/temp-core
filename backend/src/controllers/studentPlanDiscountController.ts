@@ -3,8 +3,9 @@ import { AuthRequest } from '../middleware/auth';
 import StudentPlanDiscount, { PlanDiscountType } from '../models/StudentPlanDiscount';
 import ServicePricing from '../models/ServicePricing';
 import Admin from '../models/Admin';
+import Advisory from '../models/Advisory';
 
-// ===== Set/Update Student Plan Discount (Admin only) =====
+// ===== Set/Update Student Plan Discount (Admin or Advisory) =====
 
 export const setStudentPlanDiscount = async (req: AuthRequest, res: Response): Promise<Response> => {
   try {
@@ -29,16 +30,26 @@ export const setStudentPlanDiscount = async (req: AuthRequest, res: Response): P
       return res.status(400).json({ success: false, message: 'Percentage discount cannot exceed 100' });
     }
 
-    // Find admin
+    // Find admin or advisory
+    let ownerFields: { adminId?: any; advisoryId?: any } = {};
+    let pricingFilter: any;
     const admin = await Admin.findOne({ userId: req.user!.userId });
-    if (!admin) {
-      return res.status(404).json({ success: false, message: 'Admin not found' });
+    if (admin) {
+      ownerFields = { adminId: admin._id };
+      pricingFilter = { adminId: admin._id, serviceSlug };
+    } else {
+      const advisory = await Advisory.findOne({ userId: req.user!.userId });
+      if (!advisory) {
+        return res.status(404).json({ success: false, message: 'Admin/Advisory not found' });
+      }
+      ownerFields = { advisoryId: advisory._id };
+      pricingFilter = { advisoryId: advisory._id, serviceSlug };
     }
 
-    // Get admin pricing for calculation
-    const pricing = await ServicePricing.findOne({ adminId: admin._id, serviceSlug }).lean();
+    // Get pricing for calculation
+    const pricing = await ServicePricing.findOne(pricingFilter).lean();
     if (!pricing || !pricing.prices) {
-      return res.status(400).json({ success: false, message: 'Admin pricing not set for this service' });
+      return res.status(400).json({ success: false, message: 'Pricing not set for this service' });
     }
 
     const pricesObj = pricing.prices as unknown as Record<string, number>;
@@ -69,7 +80,7 @@ export const setStudentPlanDiscount = async (req: AuthRequest, res: Response): P
     // Create new discount
     const discount = await StudentPlanDiscount.create({
       studentId,
-      adminId: admin._id,
+      ...ownerFields,
       serviceSlug,
       planTier,
       type,

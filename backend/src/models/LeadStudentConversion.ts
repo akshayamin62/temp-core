@@ -8,8 +8,9 @@ export enum CONVERSION_STATUS {
 
 export interface ILeadStudentConversion extends Document {
   leadId: Types.ObjectId;
-  requestedBy: Types.ObjectId; // Counselor who requested
-  adminId: Types.ObjectId; // Admin who will approve/reject
+  requestedBy: Types.ObjectId; // Counselor or Advisory who requested
+  adminId?: Types.ObjectId; // Admin who will approve/reject
+  advisoryId?: Types.ObjectId; // Advisory who self-approves
   status: CONVERSION_STATUS;
   rejectionReason?: string;
   approvedBy?: Types.ObjectId;
@@ -36,7 +37,12 @@ const LeadStudentConversionSchema = new Schema<ILeadStudentConversion>(
     adminId: {
       type: Schema.Types.ObjectId,
       ref: 'Admin',
-      required: true
+      required: false
+    },
+    advisoryId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Advisory',
+      default: null
     },
     status: {
       type: String,
@@ -72,6 +78,7 @@ const LeadStudentConversionSchema = new Schema<ILeadStudentConversion>(
 
 // Index for efficient queries
 LeadStudentConversionSchema.index({ adminId: 1, status: 1 });
+LeadStudentConversionSchema.index({ advisoryId: 1, status: 1 });
 LeadStudentConversionSchema.index({ leadId: 1 });
 LeadStudentConversionSchema.index({ requestedBy: 1 });
 

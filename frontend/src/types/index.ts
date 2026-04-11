@@ -10,6 +10,7 @@ export enum USER_ROLE {
   SUPER_ADMIN = 'SUPER_ADMIN',
   SERVICE_PROVIDER = 'SERVICE_PROVIDER',
   REFERRER = 'REFERRER',
+  ADVISORY = 'ADVISORY',
 }
 
 export interface User {
@@ -370,6 +371,8 @@ export interface AdminInfo {
   companyName?: string;
   companyLogo?: string | null;
   services: string[];
+  allowedServices?: string[];
+  ownerType?: string;
 }
 
 // Follow-Up Types

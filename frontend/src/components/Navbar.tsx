@@ -144,6 +144,17 @@ export default function Navbar() {
                   >
                     Dashboard
                   </Link>
+                ) : (userRole?.toLowerCase() === 'advisory' || userRole === 'ADVISORY') ? (
+                  <Link
+                    href="/advisory/dashboard"
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                      pathname.startsWith('/advisory')
+                        ? 'text-blue-600 bg-blue-50 shadow-md'
+                        : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50/50 hover:shadow-sm'
+                    }`}
+                  >
+                    Dashboard
+                  </Link>
                 ) : (
                   <Link
                     href="/dashboard"
@@ -363,6 +374,18 @@ export default function Navbar() {
                       pathname.startsWith('/parent')
                         ? 'text-purple-600 bg-purple-50'
                         : 'text-gray-700 hover:text-purple-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    Dashboard
+                  </Link>
+                ) : (userRole?.toLowerCase() === 'advisory' || userRole === 'ADVISORY') ? (
+                  <Link
+                    href="/advisory/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`block px-3 py-2 rounded-md text-base font-medium ${
+                      pathname.startsWith('/advisory')
+                        ? 'text-blue-600 bg-blue-50'
+                        : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
                     }`}
                   >
                     Dashboard

@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth';
 import ServicePricing from '../models/ServicePricing';
 import SuperAdminServicePricing from '../models/SuperAdminServicePricing';
 import Admin from '../models/Admin';
+import Advisory from '../models/Advisory';
 import Student from '../models/Student';
 import Service from '../models/Service';
 import StudentServiceRegistration, { ServiceRegistrationStatus } from '../models/StudentServiceRegistration';
@@ -11,6 +12,8 @@ import Counselor from '../models/Counselor';
 import { USER_ROLE } from '../types/roles';
 import { sendServiceRegistrationEmailToSuperAdmin } from '../utils/email';
 import StudentPlanDiscount from '../models/StudentPlanDiscount';
+import Parent from '../models/Parent';
+import Referrer from '../models/Referrer';
 import { buildInstallmentSchedule, createProformaInvoice } from '../services/paymentService';
 
 // Get pricing for the student's admin for a specific service
@@ -22,6 +25,7 @@ export const getPricingForStudent = async (req: AuthRequest, res: Response): Pro
     if (!userId) { res.status(401).json({ success: false, message: 'Not authenticated' }); return; }
 
     let adminId: any;
+    let advisoryId: any;
     if (userRole === USER_ROLE.COUNSELOR) {
       const counselor = await Counselor.findOne({ userId }).lean();
       if (!counselor || !counselor.adminId) { res.status(404).json({ success: false, message: 'Counselor or admin not found' }); return; }
@@ -31,11 +35,30 @@ export const getPricingForStudent = async (req: AuthRequest, res: Response): Pro
       adminId = admin._id;
     } else {
       const student = await Student.findOne({ userId }).lean();
-      if (!student || !student.adminId) { res.status(404).json({ success: false, message: 'Student or admin not found' }); return; }
-      adminId = student.adminId;
+      if (!student) { res.status(404).json({ success: false, message: 'Student not found' }); return; }
+      
+      if (student.adminId) {
+        adminId = student.adminId;
+      } else if (student.advisoryId) {
+        // Student belongs to advisory (pre-transfer)
+        advisoryId = student.advisoryId;
+        const advisory = await Advisory.findById(advisoryId).lean();
+        if (!advisory) { res.status(404).json({ success: false, message: 'Advisory not found' }); return; }
+        // Check if this service is in advisory's allowed services
+        if (!advisory.allowedServices.includes(serviceSlug)) {
+          res.json({ success: true, data: { pricing: null, message: 'This service is not available through your advisory. Contact your advisory for more options.' } });
+          return;
+        }
+      } else {
+        res.status(404).json({ success: false, message: 'Student is not linked to any admin or advisory' });
+        return;
+      }
     }
 
-    const pricing = await ServicePricing.findOne({ adminId, serviceSlug }).lean();
+    const pricingQuery = adminId
+      ? { adminId, serviceSlug }
+      : { advisoryId, serviceSlug };
+    const pricing = await ServicePricing.findOne(pricingQuery).lean();
     if (!pricing) {
       res.json({ success: true, data: { pricing: null, message: 'Pricing not set by your admin yet' } });
       return;
@@ -112,6 +135,12 @@ export const registerServicePlan = async (req: AuthRequest, res: Response): Prom
     let paymentAmount: number | undefined;
     if (student.adminId) {
       const pricing = await ServicePricing.findOne({ adminId: student.adminId, serviceSlug }).lean();
+      if (pricing && pricing.prices) {
+        const pricesObj = pricing.prices as unknown as Record<string, number>;
+        paymentAmount = pricesObj[planTier];
+      }
+    } else if (student.advisoryId) {
+      const pricing = await ServicePricing.findOne({ advisoryId: student.advisoryId, serviceSlug }).lean();
       if (pricing && pricing.prices) {
         const pricesObj = pricing.prices as unknown as Record<string, number>;
         paymentAmount = pricesObj[planTier];
@@ -197,10 +226,18 @@ export const getAdminPricing = async (req: AuthRequest, res: Response): Promise<
     const userId = req.user?.userId;
     if (!userId) { res.status(401).json({ success: false, message: 'Not authenticated' }); return; }
 
-    const admin = await Admin.findOne({ userId }).lean();
-    if (!admin) { res.status(404).json({ success: false, message: 'Admin not found' }); return; }
+    let isAdvisory = false;
+    let ownerDoc = await Admin.findOne({ userId }).lean();
+    if (!ownerDoc) {
+      ownerDoc = await Advisory.findOne({ userId }).lean();
+      isAdvisory = true;
+    }
+    if (!ownerDoc) { res.status(404).json({ success: false, message: 'Admin/Advisory not found' }); return; }
 
-    const pricing = await ServicePricing.findOne({ adminId: admin._id, serviceSlug }).lean();
+    const pricingFilter = isAdvisory
+      ? { advisoryId: ownerDoc._id, serviceSlug }
+      : { adminId: ownerDoc._id, serviceSlug };
+    const pricing = await ServicePricing.findOne(pricingFilter).lean();
     res.json({
       success: true,
       data: {
@@ -232,12 +269,18 @@ export const setAdminPricing = async (req: AuthRequest, res: Response): Promise<
       }
     }
 
-    const admin = await Admin.findOne({ userId }).lean();
-    if (!admin) { res.status(404).json({ success: false, message: 'Admin not found' }); return; }
+    let isAdvisory = false;
+    let ownerDoc = await Admin.findOne({ userId }).lean();
+    if (!ownerDoc) {
+      ownerDoc = await Advisory.findOne({ userId }).lean();
+      isAdvisory = true;
+    }
+    if (!ownerDoc) { res.status(404).json({ success: false, message: 'Admin/Advisory not found' }); return; }
 
+    const filterKey = isAdvisory ? 'advisoryId' : 'adminId';
     const pricing = await ServicePricing.findOneAndUpdate(
-      { adminId: admin._id, serviceSlug },
-      { adminId: admin._id, serviceSlug, prices },
+      { [filterKey]: ownerDoc._id, serviceSlug },
+      { [filterKey]: ownerDoc._id, serviceSlug, prices },
       { upsert: true, new: true, runValidators: true }
     );
 
@@ -337,6 +380,17 @@ export const getAdminPricingByAdminId = async (req: AuthRequest, res: Response):
       }
     }
 
+    // If still not found, try as Advisory._id or Advisory User._id
+    if (!pricing) {
+      pricing = await ServicePricing.findOne({ advisoryId: adminId, serviceSlug }).lean();
+      if (!pricing) {
+        const advisory = await Advisory.findOne({ userId: adminId }).lean();
+        if (advisory) {
+          pricing = await ServicePricing.findOne({ advisoryId: advisory._id, serviceSlug }).lean();
+        }
+      }
+    }
+
     res.json({
       success: true,
       data: {
@@ -385,8 +439,13 @@ export const upgradePlanTier = async (req: AuthRequest, res: Response): Promise<
     // Get new plan pricing
     let newBasePrice = 0;
     let oldBasePrice = registration.totalAmount || registration.paymentAmount || 0;
-    if (student.adminId) {
-      const pricing = await ServicePricing.findOne({ adminId: student.adminId, serviceSlug }).lean();
+    const pricingQuery = student.adminId
+      ? { adminId: student.adminId, serviceSlug }
+      : student.advisoryId
+        ? { advisoryId: student.advisoryId, serviceSlug }
+        : null;
+    if (pricingQuery) {
+      const pricing = await ServicePricing.findOne(pricingQuery).lean();
       if (pricing && pricing.prices) {
         const pricesObj = pricing.prices as unknown as Record<string, number>;
         newBasePrice = pricesObj[newPlanTier] || 0;
@@ -525,13 +584,51 @@ export const upgradePlanTier = async (req: AuthRequest, res: Response): Promise<
 export const getStudentPlanTiers = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { studentId } = req.params;
-    const [registrations, student] = await Promise.all([
-      StudentServiceRegistration.find({ studentId })
-        .populate('serviceId', 'name slug')
-        .select('planTier serviceId classTiming')
-        .lean(),
-      Student.findById(studentId).populate('userId', 'firstName middleName lastName').lean(),
-    ]);
+    const userId = req.user?.userId;
+    const userRole = req.user?.role;
+    if (!userId) { res.status(401).json({ success: false, message: 'Not authenticated' }); return; }
+
+    const student = await Student.findById(studentId).populate('userId', 'firstName middleName lastName').lean();
+    if (!student) { res.status(404).json({ success: false, message: 'Student not found' }); return; }
+
+    // Access control: verify the requesting user is connected to this student
+    const isAllowed = await (async () => {
+      if (userRole === USER_ROLE.SUPER_ADMIN || userRole === USER_ROLE.OPS) return true;
+      if (userRole === USER_ROLE.STUDENT) return student.userId?._id?.toString() === userId;
+      if (userRole === USER_ROLE.ADMIN) {
+        const admin = await Admin.findOne({ userId }).lean();
+        return admin && student.adminId?.toString() === admin._id.toString();
+      }
+      if (userRole === USER_ROLE.ADVISORY) {
+        const advisory = await Advisory.findOne({ userId }).lean();
+        return advisory && student.advisoryId?.toString() === advisory._id.toString();
+      }
+      if (userRole === USER_ROLE.COUNSELOR) {
+        const counselor = await Counselor.findOne({ userId }).lean();
+        return counselor && student.counselorId?.toString() === counselor._id.toString();
+      }
+      if (userRole === USER_ROLE.PARENT) {
+        const parent = await Parent.findOne({ userId }).lean();
+        return parent && parent.studentIds?.some((sid: any) => sid.toString() === studentId);
+      }
+      if (userRole === USER_ROLE.REFERRER) {
+        const referrer = await Referrer.findOne({ userId }).lean();
+        return referrer && student.referrerId?.toString() === referrer._id.toString();
+      }
+      // IVY_EXPERT, EDUPLAN_COACH — allowed (assigned through separate workflows)
+      if (userRole === USER_ROLE.IVY_EXPERT || userRole === USER_ROLE.EDUPLAN_COACH) return true;
+      return false;
+    })();
+
+    if (!isAllowed) {
+      res.status(403).json({ success: false, message: 'You do not have access to this student' });
+      return;
+    }
+
+    const registrations = await StudentServiceRegistration.find({ studentId })
+      .populate('serviceId', 'name slug')
+      .select('planTier serviceId classTiming')
+      .lean();
 
     const planTiers: Record<string, string> = {};
     const coachingPlanTiers: Record<string, { batchDate?: string; timeFrom?: string; timeTo?: string } | null> = {};
@@ -549,8 +646,9 @@ export const getStudentPlanTiers = async (req: AuthRequest, res: Response): Prom
     const u = student?.userId as any;
     const studentName = u ? [u.firstName, u.middleName, u.lastName].filter(Boolean).join(' ') : '';
     const adminId = student?.adminId?.toString() || '';
+    const advisoryId = student?.advisoryId?.toString() || '';
 
-    res.json({ success: true, data: { planTiers, coachingPlanTiers, studentName, adminId } });
+    res.json({ success: true, data: { planTiers, coachingPlanTiers, studentName, adminId, advisoryId } });
   } catch (error: any) {
     res.status(500).json({ success: false, message: 'Failed to fetch student plan tiers' });
   }

@@ -6,7 +6,7 @@ import { authAPI, servicePlanAPI } from '@/lib/api';
 import { User, USER_ROLE } from '@/types';
 import toast, { Toaster } from 'react-hot-toast';
 
-const availableServices = [
+const allServices = [
   {
     slug: 'study-abroad',
     name: 'Study Abroad',
@@ -18,6 +18,20 @@ const availableServices = [
     icon: (
       <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
+    slug: 'ivy-league',
+    name: 'Ivy League',
+    description: 'Premium guidance for Ivy League and top-tier university admissions with personalized strategy.',
+    color: 'from-amber-500 via-orange-500 to-red-500',
+    iconBg: 'bg-amber-100',
+    iconColor: 'text-amber-600',
+    plansPage: '/student/ivy-league/plans',
+    icon: (
+      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
       </svg>
     ),
   },
@@ -59,6 +73,7 @@ export default function StudentServicePlansPage() {
   const [loading, setLoading] = useState(true);
   const [pricingByService, setPricingByService] = useState<Record<string, Record<string, number> | null>>({});
   const [discountsByService, setDiscountsByService] = useState<Record<string, Record<string, { type: string; value: number; calculatedAmount: number; reason?: string }> | null>>({});
+  const [unavailableSlugs, setUnavailableSlugs] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -73,19 +88,26 @@ export default function StudentServicePlansPage() {
 
         // Fetch pricing & discounts for all services (non-critical)
         try {
-          const slugs = ['study-abroad', 'education-planning', 'coaching-classes'];
+          const slugs = allServices.map(s => s.slug);
           const results = await Promise.allSettled(slugs.map(s => servicePlanAPI.getPricing(s)));
           const pMap: Record<string, Record<string, number> | null> = {};
           const dMap: Record<string, Record<string, { type: string; value: number; calculatedAmount: number; reason?: string }> | null> = {};
+          const hidden = new Set<string>();
           slugs.forEach((slug, i) => {
             const r = results[i];
             if (r.status === 'fulfilled') {
-              pMap[slug] = r.value.data.data.pricing || null;
-              dMap[slug] = r.value.data.data.discounts || null;
+              const data = r.value.data.data;
+              pMap[slug] = data.pricing || null;
+              dMap[slug] = data.discounts || null;
+              // Hide services explicitly unavailable through advisory
+              if (!data.pricing && data.message && data.message.includes('not available')) {
+                hidden.add(slug);
+              }
             }
           });
           setPricingByService(pMap);
           setDiscountsByService(dMap);
+          setUnavailableSlugs(hidden);
         } catch {
           // Non-critical — page works without pricing data
         }
@@ -122,7 +144,7 @@ export default function StudentServicePlansPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {availableServices.map((service) => {
+          {allServices.filter(s => !unavailableSlugs.has(s.slug)).map((service) => {
             const servicePricing = pricingByService[service.slug];
             const serviceDiscounts = discountsByService[service.slug];
             const prices = servicePricing ? Object.values(servicePricing).filter(v => v > 0) : [];

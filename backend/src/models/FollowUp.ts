@@ -32,7 +32,8 @@ export enum MEETING_TYPE {
 
 export interface IFollowUp extends Document {
   leadId: mongoose.Types.ObjectId;
-  counselorId: mongoose.Types.ObjectId; // Reference to Counselor document
+  counselorId?: mongoose.Types.ObjectId; // Reference to Counselor document
+  advisoryId?: mongoose.Types.ObjectId; // Reference to Advisory document (when Advisory does follow-ups)
   scheduledDate: Date;
   scheduledTime: string; // Format: "HH:mm"
   duration: number; // Duration in minutes (15, 30, 45, 60)
@@ -63,7 +64,12 @@ const followUpSchema = new Schema<IFollowUp>(
     counselorId: {
       type: Schema.Types.ObjectId,
       ref: "Counselor",
-      required: true,
+      required: false,
+    },
+    advisoryId: {
+      type: Schema.Types.ObjectId,
+      ref: "Advisory",
+      required: false,
     },
     scheduledDate: {
       type: Date,
@@ -153,6 +159,7 @@ const followUpSchema = new Schema<IFollowUp>(
 followUpSchema.index({ leadId: 1, status: 1 });
 followUpSchema.index({ counselorId: 1, scheduledDate: 1 });
 followUpSchema.index({ counselorId: 1, scheduledDate: 1, scheduledTime: 1 });
+followUpSchema.index({ advisoryId: 1, scheduledDate: 1 });
 followUpSchema.index({ status: 1, scheduledDate: 1 });
 
 export default mongoose.model<IFollowUp>("FollowUp", followUpSchema);

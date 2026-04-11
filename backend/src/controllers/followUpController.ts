@@ -3,6 +3,7 @@ import { AuthRequest } from "../types/auth";
 import FollowUp, { FOLLOWUP_STATUS, MEETING_TYPE } from "../models/FollowUp";
 import Lead, { LEAD_STAGE } from "../models/Lead";
 import Counselor from "../models/Counselor";
+import Advisory from "../models/Advisory";
 import TeamMeet, { TEAMMEET_STATUS } from "../models/TeamMeet";
 import mongoose from "mongoose";
 import { USER_ROLE } from "../types/roles";
@@ -430,6 +431,19 @@ export const getFollowUpById = async (
     if (userRole === USER_ROLE.ADMIN || userRole === USER_ROLE.SUPER_ADMIN) {
       followUp = await FollowUp.findById(followUpId)
         .populate("leadId", "name email mobileNumber city serviceTypes stage conversionStatus");
+    } else if (userRole === USER_ROLE.ADVISORY) {
+      const advisory = await Advisory.findOne({ userId });
+      if (!advisory) {
+        return res.status(404).json({
+          success: false,
+          message: "Advisory profile not found",
+        });
+      }
+
+      followUp = await FollowUp.findOne({
+        _id: followUpId,
+        advisoryId: advisory._id,
+      }).populate("leadId", "name email mobileNumber city serviceTypes stage conversionStatus");
     } else {
       const counselor = await Counselor.findOne({ userId });
       if (!counselor) {
@@ -511,6 +525,7 @@ export const updateFollowUp = async (
 
     let followUp;
     let counselorId;
+    let advisoryId;
 
     // Admin can update any follow-up
     if (userRole === USER_ROLE.ADMIN) {
@@ -522,6 +537,27 @@ export const updateFollowUp = async (
         });
       }
       counselorId = followUp.counselorId;
+    } else if (userRole === USER_ROLE.ADVISORY) {
+      const advisory = await Advisory.findOne({ userId });
+      if (!advisory) {
+        return res.status(404).json({
+          success: false,
+          message: "Advisory profile not found",
+        });
+      }
+
+      followUp = await FollowUp.findOne({
+        _id: followUpId,
+        advisoryId: advisory._id,
+      });
+
+      if (!followUp) {
+        return res.status(404).json({
+          success: false,
+          message: "Follow-up not found",
+        });
+      }
+      advisoryId = advisory._id;
     } else {
       const counselor = await Counselor.findOne({ userId });
       if (!counselor) {
@@ -593,11 +629,15 @@ export const updateFollowUp = async (
       const { start: dayStart, end: dayEnd } = getDayBounds(nextDate);
 
       // Check for time conflicts - check ALL follow-ups regardless of status
-      const conflictingFollowUps = await FollowUp.find({
-        counselorId,
+      const conflictQuery: Record<string, unknown> = {
         scheduledDate: { $gte: dayStart, $lte: dayEnd },
-        // Removed status filter - check ALL statuses
-      }).populate('leadId', 'name');
+      };
+      if (advisoryId) {
+        conflictQuery.advisoryId = advisoryId;
+      } else {
+        conflictQuery.counselorId = counselorId;
+      }
+      const conflictingFollowUps = await FollowUp.find(conflictQuery).populate('leadId', 'name');
 
       console.log(`Checking ${conflictingFollowUps.length} existing follow-ups for next follow-up on ${nextFollowUp.scheduledDate}`);
 
@@ -621,26 +661,28 @@ export const updateFollowUp = async (
         }
       }
       
-      // Also check TeamMeet conflicts for the counselor
-      const counselorDoc = await Counselor.findById(counselorId);
-      if (counselorDoc) {
-        const existingTeamMeets = await TeamMeet.find({
-          $or: [{ requestedBy: counselorDoc.userId }, { requestedTo: counselorDoc.userId }],
-          scheduledDate: { $gte: dayStart, $lte: dayEnd },
-          status: { $in: [TEAMMEET_STATUS.PENDING_CONFIRMATION, TEAMMEET_STATUS.CONFIRMED, TEAMMEET_STATUS.COMPLETED] },
-        }).populate("requestedBy", "firstName middleName lastName").populate("requestedTo", "firstName middleName lastName");
+      // Also check TeamMeet conflicts for the counselor (skip for advisory)
+      if (!advisoryId) {
+        const counselorDoc = await Counselor.findById(counselorId);
+        if (counselorDoc) {
+          const existingTeamMeets = await TeamMeet.find({
+            $or: [{ requestedBy: counselorDoc.userId }, { requestedTo: counselorDoc.userId }],
+            scheduledDate: { $gte: dayStart, $lte: dayEnd },
+            status: { $in: [TEAMMEET_STATUS.PENDING_CONFIRMATION, TEAMMEET_STATUS.CONFIRMED, TEAMMEET_STATUS.COMPLETED] },
+          }).populate("requestedBy", "firstName middleName lastName").populate("requestedTo", "firstName middleName lastName");
 
-        for (const meet of existingTeamMeets) {
-          if (doTimeSlotsOverlap(nextFollowUp.scheduledTime, nextFollowUp.duration || 30, meet.scheduledTime, meet.duration)) {
-            const otherUser = meet.requestedBy._id.toString() === counselorDoc.userId?.toString()
-              ? (meet.requestedTo as any)
-              : (meet.requestedBy as any);
-            const otherParty = [otherUser?.firstName, otherUser?.middleName, otherUser?.lastName].filter(Boolean).join(' ');
-            console.log('CONFLICT DETECTED with TeamMeet for next follow-up!');
-            return res.status(400).json({
-              success: false,
-              message: `Next follow-up conflicts with a TeamMeet at ${meet.scheduledTime} with ${otherParty || 'Unknown'}`,
-            });
+          for (const meet of existingTeamMeets) {
+            if (doTimeSlotsOverlap(nextFollowUp.scheduledTime, nextFollowUp.duration || 30, meet.scheduledTime, meet.duration)) {
+              const otherUser = meet.requestedBy._id.toString() === counselorDoc.userId?.toString()
+                ? (meet.requestedTo as any)
+                : (meet.requestedBy as any);
+              const otherParty = [otherUser?.firstName, otherUser?.middleName, otherUser?.lastName].filter(Boolean).join(' ');
+              console.log('CONFLICT DETECTED with TeamMeet for next follow-up!');
+              return res.status(400).json({
+                success: false,
+                message: `Next follow-up conflicts with a TeamMeet at ${meet.scheduledTime} with ${otherParty || 'Unknown'}`,
+              });
+            }
           }
         }
       }
@@ -665,7 +707,7 @@ export const updateFollowUp = async (
 
       newFollowUp = new FollowUp({
         leadId: followUp.leadId,
-        counselorId,
+        ...(advisoryId ? { advisoryId } : { counselorId }),
         scheduledDate: nextDate,
         scheduledTime: nextFollowUp.scheduledTime,
         duration: nextFollowUp.duration || 30,
@@ -870,6 +912,7 @@ export const checkTimeSlotAvailability = async (
     }
 
     let counselorId;
+    let advisoryId;
 
     // Admin needs to provide leadId to check availability for the assigned counselor
     if (userRole === USER_ROLE.ADMIN) {
@@ -893,6 +936,15 @@ export const checkTimeSlotAvailability = async (
         });
       }
       counselorId = lead.assignedCounselorId._id;
+    } else if (userRole === USER_ROLE.ADVISORY) {
+      const advisory = await Advisory.findOne({ userId });
+      if (!advisory) {
+        return res.status(404).json({
+          success: false,
+          message: "Advisory profile not found",
+        });
+      }
+      advisoryId = advisory._id;
     } else {
       const counselor = await Counselor.findOne({ userId });
       if (!counselor) {
@@ -907,12 +959,16 @@ export const checkTimeSlotAvailability = async (
     const checkDate = new Date(date as string);
     const { start: dayStart, end: dayEnd } = getDayBounds(checkDate);
 
-    // Check ALL follow-ups regardless of status for this counselor on this day
-    const existingFollowUps = await FollowUp.find({
-      counselorId,
+    // Check ALL follow-ups regardless of status on this day
+    const queryFilter: Record<string, unknown> = {
       scheduledDate: { $gte: dayStart, $lte: dayEnd },
-      // Removed status filter - check ALL statuses
-    }).populate('leadId', 'name');
+    };
+    if (advisoryId) {
+      queryFilter.advisoryId = advisoryId;
+    } else {
+      queryFilter.counselorId = counselorId;
+    }
+    const existingFollowUps = await FollowUp.find(queryFilter).populate('leadId', 'name');
 
     console.log(`Check availability: Found ${existingFollowUps.length} follow-ups on ${date}`);
 

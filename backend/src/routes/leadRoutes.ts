@@ -91,11 +91,11 @@ router.get(
 
 // ============= SHARED ROUTES (Admin & Counselor) =============
 
-// Get lead detail (Admin, Counselor, or Super Admin)
+// Get lead detail (Admin, Counselor, Advisory, or Super Admin)
 router.get(
   "/leads/:leadId",
   authenticate,
-  authorize([USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN]),
+  authorize([USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADVISORY]),
   getLeadDetail
 );
 
@@ -103,7 +103,7 @@ router.get(
 router.patch(
   "/leads/:leadId/stage",
   authenticate,
-  authorize([USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]),
+  authorize([USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.ADVISORY]),
   updateLeadStage
 );
 
