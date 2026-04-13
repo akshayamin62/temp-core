@@ -8,6 +8,7 @@ import StudentServiceRegistration from '../models/StudentServiceRegistration';
 import StudentFormAnswer from '../models/StudentFormAnswer';
 import LeadStudentConversion from '../models/LeadStudentConversion';
 import { USER_ROLE } from '../types/roles';
+import StudentTransfer from '../models/StudentTransfer';
 
 /**
  * Get all students for the admin (students converted under this admin)
@@ -251,12 +252,17 @@ export const getAdminStudentDetails = async (req: AuthRequest, res: Response): P
       .lean()
       .exec();
 
+    // Get approved transfer's interestedServices
+    const approvedTransfer = await StudentTransfer.findOne({ studentId, status: 'APPROVED' }).lean();
+    const transferInterestedServices: string[] = approvedTransfer?.interestedServices || [];
+
     return res.status(200).json({
       success: true,
       message: 'Student details fetched successfully',
       data: {
         student,
         registrations,
+        transferInterestedServices,
       },
     });
   } catch (error: any) {
@@ -419,5 +425,56 @@ export const getStudentByLeadId = async (req: AuthRequest, res: Response): Promi
       success: false,
       message: 'Failed to fetch student',
     });
+  }
+};
+
+/**
+ * Assign or change counselor for a student
+ */
+export const assignCounselorToStudent = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const { studentId } = req.params;
+    const { counselorId } = req.body;
+    const userId = req.user?.userId;
+
+    const user = await User.findById(userId);
+    if (!user || user.role !== USER_ROLE.ADMIN) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+
+    const admin = await Admin.findOne({ userId });
+    if (!admin) {
+      return res.status(404).json({ success: false, message: 'Admin record not found' });
+    }
+
+    const student = await Student.findById(studentId);
+    if (!student || student.adminId?.toString() !== admin._id.toString()) {
+      return res.status(404).json({ success: false, message: 'Student not found or not under your admin' });
+    }
+
+    if (counselorId) {
+      const counselor = await Counselor.findById(counselorId);
+      // Counselor.adminId stores the admin's User _id, not Admin doc _id
+      if (!counselor || counselor.adminId?.toString() !== userId) {
+        return res.status(400).json({ success: false, message: 'Counselor not found or not under your admin' });
+      }
+      student.counselorId = counselorId;
+    } else {
+      student.counselorId = undefined;
+    }
+
+    await student.save();
+
+    const updated = await Student.findById(studentId)
+      .populate({ path: 'counselorId', populate: { path: 'userId', select: 'firstName middleName lastName email' } });
+
+    return res.status(200).json({
+      success: true,
+      message: counselorId ? 'Counselor assigned successfully' : 'Counselor removed',
+      data: { student: updated },
+    });
+  } catch (error: any) {
+    console.error('Assign counselor error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to assign counselor' });
   }
 };

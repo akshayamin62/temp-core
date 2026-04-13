@@ -7,6 +7,7 @@ import {
   getAdminStudentDetails,
   getAdminStudentFormAnswers,
   getStudentByLeadId,
+  assignCounselorToStudent,
 } from '../controllers/adminStudentController';
 import { sendMessageToStudent } from '../controllers/superAdminStudentController';
 
@@ -31,5 +32,8 @@ router.get('/:studentId/registrations/:registrationId/answers', getAdminStudentF
 
 // Send message to student
 router.post('/:studentId/send-message', sendMessageToStudent);
+
+// Assign counselor to student (admin only)
+router.patch('/:studentId/assign-counselor', assignCounselorToStudent);
 
 export default router;

@@ -92,6 +92,11 @@ interface Registration {
   planTier?: 'PRO' | 'PREMIUM' | 'PLATINUM';
   status: string;
   createdAt: string;
+  registeredViaAdvisoryId?: {
+    _id: string;
+    companyName?: string;
+    userId?: { firstName?: string; middleName?: string; lastName?: string };
+  };
 }
 
 export default function CounselorStudentDetailPage() {
@@ -102,6 +107,7 @@ export default function CounselorStudentDetailPage() {
   const [user, setUser] = useState<User | null>(null);
   const [student, setStudent] = useState<StudentDetails | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [transferInterestedServices, setTransferInterestedServices] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProfileModal, setShowProfileModal] = useState(false);
 
@@ -138,6 +144,7 @@ export default function CounselorStudentDetailPage() {
       const response = await adminStudentAPI.getStudentDetails(studentId);
       setStudent(response.data.data.student);
       setRegistrations(response.data.data.registrations);
+      setTransferInterestedServices(response.data.data.transferInterestedServices || []);
     } catch (error: any) {
       console.error('Error fetching student:', error);
       if (error.response?.status === 404 || error.response?.status === 403) {
@@ -315,7 +322,7 @@ export default function CounselorStudentDetailPage() {
                   )}
                   {student.advisoryId && (
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Advisory</p>
+                    <p className="text-sm text-gray-600 mb-1">Advisor</p>
                     <p className="font-medium text-gray-900">
                       {getFullName(student.advisoryId?.userId) || 'N/A'}
                     </p>
@@ -330,32 +337,36 @@ export default function CounselorStudentDetailPage() {
                       {new Date(student.createdAt).toLocaleDateString('en-GB')}
                     </p>
                   </div>
-                  {(student.intake || student.year) && (
-                    <div>
-                      {student.intake && (
-                        <div className="mb-2">
-                          <p className="text-sm text-gray-600 mb-1">Intake</p>
-                          <p className="font-medium text-blue-600">{student.intake}</p>
-                        </div>
-                      )}
-                      {student.year && (
-                        <div>
-                          <p className="text-sm text-gray-600 mb-1">Year</p>
-                          <p className="font-medium text-blue-600">{student.year}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
 
-                {/* Source & Referral Info */}
-                <div className="flex items-center gap-4 pt-4 border-t border-gray-200 mt-4">
+                {/* Source / Intake / Year / Transfer */}
+                <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-gray-200 mt-4">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Source</p>
                     <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${(student as any).referrerId ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
                       {(student as any).referrerId ? 'Referral' : 'Enquiry Form'}
                     </span>
                   </div>
+                  {student.intake && (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Intake</p>
+                      <p className="font-medium text-blue-600">{student.intake}</p>
+                    </div>
+                  )}
+                  {student.year && (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Year</p>
+                      <p className="font-medium text-blue-600">{student.year}</p>
+                    </div>
+                  )}
+                  {student.advisoryId && transferInterestedServices.length > 0 && (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Transfer For</p>
+                      <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
+                        {transferInterestedServices.map(s => ({ 'study-abroad': 'Study Abroad', 'ivy-league': 'Ivy League', 'education-planning': 'Education Planning', 'coaching-classes': 'Coaching Classes' }[s] || s)).join(', ')}
+                      </span>
+                    </div>
+                  )}
                   {(student as any).referrerId && (
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Referred By</p>

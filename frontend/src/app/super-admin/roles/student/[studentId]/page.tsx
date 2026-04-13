@@ -149,6 +149,7 @@ export default function StudentDetailPage() {
   const [user, setUser] = useState<User | null>(null);
   const [student, setStudent] = useState<StudentDetails | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [transferInterestedServices, setTransferInterestedServices] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [ops, setOps] = useState<OPS[]>([]);
   const [ivyExperts, setIvyExperts] = useState<IvyExpert[]>([]);
@@ -198,6 +199,7 @@ export default function StudentDetailPage() {
       
       setStudent(response.data.data.student);
       setRegistrations(response.data.data.registrations);
+      setTransferInterestedServices(response.data.data.transferInterestedServices || []);
       
       // Fetch ops
       try {
@@ -492,7 +494,7 @@ export default function StudentDetailPage() {
               )}
               {student.advisoryId && (
               <div>
-                <p className="text-sm text-gray-600 mb-1">Advisory</p>
+                <p className="text-sm text-gray-600 mb-1">Advisor</p>
                 <p className="font-medium text-gray-900">
                   {getFullName(student.advisoryId?.userId) || 'N/A'}
                 </p>
@@ -507,32 +509,36 @@ export default function StudentDetailPage() {
                   {new Date(student.createdAt).toLocaleDateString('en-GB')}
                 </p>
               </div>
-              {(student.intake || student.year) && (
-                <div>
-                  {student.intake && (
-                    <div className="mb-2">
-                      <p className="text-sm text-gray-600 mb-1">Intake</p>
-                      <p className="font-medium text-blue-600">{student.intake}</p>
-                    </div>
-                  )}
-                  {student.year && (
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Year</p>
-                      <p className="font-medium text-blue-600">{student.year}</p>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
-            {/* Source & Referral Info */}
-            <div className="flex items-center gap-4 pt-4 border-t border-gray-200 mt-4">
+            {/* Source / Intake / Year / Transfer For */}
+            <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-gray-200 mt-4">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Source</p>
                 <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${(student as any).referrerId ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
                   {(student as any).referrerId ? 'Referral' : 'Enquiry Form'}
                 </span>
               </div>
+              {student.intake && (
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Intake</p>
+                  <p className="font-medium text-blue-600">{student.intake}</p>
+                </div>
+              )}
+              {student.year && (
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Year</p>
+                  <p className="font-medium text-blue-600">{student.year}</p>
+                </div>
+              )}
+              {student.advisoryId && transferInterestedServices.length > 0 && (
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Transfer For</p>
+                  <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
+                    {transferInterestedServices.map(s => ({ 'study-abroad': 'Study Abroad', 'ivy-league': 'Ivy League', 'education-planning': 'Education Planning', 'coaching-classes': 'Coaching Classes' }[s] || s)).join(', ')}
+                  </span>
+                </div>
+              )}
               {(student as any).referrerId && (
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Referred By</p>

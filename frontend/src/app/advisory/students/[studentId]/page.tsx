@@ -342,7 +342,7 @@ export default function AdvisoryStudentDetailPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Mobile Number</p>
                     <p className="font-medium text-gray-900">
@@ -367,20 +367,46 @@ export default function AdvisoryStudentDetailPage() {
                       )}
                     </p>
                   </div>
-                  {(student.intake || student.year) && (
+                </div>
+
+                {/* Source / Intake / Year / Transfer */}
+                <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-gray-200 mt-4">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Source</p>
+                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${(student as any).referrerId ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
+                      {(student as any).referrerId ? 'Referral' : 'Enquiry Form'}
+                    </span>
+                  </div>
+                  {student.intake && (
                     <div>
-                      {student.intake && (
-                        <div className="mb-2">
-                          <p className="text-sm text-gray-600 mb-1">Intake</p>
-                          <p className="font-medium text-blue-600">{student.intake}</p>
-                        </div>
-                      )}
-                      {student.year && (
-                        <div>
-                          <p className="text-sm text-gray-600 mb-1">Year</p>
-                          <p className="font-medium text-blue-600">{student.year}</p>
-                        </div>
-                      )}
+                      <p className="text-sm text-gray-600 mb-1">Intake</p>
+                      <p className="font-medium text-blue-600">{student.intake}</p>
+                    </div>
+                  )}
+                  {student.year && (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Year</p>
+                      <p className="font-medium text-blue-600">{student.year}</p>
+                    </div>
+                  )}
+                  {student.adminId && (() => {
+                    const approvedTransfer = transfers.find(t => t.status === 'APPROVED');
+                    const interestedServices = approvedTransfer?.interestedServices || [];
+                    return interestedServices.length > 0 ? (
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">Transfer For</p>
+                        <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
+                          {interestedServices.map(s => ALL_SERVICES.find(svc => svc.slug === s)?.label || s).join(', ')}
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
+                  {(student as any).referrerId && (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Referred By</p>
+                      <p className="font-medium text-purple-700">
+                        {[(student as any).referrerId?.userId?.firstName, (student as any).referrerId?.userId?.middleName, (student as any).referrerId?.userId?.lastName].filter(Boolean).join(' ') || 'Referrer'}
+                      </p>
                     </div>
                   )}
                 </div>

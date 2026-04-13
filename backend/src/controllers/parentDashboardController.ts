@@ -6,6 +6,7 @@ import User from '../models/User';
 import StudentServiceRegistration from '../models/StudentServiceRegistration';
 import StudentFormAnswer from '../models/StudentFormAnswer';
 import { USER_ROLE } from '../types/roles';
+import StudentTransfer from '../models/StudentTransfer';
 
 /**
  * Get all students linked to the logged-in parent
@@ -163,12 +164,17 @@ export const getParentStudentDetails = async (req: AuthRequest, res: Response): 
       .lean()
       .exec();
 
+    // Get approved transfer's interestedServices
+    const approvedTransfer = await StudentTransfer.findOne({ studentId, status: 'APPROVED' }).lean();
+    const transferInterestedServices: string[] = approvedTransfer?.interestedServices || [];
+
     return res.status(200).json({
       success: true,
       message: 'Student details fetched successfully',
       data: {
         student,
         registrations,
+        transferInterestedServices,
       },
     });
   } catch (error: any) {

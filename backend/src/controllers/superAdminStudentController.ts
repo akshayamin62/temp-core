@@ -12,6 +12,7 @@ import { sendStaffMessageSms } from '../utils/sms';
 import StudentServiceRegistration, { ServiceRegistrationStatus } from '../models/StudentServiceRegistration';
 import StudentFormAnswer from '../models/StudentFormAnswer';
 import { USER_ROLE } from '../types/roles';
+import StudentTransfer from '../models/StudentTransfer';
 import { syncParentsFromFormAnswers } from '../utils/parentSync';
 
 /**
@@ -432,12 +433,17 @@ export const getStudentDetails = async (req: AuthRequest, res: Response): Promis
       }
     }
 
+    // Get approved transfer's interestedServices
+    const approvedTransfer = await StudentTransfer.findOne({ studentId, status: 'APPROVED' }).lean();
+    const transferInterestedServices: string[] = approvedTransfer?.interestedServices || [];
+
     return res.status(200).json({
       success: true,
       message: 'Student details fetched successfully',
       data: {
         student,
         registrations,
+        transferInterestedServices,
       },
     });
   } catch (error: any) {

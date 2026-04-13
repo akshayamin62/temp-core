@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { authAPI, adminStudentAPI } from '@/lib/api';
+import { authAPI, adminStudentAPI, adminAPI } from '@/lib/api';
 import { User, USER_ROLE } from '@/types';
 import AdminLayout from '@/components/AdminLayout';
 import StudentProfileModal from '@/components/StudentProfileModal';
@@ -120,8 +120,11 @@ export default function AdminStudentDetailPage() {
   const [user, setUser] = useState<User | null>(null);
   const [student, setStudent] = useState<StudentDetails | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [transferInterestedServices, setTransferInterestedServices] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [counselors, setCounselors] = useState<any[]>([]);
+  const [assigningCounselor, setAssigningCounselor] = useState(false);
 
   const hasFetchedRef = useRef(false);
 
@@ -145,9 +148,32 @@ export default function AdminStudentDetailPage() {
 
       setUser(userData);
       fetchStudentDetails();
+      fetchCounselors();
     } catch (error) {
       toast.error('Please login to continue');
       router.push('/login');
+    }
+  };
+
+  const fetchCounselors = async () => {
+    try {
+      const response = await adminAPI.getCounselors();
+      setCounselors(response.data.data?.counselors || []);
+    } catch (error) {
+      console.error('Failed to fetch counselors:', error);
+    }
+  };
+
+  const handleAssignCounselor = async (counselorId: string | null) => {
+    try {
+      setAssigningCounselor(true);
+      await adminStudentAPI.assignCounselor(studentId, counselorId);
+      toast.success(counselorId ? 'Counselor assigned' : 'Counselor removed');
+      fetchStudentDetails();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to assign counselor');
+    } finally {
+      setAssigningCounselor(false);
     }
   };
 
@@ -157,6 +183,7 @@ export default function AdminStudentDetailPage() {
       setStudent(response.data.data.student);
       const regs = response.data.data.registrations;
       setRegistrations(regs);
+      setTransferInterestedServices(response.data.data.transferInterestedServices || []);
     } catch (error: any) {
       console.error('Fetch student details error:', error);
       if (error.response?.status === 403) {
@@ -301,23 +328,25 @@ export default function AdminStudentDetailPage() {
                 )}
               </div>
               )}
-              {student.adminId && (
               <div>
                 <p className="text-sm text-gray-600 mb-1">Counselor</p>
-                <p className="font-medium text-green-600">
-                  {getFullName(student.counselorId?.userId) || 'N/A'}
-                </p>
-                {student.counselorId?.userId?.email && (
-                  <p className="text-sm text-gray-500">{student.counselorId.userId.email}</p>
-                )}
-                {student.counselorId?.mobileNumber && (
-                  <p className="text-sm text-gray-500">{student.counselorId.mobileNumber}</p>
-                )}
+                <select
+                  value={student.counselorId?._id || ''}
+                  onChange={(e) => handleAssignCounselor(e.target.value || null)}
+                  disabled={assigningCounselor}
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:opacity-50"
+                >
+                  <option value="">Not Assigned</option>
+                  {counselors.map((c: any) => (
+                    <option key={c._id} value={c._id}>
+                      {getFullName(c.userId) || c.userId?.email || 'Counselor'}
+                    </option>
+                  ))}
+                </select>
               </div>
-              )}
               {student.advisoryId && (
               <div>
-                <p className="text-sm text-gray-600 mb-1">Advisory</p>
+                <p className="text-sm text-gray-600 mb-1">Advisor</p>
                 <p className="font-medium text-gray-900">
                   {getFullName(student.advisoryId?.userId) || 'N/A'}
                 </p>
@@ -332,32 +361,36 @@ export default function AdminStudentDetailPage() {
                   {new Date(student.createdAt).toLocaleDateString('en-GB')}
                 </p>
               </div>
-              {(student.intake || student.year) && (
-                <div>
-                  {student.intake && (
-                    <div className="mb-2">
-                      <p className="text-sm text-gray-600 mb-1">Intake</p>
-                      <p className="font-medium text-blue-600">{student.intake}</p>
-                    </div>
-                  )}
-                  {student.year && (
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Year</p>
-                      <p className="font-medium text-blue-600">{student.year}</p>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
-            {/* Source & Referral Info */}
-            <div className="flex items-center gap-4 pt-4 border-t border-gray-200 mt-4">
+            {/* Source / Intake / Year / Transfer */}
+            <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-gray-200 mt-4">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Source</p>
                 <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${(student as any).referrerId ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
                   {(student as any).referrerId ? 'Referral' : 'Enquiry Form'}
                 </span>
               </div>
+              {student.intake && (
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Intake</p>
+                  <p className="font-medium text-blue-600">{student.intake}</p>
+                </div>
+              )}
+              {student.year && (
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Year</p>
+                  <p className="font-medium text-blue-600">{student.year}</p>
+                </div>
+              )}
+              {student.advisoryId && transferInterestedServices.length > 0 && (
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Transfer For</p>
+                  <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
+                    {transferInterestedServices.map(s => ({ 'study-abroad': 'Study Abroad', 'ivy-league': 'Ivy League', 'education-planning': 'Education Planning', 'coaching-classes': 'Coaching Classes' }[s] || s)).join(', ')}
+                  </span>
+                </div>
+              )}
               {(student as any).referrerId && (
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Referred By</p>

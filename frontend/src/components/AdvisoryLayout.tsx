@@ -129,7 +129,7 @@ export default function AdvisoryLayout({ children, user: userProp }: AdvisoryLay
                 </span>
               </div>
               <span className="font-semibold text-gray-900">
-                Advisory
+                Advisor
               </span>
             </div>
           )}

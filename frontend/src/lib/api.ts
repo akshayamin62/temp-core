@@ -264,6 +264,10 @@ export const adminStudentAPI = {
   // Get student form answers for a registration (read-only)
   getStudentFormAnswers: (studentId: string, registrationId: string) => 
     api.get(`/admin/students/${studentId}/registrations/${registrationId}/answers`),
+  
+  // Assign counselor to student
+  assignCounselor: (studentId: string, counselorId: string | null) =>
+    api.patch(`/admin/students/${studentId}/assign-counselor`, { counselorId }),
 };
 
 // Parent Dashboard API (read-only access to linked students for parent)
