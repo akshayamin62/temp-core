@@ -189,6 +189,19 @@ export const superAdminAPI = {
     month?: number;
     year?: number;
   }) => api.get(`/super-admin/admins/${adminId}/team-meets`, { params }),
+
+  // Advisory dashboard for super admin
+  getAdvisoryDashboardStats: (advisoryId: string) => api.get(`/super-admin/advisories/${advisoryId}/dashboard`),
+  getAdvisoryLeads: (advisoryId: string, params?: {
+    stage?: string;
+    serviceTypes?: string;
+    search?: string;
+  }) => api.get(`/super-admin/advisories/${advisoryId}/leads`, { params }),
+  getAdvisoryStudents: (advisoryId: string) => api.get(`/super-admin/advisories/${advisoryId}/students`),
+  getAdvisoryTeamMeets: (advisoryId: string, params?: {
+    month?: number;
+    year?: number;
+  }) => api.get(`/super-admin/advisories/${advisoryId}/team-meets`, { params }),
   
   // Counselor dashboard for super admin
   getCounselorDashboard: (counselorId: string) => api.get(`/super-admin/counselors/${counselorId}/dashboard`),

@@ -2588,3 +2588,239 @@ export const toggleAdvisoryStatus = async (req: Request, res: Response): Promise
     return res.status(500).json({ success: false, message: 'Failed to toggle advisory status' });
   }
 };
+
+// ============= ADVISORY DASHBOARD/LEADS/STUDENTS/TEAM-MEETS =============
+
+/**
+ * Get advisory dashboard stats (for super admin)
+ */
+export const getAdvisoryDashboardStats = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { advisoryId } = req.params;
+
+    const advisoryUser = await User.findOne({ _id: advisoryId, role: USER_ROLE.ADVISORY });
+    if (!advisoryUser) {
+      return res.status(404).json({ success: false, message: 'Advisory not found' });
+    }
+
+    const advisoryProfile = await Advisory.findOne({ userId: advisoryId });
+    if (!advisoryProfile) {
+      return res.status(404).json({ success: false, message: 'Advisory profile not found' });
+    }
+
+    // Get lead stats — Lead.advisoryId references Advisory._id, not User._id
+    const allLeads = await Lead.find({ advisoryId: advisoryProfile._id });
+    const totalLeads = allLeads.length;
+    const newLeads = allLeads.filter((l) => l.stage === LEAD_STAGE.NEW).length;
+
+    // Get student count
+    const totalStudents = await Student.countDocuments({ advisoryId: advisoryProfile._id });
+
+    // Enquiry form URL
+    const enquiryFormUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/enquiry/${advisoryProfile.enquiryFormSlug}`;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalLeads,
+        newLeads,
+        totalStudents,
+        enquiryFormUrl,
+        enquiryFormSlug: advisoryProfile.enquiryFormSlug,
+        allowedServices: advisoryProfile.allowedServices,
+        advisory: {
+          _id: advisoryUser._id,
+          firstName: advisoryUser.firstName,
+          middleName: advisoryUser.middleName,
+          lastName: advisoryUser.lastName,
+          email: advisoryUser.email,
+          isActive: advisoryUser.isActive,
+          isVerified: advisoryUser.isVerified,
+          companyName: advisoryProfile.companyName,
+          companyLogo: advisoryProfile.companyLogo,
+          address: advisoryProfile.address,
+          mobileNumber: advisoryProfile.mobileNumber,
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error('Get advisory dashboard stats error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch advisory dashboard stats' });
+  }
+};
+
+/**
+ * Get leads under a specific advisory (for super admin)
+ */
+export const getAdvisoryLeadsForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { advisoryId } = req.params;
+    const { stage, serviceTypes, search } = req.query;
+
+    const advisoryUser = await User.findOne({ _id: advisoryId, role: USER_ROLE.ADVISORY });
+    if (!advisoryUser) {
+      return res.status(404).json({ success: false, message: 'Advisory not found' });
+    }
+
+    // Lead.advisoryId references Advisory._id, not User._id
+    const advisoryProfile = await Advisory.findOne({ userId: advisoryUser._id });
+    if (!advisoryProfile) {
+      return res.status(404).json({ success: false, message: 'Advisory profile not found' });
+    }
+
+    const filter: any = { advisoryId: advisoryProfile._id };
+
+    if (stage) filter.stage = stage;
+    if (serviceTypes) filter.serviceTypes = { $in: [serviceTypes] };
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { mobileNumber: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const leads = await Lead.find(filter)
+      .populate({
+        path: "assignedCounselorId",
+        populate: { path: "userId", select: "firstName middleName lastName email" }
+      })
+      .sort({ createdAt: -1 });
+
+    // Get stats
+    const allLeads = await Lead.find({ advisoryId: advisoryProfile._id });
+    const stats = {
+      total: allLeads.length,
+      new: allLeads.filter((l) => l.stage === LEAD_STAGE.NEW).length,
+      hot: allLeads.filter((l) => l.stage === LEAD_STAGE.HOT).length,
+      warm: allLeads.filter((l) => l.stage === LEAD_STAGE.WARM).length,
+      cold: allLeads.filter((l) => l.stage === LEAD_STAGE.COLD).length,
+      converted: allLeads.filter((l) => l.stage === LEAD_STAGE.CONVERTED).length,
+      closed: allLeads.filter((l) => l.stage === LEAD_STAGE.CLOSED).length,
+      unassigned: allLeads.filter((l) => !l.assignedCounselorId).length,
+    };
+
+    return res.status(200).json({
+      success: true,
+      data: { leads, stats },
+    });
+  } catch (error: any) {
+    console.error('Get advisory leads error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch advisory leads' });
+  }
+};
+
+/**
+ * Get students under a specific advisory (for super admin)
+ */
+export const getAdvisoryStudentsForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { advisoryId } = req.params;
+
+    const advisoryUser = await User.findOne({ _id: advisoryId, role: USER_ROLE.ADVISORY });
+    if (!advisoryUser) {
+      return res.status(404).json({ success: false, message: 'Advisory not found' });
+    }
+
+    const advisoryProfile = await Advisory.findOne({ userId: advisoryId });
+    if (!advisoryProfile) {
+      return res.status(404).json({ success: false, message: 'Advisory profile not found' });
+    }
+
+    const students = await Student.find({ advisoryId: advisoryProfile._id })
+      .populate('userId', 'firstName middleName lastName email profilePicture isVerified isActive createdAt')
+      .populate({
+        path: 'advisoryId',
+        populate: { path: 'userId', select: 'firstName middleName lastName email' }
+      })
+      .sort({ createdAt: -1 });
+
+    const studentsWithStats = await Promise.all(
+      students.map(async (student: any) => {
+        const registrations = await StudentServiceRegistration.find({
+          studentId: student._id,
+        }).populate('serviceId', 'name');
+
+        const serviceNames = registrations
+          .map((r: any) => r.serviceId?.name)
+          .filter(Boolean);
+
+        const conversion = await LeadStudentConversion.findOne({
+          studentId: student.userId?._id,
+        }).populate('leadId', 'name email mobileNumber');
+
+        return {
+          _id: student._id,
+          user: student.userId,
+          mobileNumber: student.mobileNumber,
+          advisoryId: student.advisoryId,
+          registrationCount: registrations.length,
+          serviceNames,
+          createdAt: student.createdAt,
+          convertedFromLead: conversion?.leadId || null,
+        };
+      })
+    );
+
+    const activeStudents = studentsWithStats.filter((s: any) => s.user?.isActive).length;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        students: studentsWithStats,
+        stats: {
+          total: studentsWithStats.length,
+          active: activeStudents,
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error('Get advisory students error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch advisory students' });
+  }
+};
+
+/**
+ * Get team meets for a specific advisory (for super admin - read only)
+ */
+export const getAdvisoryTeamMeetsForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { advisoryId } = req.params;
+    const { month, year } = req.query;
+
+    const advisoryUser = await User.findOne({ _id: advisoryId, role: USER_ROLE.ADVISORY });
+    if (!advisoryUser) {
+      return res.status(404).json({ success: false, message: 'Advisory not found' });
+    }
+
+    let startDate: Date;
+    let endDate: Date;
+
+    if (month && year) {
+      const monthNum = parseInt(month as string);
+      const yearNum = parseInt(year as string);
+      startDate = new Date(yearNum, monthNum - 1, -6);
+      endDate = new Date(yearNum, monthNum, 7, 23, 59, 59, 999);
+    } else {
+      const now = new Date();
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59, 999);
+    }
+
+    const teamMeets = await TeamMeet.find({
+      $or: [{ requestedBy: advisoryId }, { requestedTo: advisoryId }],
+      scheduledDate: { $gte: startDate, $lte: endDate },
+    })
+      .populate("requestedBy", "firstName middleName lastName email role")
+      .populate("requestedTo", "firstName middleName lastName email role")
+      .sort({ scheduledDate: 1, scheduledTime: 1 });
+
+    return res.status(200).json({
+      success: true,
+      data: { teamMeets },
+    });
+  } catch (error: any) {
+    console.error('Get advisory team meets error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch advisory team meets' });
+  }
+};

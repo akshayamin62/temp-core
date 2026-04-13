@@ -41,6 +41,10 @@ import {
   getAdvisoryDetails,
   updateAdvisoryServices,
   toggleAdvisoryStatus,
+  getAdvisoryDashboardStats,
+  getAdvisoryLeadsForSuperAdmin,
+  getAdvisoryStudentsForSuperAdmin,
+  getAdvisoryTeamMeetsForSuperAdmin,
 } from "../controllers/superAdminController";
 import { authenticate } from "../middleware/auth";
 import { authorize } from "../middleware/authorize";
@@ -385,6 +389,34 @@ router.patch("/advisories/:id/services", updateAdvisoryServices);
  * @access  Super Admin only
  */
 router.patch("/advisories/:id/toggle-status", toggleAdvisoryStatus);
+
+/**
+ * @route   GET /api/super-admin/advisories/:advisoryId/dashboard
+ * @desc    Get advisory dashboard stats
+ * @access  Super Admin only
+ */
+router.get("/advisories/:advisoryId/dashboard", getAdvisoryDashboardStats);
+
+/**
+ * @route   GET /api/super-admin/advisories/:advisoryId/leads
+ * @desc    Get leads under a specific advisory
+ * @access  Super Admin only
+ */
+router.get("/advisories/:advisoryId/leads", getAdvisoryLeadsForSuperAdmin);
+
+/**
+ * @route   GET /api/super-admin/advisories/:advisoryId/students
+ * @desc    Get students under a specific advisory
+ * @access  Super Admin only
+ */
+router.get("/advisories/:advisoryId/students", getAdvisoryStudentsForSuperAdmin);
+
+/**
+ * @route   GET /api/super-admin/advisories/:advisoryId/team-meets
+ * @desc    Get team meets for a specific advisory
+ * @access  Super Admin only
+ */
+router.get("/advisories/:advisoryId/team-meets", getAdvisoryTeamMeetsForSuperAdmin);
 
 export default router;
 
