@@ -11,6 +11,7 @@ export interface IStudentServiceRegistration extends Document {
   studentId: mongoose.Types.ObjectId;
   serviceId: mongoose.Types.ObjectId;
   registeredViaAdvisoryId?: mongoose.Types.ObjectId; // Advisory who registered this service
+  registeredViaAdminId?: mongoose.Types.ObjectId; // Admin who registered this service (post-transfer)
   // For Study Abroad service - OPS role
   primaryOpsId?: mongoose.Types.ObjectId;
   secondaryOpsId?: mongoose.Types.ObjectId;
@@ -81,6 +82,11 @@ const studentServiceRegistrationSchema = new Schema<IStudentServiceRegistration>
     registeredViaAdvisoryId: {
       type: Schema.Types.ObjectId,
       ref: "Advisory",
+      required: false,
+    },
+    registeredViaAdminId: {
+      type: Schema.Types.ObjectId,
+      ref: "Admin",
       required: false,
     },
     // For Study Abroad service - OPS role

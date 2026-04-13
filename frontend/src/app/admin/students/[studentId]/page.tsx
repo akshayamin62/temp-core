@@ -100,6 +100,16 @@ interface Registration {
   paymentComplete?: boolean;
   paymentStatus?: string;
   paymentModel?: string;
+  registeredViaAdvisoryId?: {
+    _id: string;
+    companyName?: string;
+    userId?: { firstName?: string; middleName?: string; lastName?: string };
+  };
+  registeredViaAdminId?: {
+    _id: string;
+    companyName?: string;
+    userId?: { firstName?: string; middleName?: string; lastName?: string };
+  };
 }
 
 export default function AdminStudentDetailPage() {
@@ -382,6 +392,16 @@ export default function AdminStudentDetailPage() {
                             </span>
                           )}
                         </h3>
+                        {registration.registeredViaAdvisoryId && (
+                          <p className="text-xs text-blue-600 mb-1">
+                            Via Advisory: {registration.registeredViaAdvisoryId.companyName || [registration.registeredViaAdvisoryId.userId?.firstName, registration.registeredViaAdvisoryId.userId?.middleName, registration.registeredViaAdvisoryId.userId?.lastName].filter(Boolean).join(' ')}
+                          </p>
+                        )}
+                        {registration.registeredViaAdminId && (
+                          <p className="text-xs text-indigo-600 mb-1">
+                            Via Admin: {registration.registeredViaAdminId.companyName || [registration.registeredViaAdminId.userId?.firstName, registration.registeredViaAdminId.userId?.middleName, registration.registeredViaAdminId.userId?.lastName].filter(Boolean).join(' ')}
+                          </p>
+                        )}
                         <p className="text-sm text-gray-600 mb-2">
                           {registration.serviceId.shortDescription}
                         </p>

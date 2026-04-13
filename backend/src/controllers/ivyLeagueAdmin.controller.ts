@@ -378,6 +378,8 @@ export const convertCandidateToStudent = async (req: AuthRequest, res: Response)
         activeIvyExpertId: ivyExpertId,
         status: 'REGISTERED',
         registeredAt: new Date(),
+        ...(student.adminId ? { registeredViaAdminId: student.adminId } : {}),
+        ...(student.advisoryId && !student.adminId ? { registeredViaAdvisoryId: student.advisoryId } : {}),
       });
     }
 

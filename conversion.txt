@@ -1,10 +1,6 @@
 cd backend
-npx ts-node src/scripts/migrateFormAnswers.ts
 
-db.formfields.drop()
-db.formsubsections.drop()
-db.formsections.drop()
-db.formparts.drop()
-db.serviceformparts.drop()
+Set MONGO_URI
+npx ts-node src/scripts/backfillRegistrationOrigin.ts
 
-npx ts-node src/seedStudyAbroadPlan.ts
+this is to set admin and advisory in studentserviceregistration.

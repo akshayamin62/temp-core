@@ -791,7 +791,13 @@ export const getAdvisoryStudents = async (req: AuthRequest, res: Response): Prom
       .populate("userId", "firstName middleName lastName email isActive profilePicture")
       .sort({ createdAt: -1 });
 
-    return res.json({ success: true, data: { students } });
+    // Mark transferred students (those who now have an adminId)
+    const studentsWithTransferFlag = students.map((s: any) => ({
+      ...s.toObject(),
+      isTransferred: !!s.adminId,
+    }));
+
+    return res.json({ success: true, data: { students: studentsWithTransferFlag } });
   } catch (error: any) {
     console.error("Get advisory students error:", error);
     return res.status(500).json({ success: false, message: "Failed to fetch students" });
@@ -851,10 +857,28 @@ export const getAdvisoryStudentDetail = async (req: AuthRequest, res: Response):
         path: "activeOpsId",
         populate: { path: "userId", select: "firstName middleName lastName email" },
       })
+      .populate({
+        path: "registeredViaAdvisoryId",
+        select: "companyName userId",
+        populate: { path: "userId", select: "firstName middleName lastName" },
+      })
+      .populate({
+        path: "registeredViaAdminId",
+        select: "companyName userId",
+        populate: { path: "userId", select: "firstName middleName lastName" },
+      })
       .lean()
       .exec();
 
-    return res.json({ success: true, data: { student, registrations } });
+    // Mark each registration: isOwnRegistration = true if registered under this advisory
+    const advisoryIdStr = advisory._id.toString();
+    const registrationsWithAccess = registrations.map((reg: any) => ({
+      ...reg,
+      isOwnRegistration: reg.registeredViaAdvisoryId?._id?.toString() === advisoryIdStr
+        || reg.registeredViaAdvisoryId?.toString() === advisoryIdStr,
+    }));
+
+    return res.json({ success: true, data: { student, registrations: registrationsWithAccess, isTransferred: !!student.adminId } });
   } catch (error: any) {
     console.error("Get advisory student detail error:", error);
     return res.status(500).json({ success: false, message: "Failed to fetch student details" });
@@ -1067,17 +1091,31 @@ export const getAdvisoryStudentFormAnswers = async (req: AuthRequest, res: Respo
     }
 
     const registration = await StudentServiceRegistration.findById(registrationId)
-      .populate("serviceId");
+      .populate("serviceId")
+      .populate({
+        path: "registeredViaAdvisoryId",
+        select: "companyName userId",
+        populate: { path: "userId", select: "firstName middleName lastName" },
+      })
+      .populate({
+        path: "registeredViaAdminId",
+        select: "companyName userId",
+        populate: { path: "userId", select: "firstName middleName lastName" },
+      });
     if (!registration) {
       return res.status(404).json({ success: false, message: "Registration not found" });
     }
+
+    const advisoryIdStr = advisory._id.toString();
+    const isOwnRegistration = (registration as any).registeredViaAdvisoryId?._id?.toString() === advisoryIdStr
+      || (registration as any).registeredViaAdvisoryId?.toString() === advisoryIdStr;
 
     const answers = await StudentFormAnswer.find({ studentId }).lean().exec();
 
     return res.status(200).json({
       success: true,
       message: "Form answers fetched successfully",
-      data: { registration, answers },
+      data: { registration, answers, isOwnRegistration },
     });
   } catch (error: any) {
     console.error("Get advisory student form answers error:", error);

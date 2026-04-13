@@ -50,6 +50,16 @@ export const getMyServices = async (req: AuthRequest, res: Response) => {
       studentId: student._id,
     })
       .populate("serviceId")
+      .populate({
+        path: "registeredViaAdvisoryId",
+        select: "companyName userId",
+        populate: { path: "userId", select: "firstName middleName lastName" },
+      })
+      .populate({
+        path: "registeredViaAdminId",
+        select: "companyName userId",
+        populate: { path: "userId", select: "firstName middleName lastName" },
+      })
       .sort({ registeredAt: -1 });
 
     // Backfill missing payment fields for older registrations so payment UI stays accurate.
@@ -199,6 +209,8 @@ export const registerForService = async (req: AuthRequest, res: Response) => {
       studentId: student._id,
       serviceId,
       status: ServiceRegistrationStatus.REGISTERED,
+      ...(student.adminId ? { registeredViaAdminId: student.adminId } : {}),
+      ...(student.advisoryId && !student.adminId ? { registeredViaAdvisoryId: student.advisoryId } : {}),
     });
 
     const populatedRegistration = await StudentServiceRegistration.findById(
@@ -330,6 +342,16 @@ export const getRegistrationDetails = async (
       .populate({
         path: "activeEduplanCoachId",
         populate: { path: "userId", select: "firstName middleName lastName email" }
+      })
+      .populate({
+        path: "registeredViaAdvisoryId",
+        select: "companyName userId",
+        populate: { path: "userId", select: "firstName middleName lastName" },
+      })
+      .populate({
+        path: "registeredViaAdminId",
+        select: "companyName userId",
+        populate: { path: "userId", select: "firstName middleName lastName" },
       });
 
     if (!registration) {

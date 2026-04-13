@@ -333,6 +333,16 @@ export const getStudentDetails = async (req: AuthRequest, res: Response): Promis
         select: 'userId email',
         populate: { path: 'userId', select: 'firstName middleName lastName email' }
       })
+      .populate({
+        path: 'registeredViaAdvisoryId',
+        select: 'companyName userId',
+        populate: { path: 'userId', select: 'firstName middleName lastName' }
+      })
+      .populate({
+        path: 'registeredViaAdminId',
+        select: 'companyName userId',
+        populate: { path: 'userId', select: 'firstName middleName lastName' }
+      })
       .sort({ createdAt: -1 })
       .lean()
       .exec();

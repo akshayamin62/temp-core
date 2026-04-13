@@ -221,6 +221,16 @@ export const getAdminStudentDetails = async (req: AuthRequest, res: Response): P
         path: 'activeOpsId',
         populate: { path: 'userId', select: 'firstName middleName lastName name email' }
       })
+      .populate({
+        path: 'registeredViaAdvisoryId',
+        select: 'companyName userId',
+        populate: { path: 'userId', select: 'firstName middleName lastName' }
+      })
+      .populate({
+        path: 'registeredViaAdminId',
+        select: 'companyName userId',
+        populate: { path: 'userId', select: 'firstName middleName lastName' }
+      })
       .lean()
       .exec();
 

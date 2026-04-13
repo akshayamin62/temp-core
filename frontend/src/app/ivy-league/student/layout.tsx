@@ -18,6 +18,7 @@ const ALLOWED_ROLES: string[] = [
     USER_ROLE.COUNSELOR,
     USER_ROLE.PARENT,
     USER_ROLE.REFERRER,
+    USER_ROLE.ADVISORY,
 ];
 
 function StudentSidebar() {

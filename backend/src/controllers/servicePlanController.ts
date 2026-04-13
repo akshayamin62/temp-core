@@ -199,6 +199,8 @@ export const registerServicePlan = async (req: AuthRequest, res: Response): Prom
       paymentAmount: 0,
       paymentStatus: 'paid',
       paymentComplete: true,
+      ...(student.adminId ? { registeredViaAdminId: student.adminId } : {}),
+      ...(student.advisoryId && !student.adminId ? { registeredViaAdvisoryId: student.advisoryId } : {}),
     });
 
     const populated = await StudentServiceRegistration.findById(registration._id).populate('serviceId');

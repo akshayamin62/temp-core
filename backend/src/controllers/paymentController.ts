@@ -948,6 +948,8 @@ export const verifyRegistrationPayment = async (req: AuthRequest, res: Response)
       paymentStatus: isInstallment ? 'partial' : 'paid',
       totalPaid: payment.amountInr,
       paymentDate: new Date(),
+      ...(student.adminId ? { registeredViaAdminId: student.adminId } : {}),
+      ...(student.advisoryId && !student.adminId ? { registeredViaAdvisoryId: student.advisoryId } : {}),
       paymentComplete: !isInstallment,
     });
 

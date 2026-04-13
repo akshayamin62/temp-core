@@ -75,6 +75,17 @@ interface Registration {
   planTier?: 'PRO' | 'PREMIUM' | 'PLATINUM';
   status: string;
   createdAt: string;
+  isOwnRegistration?: boolean;
+  registeredViaAdvisoryId?: {
+    _id: string;
+    companyName?: string;
+    userId?: { firstName?: string; middleName?: string; lastName?: string };
+  };
+  registeredViaAdminId?: {
+    _id: string;
+    companyName?: string;
+    userId?: { firstName?: string; middleName?: string; lastName?: string };
+  };
 }
 
 interface Transfer {
@@ -425,7 +436,7 @@ export default function AdvisoryStudentDetailPage() {
                 {registrations && registrations.length > 0 ? (
                   <div className="space-y-4">
                     {registrations.map((registration) => (
-                      <div key={registration._id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div key={registration._id} className={`border rounded-lg p-4 ${registration.isOwnRegistration === false ? 'border-amber-200 bg-amber-50/50' : 'border-gray-200 bg-gray-50'}`}>
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <h3 className="font-semibold text-gray-900 mb-1">
@@ -435,7 +446,23 @@ export default function AdvisoryStudentDetailPage() {
                                   {registration.planTier}
                                 </span>
                               )}
+                              {registration.isOwnRegistration === false && (
+                                <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-medium">
+                                  Read Only
+                                </span>
+                              )}
                             </h3>
+                            {/* Service Origin Badge */}
+                            {registration.registeredViaAdvisoryId && (
+                              <p className="text-xs text-blue-600 mb-1">
+                                Via Advisory: {registration.registeredViaAdvisoryId.companyName || [registration.registeredViaAdvisoryId.userId?.firstName, registration.registeredViaAdvisoryId.userId?.middleName, registration.registeredViaAdvisoryId.userId?.lastName].filter(Boolean).join(' ')}
+                              </p>
+                            )}
+                            {registration.registeredViaAdminId && (
+                              <p className="text-xs text-indigo-600 mb-1">
+                                Via Admin: {registration.registeredViaAdminId.companyName || [registration.registeredViaAdminId.userId?.firstName, registration.registeredViaAdminId.userId?.middleName, registration.registeredViaAdminId.userId?.lastName].filter(Boolean).join(' ')}
+                              </p>
+                            )}
                             {registration.serviceId.shortDescription && (
                               <p className="text-sm text-gray-600 mb-2">
                                 {registration.serviceId.shortDescription}
