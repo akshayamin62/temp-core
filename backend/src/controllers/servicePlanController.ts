@@ -641,7 +641,7 @@ export const getStudentPlanTiers = async (req: AuthRequest, res: Response): Prom
 
     const registrations = await StudentServiceRegistration.find({ studentId })
       .populate('serviceId', 'name slug')
-      .select('planTier serviceId classTiming')
+      .select('planTier serviceId classTiming registeredViaAdvisoryId')
       .lean();
 
     const planTiers: Record<string, string> = {};
@@ -662,7 +662,20 @@ export const getStudentPlanTiers = async (req: AuthRequest, res: Response): Prom
     const adminId = student?.adminId?.toString() || '';
     const advisoryId = student?.advisoryId?.toString() || '';
 
-    res.json({ success: true, data: { planTiers, coachingPlanTiers, studentName, adminId, advisoryId } });
+    // Build set of service slugs that were registered under the advisory (for discount control)
+    const advisoryOwnedServiceSlugs: string[] = [];
+    if (advisoryId) {
+      for (const reg of registrations) {
+        const svc = reg.serviceId as any;
+        if (svc?.slug && (reg as any).registeredViaAdvisoryId) {
+          if (!advisoryOwnedServiceSlugs.includes(svc.slug)) {
+            advisoryOwnedServiceSlugs.push(svc.slug);
+          }
+        }
+      }
+    }
+
+    res.json({ success: true, data: { planTiers, coachingPlanTiers, studentName, adminId, advisoryId, advisoryOwnedServiceSlugs } });
   } catch (error: any) {
     res.status(500).json({ success: false, message: 'Failed to fetch student plan tiers' });
   }

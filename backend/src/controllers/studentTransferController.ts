@@ -4,6 +4,9 @@ import StudentTransfer, { TRANSFER_STATUS } from "../models/StudentTransfer";
 import Student from "../models/Student";
 import Advisory from "../models/Advisory";
 import Admin from "../models/Admin";
+import StudentPlanDiscount from "../models/StudentPlanDiscount";
+import StudentServiceRegistration from "../models/StudentServiceRegistration";
+import Service from "../models/Service";
 import mongoose from "mongoose";
 
 /**
@@ -217,6 +220,48 @@ export const approveTransfer = async (req: AuthRequest, res: Response): Promise<
     await Student.findByIdAndUpdate(transfer.studentId, {
       adminId: admin._id,
     });
+
+    // Deactivate advisory-set discounts for services the student has NOT registered under advisory
+    // Keep discounts for services already taken under the advisory (registeredViaAdvisoryId)
+    try {
+      const advisoryDiscounts = await StudentPlanDiscount.find({
+        studentId: transfer.studentId,
+        advisoryId: transfer.fromAdvisoryId,
+        isActive: true,
+      }).lean();
+
+      if (advisoryDiscounts.length > 0) {
+        // Find services the student actually registered under this advisory
+        const advisoryRegistrations = await StudentServiceRegistration.find({
+          studentId: transfer.studentId,
+          registeredViaAdvisoryId: transfer.fromAdvisoryId,
+        }).populate('serviceId', 'slug').lean();
+
+        // Build a Set of service slugs + plan tiers that are advisory-owned registrations
+        const advisoryOwnedKeys = new Set<string>();
+        for (const reg of advisoryRegistrations) {
+          const svc = reg.serviceId as any;
+          if (svc?.slug && reg.planTier) {
+            advisoryOwnedKeys.add(`${svc.slug}::${reg.planTier}`);
+          }
+        }
+
+        // Deactivate discounts for services NOT in the advisory-owned set
+        const discountIdsToDeactivate = advisoryDiscounts
+          .filter(d => !advisoryOwnedKeys.has(`${d.serviceSlug}::${d.planTier}`))
+          .map(d => d._id);
+
+        if (discountIdsToDeactivate.length > 0) {
+          await StudentPlanDiscount.updateMany(
+            { _id: { $in: discountIdsToDeactivate } },
+            { isActive: false }
+          );
+        }
+      }
+    } catch (discountError) {
+      // Log but don't fail the transfer approval
+      console.error('Error cleaning up advisory discounts during transfer:', discountError);
+    }
 
     // Update transfer
     transfer.status = TRANSFER_STATUS.APPROVED;

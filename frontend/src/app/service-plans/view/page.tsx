@@ -40,7 +40,16 @@ function ServicePlansViewContent() {
   const [planDiscounts, setPlanDiscounts] = useState<Record<string, Record<string, PlanDiscountInfo>>>({});
   const [discountForm, setDiscountForm] = useState<{ planKey: string; type: string; value: string; reason: string } | null>(null);
   const [savingDiscount, setSavingDiscount] = useState(false);
+  const [advisoryOwnedServiceSlugs, setAdvisoryOwnedServiceSlugs] = useState<string[]>([]);
+  const [isTransferredStudent, setIsTransferredStudent] = useState(false);
   const isAdmin = user?.role === USER_ROLE.ADMIN || user?.role === USER_ROLE.ADVISORY || user?.role === 'admin';
+
+  // Advisory can only manage discounts for services they originally registered (if student is transferred)
+  const canManageDiscount = (serviceSlug: string) => {
+    if (user?.role !== USER_ROLE.ADVISORY) return true; // Admin always has full access
+    if (!isTransferredStudent) return true; // Not transferred, advisory has full access
+    return advisoryOwnedServiceSlugs.includes(serviceSlug); // Only advisory-owned services
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -63,6 +72,8 @@ function ServicePlansViewContent() {
             if (data.studentName) setStudentName(data.studentName);
             if (data.adminId) setAdminId(data.adminId);
             else if (data.advisoryId) setAdminId(data.advisoryId);
+            if (data.adminId && data.advisoryId) setIsTransferredStudent(true);
+            if (data.advisoryOwnedServiceSlugs) setAdvisoryOwnedServiceSlugs(data.advisoryOwnedServiceSlugs);
           } catch (err: any) {
             if (err?.response?.status === 403) {
               toast.error('You do not have access to this student');
@@ -294,7 +305,7 @@ function ServicePlansViewContent() {
                     />
 
                     {/* Admin Discount Controls for Coaching */}
-                    {isAdmin && studentId && (
+                    {isAdmin && studentId && canManageDiscount(selectedService!) && (
                       <div className="mt-6 bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                         <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Set Discount for {studentName || 'Student'}</h3>
                         {!pricing && (
@@ -452,7 +463,7 @@ function ServicePlansViewContent() {
                       />
 
                       {/* Admin Discount Controls */}
-                      {isAdmin && studentId && (
+                      {isAdmin && studentId && canManageDiscount(selectedService!) && (
                         <div className="mt-6 bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                           <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Set Discount for {studentName || 'Student'}</h3>
                           {!pricing && (

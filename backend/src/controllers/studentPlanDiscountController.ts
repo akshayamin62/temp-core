@@ -4,6 +4,9 @@ import StudentPlanDiscount, { PlanDiscountType } from '../models/StudentPlanDisc
 import ServicePricing from '../models/ServicePricing';
 import Admin from '../models/Admin';
 import Advisory from '../models/Advisory';
+import Student from '../models/Student';
+import StudentServiceRegistration from '../models/StudentServiceRegistration';
+import Service from '../models/Service';
 
 // ===== Set/Update Student Plan Discount (Admin or Advisory) =====
 
@@ -42,6 +45,29 @@ export const setStudentPlanDiscount = async (req: AuthRequest, res: Response): P
       if (!advisory) {
         return res.status(404).json({ success: false, message: 'Admin/Advisory not found' });
       }
+
+      // Guard: if student has been transferred (has adminId), advisory can only set discounts
+      // for services the student registered under this advisory
+      const studentDoc = await Student.findById(studentId).lean();
+      if (studentDoc?.adminId) {
+        // Find service by slug to get serviceId
+        const service = await Service.findOne({ slug: serviceSlug }).lean();
+        if (!service) {
+          return res.status(400).json({ success: false, message: 'Service not found' });
+        }
+        const hasAdvisoryRegistration = await StudentServiceRegistration.findOne({
+          studentId,
+          serviceId: service._id,
+          registeredViaAdvisoryId: advisory._id,
+        }).lean();
+        if (!hasAdvisoryRegistration) {
+          return res.status(403).json({
+            success: false,
+            message: 'Student has been transferred. You can only manage discounts for services registered under your advisory.',
+          });
+        }
+      }
+
       ownerFields = { advisoryId: advisory._id };
       pricingFilter = { advisoryId: advisory._id, serviceSlug };
     }
@@ -161,6 +187,24 @@ export const removeStudentPlanDiscount = async (req: AuthRequest, res: Response)
 
     if (!discount.isActive) {
       return res.status(400).json({ success: false, message: 'Discount is already inactive' });
+    }
+
+    // Authorization: advisory can only remove discounts they set
+    const advisory = await Advisory.findOne({ userId: req.user!.userId });
+    if (advisory) {
+      // Caller is an advisory — only allow removing own discounts
+      if (!discount.advisoryId || discount.advisoryId.toString() !== advisory._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only remove discounts set by your advisory.',
+        });
+      }
+    } else {
+      // Caller is admin — admin can remove any discount (including advisory-set ones)
+      const admin = await Admin.findOne({ userId: req.user!.userId });
+      if (!admin) {
+        return res.status(404).json({ success: false, message: 'Admin/Advisory not found' });
+      }
     }
 
     discount.isActive = false;
