@@ -35,10 +35,7 @@ export default function AdvisoryStudyAbroadPricingPage() {
 
   const fetchPricing = async () => {
     try {
-      const [pricingRes, baseRes] = await Promise.all([
-        servicePlanAPI.getAdminPricing('study-abroad'),
-        servicePlanAPI.getBasePricingForAdmin('study-abroad'),
-      ]);
+      const pricingRes = await servicePlanAPI.getAdminPricing('study-abroad');
       const p = pricingRes.data.data.pricing;
       if (p) {
         setPricing(p);
@@ -46,9 +43,12 @@ export default function AdvisoryStudyAbroadPricingPage() {
         for (const [key, val] of Object.entries(p)) fd[key] = String(val);
         setFormData(fd);
       }
+    } catch (error: any) { console.error('Failed to fetch pricing:', error); }
+    try {
+      const baseRes = await servicePlanAPI.getBasePricingForAdmin('study-abroad');
       const bp = baseRes.data.data.basePricing;
       if (bp) setBasePricing(bp);
-    } catch (error: any) { console.error('Failed to fetch pricing:', error); }
+    } catch (error: any) { console.error('Failed to fetch base pricing:', error); }
   };
 
   const handleSave = async () => {

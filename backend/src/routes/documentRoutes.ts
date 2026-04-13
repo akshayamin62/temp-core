@@ -52,10 +52,10 @@ router.get("/:documentId/view", viewDocument);
 router.get("/:documentId/download", downloadDocument);
 
 // Approve document (OPS/Admin only)
-router.put("/:documentId/approve", authorize(USER_ROLE.SUPER_ADMIN, USER_ROLE.OPS, USER_ROLE.ADMIN), approveDocument);
+router.put("/:documentId/approve", authorize(USER_ROLE.SUPER_ADMIN, USER_ROLE.OPS, USER_ROLE.ADMIN, USER_ROLE.ADVISORY), approveDocument);
 
 // Reject document (OPS/Admin only)
-router.put("/:documentId/reject", authorize(USER_ROLE.SUPER_ADMIN, USER_ROLE.OPS, USER_ROLE.ADMIN), rejectDocument);
+router.put("/:documentId/reject", authorize(USER_ROLE.SUPER_ADMIN, USER_ROLE.OPS, USER_ROLE.ADMIN, USER_ROLE.ADVISORY), rejectDocument);
 
 // Add custom document field (DEPRECATED - use /fields/add instead)
 router.post("/add-custom-field", authorize(USER_ROLE.SUPER_ADMIN, USER_ROLE.OPS), addCustomField);

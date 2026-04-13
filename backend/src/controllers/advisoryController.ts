@@ -1047,3 +1047,40 @@ export const getAdvisoryDashboardStats = async (req: AuthRequest, res: Response)
     return res.status(500).json({ success: false, message: "Failed to fetch dashboard stats" });
   }
 };
+
+/**
+ * ADVISORY: Get student form answers for a registration (read-only)
+ */
+export const getAdvisoryStudentFormAnswers = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const { studentId, registrationId } = req.params;
+    const userId = req.user?.userId;
+
+    const advisory = await Advisory.findOne({ userId });
+    if (!advisory) {
+      return res.status(404).json({ success: false, message: "Advisory profile not found" });
+    }
+
+    const student = await Student.findOne({ _id: studentId, advisoryId: advisory._id });
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Student not found or access denied" });
+    }
+
+    const registration = await StudentServiceRegistration.findById(registrationId)
+      .populate("serviceId");
+    if (!registration) {
+      return res.status(404).json({ success: false, message: "Registration not found" });
+    }
+
+    const answers = await StudentFormAnswer.find({ studentId }).lean().exec();
+
+    return res.status(200).json({
+      success: true,
+      message: "Form answers fetched successfully",
+      data: { registration, answers },
+    });
+  } catch (error: any) {
+    console.error("Get advisory student form answers error:", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch form answers" });
+  }
+};

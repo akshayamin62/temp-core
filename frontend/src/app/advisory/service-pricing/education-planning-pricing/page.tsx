@@ -61,15 +61,15 @@ export default function AdvisoryEducationPlanningPricingPage() {
 
   const fetchPricing = async () => {
     try {
-      const [pricingRes, baseRes] = await Promise.all([
-        servicePlanAPI.getAdminPricing('education-planning'),
-        servicePlanAPI.getBasePricingForAdmin('education-planning'),
-      ]);
+      const pricingRes = await servicePlanAPI.getAdminPricing('education-planning');
       const p = pricingRes.data.data.pricing;
       if (p) setPricing(p);
+    } catch (error: any) { console.error('Failed to fetch pricing:', error); }
+    try {
+      const baseRes = await servicePlanAPI.getBasePricingForAdmin('education-planning');
       const bp = baseRes.data.data.basePricing;
       if (bp) setBasePricing(bp);
-    } catch (error: any) { console.error('Failed to fetch pricing:', error); }
+    } catch (error: any) { console.error('Failed to fetch base pricing:', error); }
   };
 
   const handlePriceEdit = async (planKey: string, price: number) => {
@@ -181,15 +181,20 @@ export default function AdvisoryEducationPlanningPricingPage() {
                       )}
                     </div>
                   ) : (
-                    <div className="mb-5 flex items-center gap-2">
-                      <p className="text-sm text-gray-400">Price not set</p>
-                      <button
-                        onClick={() => { setEditingPrice(plan.key); setPriceValue(''); }}
-                        className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                        title="Set price"
-                      >
-                        <PencilIcon className="w-4 h-4" />
-                      </button>
+                    <div className="mb-5">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-gray-400">Price not set</p>
+                        <button
+                          onClick={() => { setEditingPrice(plan.key); setPriceValue(''); }}
+                          className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                          title="Set price"
+                        >
+                          <PencilIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                      {basePrice != null && (
+                        <p className="text-xs text-gray-500 mt-0.5">Base: ₹{basePrice.toLocaleString('en-IN')}</p>
+                      )}
                     </div>
                   )}
 

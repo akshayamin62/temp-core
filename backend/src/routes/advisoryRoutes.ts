@@ -19,6 +19,7 @@ import {
   setAdvisoryPricing,
   getAdvisoryEnquiryFormUrl,
   getAdvisoryDashboardStats,
+  getAdvisoryStudentFormAnswers,
 } from "../controllers/advisoryController";
 import {
   initiateTransfer,
@@ -53,6 +54,7 @@ router.post("/leads/:leadId/convert", convertAdvisoryLead);
 // ============= STUDENTS =============
 router.get("/students", getAdvisoryStudents);
 router.get("/students/:studentId", getAdvisoryStudentDetail);
+router.get("/students/:studentId/registrations/:registrationId/answers", getAdvisoryStudentFormAnswers);
 
 // ============= STUDENT TRANSFER =============
 router.post("/students/:studentId/transfer", initiateTransfer);

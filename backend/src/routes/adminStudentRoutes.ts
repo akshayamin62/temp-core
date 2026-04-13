@@ -12,9 +12,9 @@ import { sendMessageToStudent } from '../controllers/superAdminStudentController
 
 const router = express.Router();
 
-// All routes require authentication and admin/counselor/super-admin role
+// All routes require authentication and admin/counselor/super-admin/advisory role
 router.use(authenticate);
-router.use(authorize([USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN]));
+router.use(authorize([USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADVISORY]));
 
 // Get all students under this admin
 router.get('/', getAdminStudents);

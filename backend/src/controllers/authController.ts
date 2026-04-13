@@ -641,6 +641,17 @@ export const getProfile = async (
       }
     }
 
+    // If user is a STUDENT, include advisory's allowedServices if applicable
+    if (user.role === USER_ROLE.STUDENT) {
+      const student = await Student.findOne({ userId: user._id });
+      if (student?.advisoryId) {
+        const advisory = await Advisory.findById(student.advisoryId);
+        if (advisory) {
+          responseData.allowedServices = advisory.allowedServices;
+        }
+      }
+    }
+
     return res.status(200).json({
       success: true,
       data: responseData,

@@ -18,29 +18,29 @@ router.use(authenticate);
 // Get brainography report for a registration
 router.get(
   '/:registrationId',
-  authorize([USER_ROLE.STUDENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.REFERRER]),
+  authorize([USER_ROLE.STUDENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.REFERRER, USER_ROLE.ADVISORY]),
   getBrainography
 );
 
 // Download brainography report
 router.get(
   '/:registrationId/download',
-  authorize([USER_ROLE.STUDENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.REFERRER]),
+  authorize([USER_ROLE.STUDENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.REFERRER, USER_ROLE.ADVISORY]),
   downloadBrainography
 );
 
-// Upload brainography report (Eduplan Coach, Super Admin, Admin, or Counselor)
+// Upload brainography report (Eduplan Coach, Super Admin, Admin, Counselor, or Advisory)
 router.post(
   '/:registrationId/upload',
-  authorize([USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]),
+  authorize([USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.ADVISORY]),
   upload.single('file'),
   uploadBrainography
 );
 
-// Delete brainography report (Eduplan Coach, Super Admin, Admin, or Counselor)
+// Delete brainography report (Eduplan Coach, Super Admin, Admin, Counselor, or Advisory)
 router.delete(
   '/:registrationId',
-  authorize([USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]),
+  authorize([USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.ADVISORY]),
   deleteBrainography
 );
 

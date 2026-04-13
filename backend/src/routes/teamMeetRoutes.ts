@@ -28,7 +28,7 @@ const router = Router();
 router.use(authenticate);
 
 // BY DESIGN: All authenticated roles can create, cancel, reschedule, and complete team meetings
-router.use(authorize([USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN, USER_ROLE.STUDENT, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT, USER_ROLE.PARENT, USER_ROLE.REFERRER]));
+router.use(authorize([USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN, USER_ROLE.STUDENT, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT, USER_ROLE.PARENT, USER_ROLE.REFERRER, USER_ROLE.ADVISORY]));
 
 /**
  * @route   POST /api/team-meets
@@ -75,7 +75,7 @@ router.get("/participants", getParticipants);
  * @desc    Get team meetings for a specific student (for admin/counselor/super-admin/ops dashboard)
  * @access  Admin, Counselor, Super Admin, OPS
  */
-router.get("/student/:studentId", authorize([USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT, USER_ROLE.PARENT, USER_ROLE.REFERRER]), getTeamMeetsForStudent);
+router.get("/student/:studentId", authorize([USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT, USER_ROLE.PARENT, USER_ROLE.REFERRER, USER_ROLE.ADVISORY]), getTeamMeetsForStudent);
 
 /**
  * @route   GET /api/team-meets/counselor/:counselorId

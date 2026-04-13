@@ -34,15 +34,15 @@ export default function AdvisoryCoachingClassesPricingPage() {
 
   const fetchPricing = async () => {
     try {
-      const [pricingRes, baseRes] = await Promise.all([
-        servicePlanAPI.getAdminPricing('coaching-classes'),
-        servicePlanAPI.getBasePricingForAdmin('coaching-classes'),
-      ]);
+      const pricingRes = await servicePlanAPI.getAdminPricing('coaching-classes');
       const p = pricingRes.data.data.pricing;
       if (p) setPricing(p);
+    } catch (error: any) { console.error('Failed to fetch pricing:', error); }
+    try {
+      const baseRes = await servicePlanAPI.getBasePricingForAdmin('coaching-classes');
       const bp = baseRes.data.data.basePricing;
       if (bp) setBasePricing(bp);
-    } catch (error: any) { console.error('Failed to fetch pricing:', error); }
+    } catch (error: any) { console.error('Failed to fetch base pricing:', error); }
   };
 
   const fetchBatches = async () => {

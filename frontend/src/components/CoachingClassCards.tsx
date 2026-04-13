@@ -179,16 +179,21 @@ export default function CoachingClassCards({ plans, pricing, renderAction, curre
                   <p className="text-xs text-gray-400 mt-1">+ 18% GST applicable</p>
                 </div>
               ) : (
-                <div className="mb-5 flex items-center gap-2">
-                  <p className="text-sm text-gray-400">Price not set</p>
-                  {onPriceEdit && (
-                    <button
-                      onClick={() => { setEditingPrice(plan.key); setPriceValue(''); }}
-                      className="p-1 text-gray-400 hover:text-teal-600 transition-colors"
-                      title="Set price"
-                    >
-                      <PencilIcon className="w-4 h-4" />
-                    </button>
+                <div className="mb-5">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-gray-400">Price not set</p>
+                    {onPriceEdit && (
+                      <button
+                        onClick={() => { setEditingPrice(plan.key); setPriceValue(''); }}
+                        className="p-1 text-gray-400 hover:text-teal-600 transition-colors"
+                        title="Set price"
+                      >
+                        <PencilIcon className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  {basePricing && basePricing[plan.key] != null && (
+                    <p className="text-xs text-gray-500 mt-0.5">Base: ₹{basePricing[plan.key].toLocaleString('en-IN')}</p>
                   )}
                 </div>
               )}

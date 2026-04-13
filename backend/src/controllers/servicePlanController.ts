@@ -131,6 +131,18 @@ export const registerServicePlan = async (req: AuthRequest, res: Response): Prom
       return;
     }
 
+    // Check advisory allowedServices
+    if (student.advisoryId) {
+      const advisory = await Advisory.findById(student.advisoryId);
+      if (advisory && !advisory.allowedServices.includes(serviceSlug)) {
+        res.status(403).json({
+          success: false,
+          message: 'This service is not available through your advisory. Please contact your advisory for more information.',
+        });
+        return;
+      }
+    }
+
     // Check pricing - if service has pricing, registration must go through pay-first flow
     let paymentAmount: number | undefined;
     if (student.adminId) {

@@ -4,6 +4,9 @@ import { AuthRequest } from '../middleware/auth';
 import StudentDocument, { DocumentCategory, DocumentStatus, UploaderRole } from '../models/StudentDocument';
 import StudentServiceRegistration from '../models/StudentServiceRegistration';
 import EduplanCoach from '../models/EduplanCoach';
+import Admin from '../models/Admin';
+import Counselor from '../models/Counselor';
+import Advisory from '../models/Advisory';
 import Student from '../models/Student';
 import User from '../models/User';
 import { USER_ROLE } from '../types/roles';
@@ -76,11 +79,44 @@ export const uploadBrainography = async (req: AuthRequest, res: Response): Promi
           message: 'Access denied. You are not the active Eduplan Coach for this registration.',
         });
       }
-    } else if (userRole !== USER_ROLE.SUPER_ADMIN && userRole !== USER_ROLE.ADMIN && userRole !== USER_ROLE.COUNSELOR) {
+    } else if (userRole === USER_ROLE.ADMIN) {
+      const admin = await Admin.findOne({ userId });
+      if (!admin) {
+        fs.unlinkSync(file.path);
+        return res.status(404).json({ success: false, message: 'Admin record not found' });
+      }
+      const student = await Student.findById(registration.studentId);
+      if (!student || !student.adminId || student.adminId.toString() !== admin._id.toString()) {
+        fs.unlinkSync(file.path);
+        return res.status(403).json({ success: false, message: 'Access denied. This student is not assigned to you.' });
+      }
+    } else if (userRole === USER_ROLE.COUNSELOR) {
+      const counselor = await Counselor.findOne({ userId });
+      if (!counselor) {
+        fs.unlinkSync(file.path);
+        return res.status(404).json({ success: false, message: 'Counselor record not found' });
+      }
+      const student = await Student.findById(registration.studentId);
+      if (!student || !student.counselorId || student.counselorId.toString() !== counselor._id.toString()) {
+        fs.unlinkSync(file.path);
+        return res.status(403).json({ success: false, message: 'Access denied. This student is not assigned to you.' });
+      }
+    } else if (userRole === USER_ROLE.ADVISORY) {
+      const advisory = await Advisory.findOne({ userId });
+      if (!advisory) {
+        fs.unlinkSync(file.path);
+        return res.status(404).json({ success: false, message: 'Advisory record not found' });
+      }
+      const student = await Student.findById(registration.studentId);
+      if (!student || !student.advisoryId || student.advisoryId.toString() !== advisory._id.toString()) {
+        fs.unlinkSync(file.path);
+        return res.status(403).json({ success: false, message: 'Access denied. This student is not assigned to you.' });
+      }
+    } else if (userRole !== USER_ROLE.SUPER_ADMIN) {
       fs.unlinkSync(file.path);
       return res.status(403).json({
         success: false,
-        message: 'Only Eduplan Coach, Super Admin, Admin, or Counselor can upload brainography reports',
+        message: 'You do not have permission to upload brainography reports',
       });
     }
 

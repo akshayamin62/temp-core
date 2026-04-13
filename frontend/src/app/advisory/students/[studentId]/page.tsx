@@ -224,6 +224,15 @@ export default function AdvisoryStudentDetailPage() {
     }
   };
 
+  const handleViewFormData = (registrationId: string, serviceName?: string) => {
+    // For Ivy League, open the student ivy-league view in read-only mode
+    if (serviceName === 'Ivy League Preparation' && student?.userId?._id) {
+      router.push(`/ivy-league/student?studentId=${student.userId._id}&readOnly=true`);
+      return;
+    }
+    router.push(`/advisory/students/${studentId}/registration/${registrationId}`);
+  };
+
   const pendingTransfer = transfers.find((t) => t.status === 'PENDING');
   const canTransfer = !student?.adminId?._id && !pendingTransfer;
 
@@ -439,6 +448,16 @@ export default function AdvisoryStudentDetailPage() {
                               </span>
                             </div>
                           </div>
+                          <button
+                            onClick={() => handleViewFormData(registration._id, registration.serviceId.name)}
+                            className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium inline-flex items-center gap-2"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            View
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -455,7 +474,7 @@ export default function AdvisoryStudentDetailPage() {
 
               {/* Quick Actions */}
               {student && student.userId?._id && (
-                <div className="mt-6 flex gap-3">
+                <div className="mt-6 flex gap-3 flex-wrap">
                   <button
                     onClick={() => router.push(`/service-plans/view?studentId=${studentId}`)}
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
@@ -464,6 +483,15 @@ export default function AdvisoryStudentDetailPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                     Service Plans
+                  </button>
+                  <button
+                    onClick={() => router.push(`/advisory/students/${studentId}/enquiries`)}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-600 text-white text-sm font-semibold rounded-lg hover:bg-orange-700 transition-colors shadow-sm"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Student Service Enquiry
                   </button>
                   <button
                     onClick={() => router.push(`/ivy-league/candidate-profile?userId=${student.userId._id}`)}

@@ -34,14 +34,14 @@ router.post('/upload', authorize(USER_ROLE.STUDENT), academicUploadMiddleware, u
 router.post('/evaluate', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), evaluateAcademicHandler);
 
 // GET /api/pointer1/status/:studentId - Get status and documents
-router.get('/status/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT]), getAcademicStatusHandler);
+router.get('/status/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getAcademicStatusHandler);
 
 // ========================
 // Academic Data Routes (Formal/Informal)
 // ========================
 
 // GET /api/pointer1/academic/:studentId - Get academic data
-router.get('/academic/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT]), getAcademicDataHandler);
+router.get('/academic/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getAcademicDataHandler);
 
 // POST /api/pointer1/academic/section - Add a section
 router.post('/academic/section', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), addSectionHandler);

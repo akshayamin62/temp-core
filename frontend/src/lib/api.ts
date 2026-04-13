@@ -1037,6 +1037,8 @@ export const advisoryAPI = {
   // Students
   getStudents: () => api.get('/advisory/students'),
   getStudentDetail: (studentId: string) => api.get(`/advisory/students/${studentId}`),
+  getStudentFormAnswers: (studentId: string, registrationId: string) =>
+    api.get(`/advisory/students/${studentId}/registrations/${registrationId}/answers`),
   
   // Student Transfer
   initiateTransfer: (studentId: string, data: { interestedServices: string[] }) =>

@@ -21,8 +21,8 @@ const router = Router();
 router.post('/task', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), uploadAttachmentsMiddleware, createTaskHandler);
 router.put('/task', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), uploadAttachmentsMiddleware, updateTaskHandler);
 router.delete('/task/:taskId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), deleteTaskHandler);
-router.get('/tasks/:studentIvyServiceId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT]), getTasksHandler);
-router.get('/tasks', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT]), getTasksHandler);
+router.get('/tasks/:studentIvyServiceId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getTasksHandler);
+router.get('/tasks', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getTasksHandler);
 
 // Submission Routes (Student)
 router.post('/submit', authorize(USER_ROLE.STUDENT), submitResponseHandler);
@@ -31,11 +31,11 @@ router.post('/submit', authorize(USER_ROLE.STUDENT), submitResponseHandler);
 router.post('/evaluate', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), evaluateSubmissionHandler);
 
 // Status Routes (All)
-router.get('/status/:studentIvyServiceId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT]), getStatusHandler);
-router.get('/status', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT]), getStatusHandler);
+router.get('/status/:studentIvyServiceId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getStatusHandler);
+router.get('/status', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getStatusHandler);
 
 // Score Route
-router.get('/score/:studentIvyServiceId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.REFERRER]), getScoreHandler);
-router.get('/score', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.REFERRER]), getScoreHandler);
+router.get('/score/:studentIvyServiceId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.REFERRER, USER_ROLE.ADVISORY]), getScoreHandler);
+router.get('/score', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.REFERRER, USER_ROLE.ADVISORY]), getScoreHandler);
 
 export default router;

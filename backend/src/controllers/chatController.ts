@@ -78,7 +78,7 @@ export const getOrCreateChat = async (req: AuthRequest, res: Response) => {
         return res.status(403).json({ message: 'You are not the OPS for this student' });
       }
     }
-    // SUPER_ADMIN, ADMIN, and COUNSELOR can access all chats
+    // SUPER_ADMIN, ADMIN, COUNSELOR, and ADVISORY can access all chats
 
     // Find or create chat with chatType (atomic upsert to avoid E11000 duplicate key)
     let chat = await ProgramChat.findOne({ programId, studentId, chatType })
@@ -86,7 +86,8 @@ export const getOrCreateChat = async (req: AuthRequest, res: Response) => {
       .populate('participants.OPS', 'firstName middleName lastName email')
       .populate('participants.superAdmin', 'firstName middleName lastName email')
       .populate('participants.admin', 'firstName middleName lastName email')
-      .populate('participants.counselor', 'firstName middleName lastName email');
+      .populate('participants.counselor', 'firstName middleName lastName email')
+      .populate('participants.advisory', 'firstName middleName lastName email');
 
     if (!chat) {
       // Get OPS info (check all registrations)
@@ -115,6 +116,7 @@ export const getOrCreateChat = async (req: AuthRequest, res: Response) => {
               superAdmin: userRole === USER_ROLE.SUPER_ADMIN ? userId : undefined,
               admin: userRole === USER_ROLE.ADMIN ? userId : undefined,
               counselor: userRole === USER_ROLE.COUNSELOR ? userId : undefined,
+              advisory: userRole === USER_ROLE.ADVISORY ? userId : undefined,
             },
           },
         },
@@ -126,7 +128,8 @@ export const getOrCreateChat = async (req: AuthRequest, res: Response) => {
         .populate('participants.OPS', 'name email')
         .populate('participants.superAdmin', 'name email')
         .populate('participants.admin', 'name email')
-        .populate('participants.counselor', 'name email');
+        .populate('participants.counselor', 'name email')
+        .populate('participants.advisory', 'name email');
     } else {
       // Update participant based on role if not set
       let needsSave = false;
@@ -139,6 +142,9 @@ export const getOrCreateChat = async (req: AuthRequest, res: Response) => {
       } else if (userRole === USER_ROLE.COUNSELOR && !chat.participants.counselor) {
         (chat.participants as any).counselor = new mongoose.Types.ObjectId(userId);
         needsSave = true;
+      } else if (userRole === USER_ROLE.ADVISORY && !(chat.participants as any).advisory) {
+        (chat.participants as any).advisory = new mongoose.Types.ObjectId(userId);
+        needsSave = true;
       }
       
       if (needsSave) {
@@ -148,7 +154,8 @@ export const getOrCreateChat = async (req: AuthRequest, res: Response) => {
           .populate('participants.OPS', 'name email')
           .populate('participants.superAdmin', 'name email')
           .populate('participants.admin', 'name email')
-          .populate('participants.counselor', 'name email');
+          .populate('participants.counselor', 'name email')
+          .populate('participants.advisory', 'name email');
       }
     }
 
@@ -219,7 +226,7 @@ export const getChatMessages = async (req: AuthRequest, res: Response) => {
         return res.status(403).json({ message: 'You are not the OPS for this student' });
       }
     }
-    // SUPER_ADMIN, ADMIN, and COUNSELOR can view all chats
+    // SUPER_ADMIN, ADMIN, COUNSELOR, and ADVISORY can view all chats
 
     // Find chat with chatType
     const chat = await ProgramChat.findOne({ programId, studentId, chatType });
@@ -361,6 +368,7 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
               superAdmin: userRole === USER_ROLE.SUPER_ADMIN ? userId : undefined,
               admin: userRole === USER_ROLE.ADMIN ? userId : undefined,
               counselor: userRole === USER_ROLE.COUNSELOR ? userId : undefined,
+              advisory: userRole === USER_ROLE.ADVISORY ? userId : undefined,
             },
           },
         },
@@ -377,6 +385,9 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
         needsSave = true;
       } else if (userRole === USER_ROLE.COUNSELOR && !(chat.participants as any).counselor) {
         (chat.participants as any).counselor = new mongoose.Types.ObjectId(userId);
+        needsSave = true;
+      } else if (userRole === USER_ROLE.ADVISORY && !(chat.participants as any).advisory) {
+        (chat.participants as any).advisory = new mongoose.Types.ObjectId(userId);
         needsSave = true;
       }
       if (needsSave) {
@@ -465,6 +476,7 @@ export const getMyChatsList = async (req: AuthRequest, res: Response) => {
         .populate('participants.superAdmin', 'name email')
         .populate('participants.admin', 'name email')
         .populate('participants.counselor', 'name email')
+        .populate('participants.advisory', 'name email')
         .sort({ updatedAt: -1 });
     } else if (userRole === USER_ROLE.OPS) {
       query['participants.OPS'] = userId;
@@ -478,8 +490,9 @@ export const getMyChatsList = async (req: AuthRequest, res: Response) => {
         .populate('participants.superAdmin', 'name email')
         .populate('participants.admin', 'name email')
         .populate('participants.counselor', 'name email')
+        .populate('participants.advisory', 'name email')
         .sort({ updatedAt: -1 });
-    } else if (userRole === USER_ROLE.SUPER_ADMIN || userRole === USER_ROLE.ADMIN || userRole === USER_ROLE.COUNSELOR) {
+    } else if (userRole === USER_ROLE.SUPER_ADMIN || userRole === USER_ROLE.ADMIN || userRole === USER_ROLE.COUNSELOR || userRole === USER_ROLE.ADVISORY) {
       chats = await ProgramChat.find(query)
         .populate({
           path: 'programId',
@@ -490,6 +503,7 @@ export const getMyChatsList = async (req: AuthRequest, res: Response) => {
         .populate('participants.superAdmin', 'name email')
         .populate('participants.admin', 'name email')
         .populate('participants.counselor', 'name email')
+        .populate('participants.advisory', 'name email')
         .sort({ updatedAt: -1 })
         .limit(100);
     }
@@ -604,6 +618,7 @@ export const uploadChatDocument = async (req: AuthRequest, res: Response) => {
               superAdmin: userRole === USER_ROLE.SUPER_ADMIN ? userId : undefined,
               admin: userRole === USER_ROLE.ADMIN ? userId : undefined,
               counselor: userRole === USER_ROLE.COUNSELOR ? userId : undefined,
+              advisory: userRole === USER_ROLE.ADVISORY ? userId : undefined,
             },
           },
         },

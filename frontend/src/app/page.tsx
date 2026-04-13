@@ -171,6 +171,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [allowedServices, setAllowedServices] = useState<string[] | null>(null);
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -199,6 +200,9 @@ export default function Home() {
         const response = await authAPI.getProfile();
         setUser(response.data.data.user);
         setIsLoggedIn(true);
+        if (response.data.data.allowedServices) {
+          setAllowedServices(response.data.data.allowedServices);
+        }
         if (response.data.data.user.role === USER_ROLE.STUDENT) {
           fetchMyServices();
         }
@@ -250,6 +254,13 @@ export default function Home() {
 
     // Check if service is configured
     const service = services.find(s => s._id === serviceId);
+
+    // Check if service is allowed by advisory
+    if (allowedServices && service && !allowedServices.includes(service.slug)) {
+      toast.error('This service is not available through your advisory. Please contact your advisory for more information.');
+      return;
+    }
+
     if (service && service.slug !== 'study-abroad' && service.slug !== 'ivy-league' && service.slug !== 'ivy-league-admission' && service.name !== 'Ivy League Preparation' && service.name !== 'Ivy League Admission' && service.slug !== 'education-planning' && service.name !== 'Education Planning' && service.slug !== 'coaching-classes' && service.name !== 'Coaching Classes') {
       toast('This service will be available soon for registration.');
       return;

@@ -20,7 +20,7 @@ router.use(authenticate);
 // Counselor and Admin routes
 router.post(
   "/",
-  authorize([USER_ROLE.COUNSELOR, USER_ROLE.ADMIN]),
+  authorize([USER_ROLE.COUNSELOR, USER_ROLE.ADMIN, USER_ROLE.ADVISORY]),
   createFollowUp
 );
 
@@ -44,7 +44,7 @@ router.get(
 
 router.get(
   "/lead/:leadId/history",
-  authorize([USER_ROLE.COUNSELOR, USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN]),
+  authorize([USER_ROLE.COUNSELOR, USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADVISORY]),
   getLeadFollowUpHistory
 );
 

@@ -162,6 +162,14 @@ export default function ServiceCard({
                   )}
                 </button>
               )}
+              {!onRegister && !isRegistered && (
+                <button
+                  disabled
+                  className="flex-1 px-4 py-2 bg-gray-300 text-gray-500 rounded-lg font-medium cursor-not-allowed"
+                >
+                  Not Available
+                </button>
+              )}
               {showLearnMore && (
                 service.learnMoreUrl ? (
                   <button

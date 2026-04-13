@@ -11,6 +11,7 @@ import { AuthRequest } from "../types/auth";
 import { USER_ROLE } from "../types/roles";
 import { sendServiceRegistrationEmailToSuperAdmin } from "../utils/email";
 import { getServiceFormStructure } from "../config/formConfig";
+import Advisory from "../models/Advisory";
 
 // Get all active services
 export const getAllServices = async (_req: Request, res: Response) => {
@@ -169,6 +170,17 @@ export const registerForService = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // Check advisory allowedServices
+    if (student.advisoryId) {
+      const advisory = await Advisory.findById(student.advisoryId);
+      if (advisory && !advisory.allowedServices.includes(service.slug)) {
+        return res.status(403).json({
+          success: false,
+          message: "This service is not available through your advisory. Please contact your advisory for more information.",
+        });
+      }
+    }
+
     // Check if already registered
     const existingRegistration = await StudentServiceRegistration.findOne({
       studentId: student._id,
@@ -287,6 +299,10 @@ export const getRegistrationDetails = async (
           },
           {
             path: "counselorId",
+            populate: { path: "userId", select: "firstName middleName lastName email" }
+          },
+          {
+            path: "advisoryId",
             populate: { path: "userId", select: "firstName middleName lastName email" }
           }
         ]

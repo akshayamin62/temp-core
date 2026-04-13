@@ -183,15 +183,20 @@ export default function EducationPlanningPricingPage() {
                       )}
                     </div>
                   ) : (
-                    <div className="mb-5 flex items-center gap-2">
-                      <p className="text-sm text-gray-400">Price not set</p>
-                      <button
-                        onClick={() => { setEditingPrice(plan.key); setPriceValue(''); }}
-                        className="p-1 text-gray-400 hover:text-teal-600 transition-colors"
-                        title="Set price"
-                      >
-                        <PencilIcon className="w-4 h-4" />
-                      </button>
+                    <div className="mb-5">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-gray-400">Price not set</p>
+                        <button
+                          onClick={() => { setEditingPrice(plan.key); setPriceValue(''); }}
+                          className="p-1 text-gray-400 hover:text-teal-600 transition-colors"
+                          title="Set price"
+                        >
+                          <PencilIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                      {basePrice != null && (
+                        <p className="text-xs text-gray-500 mt-0.5">Base: ₹{basePrice.toLocaleString('en-IN')}</p>
+                      )}
                     </div>
                   )}
 
