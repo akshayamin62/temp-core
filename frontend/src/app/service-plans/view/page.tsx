@@ -44,11 +44,16 @@ function ServicePlansViewContent() {
   const [isTransferredStudent, setIsTransferredStudent] = useState(false);
   const isAdmin = user?.role === USER_ROLE.ADMIN || user?.role === USER_ROLE.ADVISORY || user?.role === 'admin';
 
-  // Advisory can only manage discounts for services they originally registered (if student is transferred)
+  // Discount management restrictions for transferred students:
+  // - Advisory: can only manage discounts for services they originally registered
+  // - Admin: can only manage discounts for services NOT registered under an advisory
   const canManageDiscount = (serviceSlug: string) => {
-    if (user?.role !== USER_ROLE.ADVISORY) return true; // Admin always has full access
-    if (!isTransferredStudent) return true; // Not transferred, advisory has full access
-    return advisoryOwnedServiceSlugs.includes(serviceSlug); // Only advisory-owned services
+    if (!isTransferredStudent) return true; // Not transferred, full access for both
+    if (user?.role === USER_ROLE.ADVISORY) {
+      return advisoryOwnedServiceSlugs.includes(serviceSlug); // Advisory: only own services
+    }
+    // Admin: block advisory-owned services (those discounts are locked)
+    return !advisoryOwnedServiceSlugs.includes(serviceSlug);
   };
 
   useEffect(() => {

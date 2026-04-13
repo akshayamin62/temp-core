@@ -38,6 +38,24 @@ export const setStudentPlanDiscount = async (req: AuthRequest, res: Response): P
     let pricingFilter: any;
     const admin = await Admin.findOne({ userId: req.user!.userId });
     if (admin) {
+      // Guard: admin cannot set discounts for services registered under an advisory
+      const studentDoc = await Student.findById(studentId).lean();
+      if (studentDoc?.advisoryId) {
+        const service = await Service.findOne({ slug: serviceSlug }).lean();
+        if (service) {
+          const advisoryRegistration = await StudentServiceRegistration.findOne({
+            studentId,
+            serviceId: service._id,
+            registeredViaAdvisoryId: { $exists: true, $ne: null },
+          }).lean();
+          if (advisoryRegistration) {
+            return res.status(403).json({
+              success: false,
+              message: 'This service was registered under an advisor. Discount for this service is managed by the advisor.',
+            });
+          }
+        }
+      }
       ownerFields = { adminId: admin._id };
       pricingFilter = { adminId: admin._id, serviceSlug };
     } else {
@@ -200,10 +218,27 @@ export const removeStudentPlanDiscount = async (req: AuthRequest, res: Response)
         });
       }
     } else {
-      // Caller is admin — admin can remove any discount (including advisory-set ones)
+      // Caller is admin
       const admin = await Admin.findOne({ userId: req.user!.userId });
       if (!admin) {
         return res.status(404).json({ success: false, message: 'Admin/Advisory not found' });
+      }
+      // Block admin from removing advisory-set discounts for advisory-registered services
+      if (discount.advisoryId) {
+        const service = await Service.findOne({ slug: discount.serviceSlug }).lean();
+        if (service) {
+          const advisoryRegistration = await StudentServiceRegistration.findOne({
+            studentId: discount.studentId,
+            serviceId: service._id,
+            registeredViaAdvisoryId: discount.advisoryId,
+          }).lean();
+          if (advisoryRegistration) {
+            return res.status(403).json({
+              success: false,
+              message: 'This discount was set by an advisor for an advisor-registered service and cannot be modified.',
+            });
+          }
+        }
       }
     }
 
