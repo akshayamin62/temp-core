@@ -47,6 +47,10 @@ interface StudentData {
       email: string;
     };
   };
+  advisoryId?: {
+    _id: string;
+    companyName?: string;
+  };
   registrationCount: number;
   serviceNames?: string[];
   createdAt: string;
@@ -108,8 +112,10 @@ export default function StudentUsersPage() {
   const getServiceColor = (service: string) => {
     switch (service) {
       case SERVICE_TYPE.CAREER_FOCUS_STUDY_ABROAD:
+      case 'Study Abroad':
         return 'bg-indigo-100 text-indigo-800';
       case SERVICE_TYPE.IVY_LEAGUE_ADMISSION:
+      case 'Ivy League Preparation':
         return 'bg-amber-100 text-amber-800';
       case SERVICE_TYPE.EDUCATION_PLANNING:
         return 'bg-teal-100 text-teal-800';
@@ -409,7 +415,7 @@ export default function StudentUsersPage() {
                       Email
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Admin
+                      Admin/Advisor
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Registrations
@@ -453,8 +459,20 @@ export default function StudentUsersPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {student.user.email}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {student.adminId?.companyName || 'N/A'}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {student.adminId?.companyName && student.advisoryId?.companyName ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="text-gray-900 text-xs">{student.adminId.companyName}</span>
+                              <span className="text-gray-900 text-xs">{student.advisoryId.companyName}</span>
+                              <span className="px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-800 rounded-full w-fit">Transferred</span>
+                            </div>
+                          ) : student.adminId?.companyName ? (
+                            <span className="text-gray-900">{student.adminId.companyName}</span>
+                          ) : student.advisoryId?.companyName ? (
+                            <span className="text-gray-900">{student.advisoryId.companyName}</span>
+                          ) : (
+                            <span className="text-gray-400">N/A</span>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col gap-1">

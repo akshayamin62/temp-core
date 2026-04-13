@@ -25,6 +25,7 @@ interface StudentData {
   mobileNumber?: string;
   adminId?: {
     _id: string;
+    companyName?: string;
     userId: {
       _id: string;
       firstName?: string;
@@ -42,6 +43,10 @@ interface StudentData {
       lastName?: string;
       email: string;
     };
+  };
+  advisoryId?: {
+    _id: string;
+    companyName?: string;
   };
   registrationCount: number;
   createdAt: string;
@@ -213,6 +218,9 @@ export default function CounselorStudentsPage() {
                       Email
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Admin/Advisor
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Registrations
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -254,6 +262,21 @@ export default function CounselorStudentsPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {student.user.email}
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {student.adminId?.companyName && student.advisoryId?.companyName ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="text-gray-900 text-xs">{student.adminId.companyName}</span>
+                              <span className="text-gray-900 text-xs">{student.advisoryId.companyName}</span>
+                              <span className="px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-800 rounded-full w-fit">Transferred</span>
+                            </div>
+                          ) : student.adminId?.companyName ? (
+                            <span className="text-gray-900">{student.adminId.companyName}</span>
+                          ) : student.advisoryId?.companyName ? (
+                            <span className="text-gray-900">{student.advisoryId.companyName}</span>
+                          ) : (
+                            <span className="text-gray-400">N/A</span>
+                          )}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-full">
                             {student.registrationCount} service(s)
@@ -282,7 +305,7 @@ export default function CounselorStudentsPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center">
+                      <td colSpan={6} className="px-6 py-12 text-center">
                         <div className="text-gray-400">
                           <svg
                             className="w-12 h-12 mx-auto mb-4"

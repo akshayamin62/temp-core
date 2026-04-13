@@ -40,6 +40,10 @@ export const getParentStudents = async (req: AuthRequest, res: Response): Promis
         path: 'counselorId',
         populate: { path: 'userId', select: 'firstName middleName lastName email' },
       })
+      .populate({
+        path: 'advisoryId',
+        select: 'companyName',
+      })
       .sort({ createdAt: -1 });
 
     const studentsWithStats = await Promise.all(
@@ -53,6 +57,7 @@ export const getParentStudents = async (req: AuthRequest, res: Response): Promis
           mobileNumber: student.mobileNumber,
           adminId: student.adminId,
           counselorId: student.counselorId,
+          advisoryId: student.advisoryId,
           intake: student.intake,
           year: student.year,
           registrationCount,

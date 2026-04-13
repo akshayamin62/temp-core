@@ -14,6 +14,7 @@ import {
 } from '../controllers/pointerActivity.controller';
 import { authorize } from '../middleware/authorize';
 import { USER_ROLE } from '../types/roles';
+import { checkAdvisoryStudentAccess } from '../middleware/advisoryStudentOwnership';
 
 const router = Router();
 
@@ -21,7 +22,7 @@ const router = Router();
 router.post('/select', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), selectActivitiesHandler);
 
 // Student / Ivy Expert fetch activities
-router.get('/student/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getStudentActivitiesHandler);
+router.get('/student/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), checkAdvisoryStudentAccess, getStudentActivitiesHandler);
 router.get('/student', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getStudentActivitiesHandler);
 
 // Student uploads proof files

@@ -73,14 +73,26 @@ export const getAdminStudents = async (req: AuthRequest, res: Response): Promise
           select: 'firstName middleName lastName email'
         }
       })
+      .populate({
+        path: 'advisoryId',
+        select: 'companyName',
+        populate: {
+          path: 'userId',
+          select: 'firstName middleName lastName email'
+        }
+      })
       .sort({ createdAt: -1 });
 
     // Get registration count and conversion info for each student
     const studentsWithStats = await Promise.all(
       students.map(async (student) => {
-        const registrationCount = await StudentServiceRegistration.countDocuments({
+        const registrations = await StudentServiceRegistration.find({
           studentId: student._id,
-        });
+        }).populate('serviceId', 'name');
+        const registrationCount = registrations.length;
+        const serviceNames: string[] = registrations
+          .map((r: any) => r.serviceId?.name)
+          .filter(Boolean);
 
         // Get conversion info if exists
         const conversion = await LeadStudentConversion.findOne({
@@ -96,12 +108,16 @@ export const getAdminStudents = async (req: AuthRequest, res: Response): Promise
           mobileNumber: student.mobileNumber,
           adminId: student.adminId,
           counselorId: student.counselorId,
+          advisoryId: student.advisoryId,
           registrationCount,
+          serviceNames,
           createdAt: student.createdAt,
           convertedFromLead: conversion?.leadId || null,
         };
       })
     );
+
+    const isMainAdmin = user.role === USER_ROLE.ADMIN && userId === process.env.MAIN_ADMIN_USER_ID;
 
     return res.status(200).json({
       success: true,
@@ -109,6 +125,7 @@ export const getAdminStudents = async (req: AuthRequest, res: Response): Promise
       data: {
         students: studentsWithStats,
         total: studentsWithStats.length,
+        isMainAdmin,
       },
     });
   } catch (error: any) {

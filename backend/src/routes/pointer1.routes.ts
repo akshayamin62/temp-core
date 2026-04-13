@@ -24,6 +24,7 @@ import {
 } from '../controllers/pointer1.controller';
 import { authorize } from '../middleware/authorize';
 import { USER_ROLE } from '../types/roles';
+import { checkAdvisoryStudentAccess } from '../middleware/advisoryStudentOwnership';
 
 const router = Router();
 
@@ -34,14 +35,14 @@ router.post('/upload', authorize(USER_ROLE.STUDENT), academicUploadMiddleware, u
 router.post('/evaluate', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), evaluateAcademicHandler);
 
 // GET /api/pointer1/status/:studentId - Get status and documents
-router.get('/status/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getAcademicStatusHandler);
+router.get('/status/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), checkAdvisoryStudentAccess, getAcademicStatusHandler);
 
 // ========================
 // Academic Data Routes (Formal/Informal)
 // ========================
 
 // GET /api/pointer1/academic/:studentId - Get academic data
-router.get('/academic/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getAcademicDataHandler);
+router.get('/academic/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), checkAdvisoryStudentAccess, getAcademicDataHandler);
 
 // POST /api/pointer1/academic/section - Add a section
 router.post('/academic/section', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), addSectionHandler);
@@ -80,7 +81,7 @@ router.delete('/academic/project', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.ST
 router.put('/academic/weightages', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), updateWeightagesHandler);
 
 // GET /api/pointer1/academic/score/:studentId - Get academic excellence score
-router.get('/academic/score/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.REFERRER, USER_ROLE.ADVISORY]), getAcademicExcellenceScoreHandler);
+router.get('/academic/score/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.REFERRER, USER_ROLE.ADVISORY]), checkAdvisoryStudentAccess, getAcademicExcellenceScoreHandler);
 
 // POST /api/pointer1/academic/subsection/file - Upload file to informal sub-section
 router.post('/academic/subsection/file', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN]), subSectionFileUploadMiddleware, uploadSubSectionFileHandler);

@@ -64,8 +64,10 @@ export default function EduplanCoachStudentsPage() {
   const getServiceColor = (service: string) => {
     switch (service) {
       case SERVICE_TYPE.CAREER_FOCUS_STUDY_ABROAD:
+      case 'Study Abroad':
         return 'bg-indigo-100 text-indigo-800';
       case SERVICE_TYPE.IVY_LEAGUE_ADMISSION:
+      case 'Ivy League Preparation':
         return 'bg-amber-100 text-amber-800';
       case SERVICE_TYPE.EDUCATION_PLANNING:
         return 'bg-blue-100 text-blue-800';

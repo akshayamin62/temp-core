@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { createIvyService, getMyStudentsHandler, getMyServiceHandler, getStudentsForIvyExpertHandler, getServiceDetailsHandler, getServiceByStudentIdHandler, updateInterestHandler, getStudentsForIvyExpertByUserIdHandler } from '../controllers/ivyService.controller';
 import { authorize } from '../middleware/authorize';
 import { USER_ROLE } from '../types/roles';
+import { checkAdvisoryStudentAccess } from '../middleware/advisoryStudentOwnership';
 
 const router = Router();
 
@@ -20,7 +21,7 @@ router.get('/user/:userId/students', authorize(USER_ROLE.SUPER_ADMIN), getStuden
 // GET /api/ivy/ivy-service/ivy-expert/:ivyExpertId/students (legacy, param-based)
 router.get('/ivy-expert/:ivyExpertId/students', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), getStudentsForIvyExpertHandler);
 // GET /api/ivy/ivy-service/student/:studentId - Get service for a student
-router.get('/student/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.REFERRER, USER_ROLE.ADVISORY]), getServiceByStudentIdHandler);
+router.get('/student/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.REFERRER, USER_ROLE.ADVISORY]), checkAdvisoryStudentAccess, getServiceByStudentIdHandler);
 // GET /api/ivy/ivy-service/:serviceId - Get service details
 router.get('/:serviceId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.REFERRER, USER_ROLE.ADVISORY]), getServiceDetailsHandler);
 

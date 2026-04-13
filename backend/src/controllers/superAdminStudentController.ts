@@ -149,6 +149,14 @@ export const getAllStudents = async (req: AuthRequest, res: Response): Promise<R
           select: 'firstName middleName lastName email'
         }
       })
+      .populate({
+        path: 'advisoryId',
+        select: 'companyName',
+        populate: {
+          path: 'userId',
+          select: 'firstName middleName lastName email'
+        }
+      })
       .sort({ createdAt: -1 });
 
     // Get registration count and service names for each student
@@ -170,6 +178,7 @@ export const getAllStudents = async (req: AuthRequest, res: Response): Promise<R
           mobileNumber: student.mobileNumber,
           adminId: student.adminId,
           counselorId: student.counselorId,
+          advisoryId: student.advisoryId,
           registrationCount: registrations.length,
           serviceNames,
           createdAt: student.createdAt,

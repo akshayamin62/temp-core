@@ -1110,7 +1110,10 @@ export const getAdvisoryStudentFormAnswers = async (req: AuthRequest, res: Respo
     const isOwnRegistration = (registration as any).registeredViaAdvisoryId?._id?.toString() === advisoryIdStr
       || (registration as any).registeredViaAdvisoryId?.toString() === advisoryIdStr;
 
-    const answers = await StudentFormAnswer.find({ studentId }).lean().exec();
+    // G3 fix: only return form answers for registrations owned by this advisory
+    const answers = isOwnRegistration
+      ? await StudentFormAnswer.find({ studentId }).lean().exec()
+      : [];
 
     return res.status(200).json({
       success: true,

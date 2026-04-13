@@ -2,6 +2,7 @@ import express from 'express';
 import { authenticate } from '../middleware/auth';
 import { authorize } from '../middleware/authorize';
 import { USER_ROLE } from '../types/roles';
+import { checkAdvisoryRegistrationAccess } from '../middleware/advisoryStudentOwnership';
 import { upload } from '../middleware/upload';
 import {
   uploadBrainography,
@@ -19,6 +20,7 @@ router.use(authenticate);
 router.get(
   '/:registrationId',
   authorize([USER_ROLE.STUDENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.REFERRER, USER_ROLE.ADVISORY]),
+  checkAdvisoryRegistrationAccess,
   getBrainography
 );
 
@@ -26,6 +28,7 @@ router.get(
 router.get(
   '/:registrationId/download',
   authorize([USER_ROLE.STUDENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.REFERRER, USER_ROLE.ADVISORY]),
+  checkAdvisoryRegistrationAccess,
   downloadBrainography
 );
 
