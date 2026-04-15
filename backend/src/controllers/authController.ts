@@ -642,9 +642,10 @@ export const getProfile = async (
     }
 
     // If user is a STUDENT, include advisory's allowedServices if applicable
+    // But NOT if student has been transferred to admin (has adminId)
     if (user.role === USER_ROLE.STUDENT) {
       const student = await Student.findOne({ userId: user._id });
-      if (student?.advisoryId) {
+      if (student?.advisoryId && !student.adminId) {
         const advisory = await Advisory.findById(student.advisoryId);
         if (advisory) {
           responseData.allowedServices = advisory.allowedServices;

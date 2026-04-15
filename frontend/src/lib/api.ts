@@ -1050,6 +1050,7 @@ export const advisoryAPI = {
   
   // Lead Conversion
   convertLead: (leadId: string, data: Record<string, unknown>) => api.post(`/advisory/leads/${leadId}/convert`, data),
+  getStudentByLeadId: (leadId: string) => api.get(`/advisory/leads/${leadId}/student`),
   
   // Students
   getStudents: () => api.get('/advisory/students'),

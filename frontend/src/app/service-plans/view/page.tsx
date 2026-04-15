@@ -35,6 +35,7 @@ function ServicePlansViewContent() {
   const [coachingRegisteredClasses, setCoachingRegisteredClasses] = useState<Record<string, ClassTiming | null>>({});
   const [studentName, setStudentName] = useState<string>(paramStudentName || '');
   const [adminId, setAdminId] = useState<string>(paramAdminId || '');
+  const [advisoryId, setAdvisoryId] = useState<string>('');
 
   // Discount state
   const [planDiscounts, setPlanDiscounts] = useState<Record<string, Record<string, PlanDiscountInfo>>>({});
@@ -76,7 +77,8 @@ function ServicePlansViewContent() {
             if (data.coachingPlanTiers) setCoachingRegisteredClasses(data.coachingPlanTiers);
             if (data.studentName) setStudentName(data.studentName);
             if (data.adminId) setAdminId(data.adminId);
-            else if (data.advisoryId) setAdminId(data.advisoryId);
+            if (data.advisoryId) setAdvisoryId(data.advisoryId);
+            if (!data.adminId && data.advisoryId) setAdminId(data.advisoryId);
             if (data.adminId && data.advisoryId) setIsTransferredStudent(true);
             if (data.advisoryOwnedServiceSlugs) setAdvisoryOwnedServiceSlugs(data.advisoryOwnedServiceSlugs);
           } catch (err: any) {
@@ -112,9 +114,13 @@ function ServicePlansViewContent() {
     try {
       let p: Record<string, number> | null = null;
 
-      if (adminId) {
+      // For transferred students, use advisory pricing for advisory-owned services
+      const useAdvisoryPricing = isTransferredStudent && advisoryOwnedServiceSlugs.includes(slug) && advisoryId;
+      const pricingId = useAdvisoryPricing ? advisoryId : adminId;
+
+      if (pricingId) {
         try {
-          const pricingRes = await servicePlanAPI.getAdminPricingById(slug, adminId);
+          const pricingRes = await servicePlanAPI.getAdminPricingById(slug, pricingId);
           p = pricingRes.data.data.pricing || null;
         } catch {
           // Will fall through to own-pricing fallback

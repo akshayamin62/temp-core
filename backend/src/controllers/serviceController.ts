@@ -180,8 +180,8 @@ export const registerForService = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Check advisory allowedServices
-    if (student.advisoryId) {
+    // Check advisory allowedServices (only if student hasn't been transferred to admin)
+    if (student.advisoryId && !student.adminId) {
       const advisory = await Advisory.findById(student.advisoryId);
       if (advisory && !advisory.allowedServices.includes(service.slug)) {
         return res.status(403).json({

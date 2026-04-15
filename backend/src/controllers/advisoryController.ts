@@ -757,6 +757,46 @@ export const convertAdvisoryLead = async (req: AuthRequest, res: Response): Prom
 // ============= STUDENT MANAGEMENT =============
 
 /**
+ * ADVISORY: Get student by lead ID (for converted leads)
+ */
+export const getAdvisoryStudentByLeadId = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const userId = req.user?.userId;
+    const { leadId } = req.params;
+
+    const advisory = await Advisory.findOne({ userId });
+    if (!advisory) {
+      return res.status(404).json({ success: false, message: "Advisory profile not found" });
+    }
+
+    // Verify the lead belongs to this advisory
+    const lead = await Lead.findOne({ _id: leadId, advisoryId: advisory._id });
+    if (!lead) {
+      return res.status(404).json({ success: false, message: "Lead not found" });
+    }
+
+    const conversion = await LeadStudentConversion.findOne({
+      leadId,
+      status: "APPROVED",
+    });
+
+    if (!conversion || !conversion.createdStudentId) {
+      return res.status(404).json({ success: false, message: "No converted student found for this lead" });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        student: { _id: conversion.createdStudentId },
+      },
+    });
+  } catch (error: any) {
+    console.error("Get advisory student by lead error:", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch student" });
+  }
+};
+
+/**
  * ADVISORY: Get students
  */
 export const getAdvisoryStudents = async (req: AuthRequest, res: Response): Promise<Response> => {

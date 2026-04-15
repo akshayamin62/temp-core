@@ -76,13 +76,9 @@ export default function AdvisoryLeadDetailPage() {
 
   const fetchStudentId = async () => {
     try {
-      const response = await advisoryAPI.getStudents();
-      const students = response.data.data?.students || [];
-      const student = students.find((s: { leadId: string | { _id: string } }) => {
-        const sLeadId = typeof s.leadId === 'string' ? s.leadId : s.leadId?._id;
-        return sLeadId === leadId;
-      });
-      if (student) {
+      const response = await advisoryAPI.getStudentByLeadId(leadId);
+      const student = response.data.data?.student;
+      if (student?._id) {
         setStudentId(student._id);
       }
     } catch (error) {

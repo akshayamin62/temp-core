@@ -37,7 +37,23 @@ export const getPricingForStudent = async (req: AuthRequest, res: Response): Pro
       const student = await Student.findOne({ userId }).lean();
       if (!student) { res.status(404).json({ success: false, message: 'Student not found' }); return; }
       
-      if (student.adminId) {
+      if (student.adminId && student.advisoryId) {
+        // Transferred student: check if this service was registered via advisory
+        const service = await Service.findOne({ slug: serviceSlug }).lean();
+        const advisoryReg = service ? await StudentServiceRegistration.findOne({
+          studentId: student._id,
+          serviceId: service._id,
+          registeredViaAdvisoryId: { $exists: true, $ne: null },
+        }).lean() : null;
+
+        if (advisoryReg) {
+          // Service was registered under advisory → use advisory pricing
+          advisoryId = student.advisoryId;
+        } else {
+          // Service registered under admin (or not yet registered) → use admin pricing
+          adminId = student.adminId;
+        }
+      } else if (student.adminId) {
         adminId = student.adminId;
       } else if (student.advisoryId) {
         // Student belongs to advisory (pre-transfer)

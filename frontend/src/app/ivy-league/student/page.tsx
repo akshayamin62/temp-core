@@ -363,6 +363,7 @@ function IvyScoreContent() {
     const overallPercentage = (overallScore / totalMaxScore) * 100;
 
     const handlePointerClick = (pointerNo: number) => {
+        if (readOnly) return;
         const qs = urlStudentId ? `?studentId=${urlStudentId}&readOnly=true` : '';
         const qsAmp = urlStudentId ? `&studentId=${urlStudentId}&readOnly=true` : '';
         if (pointerNo === 1) {
@@ -398,6 +399,7 @@ function IvyScoreContent() {
                         <p className="text-xl text-gray-400 font-medium max-w-2xl leading-relaxed">Track your competitive trajectory across all core admission pillars. Your score is real-time and reflects current Ivy Expert evaluations.</p>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
+                        {!readOnly && (<>
                         <button
                             onClick={() => setShowCalendar(prev => !prev)}
                             className="inline-flex items-center gap-2 px-5 py-3 bg-brand-600 text-white text-sm font-bold rounded-xl hover:bg-brand-700 transition-all shadow-lg"
@@ -431,6 +433,7 @@ function IvyScoreContent() {
                             </svg>
                             View Ivy Candidate Profile
                         </button>
+                        </>)}
                     </div>
                 </div>
             </header>
@@ -487,7 +490,7 @@ function IvyScoreContent() {
                         <div
                             key={pointer.pointerNo}
                             onClick={() => handlePointerClick(pointer.pointerNo)}
-                            className="bg-white rounded-[2.5rem] shadow-sm hover:shadow-2xl hover:translate-y-[-8px] transition-all duration-500 p-8 border border-gray-100 hover:border-brand-100 group flex flex-col cursor-pointer"
+                            className={`bg-white rounded-[2.5rem] shadow-sm hover:shadow-2xl hover:translate-y-[-8px] transition-all duration-500 p-8 border border-gray-100 hover:border-brand-100 group flex flex-col ${readOnly ? 'cursor-default' : 'cursor-pointer'}`}
                         >
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-4">

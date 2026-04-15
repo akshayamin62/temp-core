@@ -69,6 +69,7 @@ export default function AdvisoryStudentFormViewPage() {
   const [activeView, setActiveView] = useState<ActiveView>('analytics');
   const [isEducationPlanning, setIsEducationPlanning] = useState(false);
   const [isStudyAbroad, setIsStudyAbroad] = useState(false);
+  const [isOwnRegistration, setIsOwnRegistration] = useState<boolean>(true);
   const [programStats, setProgramStats] = useState({
     suggested: 0, selected: 0, shortlisted: 0, inProgress: 0, applied: 0, offerReceived: 0, offerAccepted: 0, rejected: 0, closed: 0,
   });
@@ -304,6 +305,8 @@ export default function AdvisoryStudentFormViewPage() {
       setServiceInfo(regServiceId);
       setPlanTier(registrationData.registration.planTier);
       setRegistrationObj(registrationData.registration);
+      const ownRegistration = registrationData.isOwnRegistration !== false;
+      setIsOwnRegistration(ownRegistration);
 
       const svcName = typeof regServiceId === 'object' ? regServiceId.name : '';
       const svcSlug = typeof regServiceId === 'object' ? regServiceId.slug : '';
@@ -333,11 +336,13 @@ export default function AdvisoryStudentFormViewPage() {
 
       const serviceSlug = typeof regServiceId === 'object' ? regServiceId.slug : '';
       const partConfigs = getServiceFormStructure(serviceSlug);
-      const structure = partConfigs.map(part => ({
-        part: { key: part.key, title: part.title, description: part.description, order: part.order },
-        order: part.order,
-        sections: part.sections,
-      }));
+      const structure = partConfigs
+        .filter(part => !(studyAbroad && !ownRegistration && part.key === 'DOCUMENT'))
+        .map(part => ({
+          part: { key: part.key, title: part.title, description: part.description, order: part.order },
+          order: part.order,
+          sections: part.sections,
+        }));
       setFormStructure(structure);
 
       const answers = registrationData.answers || [];
@@ -388,8 +393,10 @@ export default function AdvisoryStudentFormViewPage() {
     ? [
         { key: 'dashboard', label: 'Dashboard', icon: '🏠' },
         { key: 'analytics', label: 'Activity Analysis', icon: '📊' },
-        { key: 'brainography', label: 'Brainography Analysis', icon: '🧠' },
-        { key: 'portfolio', label: 'Education Portfolio Generator', icon: '📁' },
+        ...(isOwnRegistration ? [
+          { key: 'brainography' as ActiveView, label: 'Brainography Analysis', icon: '🧠' },
+          { key: 'portfolio' as ActiveView, label: 'Education Portfolio Generator', icon: '📁' },
+        ] : []),
         { key: 'payment', label: 'Payment', icon: '💳' },
       ]
     : [];
@@ -419,7 +426,7 @@ export default function AdvisoryStudentFormViewPage() {
           )}
 
           {/* Read Only Badge */}
-          {!isEducationPlanning && (
+          {(!isOwnRegistration || !isEducationPlanning) && (
             <div className="mb-4 inline-flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-800 rounded-lg border border-amber-200 text-sm font-medium">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
               Read Only Access
@@ -469,7 +476,7 @@ export default function AdvisoryStudentFormViewPage() {
                       <OpsScheduleCalendar schedules={opsTasks} onScheduleSelect={(schedule) => { setSelectedOpsTask(schedule); setShowOpsTaskPanel(true); }} onDateSelect={() => {}} teamMeets={teamMeets} onTeamMeetSelect={(tm) => { setSelectedTeamMeet(tm); setTeamMeetPanelMode('view'); setShowTeamMeetPanel(true); }} currentUserId={currentUserId} />
                     </div>
                     <div className="lg:col-span-1">
-                      <TeamMeetSidebar teamMeets={teamMeets} onTeamMeetClick={(tm) => { setSelectedTeamMeet(tm); setTeamMeetPanelMode('view'); setShowTeamMeetPanel(true); }} onScheduleClick={handleScheduleTeamMeet} currentUserId={currentUserId} />
+                      <TeamMeetSidebar teamMeets={teamMeets} onTeamMeetClick={(tm) => { setSelectedTeamMeet(tm); setTeamMeetPanelMode('view'); setShowTeamMeetPanel(true); }} onScheduleClick={isOwnRegistration ? handleScheduleTeamMeet : undefined} currentUserId={currentUserId} />
                     </div>
                   </div>
                 </div>
@@ -483,7 +490,7 @@ export default function AdvisoryStudentFormViewPage() {
           )}
 
           {/* Brainography */}
-          {isEducationPlanning && activeView === 'brainography' && (
+          {isEducationPlanning && isOwnRegistration && activeView === 'brainography' && (
             <>
               <div className="bg-white rounded-xl shadow-sm border border-indigo-200 p-6 mb-6">
                 <div className="flex items-center justify-between mb-4">
@@ -548,7 +555,7 @@ export default function AdvisoryStudentFormViewPage() {
           )}
 
           {/* Portfolio (read-only) */}
-          {isEducationPlanning && activeView === 'portfolio' && (
+          {isEducationPlanning && isOwnRegistration && activeView === 'portfolio' && (
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Education Portfolio</h3>
@@ -663,7 +670,7 @@ export default function AdvisoryStudentFormViewPage() {
                       <TeamMeetSidebar
                         teamMeets={teamMeets}
                         onTeamMeetClick={(tm) => { setSelectedTeamMeet(tm); setTeamMeetPanelMode('view'); setShowTeamMeetPanel(true); }}
-                        onScheduleClick={handleScheduleTeamMeet}
+                        onScheduleClick={isOwnRegistration ? handleScheduleTeamMeet : undefined}
                         currentUserId={currentUserId}
                       />
                     </div>
@@ -688,7 +695,7 @@ export default function AdvisoryStudentFormViewPage() {
                         <h3 className="text-xl font-semibold text-white">{currentSection.title}</h3>
                         {currentSection.description && <p className="text-indigo-100 text-sm mt-1">{currentSection.description}</p>}
                       </div>
-                      <ProgramSection studentId={studentId} sectionType={currentSection.title === 'Apply to Program' ? 'available' : 'applied'} registrationId={registrationId} userRole="ADMIN" isReadOnly={true} />
+                      <ProgramSection studentId={studentId} sectionType={currentSection.title === 'Apply to Program' ? 'available' : 'applied'} registrationId={registrationId} userRole={!isOwnRegistration ? "REFERRER" : "ADMIN"} isReadOnly={true} />
                     </div>
                   ) : (
                     <FormSectionRenderer
@@ -744,9 +751,9 @@ export default function AdvisoryStudentFormViewPage() {
         isOpen={showTeamMeetPanel}
         onClose={() => { setShowTeamMeetPanel(false); setSelectedTeamMeet(null); }}
         onSave={handleTeamMeetSave}
-        mode={teamMeetPanelMode}
+        mode={!isOwnRegistration ? 'view' : teamMeetPanelMode}
         currentUserId={currentUserId}
-        readOnly={teamMeetPanelMode === 'view'}
+        readOnly={!isOwnRegistration || teamMeetPanelMode === 'view'}
       />
 
       {/* OPS Task Panel (read-only) */}
