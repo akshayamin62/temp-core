@@ -1026,7 +1026,7 @@ function MyDetailsContent() {
               )}
               {registration.studentId.advisoryId && (
                 <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
-                  <p className="text-xs font-medium text-gray-700 mb-1">Advisory</p>
+                  <p className="text-xs font-medium text-gray-700 mb-1">Advisor</p>
                   <p className="text-sm font-semibold text-gray-900">
                     {getFullName(registration.studentId.advisoryId.userId)}
                   </p>

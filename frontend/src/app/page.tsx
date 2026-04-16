@@ -257,7 +257,7 @@ export default function Home() {
 
     // Check if service is allowed by advisory
     if (allowedServices && service && !allowedServices.includes(service.slug)) {
-      toast.error('This service is not available through your advisory. Please contact your advisory for more information.');
+      toast.error('This service is not available through your advisor. Please contact your advisor for more information.');
       return;
     }
 

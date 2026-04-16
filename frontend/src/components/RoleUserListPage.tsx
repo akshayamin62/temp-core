@@ -535,9 +535,8 @@ export default function RoleUserListPage({
     pluralSuffix = "es";
   } else if (roleDisplayName.toLowerCase() === "ops") {
     pluralSuffix = "";
-  } else if (roleDisplayName.toLowerCase() === "advisory") {
-    pluralSuffix = "ies";
-    roleDisplayName = "Advisor";
+  } else if (roleDisplayName.toLowerCase() === "advisor") {
+    pluralSuffix = "s";
   } else {
     pluralSuffix = "s";
   }
@@ -1260,7 +1259,7 @@ export default function RoleUserListPage({
                     )}
                     <p className="text-xs text-gray-500 mt-1">
                       This will be the unique URL for the{" "}
-                      {isAdvisoryRole ? "advisory" : "admin"}&apos;s enquiry
+                      {isAdvisoryRole ? "advisor" : "admin"}&apos;s enquiry
                       form. If left empty, it will be auto-generated from the
                       name.
                     </p>

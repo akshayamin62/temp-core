@@ -186,7 +186,7 @@ export const registerForService = async (req: AuthRequest, res: Response) => {
       if (advisory && !advisory.allowedServices.includes(service.slug)) {
         return res.status(403).json({
           success: false,
-          message: "This service is not available through your advisory. Please contact your advisory for more information.",
+          message: "This service is not available through your advisor. Please contact your advisor for more information.",
         });
       }
     }

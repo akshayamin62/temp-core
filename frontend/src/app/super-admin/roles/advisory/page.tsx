@@ -7,7 +7,7 @@ export default function AdvisoryUsersPage() {
   return (
     <RoleUserListPage
       role="advisory"
-      roleDisplayName="Advisory"
+      roleDisplayName="Advisor"
       roleEnum={USER_ROLE.ADVISORY}
       canAddUser={true}
     />

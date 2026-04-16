@@ -269,7 +269,7 @@ function IvyExpertStudentDetail({ params }: { params: Promise<{ studentId: strin
             )}
             {student.advisoryId && (
             <div>
-              <p className="text-sm text-gray-600 mb-1">Advisory</p>
+              <p className="text-sm text-gray-600 mb-1">Advisor</p>
               <p className="font-medium text-gray-900">
                 {getFullName(student.advisoryId?.userId) || 'N/A'}
               </p>

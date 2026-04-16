@@ -191,7 +191,7 @@ export default function AdvisoryLayout({ children, user: userProp }: AdvisoryLay
                 }
               />
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{user ? getFullName(user) : 'Advisory'}</p>
+                <p className="text-sm font-medium text-gray-900 truncate">{user ? getFullName(user) : 'Advisor'}</p>
                 <p className="text-xs text-gray-500 truncate">{user?.email || ''}</p>
               </div>
             </div>

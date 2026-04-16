@@ -376,7 +376,7 @@ export default function ParentStudentDetailPage() {
                             </h3>
                             {registration.registeredViaAdvisoryId && (
                               <p className="text-xs text-blue-600 mb-1">
-                                Via Advisory: {registration.registeredViaAdvisoryId.companyName || [registration.registeredViaAdvisoryId.userId?.firstName, registration.registeredViaAdvisoryId.userId?.middleName, registration.registeredViaAdvisoryId.userId?.lastName].filter(Boolean).join(' ')}
+                                Via Advisor: {registration.registeredViaAdvisoryId.companyName || [registration.registeredViaAdvisoryId.userId?.firstName, registration.registeredViaAdvisoryId.userId?.middleName, registration.registeredViaAdvisoryId.userId?.lastName].filter(Boolean).join(' ')}
                               </p>
                             )}
                             {registration.registeredViaAdminId && (

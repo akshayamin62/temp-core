@@ -83,7 +83,7 @@ export default function SuperAdminAdvisoriesPage() {
   const handleToggleStatus = async (id: string) => {
     try {
       await superAdminAPI.toggleAdvisoryStatus(id);
-      toast.success('Advisory status updated');
+      toast.success('Advisor status updated');
       fetchAdvisories();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update status');

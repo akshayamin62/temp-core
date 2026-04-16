@@ -284,7 +284,7 @@ export default function ReferrerStudentDetailPage() {
                   )}
                   {student.advisoryId && (
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Advisory</p>
+                    <p className="text-sm text-gray-600 mb-1">Advisor</p>
                     <p className="font-medium text-gray-900">
                       {getFullName(student.advisoryId?.userId) || 'N/A'}
                     </p>
@@ -338,7 +338,7 @@ export default function ReferrerStudentDetailPage() {
                             </h3>
                             {registration.registeredViaAdvisoryId && (
                               <p className="text-xs text-blue-600 mb-1">
-                                Via Advisory: {registration.registeredViaAdvisoryId.companyName || [registration.registeredViaAdvisoryId.userId?.firstName, registration.registeredViaAdvisoryId.userId?.middleName, registration.registeredViaAdvisoryId.userId?.lastName].filter(Boolean).join(' ')}
+                                Via Advisor: {registration.registeredViaAdvisoryId.companyName || [registration.registeredViaAdvisoryId.userId?.firstName, registration.registeredViaAdvisoryId.userId?.middleName, registration.registeredViaAdvisoryId.userId?.lastName].filter(Boolean).join(' ')}
                               </p>
                             )}
                             {registration.registeredViaAdminId && (

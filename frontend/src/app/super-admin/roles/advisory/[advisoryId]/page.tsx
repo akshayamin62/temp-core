@@ -86,7 +86,7 @@ export default function SuperAdminAdvisoryDashboardPage() {
       setStats(response.data.data);
     } catch (error: any) {
       console.error('Fetch dashboard error:', error);
-      toast.error(error.response?.data?.message || 'Failed to fetch advisory dashboard');
+      toast.error(error.response?.data?.message || 'Failed to fetch advisor dashboard');
       router.push('/super-admin/roles/advisory');
     } finally {
       setLoading(false);
@@ -165,7 +165,7 @@ export default function SuperAdminAdvisoryDashboardPage() {
               )}
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">
-                  {stats?.advisory?.companyName || getFullName(stats?.advisory) || 'Advisory Dashboard'}
+                  {stats?.advisory?.companyName || getFullName(stats?.advisory) || 'Advisor Dashboard'}
                 </h1>
                 <p className="text-sm text-gray-500">
                   {getFullName(stats?.advisory)} &middot; {stats?.advisory?.email}

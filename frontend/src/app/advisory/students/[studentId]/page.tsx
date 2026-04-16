@@ -363,7 +363,7 @@ export default function AdvisoryStudentDetailPage() {
                       ) : pendingTransfer ? (
                         <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Pending Transfer</span>
                       ) : (
-                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Under Advisory</span>
+                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Under Advisor</span>
                       )}
                     </p>
                   </div>
@@ -481,7 +481,7 @@ export default function AdvisoryStudentDetailPage() {
                             {/* Service Origin Badge */}
                             {registration.registeredViaAdvisoryId && (
                               <p className="text-xs text-blue-600 mb-1">
-                                Via Advisory: {registration.registeredViaAdvisoryId.companyName || [registration.registeredViaAdvisoryId.userId?.firstName, registration.registeredViaAdvisoryId.userId?.middleName, registration.registeredViaAdvisoryId.userId?.lastName].filter(Boolean).join(' ')}
+                                Via Advisor: {registration.registeredViaAdvisoryId.companyName || [registration.registeredViaAdvisoryId.userId?.firstName, registration.registeredViaAdvisoryId.userId?.middleName, registration.registeredViaAdvisoryId.userId?.lastName].filter(Boolean).join(' ')}
                               </p>
                             )}
                             {registration.registeredViaAdminId && (

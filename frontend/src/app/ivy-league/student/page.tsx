@@ -622,7 +622,7 @@ function IvyScoreContent() {
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                         </svg>
                                     </div>
-                                    <h5 className="font-black text-gray-900 uppercase tracking-tight text-sm">Advisory</h5>
+                                    <h5 className="font-black text-gray-900 uppercase tracking-tight text-sm">Advisor</h5>
                                 </div>
                                 <p className="text-sm font-bold text-gray-900 mb-1">{serviceData.studentId.advisoryId.firstName} {serviceData.studentId.advisoryId.lastName}</p>
                                 <p className="text-xs text-gray-600 mb-1">{serviceData.studentId.advisoryId.email}</p>

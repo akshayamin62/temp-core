@@ -75,7 +75,7 @@ export const submitIvyLeagueRegistration = async (req: AuthRequest, res: Respons
       if (advisory && !advisory.allowedServices.includes('ivy-league')) {
         return res.status(403).json({
           success: false,
-          message: "Ivy League service is not available through your advisory. Please contact your advisory for more information.",
+          message: "Ivy League service is not available through your advisor. Please contact your advisor for more information.",
         });
       }
     }

@@ -46,7 +46,7 @@ export default function AdvisoryLeadsPage() {
       const response = await authAPI.getProfile();
       const userData = response.data.data.user;
       if (userData.role !== USER_ROLE.ADVISORY) {
-        toast.error('Access denied. Advisory only.');
+        toast.error('Access denied. Advisor only.');
         router.push('/');
         return;
       }

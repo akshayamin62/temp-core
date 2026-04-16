@@ -156,13 +156,13 @@ export default function SuperAdminAdvisoryStudentsPage() {
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Advisory Dashboard
+            Back to Advisor Dashboard
           </button>
 
           {/* Header */}
           <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">Advisory&apos;s Students</h2>
-            <p className="text-gray-600 mt-1">View students under this advisory (read-only)</p>
+            <h2 className="text-3xl font-bold text-gray-900">Advisor&apos;s Students</h2>
+            <p className="text-gray-600 mt-1">View students under this advisor (read-only)</p>
           </div>
 
           {/* Stats */}
@@ -249,7 +249,7 @@ export default function SuperAdminAdvisoryStudentsPage() {
                     <tr>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Student</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Email</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Advisory</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Advisor</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Registrations</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>

@@ -167,7 +167,7 @@ export default function IvyLeagueRegisterPage() {
       const { firstName, middleName, lastName, email, mobile, alreadyRegistered, advisoryBlocked } = response.data.data;
 
       if (advisoryBlocked) {
-        toast.error('Ivy League service is not available through your advisory. Please contact your advisory for more information.');
+        toast.error('Ivy League service is not available through your advisor. Please contact your advisor for more information.');
         router.push('/dashboard');
         return;
       }

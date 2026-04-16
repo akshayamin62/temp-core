@@ -83,14 +83,14 @@ export default function SuperAdminViewAdvisoryPricingPage() {
       <div className="p-6 lg:p-8">
         <button onClick={() => router.push(`/super-admin/roles/advisory/${advisoryId}`)} className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-          Back to Advisory Dashboard
+          Back to Advisor Dashboard
         </button>
 
         {!selectedService && (
           <>
             <div className="mb-8">
-              <h1 className="text-2xl font-bold text-gray-900">Advisory Service Pricing</h1>
-              <p className="text-gray-500 mt-1">View this advisory&apos;s selling prices for each service plan.</p>
+              <h1 className="text-2xl font-bold text-gray-900">Advisor Service Pricing</h1>
+              <p className="text-gray-500 mt-1">View this advisor&apos;s selling prices for each service plan.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {availableServices.map((service) => (

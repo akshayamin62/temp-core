@@ -305,7 +305,7 @@ export default function AdminStudentsPage() {
           <div className={`grid grid-cols-2 ${isMainAdmin ? 'md:grid-cols-4' : 'md:grid-cols-2'} gap-4 mb-6`}>
             <StatCard title="Total Students" value={stats.total.toString()} color="blue" active={transferFilter === 'all'} onClick={() => setTransferFilter('all')} />
             {isMainAdmin && (
-              <StatCard title="Via Advisory" value={stats.transferred.toString()} color="purple" active={transferFilter === 'transferred'} onClick={() => setTransferFilter('transferred')} />
+              <StatCard title="Via Advisor" value={stats.transferred.toString()} color="purple" active={transferFilter === 'transferred'} onClick={() => setTransferFilter('transferred')} />
             )}
             {isMainAdmin && (
               <StatCard title="Pending Transfers" value={stats.pendingTransfers.toString()} color="yellow" active={transferFilter === 'pending'} onClick={() => setTransferFilter('pending')} />
@@ -413,7 +413,7 @@ export default function AdminStudentsPage() {
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900"
                       >
                         <option value="all">All Students</option>
-                        <option value="transferred">Via Advisory (Transferred)</option>
+                        <option value="transferred">Via Advisor (Transferred)</option>
                       </select>
                     </div>
                   ) : (

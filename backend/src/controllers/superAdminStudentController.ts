@@ -1068,7 +1068,7 @@ export const sendMessageToStudent = async (req: AuthRequest, res: Response): Pro
       COUNSELOR: 'Counselor',
       OPS: 'OPS',
       EDUPLAN_COACH: 'Education Planning Coach',
-      ADVISORY: 'Advisory',
+      ADVISORY: 'Advisor',
     };
     const senderRole = roleDisplayMap[sender.role] || sender.role;
 
