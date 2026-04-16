@@ -64,8 +64,9 @@ interface ExtendedRegistration extends Omit<StudentServiceRegistration, 'student
         email: string;
       };
     };
-    advisoryId?: {
+    advisorId?: {
       _id: string;
+    companyName?: string;
       userId: {
         _id: string;
         firstName: string;
@@ -989,7 +990,7 @@ function MyDetailsContent() {
 
     const renderSupportTeam = () => {
       if (!registration.studentId) return null;
-      const hasTeam = registration.studentId.adminId || registration.studentId.counselorId || registration.studentId.advisoryId || opsUser || (isEducationPlanning && eduplanCoach);
+      const hasTeam = registration.studentId.adminId || registration.studentId.counselorId || registration.studentId.advisorId || opsUser || (isEducationPlanning && eduplanCoach);
       if (!hasTeam) return null;
       return (
         <div className="bg-white border-b border-gray-200 mb-6">
@@ -1024,14 +1025,14 @@ function MyDetailsContent() {
                   )}
                 </div>
               )}
-              {registration.studentId.advisoryId && (
+              {registration.studentId.advisorId && (
                 <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
                   <p className="text-xs font-medium text-gray-700 mb-1">Advisor</p>
                   <p className="text-sm font-semibold text-gray-900">
-                    {getFullName(registration.studentId.advisoryId.userId)}
+                    {registration.studentId.advisorId?.companyName}
                   </p>
-                  {registration.studentId.advisoryId.userId?.email && (
-                    <p className="text-xs text-gray-600">{registration.studentId.advisoryId.userId.email}</p>
+                  {registration.studentId.advisorId.userId?.email && (
+                    <p className="text-xs text-gray-600">{registration.studentId.advisorId.userId.email}</p>
                   )}
                 </div>
               )}

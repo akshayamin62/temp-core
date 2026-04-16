@@ -12,7 +12,7 @@ export interface IProgramChat extends Document {
     superAdmin?: mongoose.Types.ObjectId;
     admin?: mongoose.Types.ObjectId;
     counselor?: mongoose.Types.ObjectId;
-    advisory?: mongoose.Types.ObjectId;
+    advisor?: mongoose.Types.ObjectId;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -58,7 +58,7 @@ const ProgramChatSchema = new Schema<IProgramChat>(
         type: Schema.Types.ObjectId,
         ref: 'User',
       },
-      advisory: {
+      advisor: {
         type: Schema.Types.ObjectId,
         ref: 'User',
       },

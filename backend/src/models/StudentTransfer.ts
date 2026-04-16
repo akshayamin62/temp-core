@@ -9,11 +9,11 @@ export enum TRANSFER_STATUS {
 
 export interface IStudentTransfer extends Document {
   studentId: mongoose.Types.ObjectId;
-  fromAdvisoryId: mongoose.Types.ObjectId;
+  fromAdvisorId: mongoose.Types.ObjectId;
   toAdminId: mongoose.Types.ObjectId;
   interestedServices: string[]; // service slugs the student is interested in
   status: TRANSFER_STATUS;
-  requestedBy: mongoose.Types.ObjectId; // Advisory's userId
+  requestedBy: mongoose.Types.ObjectId; // Advisor's userId
   approvedBy?: mongoose.Types.ObjectId;
   approvedAt?: Date;
   rejectedBy?: mongoose.Types.ObjectId;
@@ -30,9 +30,9 @@ const studentTransferSchema = new Schema<IStudentTransfer>(
       ref: "Student",
       required: true,
     },
-    fromAdvisoryId: {
+    fromAdvisorId: {
       type: Schema.Types.ObjectId,
-      ref: "Advisory",
+      ref: "Advisor",
       required: true,
     },
     toAdminId: {
@@ -86,7 +86,7 @@ const studentTransferSchema = new Schema<IStudentTransfer>(
   { timestamps: true }
 );
 
-studentTransferSchema.index({ fromAdvisoryId: 1, status: 1 });
+studentTransferSchema.index({ fromAdvisorId: 1, status: 1 });
 studentTransferSchema.index({ toAdminId: 1, status: 1 });
 studentTransferSchema.index({ studentId: 1 });
 

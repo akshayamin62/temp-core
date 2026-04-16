@@ -40,7 +40,7 @@ import paymentRoutes from "./routes/paymentRoutes";
 import studentPlanDiscountRoutes from "./routes/studentPlanDiscountRoutes";
 import invoiceRoutes from "./routes/invoiceRoutes";
 import ledgerRoutes from "./routes/ledgerRoutes";
-import advisoryRoutes from "./routes/advisoryRoutes";
+import advisorRoutes from "./routes/advisorRoutes";
 
 // Ivy League route imports
 import ivyServiceRoutes from "./routes/ivyService.routes";
@@ -94,7 +94,7 @@ import "./models/MonthlyFocus";
 import "./models/DailyPlanner";
 import "./models/IvyLeagueRegistration";
 import "./models/ServicePricing";
-import "./models/Advisory";
+import "./models/Advisor";
 import "./models/StudentTransfer";
 import "./models/SuperAdminServicePricing";
 import "./models/CoachingBatch";
@@ -212,7 +212,7 @@ app.use("/api/super-admin/ivy-league", authenticate, ivyLeagueAdminRoutes); // I
 app.use("/api/super-admin", superAdminRoutes);
 app.use("/api/admin/students", adminStudentRoutes); // Admin students routes (read-only)
 app.use("/api/admin", adminRoutes);
-app.use("/api/advisory", advisoryRoutes); // Advisory role routes
+app.use("/api/advisor", advisorRoutes); // Advisor role routes
 app.use("/api/services", serviceRoutes);
 app.use("/api/forms", formAnswerRoutes);
 app.use("/api/student", studentRoutes);

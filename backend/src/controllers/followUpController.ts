@@ -3,7 +3,7 @@ import { AuthRequest } from "../types/auth";
 import FollowUp, { FOLLOWUP_STATUS, MEETING_TYPE } from "../models/FollowUp";
 import Lead, { LEAD_STAGE } from "../models/Lead";
 import Counselor from "../models/Counselor";
-import Advisory from "../models/Advisory";
+import Advisor from "../models/Advisor";
 import TeamMeet, { TEAMMEET_STATUS } from "../models/TeamMeet";
 import mongoose from "mongoose";
 import { USER_ROLE } from "../types/roles";
@@ -431,18 +431,18 @@ export const getFollowUpById = async (
     if (userRole === USER_ROLE.ADMIN || userRole === USER_ROLE.SUPER_ADMIN) {
       followUp = await FollowUp.findById(followUpId)
         .populate("leadId", "name email mobileNumber city serviceTypes stage conversionStatus");
-    } else if (userRole === USER_ROLE.ADVISORY) {
-      const advisory = await Advisory.findOne({ userId });
-      if (!advisory) {
+    } else if (userRole === USER_ROLE.ADVISOR) {
+      const advisor = await Advisor.findOne({ userId });
+      if (!advisor) {
         return res.status(404).json({
           success: false,
-          message: "Advisory profile not found",
+          message: "Advisor profile not found",
         });
       }
 
       followUp = await FollowUp.findOne({
         _id: followUpId,
-        advisoryId: advisory._id,
+        advisorId: advisor._id,
       }).populate("leadId", "name email mobileNumber city serviceTypes stage conversionStatus");
     } else {
       const counselor = await Counselor.findOne({ userId });
@@ -525,7 +525,7 @@ export const updateFollowUp = async (
 
     let followUp;
     let counselorId;
-    let advisoryId;
+    let advisorId;
 
     // Admin can update any follow-up
     if (userRole === USER_ROLE.ADMIN) {
@@ -537,18 +537,18 @@ export const updateFollowUp = async (
         });
       }
       counselorId = followUp.counselorId;
-    } else if (userRole === USER_ROLE.ADVISORY) {
-      const advisory = await Advisory.findOne({ userId });
-      if (!advisory) {
+    } else if (userRole === USER_ROLE.ADVISOR) {
+      const advisor = await Advisor.findOne({ userId });
+      if (!advisor) {
         return res.status(404).json({
           success: false,
-          message: "Advisory profile not found",
+          message: "Advisor profile not found",
         });
       }
 
       followUp = await FollowUp.findOne({
         _id: followUpId,
-        advisoryId: advisory._id,
+        advisorId: advisor._id,
       });
 
       if (!followUp) {
@@ -557,7 +557,7 @@ export const updateFollowUp = async (
           message: "Follow-up not found",
         });
       }
-      advisoryId = advisory._id;
+      advisorId = advisor._id;
     } else {
       const counselor = await Counselor.findOne({ userId });
       if (!counselor) {
@@ -632,8 +632,8 @@ export const updateFollowUp = async (
       const conflictQuery: Record<string, unknown> = {
         scheduledDate: { $gte: dayStart, $lte: dayEnd },
       };
-      if (advisoryId) {
-        conflictQuery.advisoryId = advisoryId;
+      if (advisorId) {
+        conflictQuery.advisorId = advisorId;
       } else {
         conflictQuery.counselorId = counselorId;
       }
@@ -661,8 +661,8 @@ export const updateFollowUp = async (
         }
       }
       
-      // Also check TeamMeet conflicts for the counselor (skip for advisory)
-      if (!advisoryId) {
+      // Also check TeamMeet conflicts for the counselor (skip for advisor)
+      if (!advisorId) {
         const counselorDoc = await Counselor.findById(counselorId);
         if (counselorDoc) {
           const existingTeamMeets = await TeamMeet.find({
@@ -707,7 +707,7 @@ export const updateFollowUp = async (
 
       newFollowUp = new FollowUp({
         leadId: followUp.leadId,
-        ...(advisoryId ? { advisoryId } : { counselorId }),
+        ...(advisorId ? { advisorId } : { counselorId }),
         scheduledDate: nextDate,
         scheduledTime: nextFollowUp.scheduledTime,
         duration: nextFollowUp.duration || 30,
@@ -912,7 +912,7 @@ export const checkTimeSlotAvailability = async (
     }
 
     let counselorId;
-    let advisoryId;
+    let advisorId;
 
     // Admin needs to provide leadId to check availability for the assigned counselor
     if (userRole === USER_ROLE.ADMIN) {
@@ -936,15 +936,15 @@ export const checkTimeSlotAvailability = async (
         });
       }
       counselorId = lead.assignedCounselorId._id;
-    } else if (userRole === USER_ROLE.ADVISORY) {
-      const advisory = await Advisory.findOne({ userId });
-      if (!advisory) {
+    } else if (userRole === USER_ROLE.ADVISOR) {
+      const advisor = await Advisor.findOne({ userId });
+      if (!advisor) {
         return res.status(404).json({
           success: false,
-          message: "Advisory profile not found",
+          message: "Advisor profile not found",
         });
       }
-      advisoryId = advisory._id;
+      advisorId = advisor._id;
     } else {
       const counselor = await Counselor.findOne({ userId });
       if (!counselor) {
@@ -963,8 +963,8 @@ export const checkTimeSlotAvailability = async (
     const queryFilter: Record<string, unknown> = {
       scheduledDate: { $gte: dayStart, $lte: dayEnd },
     };
-    if (advisoryId) {
-      queryFilter.advisoryId = advisoryId;
+    if (advisorId) {
+      queryFilter.advisorId = advisorId;
     } else {
       queryFilter.counselorId = counselorId;
     }

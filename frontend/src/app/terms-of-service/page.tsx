@@ -2,8 +2,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service – CORE by ADMITra',
-  description: 'Terms of Service for CORE – Student Application and Admission Management System by ADMITra.',
+  title: 'Terms of Service - CORE by ADMITra',
+  description: 'Terms of Service for CORE - Student Application and Admission Management System by ADMITra.',
 };
 
 export default function TermsOfServicePage() {
@@ -18,10 +18,10 @@ export default function TermsOfServicePage() {
             <span>Terms of Service</span>
           </div>
           <h1 className="text-4xl font-bold mb-3">Terms of Service</h1>
-          <p className="text-purple-200 text-lg">CORE – Student Application and Admission Management System</p>
+          <p className="text-purple-200 text-lg">CORE - Student Application and Admission Management System</p>
           <div className="flex flex-wrap gap-4 mt-4 text-sm text-gray-400">
             <span>Effective Date: 01 January 2026</span>
-            <span>•</span>
+            <span>-</span>
             <span>Operated by ADMITra</span>
           </div>
         </div>
@@ -31,7 +31,7 @@ export default function TermsOfServicePage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-purple-50 border border-purple-100 rounded-2xl p-6 mb-6">
           <p className="text-purple-800 text-sm leading-relaxed">
-            This Master Terms of Service ("Agreement") governs access to and use of CORE – Student Application and Admission Management System ("CORE", "Platform"), operated by ADMITra ("Company", "we", "us", "our").
+            This Master Terms of Service ("Agreement") governs access to and use of CORE - Student Application and Admission Management System ("CORE", "Platform"), operated by ADMITra ("Company", "we", "us", "our").
             By accessing or using the Platform, you agree to be legally bound by this Agreement and the applicable Annexure corresponding to your role.
           </p>
         </div>
@@ -233,7 +233,7 @@ export default function TermsOfServicePage() {
             </h2>
             <div className="space-y-5">
               <div>
-                <h3 className="font-semibold text-gray-800 mb-2">9.1 India – Digital Personal Data Protection Act, 2023</h3>
+                <h3 className="font-semibold text-gray-800 mb-2">9.1 India - Digital Personal Data Protection Act, 2023</h3>
                 <p className="text-sm mb-2">CORE acts as Data Fiduciary. Users may request:</p>
                 <ul className="space-y-1.5 text-sm">
                   {['Access', 'Correction', 'Erasure', 'Withdrawal of consent'].map((i) => (
@@ -292,7 +292,7 @@ export default function TermsOfServicePage() {
 
           <hr className="border-gray-100" />
 
-          {/* Section 12 – Annexures */}
+          {/* Section 12 - Annexures */}
           <section id="section-12">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-3">
               <span className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 text-sm font-bold flex items-center justify-center shrink-0">12</span>
@@ -303,7 +303,7 @@ export default function TermsOfServicePage() {
             <div className="space-y-4">
               {[
                 {
-                  title: 'Annexure A – Student Terms',
+                  title: 'Annexure A - Student Terms',
                   items: [
                     'Students must provide accurate academic and personal information.',
                     'Uploading forged or misleading documents results in immediate termination.',
@@ -313,7 +313,7 @@ export default function TermsOfServicePage() {
                   ]
                 },
                 {
-                  title: 'Annexure B – Parent / Guardian Terms',
+                  title: 'Annexure B - Parent / Guardian Terms',
                   items: [
                     'Parents provide consent for processing of minor\'s data.',
                     'Parents acknowledge financial responsibility under service agreements.',
@@ -322,7 +322,7 @@ export default function TermsOfServicePage() {
                   ]
                 },
                 {
-                  title: 'Annexure C – Counselor Terms',
+                  title: 'Annexure C - Counselor Terms',
                   items: [
                     'Counselors act as structured advisors, not decision-makers.',
                     'Counselors must maintain strict confidentiality.',
@@ -332,7 +332,7 @@ export default function TermsOfServicePage() {
                   ]
                 },
                 {
-                  title: 'Annexure D – Third-Party Service Provider Terms',
+                  title: 'Annexure D - Third-Party Service Provider Terms',
                   items: [
                     'Providers receive limited, role-based access only.',
                     'Student data may be used solely for defined service delivery.',
@@ -342,7 +342,7 @@ export default function TermsOfServicePage() {
                   ]
                 },
                 {
-                  title: 'Annexure E – Agent Terms',
+                  title: 'Annexure E - Agent Terms',
                   items: [
                     'Agents may not guarantee admission or visa approval.',
                     'Agents must use approved scripts and pricing structures.',
@@ -352,12 +352,12 @@ export default function TermsOfServicePage() {
                   ]
                 },
                 {
-                  title: 'Annexure F – Advisor Terms',
+                  title: 'Annexure F - Advisor Terms',
                   items: [
                     'Advisors provide non-binding mentorship.',
                     'Advisors may not independently contract with students introduced through CORE without authorization.',
                     'Confidentiality obligations apply strictly.',
-                    'Advisory opinions do not constitute legal or immigration advice.',
+                    'Advisor opinions do not constitute legal or immigration advice.',
                   ]
                 },
               ].map((annexure) => (
@@ -419,13 +419,13 @@ export default function TermsOfServicePage() {
           <Link href="/privacy-policy" className="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-5 hover:border-purple-300 hover:shadow-sm transition-all group">
             <div>
               <p className="text-xs text-gray-500 mb-1">Legal</p>
-              <p className="font-semibold text-gray-900 group-hover:text-purple-700 transition-colors">Privacy Policy →</p>
+              <p className="font-semibold text-gray-900 group-hover:text-purple-700 transition-colors">Privacy Policy ?</p>
             </div>
           </Link>
           <Link href="/cookie-policy" className="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-5 hover:border-purple-300 hover:shadow-sm transition-all group">
             <div>
               <p className="text-xs text-gray-500 mb-1">Legal</p>
-              <p className="font-semibold text-gray-900 group-hover:text-purple-700 transition-colors">Cookie Policy →</p>
+              <p className="font-semibold text-gray-900 group-hover:text-purple-700 transition-colors">Cookie Policy ?</p>
             </div>
           </Link>
         </div> */}

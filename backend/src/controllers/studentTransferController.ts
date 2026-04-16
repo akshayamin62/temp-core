@@ -2,7 +2,7 @@ import { Response } from "express";
 import { AuthRequest } from "../types/auth";
 import StudentTransfer, { TRANSFER_STATUS } from "../models/StudentTransfer";
 import Student from "../models/Student";
-import Advisory from "../models/Advisory";
+import Advisor from "../models/Advisor";
 import Admin from "../models/Admin";
 import StudentPlanDiscount from "../models/StudentPlanDiscount";
 import StudentServiceRegistration from "../models/StudentServiceRegistration";
@@ -10,7 +10,7 @@ import Service from "../models/Service";
 import mongoose from "mongoose";
 
 /**
- * ADVISORY: Initiate student transfer to main admin
+ * ADVISOR: Initiate student transfer to main admin
  */
 export const initiateTransfer = async (req: AuthRequest, res: Response): Promise<Response> => {
   try {
@@ -26,14 +26,14 @@ export const initiateTransfer = async (req: AuthRequest, res: Response): Promise
       return res.status(400).json({ success: false, message: "At least one interested service is required" });
     }
 
-    const advisory = await Advisory.findOne({ userId });
-    if (!advisory) {
-      return res.status(404).json({ success: false, message: "Advisory profile not found" });
+    const advisor = await Advisor.findOne({ userId });
+    if (!advisor) {
+      return res.status(404).json({ success: false, message: "Advisor profile not found" });
     }
 
-    const student = await Student.findOne({ _id: studentId, advisoryId: advisory._id });
+    const student = await Student.findOne({ _id: studentId, advisorId: advisor._id });
     if (!student) {
-      return res.status(404).json({ success: false, message: "Student not found or does not belong to your advisory" });
+      return res.status(404).json({ success: false, message: "Student not found or does not belong to your advisor" });
     }
 
     // Check if student already has a pending transfer
@@ -63,7 +63,7 @@ export const initiateTransfer = async (req: AuthRequest, res: Response): Promise
 
     const transfer = new StudentTransfer({
       studentId: student._id,
-      fromAdvisoryId: advisory._id,
+      fromAdvisorId: advisor._id,
       toAdminId: mainAdmin._id,
       interestedServices,
       status: TRANSFER_STATUS.PENDING,
@@ -84,19 +84,19 @@ export const initiateTransfer = async (req: AuthRequest, res: Response): Promise
 };
 
 /**
- * ADVISORY: Get transfer history for advisory
+ * ADVISOR: Get transfer history for advisor
  */
-export const getAdvisoryTransfers = async (req: AuthRequest, res: Response): Promise<Response> => {
+export const getAdvisorTransfers = async (req: AuthRequest, res: Response): Promise<Response> => {
   try {
     const userId = req.user?.userId;
     const { status } = req.query;
 
-    const advisory = await Advisory.findOne({ userId });
-    if (!advisory) {
-      return res.status(404).json({ success: false, message: "Advisory profile not found" });
+    const advisor = await Advisor.findOne({ userId });
+    if (!advisor) {
+      return res.status(404).json({ success: false, message: "Advisor profile not found" });
     }
 
-    const filter: any = { fromAdvisoryId: advisory._id };
+    const filter: any = { fromAdvisorId: advisor._id };
     if (status) filter.status = status;
 
     const transfers = await StudentTransfer.find(filter)
@@ -112,7 +112,7 @@ export const getAdvisoryTransfers = async (req: AuthRequest, res: Response): Pro
 
     return res.json({ success: true, data: { transfers } });
   } catch (error: any) {
-    console.error("Error fetching advisory transfers:", error);
+    console.error("Error fetching advisor transfers:", error);
     return res.status(500).json({ success: false, message: "Failed to fetch transfers" });
   }
 };
@@ -140,7 +140,7 @@ export const getPendingTransfers = async (req: AuthRequest, res: Response): Prom
         populate: { path: "userId", select: "firstName middleName lastName email" },
       })
       .populate({
-        path: "fromAdvisoryId",
+        path: "fromAdvisorId",
         populate: { path: "userId", select: "firstName middleName lastName" },
       })
       .sort({ createdAt: -1 });
@@ -174,7 +174,7 @@ export const getAdminTransfers = async (req: AuthRequest, res: Response): Promis
         populate: { path: "userId", select: "firstName middleName lastName email" },
       })
       .populate({
-        path: "fromAdvisoryId",
+        path: "fromAdvisorId",
         populate: { path: "userId", select: "firstName middleName lastName" },
       })
       .sort({ createdAt: -1 });
@@ -216,39 +216,39 @@ export const approveTransfer = async (req: AuthRequest, res: Response): Promise<
       return res.status(400).json({ success: false, message: `Transfer request is already ${transfer.status.toLowerCase()}` });
     }
 
-    // Update student: set adminId to this admin, keep advisoryId
+    // Update student: set adminId to this admin, keep advisorId
     await Student.findByIdAndUpdate(transfer.studentId, {
       adminId: admin._id,
     });
 
-    // Deactivate advisory-set discounts for services the student has NOT registered under advisory
-    // Keep discounts for services already taken under the advisory (registeredViaAdvisoryId)
+    // Deactivate advisor-set discounts for services the student has NOT registered under advisor
+    // Keep discounts for services already taken under the advisor (registeredViaAdvisorId)
     try {
-      const advisoryDiscounts = await StudentPlanDiscount.find({
+      const advisorDiscounts = await StudentPlanDiscount.find({
         studentId: transfer.studentId,
-        advisoryId: transfer.fromAdvisoryId,
+        advisorId: transfer.fromAdvisorId,
         isActive: true,
       }).lean();
 
-      if (advisoryDiscounts.length > 0) {
-        // Find services the student actually registered under this advisory
-        const advisoryRegistrations = await StudentServiceRegistration.find({
+      if (advisorDiscounts.length > 0) {
+        // Find services the student actually registered under this advisor
+        const advisorRegistrations = await StudentServiceRegistration.find({
           studentId: transfer.studentId,
-          registeredViaAdvisoryId: transfer.fromAdvisoryId,
+          registeredViaAdvisorId: transfer.fromAdvisorId,
         }).populate('serviceId', 'slug').lean();
 
-        // Build a Set of service slugs + plan tiers that are advisory-owned registrations
-        const advisoryOwnedKeys = new Set<string>();
-        for (const reg of advisoryRegistrations) {
+        // Build a Set of service slugs + plan tiers that are advisor-owned registrations
+        const advisorOwnedKeys = new Set<string>();
+        for (const reg of advisorRegistrations) {
           const svc = reg.serviceId as any;
           if (svc?.slug && reg.planTier) {
-            advisoryOwnedKeys.add(`${svc.slug}::${reg.planTier}`);
+            advisorOwnedKeys.add(`${svc.slug}::${reg.planTier}`);
           }
         }
 
-        // Deactivate discounts for services NOT in the advisory-owned set
-        const discountIdsToDeactivate = advisoryDiscounts
-          .filter(d => !advisoryOwnedKeys.has(`${d.serviceSlug}::${d.planTier}`))
+        // Deactivate discounts for services NOT in the advisor-owned set
+        const discountIdsToDeactivate = advisorDiscounts
+          .filter(d => !advisorOwnedKeys.has(`${d.serviceSlug}::${d.planTier}`))
           .map(d => d._id);
 
         if (discountIdsToDeactivate.length > 0) {
@@ -260,7 +260,7 @@ export const approveTransfer = async (req: AuthRequest, res: Response): Promise<
       }
     } catch (discountError) {
       // Log but don't fail the transfer approval
-      console.error('Error cleaning up advisory discounts during transfer:', discountError);
+      console.error('Error cleaning up advisor discounts during transfer:', discountError);
     }
 
     // Update transfer
@@ -329,7 +329,7 @@ export const rejectTransfer = async (req: AuthRequest, res: Response): Promise<R
 };
 
 /**
- * ADVISORY: Cancel a pending transfer
+ * ADVISOR: Cancel a pending transfer
  */
 export const cancelTransfer = async (req: AuthRequest, res: Response): Promise<Response> => {
   try {
@@ -340,9 +340,9 @@ export const cancelTransfer = async (req: AuthRequest, res: Response): Promise<R
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const advisory = await Advisory.findOne({ userId });
-    if (!advisory) {
-      return res.status(404).json({ success: false, message: "Advisory profile not found" });
+    const advisor = await Advisor.findOne({ userId });
+    if (!advisor) {
+      return res.status(404).json({ success: false, message: "Advisor profile not found" });
     }
 
     const transfer = await StudentTransfer.findById(transferId);
@@ -350,7 +350,7 @@ export const cancelTransfer = async (req: AuthRequest, res: Response): Promise<R
       return res.status(404).json({ success: false, message: "Transfer request not found" });
     }
 
-    if (transfer.fromAdvisoryId.toString() !== advisory._id.toString()) {
+    if (transfer.fromAdvisorId.toString() !== advisor._id.toString()) {
       return res.status(403).json({ success: false, message: "You can only cancel your own transfer requests" });
     }
 

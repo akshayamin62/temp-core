@@ -2,7 +2,7 @@ import { Response } from "express";
 import { AuthRequest } from "../types/auth";
 import Lead, { LEAD_STAGE, SERVICE_TYPE } from "../models/Lead";
 import Admin from "../models/Admin";
-import Advisory from "../models/Advisory";
+import Advisor from "../models/Advisor";
 import Counselor from "../models/Counselor";
 // import User from "../models/User";
 import { USER_ROLE } from "../types/roles";
@@ -29,7 +29,7 @@ export const getUniqueSlug = async (baseSlug: string): Promise<string> => {
   let slug = baseSlug;
   let counter = 1;
   
-  while (await Admin.findOne({ enquiryFormSlug: slug }) || await Advisory.findOne({ enquiryFormSlug: slug })) {
+  while (await Admin.findOne({ enquiryFormSlug: slug }) || await Advisor.findOne({ enquiryFormSlug: slug })) {
     slug = `${baseSlug}-${counter}`;
     counter++;
   }
@@ -63,11 +63,11 @@ export const submitEnquiry = async (req: Request, res: Response): Promise<Respon
       }
     }
 
-    // Find admin or advisory by slug
+    // Find admin or advisor by slug
     const admin = await Admin.findOne({ enquiryFormSlug: adminSlug.toLowerCase() });
-    const advisory = !admin ? await Advisory.findOne({ enquiryFormSlug: adminSlug.toLowerCase(), isActive: true }) : null;
+    const advisor = !admin ? await Advisor.findOne({ enquiryFormSlug: adminSlug.toLowerCase(), isActive: true }) : null;
 
-    if (!admin && !advisory) {
+    if (!admin && !advisor) {
       return res.status(404).json({
         success: false,
         message: "Invalid enquiry form link",
@@ -77,7 +77,7 @@ export const submitEnquiry = async (req: Request, res: Response): Promise<Respon
     // Determine owner ID for duplicate check
     const ownerFilter = admin
       ? { adminId: admin.userId }
-      : { advisoryId: advisory!._id };
+      : { advisorId: advisor!._id };
 
     // Check for duplicate lead (same email for same owner within last 24 hours)
     const existingLead = await Lead.findOne({
@@ -93,7 +93,7 @@ export const submitEnquiry = async (req: Request, res: Response): Promise<Respon
       });
     }
 
-    // If advisory, validate that serviceTypes are within advisory's allowed services
+    // If advisor, validate that serviceTypes are within advisor's allowed services
     // (optional: client may send any, but we filter server-side)
 
     // Create lead
@@ -117,7 +117,7 @@ export const submitEnquiry = async (req: Request, res: Response): Promise<Respon
           occupation: parentDetail.occupation?.trim(),
         },
       }),
-      ...(admin ? { adminId: admin.userId } : { advisoryId: advisory!._id }),
+      ...(admin ? { adminId: admin.userId } : { advisorId: advisor!._id }),
       stage: LEAD_STAGE.NEW,
       source: "Enquiry Form",
     });
@@ -147,12 +147,12 @@ export const getAdminInfoBySlug = async (req: Request, res: Response): Promise<R
     const admin = await Admin.findOne({ enquiryFormSlug: adminSlug.toLowerCase() })
       .populate("userId", "firstName middleName lastName");
 
-    // Try advisory if admin not found
+    // Try advisor if admin not found
     if (!admin) {
-      const advisory = await Advisory.findOne({ enquiryFormSlug: adminSlug.toLowerCase(), isActive: true })
+      const advisor = await Advisor.findOne({ enquiryFormSlug: adminSlug.toLowerCase(), isActive: true })
         .populate("userId", "firstName middleName lastName");
 
-      if (!advisory) {
+      if (!advisor) {
         return res.status(404).json({
           success: false,
           message: "Invalid enquiry form link",
@@ -165,19 +165,19 @@ export const getAdminInfoBySlug = async (req: Request, res: Response): Promise<R
         'education-planning': SERVICE_TYPE.EDUCATION_PLANNING,
         'coaching-classes': SERVICE_TYPE.COACHING_CLASSES,
       };
-      const allowedServiceTypes = advisory.allowedServices
+      const allowedServiceTypes = advisor.allowedServices
         .map((slug: string) => slugToServiceType[slug])
         .filter(Boolean);
 
       return res.json({
         success: true,
         data: {
-          adminName: [(advisory.userId as any)?.firstName, (advisory.userId as any)?.middleName, (advisory.userId as any)?.lastName].filter(Boolean).join(' ') || "Kareer Studio",
-          companyName: advisory.companyName || "Kareer Studio",
-          companyLogo: advisory.companyLogo || null,
+          adminName: [(advisor.userId as any)?.firstName, (advisor.userId as any)?.middleName, (advisor.userId as any)?.lastName].filter(Boolean).join(' ') || "Kareer Studio",
+          companyName: advisor.companyName || "Kareer Studio",
+          companyLogo: advisor.companyLogo || null,
           services: allowedServiceTypes,
-          ownerType: 'advisory',
-          allowedServices: advisory.allowedServices,
+          ownerType: 'advisor',
+          allowedServices: advisor.allowedServices,
         },
       });
     }
@@ -304,7 +304,7 @@ export const getLeadDetail = async (req: AuthRequest, res: Response): Promise<Re
       });
     }
 
-    // Check access: Admin can access their own leads, Counselor can access assigned leads, Advisory can access their leads
+    // Check access: Admin can access their own leads, Counselor can access assigned leads, Advisor can access their leads
     if (userRole === USER_ROLE.ADMIN) {
       if (lead.adminId?._id?.toString() !== userId) {
         return res.status(403).json({
@@ -312,9 +312,9 @@ export const getLeadDetail = async (req: AuthRequest, res: Response): Promise<Re
           message: "Access denied",
         });
       }
-    } else if (userRole === USER_ROLE.ADVISORY) {
-      const advisory = await Advisory.findOne({ userId });
-      if (!advisory || !lead.advisoryId || lead.advisoryId.toString() !== advisory._id.toString()) {
+    } else if (userRole === USER_ROLE.ADVISOR) {
+      const advisor = await Advisor.findOne({ userId });
+      if (!advisor || !lead.advisorId || lead.advisorId.toString() !== advisor._id.toString()) {
         return res.status(403).json({
           success: false,
           message: "Access denied",
@@ -463,9 +463,9 @@ export const updateLeadStage = async (req: AuthRequest, res: Response): Promise<
           message: "Access denied",
         });
       }
-    } else if (userRole === USER_ROLE.ADVISORY) {
-      const advisory = await Advisory.findOne({ userId });
-      if (!advisory || !lead.advisoryId || lead.advisoryId.toString() !== advisory._id.toString()) {
+    } else if (userRole === USER_ROLE.ADVISOR) {
+      const advisor = await Advisor.findOne({ userId });
+      if (!advisor || !lead.advisorId || lead.advisorId.toString() !== advisor._id.toString()) {
         return res.status(403).json({
           success: false,
           message: "Access denied",

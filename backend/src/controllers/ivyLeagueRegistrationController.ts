@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import Student from "../models/Student";
 import User from "../models/User";
 import IvyLeagueRegistration from "../models/IvyLeagueRegistration";
-import Advisory from "../models/Advisory";
+import Advisor from "../models/Advisor";
 import { AuthRequest } from "../types/auth";
 
 // GET /prefill - Get student name pre-filled from database
@@ -26,12 +26,12 @@ export const getStudentPrefill = async (req: AuthRequest, res: Response) => {
     // Check if already registered for ivy league
     const existingRegistration = await IvyLeagueRegistration.findOne({ studentId: student._id });
 
-    // Check advisory allowedServices for ivy-league
-    let advisoryBlocked = false;
-    if (student.advisoryId) {
-      const advisory = await Advisory.findById(student.advisoryId);
-      if (advisory && !advisory.allowedServices.includes('ivy-league')) {
-        advisoryBlocked = true;
+    // Check advisor allowedServices for ivy-league
+    let advisorBlocked = false;
+    if (student.advisorId) {
+      const advisor = await Advisor.findById(student.advisorId);
+      if (advisor && !advisor.allowedServices.includes('ivy-league')) {
+        advisorBlocked = true;
       }
     }
 
@@ -44,7 +44,7 @@ export const getStudentPrefill = async (req: AuthRequest, res: Response) => {
         email: user.email || student.email || "",
         mobile: student.mobileNumber || "",
         alreadyRegistered: !!existingRegistration,
-        advisoryBlocked,
+        advisorBlocked,
       },
     });
   } catch (error: any) {
@@ -69,10 +69,10 @@ export const submitIvyLeagueRegistration = async (req: AuthRequest, res: Respons
       return res.status(404).json({ success: false, message: "Student record not found" });
     }
 
-    // Check advisory allowedServices for ivy-league
-    if (student.advisoryId) {
-      const advisory = await Advisory.findById(student.advisoryId);
-      if (advisory && !advisory.allowedServices.includes('ivy-league')) {
+    // Check advisor allowedServices for ivy-league
+    if (student.advisorId) {
+      const advisor = await Advisor.findById(student.advisorId);
+      if (advisor && !advisor.allowedServices.includes('ivy-league')) {
         return res.status(403).json({
           success: false,
           message: "Ivy League service is not available through your advisor. Please contact your advisor for more information.",

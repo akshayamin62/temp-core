@@ -151,7 +151,7 @@ export const getAllStudents = async (req: AuthRequest, res: Response): Promise<R
         }
       })
       .populate({
-        path: 'advisoryId',
+        path: 'advisorId',
         select: 'companyName',
         populate: {
           path: 'userId',
@@ -179,7 +179,7 @@ export const getAllStudents = async (req: AuthRequest, res: Response): Promise<R
           mobileNumber: student.mobileNumber,
           adminId: student.adminId,
           counselorId: student.counselorId,
-          advisoryId: student.advisoryId,
+          advisorId: student.advisorId,
           registrationCount: registrations.length,
           serviceNames,
           createdAt: student.createdAt,
@@ -278,7 +278,7 @@ export const getStudentDetails = async (req: AuthRequest, res: Response): Promis
         }
       })
       .populate({
-        path: 'advisoryId',
+        path: 'advisorId',
         populate: {
           path: 'userId',
           select: 'firstName middleName lastName email'
@@ -344,7 +344,7 @@ export const getStudentDetails = async (req: AuthRequest, res: Response): Promis
         populate: { path: 'userId', select: 'firstName middleName lastName email' }
       })
       .populate({
-        path: 'registeredViaAdvisoryId',
+        path: 'registeredViaAdvisorId',
         select: 'companyName userId',
         populate: { path: 'userId', select: 'firstName middleName lastName' }
       })
@@ -1068,7 +1068,7 @@ export const sendMessageToStudent = async (req: AuthRequest, res: Response): Pro
       COUNSELOR: 'Counselor',
       OPS: 'OPS',
       EDUPLAN_COACH: 'Education Planning Coach',
-      ADVISORY: 'Advisor',
+      ADVISOR: 'Advisor',
     };
     const senderRole = roleDisplayMap[sender.role] || sender.role;
 

@@ -3,4 +3,4 @@ cd backend
 Set MONGO_URI
 npx ts-node src/scripts/backfillRegistrationOrigin.ts
 
-this is to set admin and advisory in studentserviceregistration.
+this is to set admin and advisor in studentserviceregistration.

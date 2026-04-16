@@ -94,8 +94,8 @@ export const getOpsStudentPrograms = async (req: AuthRequest, res: Response): Pr
     const userId = req.user?.userId;
     const user = await User.findById(userId);
     
-    // Allow OPS, ADMIN, COUNSELOR, SUPER_ADMIN, PARENT, EDUPLAN_COACH, IVY_EXPERT, REFERRER, ADVISORY roles
-    const allowedRoles = [USER_ROLE.OPS, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN, USER_ROLE.PARENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT, USER_ROLE.REFERRER, USER_ROLE.ADVISORY];
+    // Allow OPS, ADMIN, COUNSELOR, SUPER_ADMIN, PARENT, EDUPLAN_COACH, IVY_EXPERT, REFERRER, ADVISOR roles
+    const allowedRoles = [USER_ROLE.OPS, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN, USER_ROLE.PARENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT, USER_ROLE.REFERRER, USER_ROLE.ADVISOR];
     if (!user || !allowedRoles.includes(user.role as any)) {
       return res.status(403).json({
         success: false,

@@ -35,26 +35,26 @@ function ServicePlansViewContent() {
   const [coachingRegisteredClasses, setCoachingRegisteredClasses] = useState<Record<string, ClassTiming | null>>({});
   const [studentName, setStudentName] = useState<string>(paramStudentName || '');
   const [adminId, setAdminId] = useState<string>(paramAdminId || '');
-  const [advisoryId, setAdvisoryId] = useState<string>('');
+  const [advisorId, setAdvisorId] = useState<string>('');
 
   // Discount state
   const [planDiscounts, setPlanDiscounts] = useState<Record<string, Record<string, PlanDiscountInfo>>>({});
   const [discountForm, setDiscountForm] = useState<{ planKey: string; type: string; value: string; reason: string } | null>(null);
   const [savingDiscount, setSavingDiscount] = useState(false);
-  const [advisoryOwnedServiceSlugs, setAdvisoryOwnedServiceSlugs] = useState<string[]>([]);
+  const [advisorOwnedServiceSlugs, setAdvisorOwnedServiceSlugs] = useState<string[]>([]);
   const [isTransferredStudent, setIsTransferredStudent] = useState(false);
-  const isAdmin = user?.role === USER_ROLE.ADMIN || user?.role === USER_ROLE.ADVISORY || user?.role === 'admin';
+  const isAdmin = user?.role === USER_ROLE.ADMIN || user?.role === USER_ROLE.ADVISOR || user?.role === 'admin';
 
   // Discount management restrictions for transferred students:
-  // - Advisory: can only manage discounts for services they originally registered
-  // - Admin: can only manage discounts for services NOT registered under an advisory
+  // - Advisor: can only manage discounts for services they originally registered
+  // - Admin: can only manage discounts for services NOT registered under an advisor
   const canManageDiscount = (serviceSlug: string) => {
     if (!isTransferredStudent) return true; // Not transferred, full access for both
-    if (user?.role === USER_ROLE.ADVISORY) {
-      return advisoryOwnedServiceSlugs.includes(serviceSlug); // Advisory: only own services
+    if (user?.role === USER_ROLE.ADVISOR) {
+      return advisorOwnedServiceSlugs.includes(serviceSlug); // Advisor: only own services
     }
-    // Admin: block advisory-owned services (those discounts are locked)
-    return !advisoryOwnedServiceSlugs.includes(serviceSlug);
+    // Admin: block advisor-owned services (those discounts are locked)
+    return !advisorOwnedServiceSlugs.includes(serviceSlug);
   };
 
   useEffect(() => {
@@ -77,10 +77,10 @@ function ServicePlansViewContent() {
             if (data.coachingPlanTiers) setCoachingRegisteredClasses(data.coachingPlanTiers);
             if (data.studentName) setStudentName(data.studentName);
             if (data.adminId) setAdminId(data.adminId);
-            if (data.advisoryId) setAdvisoryId(data.advisoryId);
-            if (!data.adminId && data.advisoryId) setAdminId(data.advisoryId);
-            if (data.adminId && data.advisoryId) setIsTransferredStudent(true);
-            if (data.advisoryOwnedServiceSlugs) setAdvisoryOwnedServiceSlugs(data.advisoryOwnedServiceSlugs);
+            if (data.advisorId) setAdvisorId(data.advisorId);
+            if (!data.adminId && data.advisorId) setAdminId(data.advisorId);
+            if (data.adminId && data.advisorId) setIsTransferredStudent(true);
+            if (data.advisorOwnedServiceSlugs) setAdvisorOwnedServiceSlugs(data.advisorOwnedServiceSlugs);
           } catch (err: any) {
             if (err?.response?.status === 403) {
               toast.error('You do not have access to this student');
@@ -114,9 +114,9 @@ function ServicePlansViewContent() {
     try {
       let p: Record<string, number> | null = null;
 
-      // For transferred students, use advisory pricing for advisory-owned services
-      const useAdvisoryPricing = isTransferredStudent && advisoryOwnedServiceSlugs.includes(slug) && advisoryId;
-      const pricingId = useAdvisoryPricing ? advisoryId : adminId;
+      // For transferred students, use advisor pricing for advisor-owned services
+      const useAdvisorPricing = isTransferredStudent && advisorOwnedServiceSlugs.includes(slug) && advisorId;
+      const pricingId = useAdvisorPricing ? advisorId : adminId;
 
       if (pricingId) {
         try {
@@ -127,8 +127,8 @@ function ServicePlansViewContent() {
         }
       }
 
-      // Fallback: if logged-in admin/advisory is viewing and student pricing lookup returned empty,
-      // fetch own admin/advisory pricing directly.
+      // Fallback: if logged-in admin/advisor is viewing and student pricing lookup returned empty,
+      // fetch own admin/advisor pricing directly.
       if (!p && isAdmin) {
         try {
           const ownPricingRes = await servicePlanAPI.getAdminPricing(slug);

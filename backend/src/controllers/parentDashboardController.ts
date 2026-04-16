@@ -42,7 +42,7 @@ export const getParentStudents = async (req: AuthRequest, res: Response): Promis
         populate: { path: 'userId', select: 'firstName middleName lastName email' },
       })
       .populate({
-        path: 'advisoryId',
+        path: 'advisorId',
         select: 'companyName',
       })
       .sort({ createdAt: -1 });
@@ -58,7 +58,7 @@ export const getParentStudents = async (req: AuthRequest, res: Response): Promis
           mobileNumber: student.mobileNumber,
           adminId: student.adminId,
           counselorId: student.counselorId,
-          advisoryId: student.advisoryId,
+          advisorId: student.advisorId,
           intake: student.intake,
           year: student.year,
           registrationCount,
@@ -124,7 +124,7 @@ export const getParentStudentDetails = async (req: AuthRequest, res: Response): 
         populate: { path: 'userId', select: 'firstName middleName lastName' },
       })
       .populate({
-        path: 'advisoryId',
+        path: 'advisorId',
         populate: { path: 'userId', select: 'firstName middleName lastName email' },
       })
       .lean()
@@ -152,7 +152,7 @@ export const getParentStudentDetails = async (req: AuthRequest, res: Response): 
         populate: { path: 'userId', select: 'firstName middleName lastName email' },
       })
       .populate({
-        path: 'registeredViaAdvisoryId',
+        path: 'registeredViaAdvisorId',
         select: 'companyName userId',
         populate: { path: 'userId', select: 'firstName middleName lastName' },
       })

@@ -1,14 +1,14 @@
 /**
- * Backfill script: Set registeredViaAdvisoryId / registeredViaAdminId
+ * Backfill script: Set registeredViaAdvisorId / registeredViaAdminId
  * on existing StudentServiceRegistration documents.
  *
  * Logic:
  * - Look up the student for each registration
- * - If student has advisoryId but no adminId → registeredViaAdvisoryId = student.advisoryId
+ * - If student has advisorId but no adminId → registeredViaAdvisorId = student.advisorId
  * - If student has adminId → registeredViaAdminId = student.adminId
- *   (transferred students: services registered before transfer get advisory, after get admin,
+ *   (transferred students: services registered before transfer get advisor, after get admin,
  *    but since we can't know the exact timing, we use a heuristic:
- *    if registration was created BEFORE the student's transfer date → advisory
+ *    if registration was created BEFORE the student's transfer date → advisor
  *    if registration was created AFTER → admin
  *    If no transfer record exists, use current state)
  *
@@ -41,7 +41,7 @@ async function backfill() {
   }
 
   const registrations = await StudentServiceRegistration.find({
-    registeredViaAdvisoryId: { $exists: false },
+    registeredViaAdvisorId: { $exists: false },
     registeredViaAdminId: { $exists: false },
   }).lean();
 
@@ -59,7 +59,7 @@ async function backfill() {
 
     const update: any = {};
 
-    if (student.adminId && student.advisoryId && StudentTransfer) {
+    if (student.adminId && student.advisorId && StudentTransfer) {
       // Transferred student — check transfer date
       const transfer = await StudentTransfer.findOne({
         studentId: student._id,
@@ -70,8 +70,8 @@ async function backfill() {
         const transferDate = (transfer as any).updatedAt || (transfer as any).createdAt;
         const regDate = reg.registeredAt || reg.createdAt;
         if (regDate && transferDate && new Date(regDate) < new Date(transferDate)) {
-          // Registered before transfer → advisory
-          update.registeredViaAdvisoryId = student.advisoryId;
+          // Registered before transfer → advisor
+          update.registeredViaAdvisorId = student.advisorId;
         } else {
           // Registered after transfer → admin
           update.registeredViaAdminId = student.adminId;
@@ -82,8 +82,8 @@ async function backfill() {
       }
     } else if (student.adminId) {
       update.registeredViaAdminId = student.adminId;
-    } else if (student.advisoryId) {
-      update.registeredViaAdvisoryId = student.advisoryId;
+    } else if (student.advisorId) {
+      update.registeredViaAdvisorId = student.advisorId;
     } else {
       skipped++;
       continue;

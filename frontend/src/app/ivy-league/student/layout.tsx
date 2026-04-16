@@ -9,7 +9,7 @@ import { authAPI } from '@/lib/api';
 import { USER_ROLE } from '@/types';
 
 const REFERRER_ROLE = USER_ROLE.REFERRER;
-const ADVISORY_ROLE = USER_ROLE.ADVISORY;
+const ADVISOR_ROLE = USER_ROLE.ADVISOR;
 
 const ALLOWED_ROLES: string[] = [
     USER_ROLE.STUDENT,
@@ -19,7 +19,7 @@ const ALLOWED_ROLES: string[] = [
     USER_ROLE.COUNSELOR,
     USER_ROLE.PARENT,
     USER_ROLE.REFERRER,
-    USER_ROLE.ADVISORY,
+    USER_ROLE.ADVISOR,
 ];
 
 function StudentSidebar() {
@@ -169,7 +169,7 @@ function StudentSidebar() {
             </div>
 
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                {(readOnly && (userRole === REFERRER_ROLE || (userRole === ADVISORY_ROLE && isServiceUnderAdmin)) ? navItems.filter(item => item.name === 'Dashboard') : navItems).map((item) => {
+                {(readOnly && (userRole === REFERRER_ROLE || (userRole === ADVISOR_ROLE && isServiceUnderAdmin)) ? navItems.filter(item => item.name === 'Dashboard') : navItems).map((item) => {
                     const active = isActive(item.href);
                     
                     return (

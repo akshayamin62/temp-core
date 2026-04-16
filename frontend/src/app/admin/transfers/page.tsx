@@ -18,7 +18,7 @@ interface Transfer {
       email: string;
     };
   };
-  fromAdvisoryId: {
+  fromAdvisorId: {
     companyName: string;
     email: string;
   };
@@ -133,7 +133,7 @@ export default function AdminTransfersPage() {
         <div className="p-8">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">Student Transfers</h1>
-            <p className="text-gray-600 mt-1">Manage incoming student transfer requests from advisories</p>
+            <p className="text-gray-600 mt-1">Manage incoming student transfer requests from advisors</p>
           </div>
 
           {/* Filter Tabs */}
@@ -177,7 +177,7 @@ export default function AdminTransfersPage() {
                       </div>
                       <p className="text-sm text-gray-500 mt-1">{transfer.studentId?.userId?.email}</p>
                       <p className="text-sm text-gray-500 mt-1">
-                        From: <span className="font-medium">{transfer.fromAdvisoryId?.companyName}</span>
+                        From: <span className="font-medium">{transfer.fromAdvisorId?.companyName}</span>
                       </p>
                       <div className="mt-3">
                         <p className="text-xs text-gray-400 mb-1">Interested Services:</p>

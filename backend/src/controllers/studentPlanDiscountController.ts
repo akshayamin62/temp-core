@@ -3,12 +3,12 @@ import { AuthRequest } from '../middleware/auth';
 import StudentPlanDiscount, { PlanDiscountType } from '../models/StudentPlanDiscount';
 import ServicePricing from '../models/ServicePricing';
 import Admin from '../models/Admin';
-import Advisory from '../models/Advisory';
+import Advisor from "../models/Advisor";
 import Student from '../models/Student';
 import StudentServiceRegistration from '../models/StudentServiceRegistration';
 import Service from '../models/Service';
 
-// ===== Set/Update Student Plan Discount (Admin or Advisory) =====
+// ===== Set/Update Student Plan Discount (Admin or Advisor) =====
 
 export const setStudentPlanDiscount = async (req: AuthRequest, res: Response): Promise<Response> => {
   try {
@@ -33,22 +33,22 @@ export const setStudentPlanDiscount = async (req: AuthRequest, res: Response): P
       return res.status(400).json({ success: false, message: 'Percentage discount cannot exceed 100' });
     }
 
-    // Find admin or advisory
-    let ownerFields: { adminId?: any; advisoryId?: any } = {};
+    // Find admin or advisor
+    let ownerFields: { adminId?: any; advisorId?: any } = {};
     let pricingFilter: any;
     const admin = await Admin.findOne({ userId: req.user!.userId });
     if (admin) {
-      // Guard: admin cannot set discounts for services registered under an advisory
+      // Guard: admin cannot set discounts for services registered under an advisor
       const studentDoc = await Student.findById(studentId).lean();
-      if (studentDoc?.advisoryId) {
+      if (studentDoc?.advisorId) {
         const service = await Service.findOne({ slug: serviceSlug }).lean();
         if (service) {
-          const advisoryRegistration = await StudentServiceRegistration.findOne({
+          const advisorRegistration = await StudentServiceRegistration.findOne({
             studentId,
             serviceId: service._id,
-            registeredViaAdvisoryId: { $exists: true, $ne: null },
+            registeredViaAdvisorId: { $exists: true, $ne: null },
           }).lean();
-          if (advisoryRegistration) {
+          if (advisorRegistration) {
             return res.status(403).json({
               success: false,
               message: 'This service was registered under an advisor. Discount for this service is managed by the advisor.',
@@ -59,13 +59,13 @@ export const setStudentPlanDiscount = async (req: AuthRequest, res: Response): P
       ownerFields = { adminId: admin._id };
       pricingFilter = { adminId: admin._id, serviceSlug };
     } else {
-      const advisory = await Advisory.findOne({ userId: req.user!.userId });
-      if (!advisory) {
-        return res.status(404).json({ success: false, message: 'Admin/Advisory not found' });
+      const advisor = await Advisor.findOne({ userId: req.user!.userId });
+      if (!advisor) {
+        return res.status(404).json({ success: false, message: 'Admin/Advisor not found' });
       }
 
-      // Guard: if student has been transferred (has adminId), advisory can only set discounts
-      // for services the student registered under this advisory
+      // Guard: if student has been transferred (has adminId), advisor can only set discounts
+      // for services the student registered under this advisor
       const studentDoc = await Student.findById(studentId).lean();
       if (studentDoc?.adminId) {
         // Find service by slug to get serviceId
@@ -73,21 +73,21 @@ export const setStudentPlanDiscount = async (req: AuthRequest, res: Response): P
         if (!service) {
           return res.status(400).json({ success: false, message: 'Service not found' });
         }
-        const hasAdvisoryRegistration = await StudentServiceRegistration.findOne({
+        const hasAdvisorRegistration = await StudentServiceRegistration.findOne({
           studentId,
           serviceId: service._id,
-          registeredViaAdvisoryId: advisory._id,
+          registeredViaAdvisorId: advisor._id,
         }).lean();
-        if (!hasAdvisoryRegistration) {
+        if (!hasAdvisorRegistration) {
           return res.status(403).json({
             success: false,
-            message: 'Student has been transferred. You can only manage discounts for services registered under your advisory.',
+            message: 'Student has been transferred. You can only manage discounts for services registered under your Advisor.',
           });
         }
       }
 
-      ownerFields = { advisoryId: advisory._id };
-      pricingFilter = { advisoryId: advisory._id, serviceSlug };
+      ownerFields = { advisorId: advisor._id };
+      pricingFilter = { advisorId: advisor._id, serviceSlug };
     }
 
     // Get pricing for calculation
@@ -207,32 +207,32 @@ export const removeStudentPlanDiscount = async (req: AuthRequest, res: Response)
       return res.status(400).json({ success: false, message: 'Discount is already inactive' });
     }
 
-    // Authorization: advisory can only remove discounts they set
-    const advisory = await Advisory.findOne({ userId: req.user!.userId });
-    if (advisory) {
-      // Caller is an advisory — only allow removing own discounts
-      if (!discount.advisoryId || discount.advisoryId.toString() !== advisory._id.toString()) {
+    // Authorization: advisor can only remove discounts they set
+    const advisor = await Advisor.findOne({ userId: req.user!.userId });
+    if (advisor) {
+      // Caller is an advisor — only allow removing own discounts
+      if (!discount.advisorId || discount.advisorId.toString() !== advisor._id.toString()) {
         return res.status(403).json({
           success: false,
-          message: 'You can only remove discounts set by your advisory.',
+          message: 'You can only remove discounts set by your Advisor.',
         });
       }
     } else {
       // Caller is admin
       const admin = await Admin.findOne({ userId: req.user!.userId });
       if (!admin) {
-        return res.status(404).json({ success: false, message: 'Admin/Advisory not found' });
+        return res.status(404).json({ success: false, message: 'Admin/Advisor not found' });
       }
-      // Block admin from removing advisory-set discounts for advisory-registered services
-      if (discount.advisoryId) {
+      // Block admin from removing advisor-set discounts for advisor-registered services
+      if (discount.advisorId) {
         const service = await Service.findOne({ slug: discount.serviceSlug }).lean();
         if (service) {
-          const advisoryRegistration = await StudentServiceRegistration.findOne({
+          const advisorRegistration = await StudentServiceRegistration.findOne({
             studentId: discount.studentId,
             serviceId: service._id,
-            registeredViaAdvisoryId: discount.advisoryId,
+            registeredViaAdvisorId: discount.advisorId,
           }).lean();
-          if (advisoryRegistration) {
+          if (advisorRegistration) {
             return res.status(403).json({
               success: false,
               message: 'This discount was set by an advisor for an advisor-registered service and cannot be modified.',

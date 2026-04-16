@@ -16,7 +16,7 @@ const router = Router();
 router.get('/', authenticate, getBatches);
 
 // Super Admin / Admin - get all batches including inactive
-router.get('/all', authenticate, authorize([USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.ADVISORY]), getAllBatches);
+router.get('/all', authenticate, authorize([USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.ADVISOR]), getAllBatches);
 
 // Super Admin - create batch
 router.post('/', authenticate, authorize([USER_ROLE.SUPER_ADMIN]), createBatch);

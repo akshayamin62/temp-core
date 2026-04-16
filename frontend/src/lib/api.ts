@@ -190,18 +190,18 @@ export const superAdminAPI = {
     year?: number;
   }) => api.get(`/super-admin/admins/${adminId}/team-meets`, { params }),
 
-  // Advisory dashboard for super admin
-  getAdvisoryDashboardStats: (advisoryId: string) => api.get(`/super-admin/advisories/${advisoryId}/dashboard`),
-  getAdvisoryLeads: (advisoryId: string, params?: {
+  // Advisor dashboard for super admin
+  getAdvisorDashboardStats: (advisorId: string) => api.get(`/super-admin/advisors/${advisorId}/dashboard`),
+  getAdvisorLeads: (advisorId: string, params?: {
     stage?: string;
     serviceTypes?: string;
     search?: string;
-  }) => api.get(`/super-admin/advisories/${advisoryId}/leads`, { params }),
-  getAdvisoryStudents: (advisoryId: string) => api.get(`/super-admin/advisories/${advisoryId}/students`),
-  getAdvisoryTeamMeets: (advisoryId: string, params?: {
+  }) => api.get(`/super-admin/advisors/${advisorId}/leads`, { params }),
+  getAdvisorStudents: (advisorId: string) => api.get(`/super-admin/advisors/${advisorId}/students`),
+  getAdvisorTeamMeets: (advisorId: string, params?: {
     month?: number;
     year?: number;
-  }) => api.get(`/super-admin/advisories/${advisoryId}/team-meets`, { params }),
+  }) => api.get(`/super-admin/advisors/${advisorId}/team-meets`, { params }),
   
   // Counselor dashboard for super admin
   getCounselorDashboard: (counselorId: string) => api.get(`/super-admin/counselors/${counselorId}/dashboard`),
@@ -241,13 +241,13 @@ export const superAdminAPI = {
   toggleReferrerStatus: (referrerId: string) =>
     api.patch(`/super-admin/referrer/${referrerId}/toggle-status`),
 
-  // Advisory management
-  getAdvisories: () => api.get('/super-admin/advisories'),
-  getAdvisoryDetails: (id: string) => api.get(`/super-admin/advisories/${id}`),
-  updateAdvisoryServices: (id: string, data: { allowedServices: string[] }) =>
-    api.patch(`/super-admin/advisories/${id}/services`, data),
-  toggleAdvisoryStatus: (id: string) =>
-    api.patch(`/super-admin/advisories/${id}/toggle-status`),
+  // Advisor management
+  getAdvisors: () => api.get('/super-admin/advisors'),
+  getAdvisorDetails: (id: string) => api.get(`/super-admin/advisors/${id}`),
+  updateAdvisorServices: (id: string, data: { allowedServices: string[] }) =>
+    api.patch(`/super-admin/advisors/${id}/services`, data),
+  toggleAdvisorStatus: (id: string) =>
+    api.patch(`/super-admin/advisors/${id}/toggle-status`),
 };
 
 // Admin Student API (read-only access to students for admin/counselor)
@@ -1031,49 +1031,49 @@ export const ledgerAPI = {
   getLedgersByStudent: (studentId: string) => api.get(`/ledger/student/${studentId}`),
 };
 
-// ===== Advisory APIs =====
-export const advisoryAPI = {
+// ===== Advisor APIs =====
+export const advisorAPI = {
   // Dashboard
-  getDashboardStats: () => api.get('/advisory/dashboard'),
+  getDashboardStats: () => api.get('/advisor/dashboard'),
   
   // Leads
-  getLeads: (params?: Record<string, string>) => api.get('/advisory/leads', { params }),
-  getLeadDetail: (leadId: string) => api.get(`/advisory/leads/${leadId}`),
-  updateLeadStage: (leadId: string, data: { stage: string }) => api.patch(`/advisory/leads/${leadId}/stage`, data),
+  getLeads: (params?: Record<string, string>) => api.get('/advisor/leads', { params }),
+  getLeadDetail: (leadId: string) => api.get(`/advisor/leads/${leadId}`),
+  updateLeadStage: (leadId: string, data: { stage: string }) => api.patch(`/advisor/leads/${leadId}/stage`, data),
   
   // Follow-ups
-  createFollowUp: (data: Record<string, unknown>) => api.post('/advisory/follow-ups', data),
-  getFollowUps: (params?: Record<string, string>) => api.get('/advisory/follow-ups', { params }),
-  getFollowUpSummary: () => api.get('/advisory/follow-ups/summary'),
-  updateFollowUp: (followUpId: string, data: Record<string, unknown>) => api.patch(`/advisory/follow-ups/${followUpId}`, data),
-  getLeadFollowUpHistory: (leadId: string) => api.get(`/advisory/leads/${leadId}/follow-ups`),
+  createFollowUp: (data: Record<string, unknown>) => api.post('/advisor/follow-ups', data),
+  getFollowUps: (params?: Record<string, string>) => api.get('/advisor/follow-ups', { params }),
+  getFollowUpSummary: () => api.get('/advisor/follow-ups/summary'),
+  updateFollowUp: (followUpId: string, data: Record<string, unknown>) => api.patch(`/advisor/follow-ups/${followUpId}`, data),
+  getLeadFollowUpHistory: (leadId: string) => api.get(`/advisor/leads/${leadId}/follow-ups`),
   
   // Lead Conversion
-  convertLead: (leadId: string, data: Record<string, unknown>) => api.post(`/advisory/leads/${leadId}/convert`, data),
-  getStudentByLeadId: (leadId: string) => api.get(`/advisory/leads/${leadId}/student`),
+  convertLead: (leadId: string, data: Record<string, unknown>) => api.post(`/advisor/leads/${leadId}/convert`, data),
+  getStudentByLeadId: (leadId: string) => api.get(`/advisor/leads/${leadId}/student`),
   
   // Students
-  getStudents: () => api.get('/advisory/students'),
-  getStudentDetail: (studentId: string) => api.get(`/advisory/students/${studentId}`),
+  getStudents: () => api.get('/advisor/students'),
+  getStudentDetail: (studentId: string) => api.get(`/advisor/students/${studentId}`),
   getStudentFormAnswers: (studentId: string, registrationId: string) =>
-    api.get(`/advisory/students/${studentId}/registrations/${registrationId}/answers`),
+    api.get(`/advisor/students/${studentId}/registrations/${registrationId}/answers`),
   
   // Student Transfer
   initiateTransfer: (studentId: string, data: { interestedServices: string[] }) =>
-    api.post(`/advisory/students/${studentId}/transfer`, data),
-  getTransfers: () => api.get('/advisory/transfers'),
-  cancelTransfer: (transferId: string) => api.post(`/advisory/transfers/${transferId}/cancel`),
+    api.post(`/advisor/students/${studentId}/transfer`, data),
+  getTransfers: () => api.get('/advisor/transfers'),
+  cancelTransfer: (transferId: string) => api.post(`/advisor/transfers/${transferId}/cancel`),
   
   // Parents
-  getParents: () => api.get('/advisory/parents'),
+  getParents: () => api.get('/advisor/parents'),
   
   // Service Pricing
-  getPricing: (serviceSlug: string) => api.get(`/advisory/service-pricing/${serviceSlug}`),
+  getPricing: (serviceSlug: string) => api.get(`/advisor/service-pricing/${serviceSlug}`),
   setPricing: (serviceSlug: string, data: Record<string, unknown>) =>
-    api.put(`/advisory/service-pricing/${serviceSlug}`, data),
+    api.put(`/advisor/service-pricing/${serviceSlug}`, data),
   
   // Enquiry Form URL
-  getEnquiryFormUrl: () => api.get('/advisory/enquiry-form-url'),
+  getEnquiryFormUrl: () => api.get('/advisor/enquiry-form-url'),
 };
 
 // ===== Admin Transfer APIs =====

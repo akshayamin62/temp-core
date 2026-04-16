@@ -27,7 +27,7 @@ router.post(
   authorize([
     USER_ROLE.SUPER_ADMIN,
     USER_ROLE.ADMIN,
-    USER_ROLE.ADVISORY,
+    USER_ROLE.ADVISOR,
     USER_ROLE.COUNSELOR,
     USER_ROLE.OPS,
   ]),
@@ -38,7 +38,7 @@ router.post(
 router.post(
   '/set-price',
   authenticate,
-  authorize([USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.ADVISORY]),
+  authorize([USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.ADVISOR]),
   setPrice
 );
 
@@ -49,7 +49,7 @@ router.post(
   authorize([
     USER_ROLE.SUPER_ADMIN,
     USER_ROLE.ADMIN,
-    USER_ROLE.ADVISORY,
+    USER_ROLE.ADVISOR,
     USER_ROLE.COUNSELOR,
     USER_ROLE.OPS,
     USER_ROLE.STUDENT,
@@ -64,7 +64,7 @@ router.post(
   authorize([
     USER_ROLE.SUPER_ADMIN,
     USER_ROLE.ADMIN,
-    USER_ROLE.ADVISORY,
+    USER_ROLE.ADVISOR,
     USER_ROLE.COUNSELOR,
     USER_ROLE.OPS,
     USER_ROLE.STUDENT,
@@ -111,18 +111,18 @@ router.post(
   authorize([
     USER_ROLE.SUPER_ADMIN,
     USER_ROLE.ADMIN,
-    USER_ROLE.ADVISORY,
+    USER_ROLE.ADVISOR,
     USER_ROLE.COUNSELOR,
     USER_ROLE.OPS,
   ]),
   requestInstallment
 );
 
-// Create miscellaneous collection (super admin, admin, advisory, ops)
+// Create miscellaneous collection (super admin, admin, advisor, ops)
 router.post(
   '/misc-collection',
   authenticate,
-  authorize([USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.ADVISORY, USER_ROLE.OPS]),
+  authorize([USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.ADVISOR, USER_ROLE.OPS]),
   createMiscCollection
 );
 
@@ -133,7 +133,7 @@ router.get(
   authorize([
     USER_ROLE.SUPER_ADMIN,
     USER_ROLE.ADMIN,
-    USER_ROLE.ADVISORY,
+    USER_ROLE.ADVISOR,
     USER_ROLE.COUNSELOR,
     USER_ROLE.OPS,
     USER_ROLE.STUDENT,
@@ -151,7 +151,7 @@ router.get(
   authorize([
     USER_ROLE.SUPER_ADMIN,
     USER_ROLE.ADMIN,
-    USER_ROLE.ADVISORY,
+    USER_ROLE.ADVISOR,
     USER_ROLE.COUNSELOR,
     USER_ROLE.OPS,
     USER_ROLE.STUDENT,
@@ -169,7 +169,7 @@ router.get(
   authorize([
     USER_ROLE.SUPER_ADMIN,
     USER_ROLE.ADMIN,
-    USER_ROLE.ADVISORY,
+    USER_ROLE.ADVISOR,
     USER_ROLE.COUNSELOR,
     USER_ROLE.OPS,
     USER_ROLE.STUDENT,

@@ -766,7 +766,7 @@ export const getReferrerStudentDetail = async (req: AuthRequest, res: Response):
         populate: { path: "userId", select: "firstName middleName lastName email" },
       })
       .populate({
-        path: "advisoryId",
+        path: "advisorId",
         populate: { path: "userId", select: "firstName middleName lastName email" },
       })
       .lean()
@@ -791,7 +791,7 @@ export const getReferrerStudentDetail = async (req: AuthRequest, res: Response):
         populate: { path: "userId", select: "firstName middleName lastName email" },
       })
       .populate({
-        path: "registeredViaAdvisoryId",
+        path: "registeredViaAdvisorId",
         select: "companyName userId",
         populate: { path: "userId", select: "firstName middleName lastName" },
       })

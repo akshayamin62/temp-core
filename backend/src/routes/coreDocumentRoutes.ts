@@ -14,7 +14,7 @@ const router = express.Router();
 router.use(authenticate);
 
 // Get CORE document fields for a specific student
-router.get("/:registrationId", authorize([USER_ROLE.STUDENT, USER_ROLE.OPS, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT, USER_ROLE.REFERRER, USER_ROLE.ADVISORY]), getCOREDocumentFields);
+router.get("/:registrationId", authorize([USER_ROLE.STUDENT, USER_ROLE.OPS, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT, USER_ROLE.REFERRER, USER_ROLE.ADVISOR]), getCOREDocumentFields);
 
 // Add new CORE document field (Admin/OPS only)
 router.post("/add", authorize(USER_ROLE.SUPER_ADMIN, USER_ROLE.OPS), addCOREDocumentField);

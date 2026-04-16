@@ -10,7 +10,7 @@ export enum USER_ROLE {
   SUPER_ADMIN = 'SUPER_ADMIN',
   SERVICE_PROVIDER = 'SERVICE_PROVIDER',
   REFERRER = 'REFERRER',
-  ADVISORY = 'ADVISORY',
+  ADVISOR = 'ADVISOR',
 }
 
 export interface User {

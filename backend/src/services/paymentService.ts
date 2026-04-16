@@ -31,7 +31,7 @@ export const createProformaInvoice = async (params: {
   registrationId: string;
   studentId: string;
   adminId?: string;
-  advisoryId?: string;
+  advisorId?: string;
   serviceName: string;
   serviceSlug: string;
   planTier: string;
@@ -60,7 +60,7 @@ export const createProformaInvoice = async (params: {
     registrationId: params.registrationId,
     studentId: params.studentId,
     adminId: params.adminId,
-    advisoryId: params.advisoryId,
+    advisorId: params.advisorId,
     studentName: studentUser
       ? [studentUser.firstName, studentUser.middleName, studentUser.lastName].filter(Boolean).join(' ')
       : 'Student',
@@ -93,7 +93,7 @@ export const createTaxInvoice = async (params: {
   paymentId: string;
   studentId: string;
   adminId?: string;
-  advisoryId?: string;
+  advisorId?: string;
   serviceName: string;
   serviceSlug: string;
   planTier: string;
@@ -120,7 +120,7 @@ export const createTaxInvoice = async (params: {
     paymentId: params.paymentId,
     studentId: params.studentId,
     adminId: params.adminId,
-    advisoryId: params.advisoryId,
+    advisorId: params.advisorId,
     studentName: studentUser
       ? [studentUser.firstName, studentUser.middleName, studentUser.lastName].filter(Boolean).join(' ')
       : 'Student',

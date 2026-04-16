@@ -51,8 +51,9 @@ interface StudentDetails {
     profilePicture?: string;
     };
   };
-  advisoryId?: {
+  advisorId?: {
     _id: string;
+    companyName?: string;
     userId: {
       _id: string;
       firstName: string;
@@ -267,14 +268,14 @@ function IvyExpertStudentDetail({ params }: { params: Promise<{ studentId: strin
               )}
             </div>
             )}
-            {student.advisoryId && (
+            {student.advisorId && (
             <div>
               <p className="text-sm text-gray-600 mb-1">Advisor</p>
               <p className="font-medium text-gray-900">
-                {getFullName(student.advisoryId?.userId) || 'N/A'}
+                {student.advisorId?.companyName || 'N/A'}
               </p>
-              {student.advisoryId?.userId?.email && (
-                <p className="text-sm text-gray-500">{student.advisoryId.userId.email}</p>
+              {student.advisorId?.userId?.email && (
+                <p className="text-sm text-gray-500">{student.advisorId.userId.email}</p>
               )}
             </div>
             )}
@@ -377,7 +378,7 @@ function IvyExpertStudentDetail({ params }: { params: Promise<{ studentId: strin
         </div>
       </div>
       {/* Service Plans Button */}
-      {(student.adminId?._id || student.advisoryId?._id) && (
+      {(student.adminId?._id || student.advisorId?._id) && (
         <div className="px-8 pb-6">
           <button
             onClick={() => router.push('/service-plans/view?studentId=' + studentId)}

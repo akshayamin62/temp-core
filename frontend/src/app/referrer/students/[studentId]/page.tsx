@@ -48,8 +48,9 @@ interface StudentDetails {
     profilePicture?: string;
     };
   };
-  advisoryId?: {
+  advisorId?: {
     _id: string;
+    companyName?: string;
     userId: {
       _id: string;
       firstName: string;
@@ -86,7 +87,7 @@ interface Registration {
   planTier?: 'PRO' | 'PREMIUM' | 'PLATINUM';
   status: string;
   createdAt: string;
-  registeredViaAdvisoryId?: {
+  registeredViaAdvisorId?: {
     _id: string;
     companyName?: string;
     userId?: { firstName?: string; middleName?: string; lastName?: string };
@@ -282,14 +283,14 @@ export default function ReferrerStudentDetailPage() {
                     )}
                   </div>
                   )}
-                  {student.advisoryId && (
+                  {student.advisorId && (
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Advisor</p>
                     <p className="font-medium text-gray-900">
-                      {getFullName(student.advisoryId?.userId) || 'N/A'}
+                      {student.advisorId?.companyName || 'N/A'}
                     </p>
-                    {student.advisoryId?.userId?.email && (
-                      <p className="text-sm text-gray-500">{student.advisoryId.userId.email}</p>
+                    {student.advisorId?.userId?.email && (
+                      <p className="text-sm text-gray-500">{student.advisorId.userId.email}</p>
                     )}
                   </div>
                   )}
@@ -336,9 +337,9 @@ export default function ReferrerStudentDetailPage() {
                                 </span>
                               )}
                             </h3>
-                            {registration.registeredViaAdvisoryId && (
+                            {registration.registeredViaAdvisorId && (
                               <p className="text-xs text-blue-600 mb-1">
-                                Via Advisor: {registration.registeredViaAdvisoryId.companyName || [registration.registeredViaAdvisoryId.userId?.firstName, registration.registeredViaAdvisoryId.userId?.middleName, registration.registeredViaAdvisoryId.userId?.lastName].filter(Boolean).join(' ')}
+                                Via Advisor: {registration.registeredViaAdvisorId.companyName || [registration.registeredViaAdvisorId.userId?.firstName, registration.registeredViaAdvisorId.userId?.middleName, registration.registeredViaAdvisorId.userId?.lastName].filter(Boolean).join(' ')}
                               </p>
                             )}
                             {registration.registeredViaAdminId && (
@@ -408,7 +409,7 @@ export default function ReferrerStudentDetailPage() {
               </div>
 
               {/* Service Plans Button */}
-              {(student.adminId?._id || student.advisoryId?._id) && (
+              {(student.adminId?._id || student.advisorId?._id) && (
                 <div className="mt-6 flex flex-wrap gap-3">
                   <button
                     onClick={() => router.push(`/referrer/students/${studentId}/enquiries`)}

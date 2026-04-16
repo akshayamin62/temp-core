@@ -12,7 +12,7 @@ export interface IDocumentMeta {
 export interface IChatMessage extends Document {
   chatId: mongoose.Types.ObjectId;
   senderId: mongoose.Types.ObjectId;
-  senderRole: 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN' | 'COUNSELOR' | 'PARENT' | 'ADVISORY';
+  senderRole: 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN' | 'COUNSELOR' | 'PARENT' | 'ADVISOR';
   opsType?: 'PRIMARY' | 'ACTIVE';
   messageType: MessageType;
   message: string;
@@ -39,7 +39,7 @@ const ChatMessageSchema = new Schema<IChatMessage>(
     },
     senderRole: {
       type: String,
-      enum: ['STUDENT', 'OPS', 'SUPER_ADMIN', 'ADMIN', 'COUNSELOR', 'PARENT', 'ADVISORY'],
+      enum: ['STUDENT', 'OPS', 'SUPER_ADMIN', 'ADMIN', 'COUNSELOR', 'PARENT', 'ADVISOR'],
       required: true,
     },
     opsType: {

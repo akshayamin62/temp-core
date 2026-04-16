@@ -63,8 +63,8 @@ export const adminOpsOrServiceProvider = authorize(
   USER_ROLE.SERVICE_PROVIDER
 );
 
-// Only advisory can access
-export const advisoryOnly = authorize(USER_ROLE.ADVISORY);
+// Only advisor can access
+export const advisorOnly = authorize(USER_ROLE.ADVISOR);
 
 // All verified users except students
 export const nonStudentOnly = authorize(

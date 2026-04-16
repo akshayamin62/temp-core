@@ -6,7 +6,7 @@ import StudentServiceRegistration from '../models/StudentServiceRegistration';
 import EduplanCoach from '../models/EduplanCoach';
 import Admin from '../models/Admin';
 import Counselor from '../models/Counselor';
-import Advisory from '../models/Advisory';
+import Advisor from "../models/Advisor";
 import Student from '../models/Student';
 import User from '../models/User';
 import { USER_ROLE } from '../types/roles';
@@ -101,14 +101,14 @@ export const uploadBrainography = async (req: AuthRequest, res: Response): Promi
         fs.unlinkSync(file.path);
         return res.status(403).json({ success: false, message: 'Access denied. This student is not assigned to you.' });
       }
-    } else if (userRole === USER_ROLE.ADVISORY) {
-      const advisory = await Advisory.findOne({ userId });
-      if (!advisory) {
+    } else if (userRole === USER_ROLE.ADVISOR) {
+      const advisor = await Advisor.findOne({ userId });
+      if (!advisor) {
         fs.unlinkSync(file.path);
-        return res.status(404).json({ success: false, message: 'Advisory record not found' });
+        return res.status(404).json({ success: false, message: 'Advisor record not found' });
       }
       const student = await Student.findById(registration.studentId);
-      if (!student || !student.advisoryId || student.advisoryId.toString() !== advisory._id.toString()) {
+      if (!student || !student.advisorId || student.advisorId.toString() !== advisor._id.toString()) {
         fs.unlinkSync(file.path);
         return res.status(403).json({ success: false, message: 'Access denied. This student is not assigned to you.' });
       }

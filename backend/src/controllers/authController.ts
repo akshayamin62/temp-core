@@ -2,7 +2,7 @@ import { Response } from "express";
 import User from "../models/User";
 import Student from "../models/Student";
 import Admin from "../models/Admin";
-import Advisory from "../models/Advisory";
+import Advisor from "../models/Advisor";
 import Alumni from "../models/Alumni";
 import ServiceProvider from "../models/ServiceProvider";
 import { USER_ROLE } from "../types/roles";
@@ -625,30 +625,30 @@ export const getProfile = async (
       }
     }
 
-    // If user is an ADVISORY, include advisory profile data
-    if (user.role === USER_ROLE.ADVISORY) {
-      const advisory = await Advisory.findOne({ userId: user._id });
-      if (advisory) {
-        responseData.advisory = {
-          companyName: advisory.companyName,
-          companyLogo: advisory.companyLogo,
-          address: advisory.address,
-          enquiryFormSlug: advisory.enquiryFormSlug,
-          allowedServices: advisory.allowedServices,
+    // If user is an ADVISOR, include advisor profile data
+    if (user.role === USER_ROLE.ADVISOR) {
+      const advisor = await Advisor.findOne({ userId: user._id });
+      if (advisor) {
+        responseData.advisor = {
+          companyName: advisor.companyName,
+          companyLogo: advisor.companyLogo,
+          address: advisor.address,
+          enquiryFormSlug: advisor.enquiryFormSlug,
+          allowedServices: advisor.allowedServices,
         };
-        responseData.user.companyName = advisory.companyName;
-        responseData.user.companyLogo = advisory.companyLogo;
+        responseData.user.companyName = advisor.companyName;
+        responseData.user.companyLogo = advisor.companyLogo;
       }
     }
 
-    // If user is a STUDENT, include advisory's allowedServices if applicable
+    // If user is a STUDENT, include advisor's allowedServices if applicable
     // But NOT if student has been transferred to admin (has adminId)
     if (user.role === USER_ROLE.STUDENT) {
       const student = await Student.findOne({ userId: user._id });
-      if (student?.advisoryId && !student.adminId) {
-        const advisory = await Advisory.findById(student.advisoryId);
-        if (advisory) {
-          responseData.allowedServices = advisory.allowedServices;
+      if (student?.advisorId && !student.adminId) {
+        const advisor = await Advisor.findById(student.advisorId);
+        if (advisor) {
+          responseData.allowedServices = advisor.allowedServices;
         }
       }
     }

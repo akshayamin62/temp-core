@@ -51,8 +51,9 @@ interface StudentDetails {
     profilePicture?: string;
     };
   };
-  advisoryId?: {
+  advisorId?: {
     _id: string;
+    companyName?: string;
     userId: {
       _id: string;
       firstName: string;
@@ -92,7 +93,7 @@ interface Registration {
   planTier?: 'PRO' | 'PREMIUM' | 'PLATINUM';
   status: string;
   createdAt: string;
-  registeredViaAdvisoryId?: {
+  registeredViaAdvisorId?: {
     _id: string;
     companyName?: string;
     userId?: { firstName?: string; middleName?: string; lastName?: string };
@@ -320,14 +321,14 @@ export default function CounselorStudentDetailPage() {
                     )}
                   </div>
                   )}
-                  {student.advisoryId && (
+                  {student.advisorId && (
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Advisor</p>
                     <p className="font-medium text-gray-900">
-                      {getFullName(student.advisoryId?.userId) || 'N/A'}
+                      {student.advisorId?.companyName || 'N/A'}
                     </p>
-                    {student.advisoryId?.userId?.email && (
-                      <p className="text-sm text-gray-500">{student.advisoryId.userId.email}</p>
+                    {student.advisorId?.userId?.email && (
+                      <p className="text-sm text-gray-500">{student.advisorId.userId.email}</p>
                     )}
                   </div>
                   )}
@@ -359,7 +360,7 @@ export default function CounselorStudentDetailPage() {
                       <p className="font-medium text-blue-600">{student.year}</p>
                     </div>
                   )}
-                  {student.advisoryId && transferInterestedServices.length > 0 && (
+                  {student.advisorId && transferInterestedServices.length > 0 && (
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Transfer For</p>
                       <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
@@ -478,7 +479,7 @@ export default function CounselorStudentDetailPage() {
                     </svg>
                     View Ivy League Candidate Profile
                   </button>
-                  {(student.adminId?._id || student.advisoryId?._id) && (
+                  {(student.adminId?._id || student.advisorId?._id) && (
                     <button
                       onClick={() => router.push('/service-plans/view?studentId=' + studentId)}
                       className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"

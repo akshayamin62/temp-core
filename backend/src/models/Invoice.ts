@@ -21,7 +21,7 @@ export interface IInvoice extends Document {
   paymentId?: mongoose.Types.ObjectId;
   studentId: mongoose.Types.ObjectId;
   adminId?: mongoose.Types.ObjectId;
-  advisoryId?: mongoose.Types.ObjectId;
+  advisorId?: mongoose.Types.ObjectId;
 
   // Student details snapshot
   studentName: string;
@@ -98,9 +98,9 @@ const invoiceSchema = new Schema<IInvoice>(
       ref: 'Admin',
       default: undefined,
     },
-    advisoryId: {
+    advisorId: {
       type: Schema.Types.ObjectId,
-      ref: 'Advisory',
+      ref: 'Advisor',
       default: undefined,
     },
 

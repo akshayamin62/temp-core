@@ -20,7 +20,7 @@ import {
 } from '../controllers/pointer6.controller';
 import { authorize } from '../middleware/authorize';
 import { USER_ROLE } from '../types/roles';
-import { checkAdvisoryStudentAccess } from '../middleware/advisoryStudentOwnership';
+import { checkAdvisorStudentAccess } from '../middleware/advisorStudentOwnership';
 
 const router = Router();
 
@@ -44,12 +44,12 @@ router.post('/evaluate', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]
 
 // GET /pointer6/status/:studentId - by studentId
 // GET /pointer6/status?studentIvyServiceId=xxx - by serviceId
-router.get('/status', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getPointer6StatusHandler);
-router.get('/status/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), checkAdvisoryStudentAccess, getPointer6StatusHandler);
+router.get('/status', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISOR]), getPointer6StatusHandler);
+router.get('/status/:studentId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISOR]), checkAdvisorStudentAccess, getPointer6StatusHandler);
 
 // GET /pointer6/score/:studentIvyServiceId - Get pointer6 average score
-router.get('/score/:studentIvyServiceId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getPointer6ScoreHandler);
-router.get('/score', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getPointer6ScoreHandler);
+router.get('/score/:studentIvyServiceId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISOR]), getPointer6ScoreHandler);
+router.get('/score', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISOR]), getPointer6ScoreHandler);
 
 // POST /pointer6/select-course - Select a course with start and end dates
 router.post('/select-course', authorize([USER_ROLE.STUDENT, USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), selectCourseHandler);
@@ -64,8 +64,8 @@ router.post('/upload-course-certificate', authorize([USER_ROLE.STUDENT, USER_ROL
 router.post('/score-course-certificate', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), scoreCourseCertificateHandler);
 
 // GET /pointer6/course-score/:studentIvyServiceId - Get Pointer 6 course average score
-router.get('/course-score/:studentIvyServiceId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getPointer6CourseScoreHandler);
-router.get('/course-score', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getPointer6CourseScoreHandler);
+router.get('/course-score/:studentIvyServiceId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISOR]), getPointer6CourseScoreHandler);
+router.get('/course-score', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.STUDENT, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.PARENT, USER_ROLE.ADVISOR]), getPointer6CourseScoreHandler);
 
 export default router;
 

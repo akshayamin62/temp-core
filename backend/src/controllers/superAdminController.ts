@@ -5,7 +5,7 @@ import Ops from "../models/Ops";
 import IvyExpert from "../models/IvyExpert";
 import EduplanCoach from "../models/EduplanCoach";
 import Admin from "../models/Admin";
-import Advisory from "../models/Advisory";
+import Advisor from "../models/Advisor";
 import Counselor from "../models/Counselor";
 import Lead, { LEAD_STAGE } from "../models/Lead";
 import Student from "../models/Student";
@@ -99,16 +99,16 @@ export const getAllUsers = async (req: Request, res: Response): Promise<Response
       );
     }
 
-    // If filtering by ADVISORY role, include advisory profile data
-    if (role && String(role).toUpperCase() === 'ADVISORY') {
+    // If filtering by ADVISOR role, include advisor profile data
+    if (role && String(role).toUpperCase() === 'ADVISOR') {
       enrichedUsers = await Promise.all(
         users.map(async (user: any) => {
           const userObj = user.toObject();
-          if (userObj.role === USER_ROLE.ADVISORY) {
-            const advisoryProfile = await Advisory.findOne({ userId: user._id }).select('companyName companyLogo');
-            if (advisoryProfile) {
-              userObj.companyName = advisoryProfile.companyName;
-              userObj.companyLogo = advisoryProfile.companyLogo;
+          if (userObj.role === USER_ROLE.ADVISOR) {
+            const advisorProfile = await Advisor.findOne({ userId: user._id }).select('companyName companyLogo');
+            if (advisorProfile) {
+              userObj.companyName = advisorProfile.companyName;
+              userObj.companyLogo = advisorProfile.companyLogo;
             }
           }
           return userObj;
@@ -965,15 +965,15 @@ export const createUserByRole = async (req: Request, res: Response): Promise<Res
       });
     }
 
-    // For ADVISORY role, companyName and allowedServices are required
-    if (role === USER_ROLE.ADVISORY && !companyName) {
+    // For ADVISOR role, companyName and allowedServices are required
+    if (role === USER_ROLE.ADVISOR && !companyName) {
       return res.status(400).json({
         success: false,
-        message: 'Company name is required for Advisory creation',
+        message: 'Company name is required for Advisor creation',
       });
     }
 
-    if (role === USER_ROLE.ADVISORY) {
+    if (role === USER_ROLE.ADVISOR) {
       let allowedServices = req.body.allowedServices;
       // FormData sends arrays as JSON strings — parse if needed
       if (typeof allowedServices === 'string') {
@@ -982,7 +982,7 @@ export const createUserByRole = async (req: Request, res: Response): Promise<Res
       if (!allowedServices || !Array.isArray(allowedServices) || allowedServices.length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'At least one allowed service is required for Advisory creation',
+          message: 'At least one allowed service is required for Advisor creation',
         });
       }
       // Store parsed array back for later use
@@ -996,7 +996,7 @@ export const createUserByRole = async (req: Request, res: Response): Promise<Res
       USER_ROLE.EDUPLAN_COACH,
       USER_ROLE.IVY_EXPERT,
       USER_ROLE.COUNSELOR,
-      USER_ROLE.ADVISORY,
+      USER_ROLE.ADVISOR,
     ];
 
     if (!allowedRoles.includes(role as USER_ROLE)) {
@@ -1047,8 +1047,8 @@ export const createUserByRole = async (req: Request, res: Response): Promise<Res
 
     await newUser.save();
 
-    // Set company logo as profile picture for admin/advisory roles
-    if (companyLogo && (role === USER_ROLE.ADMIN || role === USER_ROLE.ADVISORY)) {
+    // Set company logo as profile picture for admin/advisor roles
+    if (companyLogo && (role === USER_ROLE.ADMIN || role === USER_ROLE.ADVISOR)) {
       newUser.profilePicture = companyLogo;
       await newUser.save();
     }
@@ -1122,8 +1122,8 @@ export const createUserByRole = async (req: Request, res: Response): Promise<Res
       await newCounselor.save();
     }
 
-    // If creating ADVISORY role, create Advisory profile with slug and allowedServices
-    if (role === USER_ROLE.ADVISORY) {
+    // If creating ADVISOR role, create Advisor profile with slug and allowedServices
+    if (role === USER_ROLE.ADVISOR) {
       const { allowedServices } = req.body;
       let baseSlug: string;
       if (customSlug) {
@@ -1136,7 +1136,7 @@ export const createUserByRole = async (req: Request, res: Response): Promise<Res
       }
       enquiryFormSlug = await getUniqueSlug(baseSlug);
 
-      const newAdvisory = new Advisory({
+      const newAdvisor = new Advisor({
         userId: newUser._id,
         email: email.toLowerCase().trim(),
         mobileNumber: phoneNumber?.trim() || undefined,
@@ -1146,7 +1146,7 @@ export const createUserByRole = async (req: Request, res: Response): Promise<Res
         enquiryFormSlug: enquiryFormSlug,
         allowedServices: allowedServices,
       });
-      await newAdvisory.save();
+      await newAdvisor.save();
     }
 
     return res.status(201).json({
@@ -2362,31 +2362,31 @@ export const editUserByRole = async (req: Request, res: Response): Promise<Respo
         }
         }
       }
-    } else if (role === USER_ROLE.ADVISORY) {
-      const advisoryUpdate: any = {};
-      if (email !== undefined) advisoryUpdate.email = email.toLowerCase().trim();
-      if (mobileNumber !== undefined) advisoryUpdate.mobileNumber = mobileNumber.trim();
-      if (body.companyName !== undefined) advisoryUpdate.companyName = body.companyName.trim();
-      if (body.address !== undefined) advisoryUpdate.address = body.address.trim();
-      if (body.enquiryFormSlug !== undefined) advisoryUpdate.enquiryFormSlug = body.enquiryFormSlug.toLowerCase().trim();
+    } else if (role === USER_ROLE.ADVISOR) {
+      const advisorUpdate: any = {};
+      if (email !== undefined) advisorUpdate.email = email.toLowerCase().trim();
+      if (mobileNumber !== undefined) advisorUpdate.mobileNumber = mobileNumber.trim();
+      if (body.companyName !== undefined) advisorUpdate.companyName = body.companyName.trim();
+      if (body.address !== undefined) advisorUpdate.address = body.address.trim();
+      if (body.enquiryFormSlug !== undefined) advisorUpdate.enquiryFormSlug = body.enquiryFormSlug.toLowerCase().trim();
       if (body.allowedServices !== undefined) {
         let services = body.allowedServices;
         if (typeof services === 'string') {
           try { services = JSON.parse(services); } catch { services = null; }
         }
         if (Array.isArray(services) && services.length > 0) {
-          advisoryUpdate.allowedServices = services;
+          advisorUpdate.allowedServices = services;
         }
       }
       // Handle company logo upload
       if ((req as any).file) {
         const logoPath = `/uploads/admin/${(req as any).file.filename}`;
-        advisoryUpdate.companyLogo = logoPath;
+        advisorUpdate.companyLogo = logoPath;
         // Also update user profile picture
         await User.findByIdAndUpdate(userId, { profilePicture: logoPath });
       }
-      if (Object.keys(advisoryUpdate).length > 0) {
-        await Advisory.findOneAndUpdate({ userId }, advisoryUpdate, { new: true, runValidators: false });
+      if (Object.keys(advisorUpdate).length > 0) {
+        await Advisor.findOneAndUpdate({ userId }, advisorUpdate, { new: true, runValidators: false });
       }
     }
 
@@ -2437,8 +2437,8 @@ export const getUserWithProfile = async (req: Request, res: Response): Promise<R
       }
     } else if (role === USER_ROLE.ADMIN) {
       profile = await Admin.findOne({ userId });
-    } else if (role === USER_ROLE.ADVISORY) {
-      profile = await Advisory.findOne({ userId });
+    } else if (role === USER_ROLE.ADVISOR) {
+      profile = await Advisor.findOne({ userId });
     } else if (role === USER_ROLE.SERVICE_PROVIDER) {
       profile = await ServiceProvider.findOne({ userId });
     }
@@ -2456,21 +2456,21 @@ export const getUserWithProfile = async (req: Request, res: Response): Promise<R
 /**
  * Get all advisories (Super Admin)
  */
-export const getAdvisories = async (req: Request, res: Response): Promise<Response> => {
+export const getAdvisors = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const advisories = await Advisory.find()
+    const advisors = await Advisor.find()
       .populate('userId', 'firstName middleName lastName email role isActive')
       .sort({ createdAt: -1 });
 
-    // Get lead and student counts for each advisory
+    // Get lead and student counts for each advisor
     const data = await Promise.all(
-      advisories.map(async (advisory) => {
+      advisors.map(async (advisor) => {
         const [leadCount, studentCount] = await Promise.all([
-          Lead.countDocuments({ advisoryId: advisory._id }),
-          Student.countDocuments({ advisoryId: advisory._id }),
+          Lead.countDocuments({ advisorId: advisor._id }),
+          Student.countDocuments({ advisorId: advisor._id }),
         ]);
         return {
-          ...advisory.toObject(),
+          ...advisor.toObject(),
           leadCount,
           studentCount,
         };
@@ -2479,50 +2479,50 @@ export const getAdvisories = async (req: Request, res: Response): Promise<Respon
 
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    console.error('Get advisories error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch advisories' });
+    console.error('Get advisors error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch advisors' });
   }
 };
 
 /**
- * Get advisory details (Super Admin)
+ * Get advisor details (Super Admin)
  */
-export const getAdvisoryDetails = async (req: Request, res: Response): Promise<Response> => {
+export const getAdvisorDetails = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { id } = req.params;
 
-    const advisory = await Advisory.findById(id)
+    const advisor = await Advisor.findById(id)
       .populate('userId', 'firstName middleName lastName email role isActive');
 
-    if (!advisory) {
-      return res.status(404).json({ success: false, message: 'Advisory not found' });
+    if (!advisor) {
+      return res.status(404).json({ success: false, message: 'Advisor not found' });
     }
 
     const [leadCount, studentCount, transferCount] = await Promise.all([
-      Lead.countDocuments({ advisoryId: advisory._id }),
-      Student.countDocuments({ advisoryId: advisory._id }),
-      (await import('../models/StudentTransfer')).default.countDocuments({ fromAdvisoryId: advisory._id }),
+      Lead.countDocuments({ advisorId: advisor._id }),
+      Student.countDocuments({ advisorId: advisor._id }),
+      (await import('../models/StudentTransfer')).default.countDocuments({ fromAdvisorId: advisor._id }),
     ]);
 
     return res.status(200).json({
       success: true,
       data: {
-        ...advisory.toObject(),
+        ...advisor.toObject(),
         leadCount,
         studentCount,
         transferCount,
       },
     });
   } catch (error: any) {
-    console.error('Get advisory details error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch advisory details' });
+    console.error('Get advisor details error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch advisor details' });
   }
 };
 
 /**
- * Update advisory allowed services (Super Admin)
+ * Update advisor allowed services (Super Admin)
  */
-export const updateAdvisoryServices = async (req: Request, res: Response): Promise<Response> => {
+export const updateAdvisorServices = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { id } = req.params;
     let allowedServices = req.body.allowedServices;
@@ -2539,85 +2539,85 @@ export const updateAdvisoryServices = async (req: Request, res: Response): Promi
       });
     }
 
-    const advisory = await Advisory.findByIdAndUpdate(
+    const advisor = await Advisor.findByIdAndUpdate(
       id,
       { allowedServices },
       { new: true }
     ).populate('userId', 'firstName middleName lastName email role isActive');
 
-    if (!advisory) {
-      return res.status(404).json({ success: false, message: 'Advisory not found' });
+    if (!advisor) {
+      return res.status(404).json({ success: false, message: 'Advisor not found' });
     }
 
     return res.status(200).json({
       success: true,
-      message: 'Advisory services updated successfully',
-      data: advisory,
+      message: 'Advisor services updated successfully',
+      data: advisor,
     });
   } catch (error: any) {
-    console.error('Update advisory services error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to update advisory services' });
+    console.error('Update advisor services error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to update advisor services' });
   }
 };
 
 /**
- * Toggle advisory active status (Super Admin)
+ * Toggle advisor active status (Super Admin)
  */
-export const toggleAdvisoryStatus = async (req: Request, res: Response): Promise<Response> => {
+export const toggleAdvisorStatus = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { id } = req.params;
 
-    const advisory = await Advisory.findById(id);
-    if (!advisory) {
-      return res.status(404).json({ success: false, message: 'Advisory not found' });
+    const advisor = await Advisor.findById(id);
+    if (!advisor) {
+      return res.status(404).json({ success: false, message: 'Advisor not found' });
     }
 
-    advisory.isActive = !advisory.isActive;
-    await advisory.save();
+    advisor.isActive = !advisor.isActive;
+    await advisor.save();
 
     // Also toggle the user's isActive status
-    await User.findByIdAndUpdate(advisory.userId, { isActive: advisory.isActive });
+    await User.findByIdAndUpdate(advisor.userId, { isActive: advisor.isActive });
 
     return res.status(200).json({
       success: true,
-      message: `Advisory ${advisory.isActive ? 'activated' : 'deactivated'} successfully`,
-      data: advisory,
+      message: `Advisor ${advisor.isActive ? 'activated' : 'deactivated'} successfully`,
+      data: advisor,
     });
   } catch (error: any) {
-    console.error('Toggle advisory status error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to toggle advisory status' });
+    console.error('Toggle advisor status error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to toggle advisor status' });
   }
 };
 
-// ============= ADVISORY DASHBOARD/LEADS/STUDENTS/TEAM-MEETS =============
+// ============= ADVISOR DASHBOARD/LEADS/STUDENTS/TEAM-MEETS =============
 
 /**
- * Get advisory dashboard stats (for super admin)
+ * Get advisor dashboard stats (for super admin)
  */
-export const getAdvisoryDashboardStats = async (req: Request, res: Response): Promise<Response> => {
+export const getAdvisorDashboardStats = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { advisoryId } = req.params;
+    const { advisorId } = req.params;
 
-    const advisoryUser = await User.findOne({ _id: advisoryId, role: USER_ROLE.ADVISORY });
-    if (!advisoryUser) {
-      return res.status(404).json({ success: false, message: 'Advisory not found' });
+    const advisorUser = await User.findOne({ _id: advisorId, role: USER_ROLE.ADVISOR });
+    if (!advisorUser) {
+      return res.status(404).json({ success: false, message: 'Advisor not found' });
     }
 
-    const advisoryProfile = await Advisory.findOne({ userId: advisoryId });
-    if (!advisoryProfile) {
-      return res.status(404).json({ success: false, message: 'Advisory profile not found' });
+    const advisorProfile = await Advisor.findOne({ userId: advisorId });
+    if (!advisorProfile) {
+      return res.status(404).json({ success: false, message: 'Advisor profile not found' });
     }
 
-    // Get lead stats — Lead.advisoryId references Advisory._id, not User._id
-    const allLeads = await Lead.find({ advisoryId: advisoryProfile._id });
+    // Get lead stats — Lead.advisorId references Advisor._id, not User._id
+    const allLeads = await Lead.find({ advisorId: advisorProfile._id });
     const totalLeads = allLeads.length;
     const newLeads = allLeads.filter((l) => l.stage === LEAD_STAGE.NEW).length;
 
     // Get student count
-    const totalStudents = await Student.countDocuments({ advisoryId: advisoryProfile._id });
+    const totalStudents = await Student.countDocuments({ advisorId: advisorProfile._id });
 
     // Enquiry form URL
-    const enquiryFormUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/enquiry/${advisoryProfile.enquiryFormSlug}`;
+    const enquiryFormUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/enquiry/${advisorProfile.enquiryFormSlug}`;
 
     return res.status(200).json({
       success: true,
@@ -2626,49 +2626,49 @@ export const getAdvisoryDashboardStats = async (req: Request, res: Response): Pr
         newLeads,
         totalStudents,
         enquiryFormUrl,
-        enquiryFormSlug: advisoryProfile.enquiryFormSlug,
-        allowedServices: advisoryProfile.allowedServices,
-        advisory: {
-          _id: advisoryUser._id,
-          firstName: advisoryUser.firstName,
-          middleName: advisoryUser.middleName,
-          lastName: advisoryUser.lastName,
-          email: advisoryUser.email,
-          isActive: advisoryUser.isActive,
-          isVerified: advisoryUser.isVerified,
-          companyName: advisoryProfile.companyName,
-          companyLogo: advisoryProfile.companyLogo,
-          address: advisoryProfile.address,
-          mobileNumber: advisoryProfile.mobileNumber,
+        enquiryFormSlug: advisorProfile.enquiryFormSlug,
+        allowedServices: advisorProfile.allowedServices,
+        advisor: {
+          _id: advisorUser._id,
+          firstName: advisorUser.firstName,
+          middleName: advisorUser.middleName,
+          lastName: advisorUser.lastName,
+          email: advisorUser.email,
+          isActive: advisorUser.isActive,
+          isVerified: advisorUser.isVerified,
+          companyName: advisorProfile.companyName,
+          companyLogo: advisorProfile.companyLogo,
+          address: advisorProfile.address,
+          mobileNumber: advisorProfile.mobileNumber,
         },
       },
     });
   } catch (error: any) {
-    console.error('Get advisory dashboard stats error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch advisory dashboard stats' });
+    console.error('Get advisor dashboard stats error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch advisor dashboard stats' });
   }
 };
 
 /**
- * Get leads under a specific advisory (for super admin)
+ * Get leads under a specific advisor (for super admin)
  */
-export const getAdvisoryLeadsForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
+export const getAdvisorLeadsForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { advisoryId } = req.params;
+    const { advisorId } = req.params;
     const { stage, serviceTypes, search } = req.query;
 
-    const advisoryUser = await User.findOne({ _id: advisoryId, role: USER_ROLE.ADVISORY });
-    if (!advisoryUser) {
-      return res.status(404).json({ success: false, message: 'Advisory not found' });
+    const advisorUser = await User.findOne({ _id: advisorId, role: USER_ROLE.ADVISOR });
+    if (!advisorUser) {
+      return res.status(404).json({ success: false, message: 'Advisor not found' });
     }
 
-    // Lead.advisoryId references Advisory._id, not User._id
-    const advisoryProfile = await Advisory.findOne({ userId: advisoryUser._id });
-    if (!advisoryProfile) {
-      return res.status(404).json({ success: false, message: 'Advisory profile not found' });
+    // Lead.advisorId references Advisor._id, not User._id
+    const advisorProfile = await Advisor.findOne({ userId: advisorUser._id });
+    if (!advisorProfile) {
+      return res.status(404).json({ success: false, message: 'Advisor profile not found' });
     }
 
-    const filter: any = { advisoryId: advisoryProfile._id };
+    const filter: any = { advisorId: advisorProfile._id };
 
     if (stage) filter.stage = stage;
     if (serviceTypes) filter.serviceTypes = { $in: [serviceTypes] };
@@ -2688,7 +2688,7 @@ export const getAdvisoryLeadsForSuperAdmin = async (req: Request, res: Response)
       .sort({ createdAt: -1 });
 
     // Get stats
-    const allLeads = await Lead.find({ advisoryId: advisoryProfile._id });
+    const allLeads = await Lead.find({ advisorId: advisorProfile._id });
     const stats = {
       total: allLeads.length,
       new: allLeads.filter((l) => l.stage === LEAD_STAGE.NEW).length,
@@ -2705,32 +2705,32 @@ export const getAdvisoryLeadsForSuperAdmin = async (req: Request, res: Response)
       data: { leads, stats },
     });
   } catch (error: any) {
-    console.error('Get advisory leads error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch advisory leads' });
+    console.error('Get advisor leads error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch advisor leads' });
   }
 };
 
 /**
- * Get students under a specific advisory (for super admin)
+ * Get students under a specific advisor (for super admin)
  */
-export const getAdvisoryStudentsForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
+export const getAdvisorStudentsForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { advisoryId } = req.params;
+    const { advisorId } = req.params;
 
-    const advisoryUser = await User.findOne({ _id: advisoryId, role: USER_ROLE.ADVISORY });
-    if (!advisoryUser) {
-      return res.status(404).json({ success: false, message: 'Advisory not found' });
+    const advisorUser = await User.findOne({ _id: advisorId, role: USER_ROLE.ADVISOR });
+    if (!advisorUser) {
+      return res.status(404).json({ success: false, message: 'Advisor not found' });
     }
 
-    const advisoryProfile = await Advisory.findOne({ userId: advisoryId });
-    if (!advisoryProfile) {
-      return res.status(404).json({ success: false, message: 'Advisory profile not found' });
+    const advisorProfile = await Advisor.findOne({ userId: advisorId });
+    if (!advisorProfile) {
+      return res.status(404).json({ success: false, message: 'Advisor profile not found' });
     }
 
-    const students = await Student.find({ advisoryId: advisoryProfile._id })
+    const students = await Student.find({ advisorId: advisorProfile._id })
       .populate('userId', 'firstName middleName lastName email profilePicture isVerified isActive createdAt')
       .populate({
-        path: 'advisoryId',
+        path: 'advisorId',
         populate: { path: 'userId', select: 'firstName middleName lastName email' }
       })
       .sort({ createdAt: -1 });
@@ -2753,7 +2753,7 @@ export const getAdvisoryStudentsForSuperAdmin = async (req: Request, res: Respon
           _id: student._id,
           user: student.userId,
           mobileNumber: student.mobileNumber,
-          advisoryId: student.advisoryId,
+          advisorId: student.advisorId,
           registrationCount: registrations.length,
           serviceNames,
           createdAt: student.createdAt,
@@ -2775,22 +2775,22 @@ export const getAdvisoryStudentsForSuperAdmin = async (req: Request, res: Respon
       },
     });
   } catch (error: any) {
-    console.error('Get advisory students error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch advisory students' });
+    console.error('Get advisor students error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch advisor students' });
   }
 };
 
 /**
- * Get team meets for a specific advisory (for super admin - read only)
+ * Get team meets for a specific advisor (for super admin - read only)
  */
-export const getAdvisoryTeamMeetsForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
+export const getAdvisorTeamMeetsForSuperAdmin = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { advisoryId } = req.params;
+    const { advisorId } = req.params;
     const { month, year } = req.query;
 
-    const advisoryUser = await User.findOne({ _id: advisoryId, role: USER_ROLE.ADVISORY });
-    if (!advisoryUser) {
-      return res.status(404).json({ success: false, message: 'Advisory not found' });
+    const advisorUser = await User.findOne({ _id: advisorId, role: USER_ROLE.ADVISOR });
+    if (!advisorUser) {
+      return res.status(404).json({ success: false, message: 'Advisor not found' });
     }
 
     let startDate: Date;
@@ -2808,7 +2808,7 @@ export const getAdvisoryTeamMeetsForSuperAdmin = async (req: Request, res: Respo
     }
 
     const teamMeets = await TeamMeet.find({
-      $or: [{ requestedBy: advisoryId }, { requestedTo: advisoryId }],
+      $or: [{ requestedBy: advisorId }, { requestedTo: advisorId }],
       scheduledDate: { $gte: startDate, $lte: endDate },
     })
       .populate("requestedBy", "firstName middleName lastName email role")
@@ -2820,7 +2820,7 @@ export const getAdvisoryTeamMeetsForSuperAdmin = async (req: Request, res: Respo
       data: { teamMeets },
     });
   } catch (error: any) {
-    console.error('Get advisory team meets error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch advisory team meets' });
+    console.error('Get advisor team meets error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch advisor team meets' });
   }
 };

@@ -75,7 +75,7 @@ export const getAdminStudents = async (req: AuthRequest, res: Response): Promise
         }
       })
       .populate({
-        path: 'advisoryId',
+        path: 'advisorId',
         select: 'companyName',
         populate: {
           path: 'userId',
@@ -109,7 +109,7 @@ export const getAdminStudents = async (req: AuthRequest, res: Response): Promise
           mobileNumber: student.mobileNumber,
           adminId: student.adminId,
           counselorId: student.counselorId,
-          advisoryId: student.advisoryId,
+          advisorId: student.advisorId,
           registrationCount,
           serviceNames,
           createdAt: student.createdAt,
@@ -178,7 +178,7 @@ export const getAdminStudentDetails = async (req: AuthRequest, res: Response): P
         }
       })
       .populate({
-        path: 'advisoryId',
+        path: 'advisorId',
         populate: {
           path: 'userId',
           select: 'firstName middleName lastName name email'
@@ -240,7 +240,7 @@ export const getAdminStudentDetails = async (req: AuthRequest, res: Response): P
         populate: { path: 'userId', select: 'firstName middleName lastName name email' }
       })
       .populate({
-        path: 'registeredViaAdvisoryId',
+        path: 'registeredViaAdvisorId',
         select: 'companyName userId',
         populate: { path: 'userId', select: 'firstName middleName lastName' }
       })

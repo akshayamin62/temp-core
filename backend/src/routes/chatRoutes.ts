@@ -18,19 +18,19 @@ const router = express.Router();
 router.use(authenticate);
 
 // Get all chats for current user
-router.get('/my-chats', authorize([USER_ROLE.STUDENT, USER_ROLE.COUNSELOR, USER_ROLE.OPS, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getMyChatsList);
+router.get('/my-chats', authorize([USER_ROLE.STUDENT, USER_ROLE.COUNSELOR, USER_ROLE.OPS, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.PARENT, USER_ROLE.ADVISOR]), getMyChatsList);
 
 // Get or create chat for a program
-router.get('/program/:programId/chat', authorize([USER_ROLE.STUDENT, USER_ROLE.COUNSELOR, USER_ROLE.OPS, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getOrCreateChat);
+router.get('/program/:programId/chat', authorize([USER_ROLE.STUDENT, USER_ROLE.COUNSELOR, USER_ROLE.OPS, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.PARENT, USER_ROLE.ADVISOR]), getOrCreateChat);
 
 // Get all messages for a program
-router.get('/program/:programId/messages', authorize([USER_ROLE.STUDENT, USER_ROLE.COUNSELOR, USER_ROLE.OPS, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), getChatMessages);
+router.get('/program/:programId/messages', authorize([USER_ROLE.STUDENT, USER_ROLE.COUNSELOR, USER_ROLE.OPS, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.PARENT, USER_ROLE.ADVISOR]), getChatMessages);
 
 // Send a message
-router.post('/program/:programId/messages', authorize([USER_ROLE.STUDENT, USER_ROLE.COUNSELOR, USER_ROLE.OPS, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), sendMessage);
+router.post('/program/:programId/messages', authorize([USER_ROLE.STUDENT, USER_ROLE.COUNSELOR, USER_ROLE.OPS, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.PARENT, USER_ROLE.ADVISOR]), sendMessage);
 
 // Upload document in chat (open chat)
-router.post('/program/:programId/upload-document', authorize([USER_ROLE.STUDENT, USER_ROLE.COUNSELOR, USER_ROLE.OPS, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.PARENT, USER_ROLE.ADVISORY]), upload.single('file'), uploadChatDocument);
+router.post('/program/:programId/upload-document', authorize([USER_ROLE.STUDENT, USER_ROLE.COUNSELOR, USER_ROLE.OPS, USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.PARENT, USER_ROLE.ADVISOR]), upload.single('file'), uploadChatDocument);
 
 // Save chat document to Extra Documents (OPS / SUPER_ADMIN only)
 router.post('/messages/:messageId/save-to-extra', authorize([USER_ROLE.OPS, USER_ROLE.SUPER_ADMIN]), saveChatDocumentToExtra);

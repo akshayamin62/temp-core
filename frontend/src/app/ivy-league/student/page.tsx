@@ -364,10 +364,10 @@ function IvyScoreContent() {
     const overallScore = calculatedOverallScore;
     const overallPercentage = (overallScore / totalMaxScore) * 100;
 
-    // Restricted read-only: referrer always, or advisory when service is under admin (transferred)
+    // Restricted read-only: referrer always, or advisor when service is under admin (transferred)
     const isRestrictedReadOnly = readOnly && (
         userRole === USER_ROLE.REFERRER ||
-        (userRole === USER_ROLE.ADVISORY && serviceData?.registeredViaAdminId)
+        (userRole === USER_ROLE.ADVISOR && serviceData?.registeredViaAdminId)
     );
 
     const handlePointerClick = (pointerNo: number) => {
@@ -613,8 +613,8 @@ function IvyScoreContent() {
                             </div>
                         )}
 
-                        {/* Advisory */}
-                        {serviceData.studentId?.advisoryId && (
+                        {/* Advisor */}
+                        {serviceData.studentId?.advisorId && (
                             <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
@@ -624,8 +624,8 @@ function IvyScoreContent() {
                                     </div>
                                     <h5 className="font-black text-gray-900 uppercase tracking-tight text-sm">Advisor</h5>
                                 </div>
-                                <p className="text-sm font-bold text-gray-900 mb-1">{serviceData.studentId.advisoryId.firstName} {serviceData.studentId.advisoryId.lastName}</p>
-                                <p className="text-xs text-gray-600 mb-1">{serviceData.studentId.advisoryId.email}</p>
+                                <p className="text-sm font-bold text-gray-900 mb-1">{serviceData.studentId.advisorId.firstName} {serviceData.studentId.advisorId.lastName}</p>
+                                <p className="text-xs text-gray-600 mb-1">{serviceData.studentId.advisorId.email}</p>
                             </div>
                         )}
 

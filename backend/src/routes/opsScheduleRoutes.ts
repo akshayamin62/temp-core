@@ -2,7 +2,7 @@ import express from "express";
 import { authenticate } from "../middleware/auth";
 import { authorize } from "../middleware/authorize";
 import { USER_ROLE } from "../types/roles";
-import { checkAdvisoryStudentAccess } from "../middleware/advisoryStudentOwnership";
+import { checkAdvisorStudentAccess } from "../middleware/advisorStudentOwnership";
 import {
   getMySchedules,
   getScheduleSummary,
@@ -21,7 +21,7 @@ const router = express.Router();
 router.get("/my-tasks", authenticate, authorize(USER_ROLE.STUDENT), getMyOpsTasksAsStudent);
 
 // Get OPS tasks for a specific student (for admin/counselor/super-admin/ops viewing student dashboard)
-router.get("/student/:studentId", authenticate, authorize([USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT, USER_ROLE.PARENT, USER_ROLE.REFERRER, USER_ROLE.ADVISORY]), checkAdvisoryStudentAccess, getStudentOpsTasksById);
+router.get("/student/:studentId", authenticate, authorize([USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT, USER_ROLE.PARENT, USER_ROLE.REFERRER, USER_ROLE.ADVISOR]), checkAdvisorStudentAccess, getStudentOpsTasksById);
 
 // All remaining routes require OPS role
 router.use(authenticate, authorize(USER_ROLE.OPS));

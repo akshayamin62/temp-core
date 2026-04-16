@@ -57,7 +57,7 @@ router.get(
     USER_ROLE.IVY_EXPERT,
     USER_ROLE.STUDENT,
     USER_ROLE.SUPER_ADMIN,
-    USER_ROLE.ADVISORY
+    USER_ROLE.ADVISOR
   ),
   getMyParents
 );
@@ -74,7 +74,7 @@ router.get(
     USER_ROLE.IVY_EXPERT,
     USER_ROLE.STUDENT,
     USER_ROLE.SUPER_ADMIN,
-    USER_ROLE.ADVISORY
+    USER_ROLE.ADVISOR
   ),
   getParentDetail
 );
@@ -99,7 +99,7 @@ router.get(
     USER_ROLE.STUDENT,
     USER_ROLE.COUNSELOR,
     USER_ROLE.ADMIN,
-    USER_ROLE.ADVISORY
+    USER_ROLE.ADVISOR
   ),
   getParentsByStudent
 );

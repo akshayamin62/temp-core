@@ -11,7 +11,7 @@ import Student from "../models/Student";
 import Ops from "../models/Ops";
 import EduplanCoach from "../models/EduplanCoach";
 import IvyExpert from "../models/IvyExpert";
-import Advisory from "../models/Advisory";
+import Advisor from "../models/Advisor";
 import Parent from "../models/Parent";
 import StudentServiceRegistration from "../models/StudentServiceRegistration";
 import mongoose from "mongoose";
@@ -238,7 +238,7 @@ export const createTeamMeet = async (
     const allowedRecipientRoles = [
       USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN,
       USER_ROLE.STUDENT, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT,
-      USER_ROLE.PARENT, USER_ROLE.ADVISORY,
+      USER_ROLE.PARENT, USER_ROLE.ADVISOR,
     ];
     if (!allowedRecipientRoles.includes(recipient.role as USER_ROLE)) {
       return res.status(400).json({
@@ -1152,7 +1152,7 @@ export const getParticipants = async (
     // ── SUPER_ADMIN: all users with meeting-eligible roles ──
     if (userRole === USER_ROLE.SUPER_ADMIN) {
       const users = await User.find({
-        role: { $in: [USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.STUDENT, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT, USER_ROLE.ADVISORY] },
+        role: { $in: [USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.STUDENT, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT, USER_ROLE.ADVISOR] },
         _id: { $ne: userId },
       }).select("_id firstName middleName lastName email role");
       users.forEach(addUser);
@@ -1198,10 +1198,10 @@ export const getParticipants = async (
         if ((reg as any).secondaryIvyExpertId?.userId) addUser((reg as any).secondaryIvyExpertId.userId);
       }
 
-      // Advisory
-      if (student.advisoryId) {
-        const advisory = await Advisory.findById(student.advisoryId).populate("userId", "_id firstName middleName lastName email role");
-        if (advisory) addUser((advisory.userId as any));
+      // Advisor
+      if (student.advisorId) {
+        const advisor = await Advisor.findById(student.advisorId).populate("userId", "_id firstName middleName lastName email role");
+        if (advisor) addUser((advisor.userId as any));
       }
 
       return res.status(200).json({ success: true, data: { participants } });
@@ -1243,11 +1243,11 @@ export const getParticipants = async (
         if ((reg as any).secondaryIvyExpertId?.userId) addUser((reg as any).secondaryIvyExpertId.userId);
       }
 
-      // Advisory for parent's students
+      // Advisor for parent's students
       for (const s of students) {
-        if (s.advisoryId) {
-          const advisory = await Advisory.findById(s.advisoryId).populate("userId", "_id firstName middleName lastName email role");
-          if (advisory) addUser((advisory.userId as any));
+        if (s.advisorId) {
+          const advisor = await Advisor.findById(s.advisorId).populate("userId", "_id firstName middleName lastName email role");
+          if (advisor) addUser((advisor.userId as any));
         }
       }
 
@@ -1298,11 +1298,11 @@ export const getParticipants = async (
         if ((reg as any).secondaryIvyExpertId?.userId) addUser((reg as any).secondaryIvyExpertId.userId);
       }
 
-      // Advisory for admin's students
+      // Advisor for admin's students
       for (const s of students) {
-        if (s.advisoryId) {
-          const advisory = await Advisory.findById(s.advisoryId).populate("userId", "_id firstName middleName lastName email role");
-          if (advisory) addUser((advisory.userId as any));
+        if (s.advisorId) {
+          const advisor = await Advisor.findById(s.advisorId).populate("userId", "_id firstName middleName lastName email role");
+          if (advisor) addUser((advisor.userId as any));
         }
       }
 
@@ -1351,11 +1351,11 @@ export const getParticipants = async (
         if ((reg as any).secondaryIvyExpertId?.userId) addUser((reg as any).secondaryIvyExpertId.userId);
       }
 
-      // Advisory for counselor's students
+      // Advisor for counselor's students
       for (const s of students) {
-        if (s.advisoryId) {
-          const advisory = await Advisory.findById(s.advisoryId).populate("userId", "_id firstName middleName lastName email role");
-          if (advisory) addUser((advisory.userId as any));
+        if (s.advisorId) {
+          const advisor = await Advisor.findById(s.advisorId).populate("userId", "_id firstName middleName lastName email role");
+          if (advisor) addUser((advisor.userId as any));
         }
       }
 
@@ -1411,11 +1411,11 @@ export const getParticipants = async (
       // Parents of ops's students
       await addParentsForStudents(studentDocs.map(s => s._id), seen, participants, userId!);
 
-      // Advisory for ops's students
+      // Advisor for ops's students
       for (const s of studentDocs) {
-        if (s.advisoryId) {
-          const advisory = await Advisory.findById(s.advisoryId).populate("userId", "_id firstName middleName lastName email role");
-          if (advisory) addUser((advisory.userId as any));
+        if (s.advisorId) {
+          const advisor = await Advisor.findById(s.advisorId).populate("userId", "_id firstName middleName lastName email role");
+          if (advisor) addUser((advisor.userId as any));
         }
       }
 
@@ -1474,11 +1474,11 @@ export const getParticipants = async (
       // Parents of coach's students
       await addParentsForStudents(studentDocIds.map(id => id), seen, participants, userId!);
 
-      // Advisory for coach's students
+      // Advisor for coach's students
       for (const s of studentDocs) {
-        if (s.advisoryId) {
-          const advisory = await Advisory.findById(s.advisoryId).populate("userId", "_id firstName middleName lastName email role");
-          if (advisory) addUser((advisory.userId as any));
+        if (s.advisorId) {
+          const advisor = await Advisor.findById(s.advisorId).populate("userId", "_id firstName middleName lastName email role");
+          if (advisor) addUser((advisor.userId as any));
         }
       }
 
@@ -1537,29 +1537,29 @@ export const getParticipants = async (
       // Parents of ivy expert's students
       await addParentsForStudents(studentDocIds.map(id => id), seen, participants, userId!);
 
-      // Advisory for ivy expert's students
+      // Advisor for ivy expert's students
       for (const s of studentDocs) {
-        if (s.advisoryId) {
-          const advisory = await Advisory.findById(s.advisoryId).populate("userId", "_id firstName middleName lastName email role");
-          if (advisory) addUser((advisory.userId as any));
+        if (s.advisorId) {
+          const advisor = await Advisor.findById(s.advisorId).populate("userId", "_id firstName middleName lastName email role");
+          if (advisor) addUser((advisor.userId as any));
         }
       }
 
       return res.status(200).json({ success: true, data: { participants } });
     }
 
-    // ── ADVISORY: students + their ops/eduplan/ivy + parents + super admins ──
-    if (userRole === USER_ROLE.ADVISORY) {
-      const advisory = await Advisory.findOne({ userId });
-      if (!advisory) return res.status(404).json({ success: false, message: "Advisory record not found" });
+    // ── ADVISOR: students + their ops/eduplan/ivy + parents + super admins ──
+    if (userRole === USER_ROLE.ADVISOR) {
+      const advisor = await Advisor.findOne({ userId });
+      if (!advisor) return res.status(404).json({ success: false, message: "Advisor record not found" });
 
       // Super admins
       const superAdmins = await User.find({ role: USER_ROLE.SUPER_ADMIN })
         .select("_id firstName middleName lastName email role");
       superAdmins.forEach(addUser);
 
-      // Students under this advisory
-      const students = await Student.find({ advisoryId: advisory._id })
+      // Students under this advisor
+      const students = await Student.find({ advisorId: advisor._id })
         .populate("userId", "_id firstName middleName lastName email role");
       for (const s of students) addUser((s.userId as any));
 
@@ -1587,7 +1587,7 @@ export const getParticipants = async (
         if ((reg as any).secondaryIvyExpertId?.userId) addUser((reg as any).secondaryIvyExpertId.userId);
       }
 
-      // Parents of advisory's students
+      // Parents of advisor's students
       await addParentsForStudents(studentIds, seen, participants, userId!);
 
       return res.status(200).json({ success: true, data: { participants } });

@@ -255,7 +255,7 @@ export default function Home() {
     // Check if service is configured
     const service = services.find(s => s._id === serviceId);
 
-    // Check if service is allowed by advisory
+    // Check if service is allowed by advisor
     if (allowedServices && service && !allowedServices.includes(service.slug)) {
       toast.error('This service is not available through your advisor. Please contact your advisor for more information.');
       return;

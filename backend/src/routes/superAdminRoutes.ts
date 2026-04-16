@@ -37,14 +37,14 @@ import {
   getIvyExpertTeamMeetsForSuperAdmin,
   editUserByRole,
   getUserWithProfile,
-  getAdvisories,
-  getAdvisoryDetails,
-  updateAdvisoryServices,
-  toggleAdvisoryStatus,
-  getAdvisoryDashboardStats,
-  getAdvisoryLeadsForSuperAdmin,
-  getAdvisoryStudentsForSuperAdmin,
-  getAdvisoryTeamMeetsForSuperAdmin,
+  getAdvisors,
+  getAdvisorDetails,
+  updateAdvisorServices,
+  toggleAdvisorStatus,
+  getAdvisorDashboardStats,
+  getAdvisorLeadsForSuperAdmin,
+  getAdvisorStudentsForSuperAdmin,
+  getAdvisorTeamMeetsForSuperAdmin,
 } from "../controllers/superAdminController";
 import { authenticate } from "../middleware/auth";
 import { authorize } from "../middleware/authorize";
@@ -360,63 +360,63 @@ router.post("/referrer", createReferrerForSuperAdmin);
  */
 router.patch("/referrer/:referrerId/toggle-status", toggleReferrerStatusForSuperAdmin);
 
-// ============= ADVISORY ROUTES =============
+// ============= ADVISOR ROUTES =============
 
 /**
- * @route   GET /api/super-admin/advisories
- * @desc    Get all advisories with lead/student counts
+ * @route   GET /api/super-admin/advisors
+ * @desc    Get all advisors with lead/student counts
  * @access  Super Admin only
  */
-router.get("/advisories", getAdvisories);
+router.get("/advisors", getAdvisors);
 
 /**
- * @route   GET /api/super-admin/advisories/:id
- * @desc    Get advisory details
+ * @route   GET /api/super-admin/advisors/:id
+ * @desc    Get advisor details
  * @access  Super Admin only
  */
-router.get("/advisories/:id", getAdvisoryDetails);
+router.get("/advisors/:id", getAdvisorDetails);
 
 /**
- * @route   PATCH /api/super-admin/advisories/:id/services
- * @desc    Update advisory allowed services
+ * @route   PATCH /api/super-admin/advisors/:id/services
+ * @desc    Update advisor allowed services
  * @access  Super Admin only
  */
-router.patch("/advisories/:id/services", updateAdvisoryServices);
+router.patch("/advisors/:id/services", updateAdvisorServices);
 
 /**
- * @route   PATCH /api/super-admin/advisories/:id/toggle-status
- * @desc    Toggle advisory active/inactive status
+ * @route   PATCH /api/super-admin/advisors/:id/toggle-status
+ * @desc    Toggle advisor active/inactive status
  * @access  Super Admin only
  */
-router.patch("/advisories/:id/toggle-status", toggleAdvisoryStatus);
+router.patch("/advisors/:id/toggle-status", toggleAdvisorStatus);
 
 /**
- * @route   GET /api/super-admin/advisories/:advisoryId/dashboard
- * @desc    Get advisory dashboard stats
+ * @route   GET /api/super-admin/advisors/:advisorId/dashboard
+ * @desc    Get advisor dashboard stats
  * @access  Super Admin only
  */
-router.get("/advisories/:advisoryId/dashboard", getAdvisoryDashboardStats);
+router.get("/advisors/:advisorId/dashboard", getAdvisorDashboardStats);
 
 /**
- * @route   GET /api/super-admin/advisories/:advisoryId/leads
- * @desc    Get leads under a specific advisory
+ * @route   GET /api/super-admin/advisors/:advisorId/leads
+ * @desc    Get leads under a specific advisor
  * @access  Super Admin only
  */
-router.get("/advisories/:advisoryId/leads", getAdvisoryLeadsForSuperAdmin);
+router.get("/advisors/:advisorId/leads", getAdvisorLeadsForSuperAdmin);
 
 /**
- * @route   GET /api/super-admin/advisories/:advisoryId/students
- * @desc    Get students under a specific advisory
+ * @route   GET /api/super-admin/advisors/:advisorId/students
+ * @desc    Get students under a specific advisor
  * @access  Super Admin only
  */
-router.get("/advisories/:advisoryId/students", getAdvisoryStudentsForSuperAdmin);
+router.get("/advisors/:advisorId/students", getAdvisorStudentsForSuperAdmin);
 
 /**
- * @route   GET /api/super-admin/advisories/:advisoryId/team-meets
- * @desc    Get team meets for a specific advisory
+ * @route   GET /api/super-admin/advisors/:advisorId/team-meets
+ * @desc    Get team meets for a specific advisor
  * @access  Super Admin only
  */
-router.get("/advisories/:advisoryId/team-meets", getAdvisoryTeamMeetsForSuperAdmin);
+router.get("/advisors/:advisorId/team-meets", getAdvisorTeamMeetsForSuperAdmin);
 
 export default router;
 

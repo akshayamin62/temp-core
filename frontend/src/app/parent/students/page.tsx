@@ -25,7 +25,7 @@ interface StudentData {
   mobileNumber?: string;
   intake?: string;
   year?: string;
-  advisoryId?: {
+  advisorId?: {
     _id: string;
     companyName?: string;
   };
@@ -191,16 +191,16 @@ export default function ParentStudentsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.user.email}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {student.adminId?.companyName && student.advisoryId?.companyName ? (
+                          {student.adminId?.companyName && student.advisorId?.companyName ? (
                             <div className="flex flex-col gap-1">
                               <span className="text-gray-900 text-xs">{student.adminId.companyName}</span>
-                              <span className="text-gray-900 text-xs">{student.advisoryId.companyName}</span>
+                              <span className="text-gray-900 text-xs">{student.advisorId.companyName}</span>
                               <span className="px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-800 rounded-full w-fit">Transferred</span>
                             </div>
                           ) : student.adminId?.companyName ? (
                             <span className="text-gray-900">{student.adminId.companyName}</span>
-                          ) : student.advisoryId?.companyName ? (
-                            <span className="text-gray-900">{student.advisoryId.companyName}</span>
+                          ) : student.advisorId?.companyName ? (
+                            <span className="text-gray-900">{student.advisorId.companyName}</span>
                           ) : (
                             <span className="text-gray-400">N/A</span>
                           )}

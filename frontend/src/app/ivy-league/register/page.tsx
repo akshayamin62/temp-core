@@ -164,9 +164,9 @@ export default function IvyLeagueRegisterPage() {
   const fetchPrefill = async () => {
     try {
       const response = await ivyLeagueRegistrationAPI.getPrefill();
-      const { firstName, middleName, lastName, email, mobile, alreadyRegistered, advisoryBlocked } = response.data.data;
+      const { firstName, middleName, lastName, email, mobile, alreadyRegistered, advisorBlocked } = response.data.data;
 
-      if (advisoryBlocked) {
+      if (advisorBlocked) {
         toast.error('Ivy League service is not available through your advisor. Please contact your advisor for more information.');
         router.push('/dashboard');
         return;

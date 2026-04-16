@@ -27,7 +27,7 @@ const readOnlyIvyAccess = authorize([
   USER_ROLE.PARENT,
   USER_ROLE.REFERRER,
   USER_ROLE.STUDENT,
-  USER_ROLE.ADVISORY,
+  USER_ROLE.ADVISOR,
 ]);
 
 // GET /api/super-admin/ivy-league/stats           — Candidate/Student counts (SUPER_ADMIN only)

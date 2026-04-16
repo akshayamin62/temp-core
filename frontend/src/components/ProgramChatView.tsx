@@ -27,7 +27,7 @@ interface DocumentMeta {
 interface ChatMessage {
   _id: string;
   senderId: string;
-  senderRole: 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN' | 'COUNSELOR' | 'ADVISORY';
+  senderRole: 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN' | 'COUNSELOR' | 'ADVISOR';
   senderName: string;
   opsType?: 'PRIMARY' | 'ACTIVE';
   messageType: 'text' | 'document';
@@ -55,7 +55,7 @@ interface ChatInfo {
 interface ProgramChatViewProps {
   program: Program;
   onClose: () => void;
-  userRole: 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN' | 'COUNSELOR' | 'PARENT' | 'EDUPLAN_COACH' | 'IVY_EXPERT' | 'REFERRER' | 'ADVISORY';
+  userRole: 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN' | 'COUNSELOR' | 'PARENT' | 'EDUPLAN_COACH' | 'IVY_EXPERT' | 'REFERRER' | 'ADVISOR';
   isReadOnly?: boolean;
   chatType?: 'open' | 'private';
 }

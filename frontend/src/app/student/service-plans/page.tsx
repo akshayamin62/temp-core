@@ -99,7 +99,7 @@ export default function StudentServicePlansPage() {
               const data = r.value.data.data;
               pMap[slug] = data.pricing || null;
               dMap[slug] = data.discounts || null;
-              // Hide services explicitly unavailable through advisory
+              // Hide services explicitly unavailable through advisor
               if (!data.pricing && data.message && data.message.includes('not available')) {
                 hidden.add(slug);
               }

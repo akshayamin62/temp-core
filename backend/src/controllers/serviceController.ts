@@ -11,7 +11,7 @@ import { AuthRequest } from "../types/auth";
 import { USER_ROLE } from "../types/roles";
 import { sendServiceRegistrationEmailToSuperAdmin } from "../utils/email";
 import { getServiceFormStructure } from "../config/formConfig";
-import Advisory from "../models/Advisory";
+import Advisor from "../models/Advisor";
 
 // Get all active services
 export const getAllServices = async (_req: Request, res: Response) => {
@@ -51,7 +51,7 @@ export const getMyServices = async (req: AuthRequest, res: Response) => {
     })
       .populate("serviceId")
       .populate({
-        path: "registeredViaAdvisoryId",
+        path: "registeredViaAdvisorId",
         select: "companyName userId",
         populate: { path: "userId", select: "firstName middleName lastName" },
       })
@@ -180,10 +180,10 @@ export const registerForService = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Check advisory allowedServices (only if student hasn't been transferred to admin)
-    if (student.advisoryId && !student.adminId) {
-      const advisory = await Advisory.findById(student.advisoryId);
-      if (advisory && !advisory.allowedServices.includes(service.slug)) {
+    // Check advisor allowedServices (only if student hasn't been transferred to admin)
+    if (student.advisorId && !student.adminId) {
+      const advisor = await Advisor.findById(student.advisorId);
+      if (advisor && !advisor.allowedServices.includes(service.slug)) {
         return res.status(403).json({
           success: false,
           message: "This service is not available through your advisor. Please contact your advisor for more information.",
@@ -210,7 +210,7 @@ export const registerForService = async (req: AuthRequest, res: Response) => {
       serviceId,
       status: ServiceRegistrationStatus.REGISTERED,
       ...(student.adminId ? { registeredViaAdminId: student.adminId } : {}),
-      ...(student.advisoryId && !student.adminId ? { registeredViaAdvisoryId: student.advisoryId } : {}),
+      ...(student.advisorId && !student.adminId ? { registeredViaAdvisorId: student.advisorId } : {}),
     });
 
     const populatedRegistration = await StudentServiceRegistration.findById(
@@ -314,7 +314,7 @@ export const getRegistrationDetails = async (
             populate: { path: "userId", select: "firstName middleName lastName email" }
           },
           {
-            path: "advisoryId",
+            path: "advisorId",
             populate: { path: "userId", select: "firstName middleName lastName email" }
           }
         ]
@@ -344,7 +344,7 @@ export const getRegistrationDetails = async (
         populate: { path: "userId", select: "firstName middleName lastName email" }
       })
       .populate({
-        path: "registeredViaAdvisoryId",
+        path: "registeredViaAdvisorId",
         select: "companyName userId",
         populate: { path: "userId", select: "firstName middleName lastName" },
       })

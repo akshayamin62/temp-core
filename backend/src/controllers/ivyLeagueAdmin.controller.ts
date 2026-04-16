@@ -379,7 +379,7 @@ export const convertCandidateToStudent = async (req: AuthRequest, res: Response)
         status: 'REGISTERED',
         registeredAt: new Date(),
         ...(student.adminId ? { registeredViaAdminId: student.adminId } : {}),
-        ...(student.advisoryId && !student.adminId ? { registeredViaAdvisoryId: student.advisoryId } : {}),
+        ...(student.advisorId && !student.adminId ? { registeredViaAdvisorId: student.advisorId } : {}),
       });
     }
 

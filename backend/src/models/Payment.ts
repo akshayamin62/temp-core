@@ -17,7 +17,7 @@ export interface IPayment extends Document {
   registrationId?: mongoose.Types.ObjectId;
   studentId: mongoose.Types.ObjectId;
   adminId?: mongoose.Types.ObjectId;
-  advisoryId?: mongoose.Types.ObjectId;
+  advisorId?: mongoose.Types.ObjectId;
 
   // Razorpay fields
   razorpayOrderId: string;
@@ -67,9 +67,9 @@ const paymentSchema = new Schema<IPayment>(
       ref: 'Admin',
       default: undefined,
     },
-    advisoryId: {
+    advisorId: {
       type: Schema.Types.ObjectId,
-      ref: 'Advisory',
+      ref: 'Advisor',
       default: undefined,
     },
 

@@ -9,7 +9,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
 import AuthImage from '@/components/AuthImage';
 
-interface AdvisoryInfo {
+interface AdvisorInfo {
   _id: string;
   companyName?: string;
   userId?: {
@@ -55,7 +55,7 @@ interface StudentData {
       email: string;
     };
   };
-  advisoryId?: AdvisoryInfo;
+  advisorId?: AdvisorInfo;
   registrationCount: number;
   serviceNames?: string[];
   createdAt: string;
@@ -78,7 +78,7 @@ interface Transfer {
       email: string;
     };
   };
-  fromAdvisoryId: {
+  fromAdvisorId: {
     _id: string;
     companyName: string;
     email?: string;
@@ -207,7 +207,7 @@ export default function AdminStudentsPage() {
       total: s.length,
       active: s.filter((s: StudentData) => s.user.isActive).length,
       pendingTransfers: t.length,
-      transferred: s.filter((s: StudentData) => !!s.advisoryId).length,
+      transferred: s.filter((s: StudentData) => !!s.advisorId).length,
     });
   };
 
@@ -217,7 +217,7 @@ export default function AdminStudentsPage() {
         total: students.length,
         active: students.filter(s => s.user.isActive).length,
         pendingTransfers: pendingTransfers.length,
-        transferred: students.filter(s => !!s.advisoryId).length,
+        transferred: students.filter(s => !!s.advisorId).length,
       });
     }
   }, [students, pendingTransfers]);
@@ -255,19 +255,19 @@ export default function AdminStudentsPage() {
     const query = searchQuery.toLowerCase();
     const studentName = getFullName(student.user).toLowerCase();
     const counselorName = student.counselorId?.userId ? getFullName(student.counselorId.userId).toLowerCase() : '';
-    const advisoryName = student.advisoryId?.companyName?.toLowerCase() || '';
+    const advisorName = student.advisorId?.companyName?.toLowerCase() || '';
 
     const matchesSearch =
       studentName.includes(query) ||
       student.user.email.toLowerCase().includes(query) ||
       student.mobileNumber?.includes(query) ||
       counselorName.includes(query) ||
-      advisoryName.includes(query);
+      advisorName.includes(query);
 
     const matchesService = !serviceFilter || (student.serviceNames || []).includes(serviceFilter);
     const matchesCounselor = !counselorFilter || student.counselorId?._id === counselorFilter;
 
-    if (transferFilter === 'transferred') return matchesSearch && matchesService && matchesCounselor && !!student.advisoryId;
+    if (transferFilter === 'transferred') return matchesSearch && matchesService && matchesCounselor && !!student.advisorId;
     return matchesSearch && matchesService && matchesCounselor && student.user.isActive !== false;
   });
 
@@ -334,7 +334,7 @@ export default function AdminStudentsPage() {
                             <span className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full font-medium">Pending</span>
                           </div>
                           <p className="text-sm text-gray-500 mt-0.5">{transfer.studentId?.userId?.email}</p>
-                          <p className="text-sm text-gray-600 mt-1">From: <span className="font-medium">{transfer.fromAdvisoryId?.companyName}</span></p>
+                          <p className="text-sm text-gray-600 mt-1">From: <span className="font-medium">{transfer.fromAdvisorId?.companyName}</span></p>
                           <div className="flex flex-wrap gap-1 mt-2">
                             {transfer.interestedServices?.map((s) => (
                               <span key={s} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-full">{SERVICE_LABELS[s] || s}</span>
@@ -469,16 +469,16 @@ export default function AdminStudentsPage() {
                             {student.counselorId?.userId ? getFullName(student.counselorId.userId) : 'N/A'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            {student.adminId?.companyName && student.advisoryId?.companyName ? (
+                            {student.adminId?.companyName && student.advisorId?.companyName ? (
                               <div className="flex flex-col gap-1">
                                 <span className="text-gray-900 text-xs">{student.adminId.companyName}</span>
-                                <span className="text-gray-900 text-xs">{student.advisoryId.companyName}</span>
+                                <span className="text-gray-900 text-xs">{student.advisorId.companyName}</span>
                                 <span className="px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-800 rounded-full w-fit">Transferred</span>
                               </div>
                             ) : student.adminId?.companyName ? (
                               <span className="text-gray-900">{student.adminId.companyName}</span>
-                            ) : student.advisoryId?.companyName ? (
-                              <span className="text-gray-900">{student.advisoryId.companyName}</span>
+                            ) : student.advisorId?.companyName ? (
+                              <span className="text-gray-900">{student.advisorId.companyName}</span>
                             ) : (
                               <span className="text-gray-400">N/A</span>
                             )}

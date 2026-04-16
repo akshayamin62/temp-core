@@ -102,13 +102,13 @@ export default function RoleUserListPage({
   // Check if this is Admin role (for slug editing)
   const isAdminRole = roleEnum === USER_ROLE.ADMIN;
 
-  // Check if this is Advisory role
-  const isAdvisoryRole = roleEnum === USER_ROLE.ADVISORY;
+  // Check if this is Advisor role
+  const isAdvisorRole = roleEnum === USER_ROLE.ADVISOR;
 
-  // Admin and Advisory share company fields
-  const isCompanyRole = isAdminRole || isAdvisoryRole;
+  // Admin and Advisor share company fields
+  const isCompanyRole = isAdminRole || isAdvisorRole;
 
-  // Allowed services for Advisory creation
+  // Allowed services for Advisor creation
   const ALL_SERVICES = [
     { slug: "study-abroad", label: "Study Abroad" },
     { slug: "ivy-league", label: "Ivy League" },
@@ -117,7 +117,7 @@ export default function RoleUserListPage({
   ];
   const [allowedServices, setAllowedServices] = useState<string[]>([]);
 
-  // Slug state for Admin/Advisory creation
+  // Slug state for Admin/Advisor creation
   const [customSlug, setCustomSlug] = useState("");
   const [slugPreview, setSlugPreview] = useState("");
 
@@ -132,7 +132,7 @@ export default function RoleUserListPage({
       .substring(0, 50);
   };
 
-  // Update slug preview when company name changes (for Admin/Advisory)
+  // Update slug preview when company name changes (for Admin/Advisor)
   useEffect(() => {
     if (isCompanyRole && adminFormData.companyName && !customSlug) {
       setSlugPreview(generateSlugFromName(adminFormData.companyName));
@@ -267,8 +267,8 @@ export default function RoleUserListPage({
         base.address = profile?.address || "";
         base.enquiryFormSlug = profile?.enquiryFormSlug || "";
       }
-      // Advisory extra fields
-      if (roleEnum === USER_ROLE.ADVISORY) {
+      // Advisor extra fields
+      if (roleEnum === USER_ROLE.ADVISOR) {
         base.companyName = profile?.companyName || "";
         base.address = profile?.address || "";
         base.enquiryFormSlug = profile?.enquiryFormSlug || "";
@@ -326,8 +326,8 @@ export default function RoleUserListPage({
         if (editFormData.enquiryFormSlug !== undefined)
           payload.enquiryFormSlug = editFormData.enquiryFormSlug.trim();
       }
-      // Advisory extra fields
-      if (roleEnum === USER_ROLE.ADVISORY) {
+      // Advisor extra fields
+      if (roleEnum === USER_ROLE.ADVISOR) {
         if (editFormData.companyName !== undefined)
           payload.companyName = editFormData.companyName.trim();
         if (editFormData.address !== undefined)
@@ -360,8 +360,8 @@ export default function RoleUserListPage({
         if (editFormData.website !== undefined)
           payload.website = editFormData.website.trim();
       }
-      // If there's a logo file (advisory edit), send as FormData
-      if (editLogoFile && roleEnum === USER_ROLE.ADVISORY) {
+      // If there's a logo file (advisor edit), send as FormData
+      if (editLogoFile && roleEnum === USER_ROLE.ADVISOR) {
         const formDataToSend = new FormData();
         for (const [key, value] of Object.entries(payload)) {
           if (value !== undefined && value !== null) {
@@ -422,7 +422,7 @@ export default function RoleUserListPage({
       return;
     }
 
-    // Validate admin/advisory-specific fields
+    // Validate admin/advisor-specific fields
     if (isCompanyRole) {
       if (!adminFormData.companyName.trim()) {
         toast.error("Company name is required");
@@ -430,8 +430,8 @@ export default function RoleUserListPage({
       }
     }
 
-    // Validate advisory-specific fields
-    if (isAdvisoryRole && allowedServices.length === 0) {
+    // Validate advisor-specific fields
+    if (isAdvisorRole && allowedServices.length === 0) {
       toast.error("Please select at least one allowed service");
       return;
     }
@@ -468,7 +468,7 @@ export default function RoleUserListPage({
         }
       }
 
-      if (isAdvisoryRole && allowedServices.length > 0) {
+      if (isAdvisorRole && allowedServices.length > 0) {
         formDataToSend.append(
           "allowedServices",
           JSON.stringify(allowedServices),
@@ -477,7 +477,7 @@ export default function RoleUserListPage({
 
       const response = await superAdminAPI.createUserByRole(formDataToSend);
 
-      // Show success message with slug for Admin/Advisory
+      // Show success message with slug for Admin/Advisor
       if (isCompanyRole && response.data.data.enquiryFormSlug) {
         toast.success(
           `${roleDisplayName} created successfully! Enquiry form slug: ${response.data.data.enquiryFormSlug}`,
@@ -953,11 +953,11 @@ export default function RoleUserListPage({
                                 View Detail
                               </button>
                             )}
-                            {roleEnum === USER_ROLE.ADVISORY && (
+                            {roleEnum === USER_ROLE.ADVISOR && (
                               <button
                                 onClick={() =>
                                   router.push(
-                                    `/super-admin/roles/advisory/${user._id || user.id}`,
+                                    `/super-admin/roles/advisor/${user._id || user.id}`,
                                   )
                                 }
                                 className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white hover:bg-blue-700"
@@ -1010,7 +1010,7 @@ export default function RoleUserListPage({
         {/* Add User Modal */}
         {showAddModal && canAddUser && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className={`bg-white rounded-xl shadow-xl w-full mx-4 p-6 ${isAdvisoryRole ? 'max-w-4xl' : 'max-w-2xl'}`}>
+            <div className={`bg-white rounded-xl shadow-xl w-full mx-4 p-6 ${isAdvisorRole ? 'max-w-4xl' : 'max-w-2xl'}`}>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">
                   Add New {roleDisplayName}
@@ -1036,7 +1036,7 @@ export default function RoleUserListPage({
               </div>
 
               <form onSubmit={handleAddUser} className="space-y-4">
-                <div className={`grid gap-4 ${isAdvisoryRole ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
+                <div className={`grid gap-4 ${isAdvisorRole ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       First Name <span className="text-red-500">*</span>
@@ -1122,10 +1122,10 @@ export default function RoleUserListPage({
                   </div>
                 </div>
 
-                {/* Admin/Advisory-specific fields */}
+                {/* Admin/Advisor-specific fields */}
                 {isCompanyRole && (
                   <>
-                    <div className={`grid gap-4 ${isAdvisoryRole ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
+                    <div className={`grid gap-4 ${isAdvisorRole ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Company Name <span className="text-red-500">*</span>
@@ -1230,7 +1230,7 @@ export default function RoleUserListPage({
                   </div>
                 )}
 
-                {/* Enquiry Form Slug for Admin/Advisory */}
+                {/* Enquiry Form Slug for Admin/Advisor */}
                 {isCompanyRole && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1259,15 +1259,15 @@ export default function RoleUserListPage({
                     )}
                     <p className="text-xs text-gray-500 mt-1">
                       This will be the unique URL for the{" "}
-                      {isAdvisoryRole ? "advisor" : "admin"}&apos;s enquiry
+                      {isAdvisorRole ? "advisor" : "admin"}&apos;s enquiry
                       form. If left empty, it will be auto-generated from the
                       name.
                     </p>
                   </div>
                 )}
 
-                {/* Allowed Services for Advisory */}
-                {isAdvisoryRole && (
+                {/* Allowed Services for Advisor */}
+                {isAdvisorRole && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Allowed Services <span className="text-red-500">*</span>
@@ -1297,7 +1297,7 @@ export default function RoleUserListPage({
                       ))}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      Select the services this advisory is allowed to offer.
+                      Select the services this advisor is allowed to offer.
                     </p>
                   </div>
                 )}
@@ -1519,8 +1519,8 @@ export default function RoleUserListPage({
                     </>
                   )}
 
-                  {/* Advisory Extra Fields */}
-                  {roleEnum === USER_ROLE.ADVISORY && (
+                  {/* Advisor Extra Fields */}
+                  {roleEnum === USER_ROLE.ADVISOR && (
                     <>
                       <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider pt-2">
                         Company Information
