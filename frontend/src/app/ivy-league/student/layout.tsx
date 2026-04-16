@@ -9,6 +9,7 @@ import { authAPI } from '@/lib/api';
 import { USER_ROLE } from '@/types';
 
 const REFERRER_ROLE = USER_ROLE.REFERRER;
+const ADVISORY_ROLE = USER_ROLE.ADVISORY;
 
 const ALLOWED_ROLES: string[] = [
     USER_ROLE.STUDENT,
@@ -31,6 +32,7 @@ function StudentSidebar() {
     
     const [studentInfo, setStudentInfo] = useState<{ firstName: string; lastName: string; email: string } | null>(null);
     const [userRole, setUserRole] = useState<string>('');
+    const [isServiceUnderAdmin, setIsServiceUnderAdmin] = useState(false);
 
     useEffect(() => {
         authAPI.getProfile().then(res => {
@@ -60,6 +62,10 @@ function StudentSidebar() {
                         lastName: svc.studentId.lastName || '',
                         email: svc.studentId.email || '',
                     });
+                }
+                // Track if this service was transferred to admin
+                if (svc?.registeredViaAdminId) {
+                    setIsServiceUnderAdmin(true);
                 }
             } catch (error) {
                 console.error('Error fetching student info:', error);
@@ -163,7 +169,7 @@ function StudentSidebar() {
             </div>
 
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                {(readOnly && userRole === REFERRER_ROLE ? navItems.filter(item => item.name === 'Dashboard') : navItems).map((item) => {
+                {(readOnly && (userRole === REFERRER_ROLE || (userRole === ADVISORY_ROLE && isServiceUnderAdmin)) ? navItems.filter(item => item.name === 'Dashboard') : navItems).map((item) => {
                     const active = isActive(item.href);
                     
                     return (

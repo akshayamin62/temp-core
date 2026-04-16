@@ -5,7 +5,7 @@ import axios from 'axios';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { IVY_API_URL } from '@/lib/ivyApi';
 import { teamMeetAPI, authAPI, opsScheduleAPI } from '@/lib/api';
-import { TeamMeet, OpsSchedule, TEAMMEET_STATUS } from '@/types';
+import { TeamMeet, OpsSchedule, TEAMMEET_STATUS, USER_ROLE } from '@/types';
 import OpsScheduleCalendar from '@/components/OpsScheduleCalendar';
 import TeamMeetSidebar from '@/components/TeamMeetSidebar';
 import TeamMeetFormPanel from '@/components/TeamMeetFormPanel';
@@ -91,6 +91,7 @@ function IvyScoreContent() {
     const [teamMeetPanelMode, setTeamMeetPanelMode] = useState<'create' | 'view' | 'respond'>('create');
     const [selectedTeamMeetDate, setSelectedTeamMeetDate] = useState<Date | undefined>(undefined);
     const [currentUserId, setCurrentUserId] = useState('');
+    const [userRole, setUserRole] = useState('');
 
     const fetchTeamMeets = useCallback(async (studentDocId?: string) => {
         try {
@@ -126,6 +127,7 @@ function IvyScoreContent() {
                 if (res.data.success) {
                     const u = res.data.data.user;
                     setCurrentUserId(u?.id || u?._id || '');
+                    setUserRole(u?.role || '');
                 }
             } catch (err) {
                 console.error('Error fetching user:', err);
@@ -362,8 +364,14 @@ function IvyScoreContent() {
     const overallScore = calculatedOverallScore;
     const overallPercentage = (overallScore / totalMaxScore) * 100;
 
+    // Restricted read-only: referrer always, or advisory when service is under admin (transferred)
+    const isRestrictedReadOnly = readOnly && (
+        userRole === USER_ROLE.REFERRER ||
+        (userRole === USER_ROLE.ADVISORY && serviceData?.registeredViaAdminId)
+    );
+
     const handlePointerClick = (pointerNo: number) => {
-        if (readOnly) return;
+        if (isRestrictedReadOnly) return;
         const qs = urlStudentId ? `?studentId=${urlStudentId}&readOnly=true` : '';
         const qsAmp = urlStudentId ? `&studentId=${urlStudentId}&readOnly=true` : '';
         if (pointerNo === 1) {
@@ -399,7 +407,6 @@ function IvyScoreContent() {
                         <p className="text-xl text-gray-400 font-medium max-w-2xl leading-relaxed">Track your competitive trajectory across all core admission pillars. Your score is real-time and reflects current Ivy Expert evaluations.</p>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
-                        {!readOnly && (<>
                         <button
                             onClick={() => setShowCalendar(prev => !prev)}
                             className="inline-flex items-center gap-2 px-5 py-3 bg-brand-600 text-white text-sm font-bold rounded-xl hover:bg-brand-700 transition-all shadow-lg"
@@ -433,13 +440,12 @@ function IvyScoreContent() {
                             </svg>
                             View Ivy Candidate Profile
                         </button>
-                        </>)}
                     </div>
                 </div>
             </header>
 
             {!showCalendar && (<>
-            {/* Overall Score Card */}
+            {/* Overall Score Card - always visible */}
             <div className="relative mb-16 group">
                 <div className="absolute inset-0 bg-brand-600 rounded-[3rem] blur-3xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
                 <div className="relative bg-white rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(41,89,186,0.1)] border border-gray-100 p-12 overflow-hidden">
@@ -473,7 +479,8 @@ function IvyScoreContent() {
                 </div>
             </div>
 
-            {/* Individual Pointer Scores */}
+            {/* Individual Pointer Scores - hidden in read-only mode */}
+            {!isRestrictedReadOnly && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {scoreData.pointerScores.map((pointer) => {
                     // Use academic excellence score for Pointer 1 if available
@@ -490,7 +497,7 @@ function IvyScoreContent() {
                         <div
                             key={pointer.pointerNo}
                             onClick={() => handlePointerClick(pointer.pointerNo)}
-                            className={`bg-white rounded-[2.5rem] shadow-sm hover:shadow-2xl hover:translate-y-[-8px] transition-all duration-500 p-8 border border-gray-100 hover:border-brand-100 group flex flex-col ${readOnly ? 'cursor-default' : 'cursor-pointer'}`}
+                            className={`bg-white rounded-[2.5rem] shadow-sm hover:shadow-2xl hover:translate-y-[-8px] transition-all duration-500 p-8 border border-gray-100 hover:border-brand-100 group flex flex-col ${isRestrictedReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
                         >
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-4">
@@ -542,7 +549,9 @@ function IvyScoreContent() {
                     );
                 })}
             </div>
+            )}
 
+            {!isRestrictedReadOnly && (<>
             {/* Premium Info Panel */}
             <div className="mt-20 bg-gray-900 rounded-[3rem] p-12 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-brand-600 rounded-full blur-[120px] opacity-20 translate-x-1/2 -translate-y-1/2"></div>
@@ -641,6 +650,7 @@ function IvyScoreContent() {
                     </div>
                 </div>
             )}
+            </>)}
             </>)}
 
             {/* Calendar Section */}
