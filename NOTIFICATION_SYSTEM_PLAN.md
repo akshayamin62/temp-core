@@ -124,15 +124,15 @@ Please use akshay.amin.62@gmail.com as your login email when signing in to core.
 
 ---
 
-### Template 2: `program_suggested`
+### Template 2: `program_added_notification`
 **Category:** UTILITY  
 **Language:** English
 
 ```
 Hello, {{1}}
-A list of new program has been suggested for you.
+A list of new programs has been suggested for you.
 Please find the details below for your reference.
-{{2}} at {{3}} — {{4}}.
+{{2}} at {{3}}.
 
 🙂 Thanks for taking a moment to read this message.
 ```
@@ -140,12 +140,14 @@ Please find the details below for your reference.
 **Sample:**
 ```
 Hello, Akshay Amin
-A new program has been suggested for you.
+A list of new programs has been suggested for you.
 Please find the details below for your reference.
-MS in Computer Science at MIT — United States.
+MS in Computer Science at MIT - United States.
 
 🙂 Thanks for taking a moment to read this message.
 ```
+How to use.
+WHATSAPP_WEBHOOK_URL?number=919601373545&message=program%20added%20notification,%20Akshay%20Amin,%20MS%20in%20Computer%20Science,%20MIT%20-%20United%20States.
 
 ---
 
@@ -156,21 +158,22 @@ MS in Computer Science at MIT — United States.
 ```
 Hello, {{1}}
 There is an update on your application.
-Please find the details below for your reference.
 {{2}} — Status: {{3}}.
 
-🙂 Thanks for taking a moment to read this message.
+Kindly take a look.
 ```
 
 **Sample:**
 ```
 Hello, Akshay Amin
 There is an update on your application.
-Please find the details below for your reference.
 MS in Computer Science at MIT — Status: Offer Received.
 
-🙂 Thanks for taking a moment to read this message.
+Kindly take a look.
 ```
+
+how to Use:
+WHATSAPP_WEBHOOK_URL?number=919601373545&message=program%20status%20update,%20Akshay%20Amin,%20MS%20in%20Computer%20Science%20at%20MIT,%20Offer%20Received
 
 ---
 
@@ -290,23 +293,23 @@ Application Review with Priya Sharma on 15 Apr 2026 at 3:00 PM. Join at: https:/
 
 ```
 Hello, {{1}}
-A student has selected a program for application.
-Please find the details below for your reference.
-{{2}} selected "{{3}}" at {{4}}.
 
-🙂 Thanks for taking a moment to read this message.
+{{2}} selected a program "{{3}}" at {{4}}.
+
+Kindly take a look.
 ```
 
 **Sample:**
 ```
 Hello, Priya Sharma
-A student has selected a program for application.
-Please find the details below for your reference.
-Akshay Amin selected "MS in Computer Science" at MIT.
 
-🙂 Thanks for taking a moment to read this message.
+Akshay Amin selected a program "MS in Computer Science" at MIT.
+
+Kindly take a look.
 ```
 
+How to Use:
+WHATSAPP_WEBHOOK_URL?number=919601373545&message=student%20selected%20program,Priya%20Sharma,Akshay%20Amin,MS%20in%20Computer%20Science,MIT
 ---
 
 ### Template 9: `offer_received`
@@ -315,22 +318,31 @@ Akshay Amin selected "MS in Computer Science" at MIT.
 
 ```
 Hello, {{1}}
-🎉 Congratulations! You have received an offer!
-Please find the details below for your reference.
-{{2}} at {{3}} — You have received an admission offer! Please log in to core.admitra.io to review and respond.
 
-🙂 Thanks for taking a moment to read this message.
+🎉 Congratulations! You have received an offer!
+
+{{2}} at {{3}} — You have received an admission offer!
+
+Please log in to core.admitra.io to review and respond.
+
+Thank you for keeping us in business
 ```
 
 **Sample:**
 ```
 Hello, Akshay Amin
-🎉 Congratulations! You have received an offer!
-Please find the details below for your reference.
-MS in Computer Science at MIT — You have received an admission offer! Please log in to core.admitra.io to review and respond.
 
-🙂 Thanks for taking a moment to read this message.
+🎉 Congratulations! You have received an offer!
+
+MS in Computer Science at MIT — You have received an admission offer! 
+
+Please log in to core.admitra.io to review and respond.
+
+Thank you for keeping us in business
 ```
+
+How to Use:
+WHATSAPP_WEBHOOK_URL?number=919601373545&message=ffer%20received,Akshay%20Amin,MS%20in%20Computer%20Science,MIT
 
 ---
 

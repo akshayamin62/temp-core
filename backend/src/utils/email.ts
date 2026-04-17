@@ -670,3 +670,250 @@ export const sendCustomMessageToStudent = async (
     text,
   });
 };
+
+/**
+ * Send email when OPS/Admin suggests a new program to student
+ */
+export const sendProgramSuggestedEmail = async (
+  studentEmail: string,
+  studentName: string,
+  programDetails: {
+    programName: string;
+    university: string;
+    country: string;
+    intake?: string;
+    year?: string;
+  }
+): Promise<void> => {
+  const { programName, university, country, intake, year } = programDetails;
+  const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/student/dashboard`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>New Program Suggestion</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9f9f9; margin: 0; padding: 0;">
+      <div style="max-width: 600px; margin: 20px auto; background-color: white; padding: 30px; border: 1px solid #ddd; border-radius: 8px;">
+        <h2 style="color: #2563eb; margin-bottom: 20px;">New Program Suggestion</h2>
+        <p style="font-size: 16px;">Hi ${studentName},</p>
+        <p style="font-size: 16px;">Your team has suggested a new program for you:</p>
+        
+        <div style="background-color: #f0f9ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+          <p style="margin: 5px 0;"><strong>Program:</strong> ${programName}</p>
+          <p style="margin: 5px 0;"><strong>University:</strong> ${university}</p>
+          <p style="margin: 5px 0;"><strong>Country:</strong> ${country}</p>
+          ${intake ? `<p style="margin: 5px 0;"><strong>Intake:</strong> ${intake}${year ? ` ${year}` : ''}</p>` : ''}
+        </div>
+
+        <p style="font-size: 16px;">Log in to review and select this program:</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${dashboardUrl}" style="display: inline-block; background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">View Program</a>
+        </div>
+
+        <p style="color: #999; font-size: 12px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+          This is an automated notification from Admitra.
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `New Program Suggestion\n\nHi ${studentName},\n\nYour team has suggested a new program for you:\n\nProgram: ${programName}\nUniversity: ${university}\nCountry: ${country}${intake ? `\nIntake: ${intake}${year ? ` ${year}` : ''}` : ''}\n\nLog in to review and select this program:\n${dashboardUrl}\n\nBest regards,\nAdmitra Team`;
+
+  await sendEmail({
+    to: studentEmail,
+    subject: `New Program Suggestion - ${programName} at ${university}`,
+    html,
+    text,
+  });
+};
+
+/**
+ * Send email when student selects/applies to a program (notify OPS)
+ */
+export const sendStudentSelectedProgramEmail = async (
+  opsEmail: string,
+  opsName: string,
+  studentName: string,
+  programDetails: {
+    programName: string;
+    university: string;
+    priority?: number;
+  }
+): Promise<void> => {
+  const { programName, university, priority } = programDetails;
+  const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/ops/dashboard`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Student Selected a Program</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9f9f9; margin: 0; padding: 0;">
+      <div style="max-width: 600px; margin: 20px auto; background-color: white; padding: 30px; border: 1px solid #ddd; border-radius: 8px;">
+        <h2 style="color: #2563eb; margin-bottom: 20px;">Student Selected a Program</h2>
+        <p style="font-size: 16px;">Hi ${opsName},</p>
+        <p style="font-size: 16px;"><strong>${studentName}</strong> has selected a program for application:</p>
+        
+        <div style="background-color: #f0f9ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+          <p style="margin: 5px 0;"><strong>Program:</strong> ${programName}</p>
+          <p style="margin: 5px 0;"><strong>University:</strong> ${university}</p>
+          ${priority ? `<p style="margin: 5px 0;"><strong>Priority:</strong> ${priority}</p>` : ''}
+        </div>
+
+        <p style="font-size: 16px;">Please review and proceed with the application process.</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${dashboardUrl}" style="display: inline-block; background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">View Dashboard</a>
+        </div>
+
+        <p style="color: #999; font-size: 12px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+          This is an automated notification from Admitra.
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `Student Selected a Program\n\nHi ${opsName},\n\n${studentName} has selected a program for application:\n\nProgram: ${programName}\nUniversity: ${university}${priority ? `\nPriority: ${priority}` : ''}\n\nPlease review and proceed with the application process.\n${dashboardUrl}\n\nBest regards,\nAdmitra Team`;
+
+  await sendEmail({
+    to: opsEmail,
+    subject: `${studentName} selected a program - Action needed`,
+    html,
+    text,
+  });
+};
+
+/**
+ * Send email when program status is updated (notify student)
+ */
+export const sendProgramStatusUpdateEmail = async (
+  studentEmail: string,
+  studentName: string,
+  programDetails: {
+    programName: string;
+    university: string;
+    country: string;
+    newStatus: string;
+  }
+): Promise<void> => {
+  const { programName, university, country, newStatus } = programDetails;
+  const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/student/dashboard`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Application Status Update</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9f9f9; margin: 0; padding: 0;">
+      <div style="max-width: 600px; margin: 20px auto; background-color: white; padding: 30px; border: 1px solid #ddd; border-radius: 8px;">
+        <h2 style="color: #2563eb; margin-bottom: 20px;">Application Status Update</h2>
+        <p style="font-size: 16px;">Hi ${studentName},</p>
+        <p style="font-size: 16px;">There is an update on your application:</p>
+        
+        <div style="background-color: #f0f9ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+          <p style="margin: 5px 0;"><strong>Program:</strong> ${programName}</p>
+          <p style="margin: 5px 0;"><strong>University:</strong> ${university}</p>
+          <p style="margin: 5px 0;"><strong>Country:</strong> ${country}</p>
+          <p style="margin: 5px 0;"><strong>New Status:</strong> ${newStatus}</p>
+        </div>
+
+        <p style="font-size: 16px;">Log in for more details:</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${dashboardUrl}" style="display: inline-block; background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">View Application</a>
+        </div>
+
+        <p style="color: #999; font-size: 12px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+          This is an automated notification from Admitra.
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `Application Status Update\n\nHi ${studentName},\n\nThere is an update on your application:\n\nProgram: ${programName}\nUniversity: ${university}\nCountry: ${country}\nNew Status: ${newStatus}\n\nLog in for more details:\n${dashboardUrl}\n\nBest regards,\nAdmitra Team`;
+
+  await sendEmail({
+    to: studentEmail,
+    subject: `Application Update - ${programName} at ${university}`,
+    html,
+    text,
+  });
+};
+
+/**
+ * Send email when student receives an offer (special celebration email)
+ */
+export const sendOfferReceivedEmail = async (
+  studentEmail: string,
+  studentName: string,
+  programDetails: {
+    programName: string;
+    university: string;
+    country: string;
+  }
+): Promise<void> => {
+  const { programName, university, country } = programDetails;
+  const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/student/dashboard`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Congratulations! Offer Received</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9f9f9; margin: 0; padding: 0;">
+      <div style="max-width: 600px; margin: 20px auto; background-color: white; padding: 30px; border: 1px solid #ddd; border-radius: 8px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h1 style="color: #16a34a; margin-bottom: 10px;">Congratulations! Offer Received</h1>
+        </div>
+        
+        <p style="font-size: 16px;">Hi ${studentName},</p>
+        <p style="font-size: 16px;">Great news! You have received an admission offer:</p>
+        
+        <div style="background-color: #f0fdf4; border-left: 4px solid #16a34a; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+          <p style="margin: 5px 0;"><strong>Program:</strong> ${programName}</p>
+          <p style="margin: 5px 0;"><strong>University:</strong> ${university}</p>
+          <p style="margin: 5px 0;"><strong>Country:</strong> ${country}</p>
+        </div>
+
+        <p style="font-size: 16px;">Please log in to review the offer and take the next steps:</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${dashboardUrl}" style="display: inline-block; background-color: #16a34a; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Review Offer</a>
+        </div>
+
+        <p style="text-align: center; font-size: 14px; color: #666;">Congratulations from the Admitra Team!</p>
+
+        <p style="color: #999; font-size: 12px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+          This is an automated notification from Admitra.
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `Congratulations! Offer Received\n\nHi ${studentName},\n\nGreat news! You have received an admission offer:\n\nProgram: ${programName}\nUniversity: ${university}\nCountry: ${country}\n\nPlease log in to review the offer and take the next steps:\n${dashboardUrl}\n\nCongratulations!\nAdmitra Team`;
+
+  await sendEmail({
+    to: studentEmail,
+    subject: `Congratulations! Offer from ${university}`,
+    html,
+    text,
+  });
+};

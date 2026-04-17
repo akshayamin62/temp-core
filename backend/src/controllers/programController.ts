@@ -9,6 +9,25 @@ import StudentServiceRegistration from '../models/StudentServiceRegistration';
 import OpsSchedule, { OPS_SCHEDULE_STATUS } from '../models/OpsSchedule';
 import * as XLSX from 'xlsx';
 import { getQsRanking, clearQsRankingCache, getQsData } from '../utils/qsRankingLookup';
+import {
+  sendWhatsAppProgramAdded,
+  sendWhatsAppProgramStatusUpdate,
+  sendWhatsAppStudentSelectedProgram,
+  sendWhatsAppOfferReceived,
+} from '../utils/whatsapp';
+import {
+  sendProgramSuggestedEmail,
+  sendStudentSelectedProgramEmail,
+  sendProgramStatusUpdateEmail,
+  sendOfferReceivedEmail,
+} from '../utils/email';
+
+/**
+ * Helper: get full name from a User document
+ */
+const getFullName = (user: any): string => {
+  return [user?.firstName, user?.middleName, user?.lastName].filter(Boolean).join(' ') || 'Student';
+};
 
 /**
  * Get all programs for a student (added by their assigned OPS)
@@ -354,6 +373,34 @@ export const createProgram = async (req: AuthRequest, res: Response): Promise<Re
       isSelectedByStudent: false,
     });
 
+    // Send WhatsApp + Email notification to student when OPS/Super Admin creates a program
+    if (studentObjectId && (user.role === USER_ROLE.OPS || user.role === USER_ROLE.SUPER_ADMIN)) {
+      try {
+        const student = await Student.findById(studentObjectId).populate('userId', 'firstName middleName lastName email');
+        if (student) {
+          const studentUser = student.userId as any;
+          const studentName = getFullName(studentUser);
+          const universityWithCountry = `${university} - ${country}`;
+
+          // WhatsApp to student
+          if (student.mobileNumber) {
+            sendWhatsAppProgramAdded(student.mobileNumber, studentName, programName, universityWithCountry).catch(err =>
+              console.error('WhatsApp program added notification failed:', err.message)
+            );
+          }
+
+          // Email to student
+          if (studentUser?.email) {
+            sendProgramSuggestedEmail(studentUser.email, studentName, { programName, university, country }).catch(err =>
+              console.error('Email program suggested notification failed:', err.message)
+            );
+          }
+        }
+      } catch (notifError: any) {
+        console.error('Program creation notification failed:', notifError.message);
+      }
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Program created successfully',
@@ -427,6 +474,45 @@ export const selectProgram = async (req: AuthRequest, res: Response): Promise<Re
       program.registrationId = registrationId;
     }
     await program.save();
+
+    // Send WhatsApp + Email notification to OPS when student selects a program
+    try {
+      const studentUser = user; // Current user is the student
+      const studentName = getFullName(studentUser);
+
+      // Find the active OPS for this student's registration
+      const regId = registrationId || program.registrationId;
+      if (regId) {
+        const registration = await StudentServiceRegistration.findById(regId);
+        if (registration?.activeOpsId) {
+          const opsRecord = await Ops.findById(registration.activeOpsId).populate('userId', 'firstName middleName lastName email');
+          if (opsRecord) {
+            const opsUser = opsRecord.userId as any;
+            const opsName = getFullName(opsUser);
+
+            // WhatsApp to OPS
+            if (opsRecord.mobileNumber) {
+              sendWhatsAppStudentSelectedProgram(opsRecord.mobileNumber, opsName, studentName, program.programName, program.university).catch(err =>
+                console.error('WhatsApp student selected program notification failed:', err.message)
+              );
+            }
+
+            // Email to OPS
+            if (opsUser?.email) {
+              sendStudentSelectedProgramEmail(opsUser.email, opsName, studentName, {
+                programName: program.programName,
+                university: program.university,
+                priority,
+              }).catch(err =>
+                console.error('Email student selected program notification failed:', err.message)
+              );
+            }
+          }
+        }
+      }
+    } catch (notifError: any) {
+      console.error('Program selection notification failed:', notifError.message);
+    }
 
     return res.status(200).json({
       success: true,
@@ -663,6 +749,55 @@ export const updateProgramStatus = async (req: AuthRequest, res: Response): Prom
       } catch (scheduleError: any) {
         console.error('Failed to create auto OPS schedule:', scheduleError);
         // Don't fail the status update if schedule creation fails
+      }
+    }
+
+    // Send WhatsApp + Email notification to student on status change
+    if (program.studentId) {
+      try {
+        const student = await Student.findById(program.studentId).populate('userId', 'firstName middleName lastName email');
+        if (student) {
+          const studentUser = student.userId as any;
+          const studentName = getFullName(studentUser);
+          const programAtUniversity = `${program.programName} at ${program.university}`;
+
+          if (status === PROGRAM_STATUS.OFFER_RECEIVED) {
+            // Template 9: Offer Received — special celebration notification
+            if (student.mobileNumber) {
+              sendWhatsAppOfferReceived(student.mobileNumber, studentName, program.programName, program.university).catch(err =>
+                console.error('WhatsApp offer received notification failed:', err.message)
+              );
+            }
+            if (studentUser?.email) {
+              sendOfferReceivedEmail(studentUser.email, studentName, {
+                programName: program.programName,
+                university: program.university,
+                country: program.country,
+              }).catch(err =>
+                console.error('Email offer received notification failed:', err.message)
+              );
+            }
+          } else {
+            // Template 3: General program status update
+            if (student.mobileNumber) {
+              sendWhatsAppProgramStatusUpdate(student.mobileNumber, studentName, programAtUniversity, status).catch(err =>
+                console.error('WhatsApp program status update notification failed:', err.message)
+              );
+            }
+            if (studentUser?.email) {
+              sendProgramStatusUpdateEmail(studentUser.email, studentName, {
+                programName: program.programName,
+                university: program.university,
+                country: program.country,
+                newStatus: status,
+              }).catch(err =>
+                console.error('Email program status update notification failed:', err.message)
+              );
+            }
+          }
+        }
+      } catch (notifError: any) {
+        console.error('Program status notification failed:', notifError.message);
       }
     }
 
@@ -958,6 +1093,45 @@ export const uploadProgramsFromExcel = async (req: AuthRequest & { file?: Expres
         errors.push({
           row: i + 2 || 'Failed to create program',
         });
+      }
+    }
+
+    // Send WhatsApp + Email notification to student after Excel upload (if student is linked)
+    if (programs.length > 0 && req.body.studentId) {
+      try {
+        const student = await Student.findById(req.body.studentId).populate('userId', 'firstName middleName lastName email');
+        if (student) {
+          const studentUser = student.userId as any;
+          const studentName = getFullName(studentUser);
+
+          // Use the first program as the representative for the notification
+          // The WhatsApp template mentions "a list of new programs has been suggested"
+          const firstProgram = programs[0];
+          const universityWithCountry = `${firstProgram.university} - ${firstProgram.country}`;
+          const programLabel = programs.length > 1
+            ? `${firstProgram.programName} and ${programs.length - 1} more program(s)`
+            : firstProgram.programName;
+
+          // WhatsApp to student (Template 2)
+          if (student.mobileNumber) {
+            sendWhatsAppProgramAdded(student.mobileNumber, studentName, programLabel, universityWithCountry).catch(err =>
+              console.error('WhatsApp program added (excel) notification failed:', err.message)
+            );
+          }
+
+          // Email to student
+          if (studentUser?.email) {
+            sendProgramSuggestedEmail(studentUser.email, studentName, {
+              programName: programLabel,
+              university: firstProgram.university,
+              country: firstProgram.country,
+            }).catch(err =>
+              console.error('Email program suggested (excel) notification failed:', err.message)
+            );
+          }
+        }
+      } catch (notifError: any) {
+        console.error('Excel upload notification failed:', notifError.message);
       }
     }
 
