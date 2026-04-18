@@ -7,6 +7,7 @@ import IvyExpert from '../models/IvyExpert';
 import EduplanCoach from '../models/EduplanCoach';
 import { sendCustomMessageToStudent } from '../utils/email';
 import { sendStaffMessageSms } from '../utils/sms';
+import { sendWhatsAppStaffMessage } from '../utils/whatsapp';
 // import Admin from '../models/Admin';
 // import Counselor from '../models/Counselor';
 import StudentServiceRegistration, { ServiceRegistrationStatus } from '../models/StudentServiceRegistration';
@@ -1020,9 +1021,7 @@ export const sendMessageToStudent = async (req: AuthRequest, res: Response): Pro
   try {
     const userId = req.user?.userId;
     const { studentId } = req.params;
-    const { message, serviceName, sendVia } = req.body;
-    // sendVia: 'email' | 'sms' | 'both' (default: 'email')
-    const channel: string = sendVia || 'email';
+    const { message, serviceName } = req.body;
 
     if (!message || !message.trim()) {
       return res.status(400).json({
@@ -1051,7 +1050,7 @@ export const sendMessageToStudent = async (req: AuthRequest, res: Response): Pro
     }
 
     const studentUser = student.userId as any;
-    if (!studentUser?.email && (channel === 'email' || channel === 'both')) {
+    if (!studentUser?.email) {
       return res.status(400).json({
         success: false,
         message: 'Student email not found',
@@ -1074,46 +1073,46 @@ export const sendMessageToStudent = async (req: AuthRequest, res: Response): Pro
 
     const results: string[] = [];
 
-    // Send Email
-    if (channel === 'email' || channel === 'both') {
-      await sendCustomMessageToStudent(
-        studentUser.email,
-        studentName,
-        senderName,
-        senderRole,
-        message.trim(),
-        serviceName
-      );
-      results.push('Email sent');
+    // Send Email (always)
+    await sendCustomMessageToStudent(
+      studentUser.email,
+      studentName,
+      senderName,
+      senderRole,
+      message.trim(),
+      serviceName
+    );
+    results.push('Email sent');
+
+    // Send SMS (always; skip gracefully if no mobile)
+    const mobile = student.mobileNumber;
+    if (mobile) {
+      try {
+        await sendStaffMessageSms({ mobile, senderName, senderRole, serviceName: serviceName || 'CORE Platform' });
+        results.push('SMS sent');
+      } catch (smsErr: any) {
+        console.error('SMS send error:', smsErr?.message || smsErr);
+        results.push('SMS failed');
+      }
+    } else {
+      results.push('SMS skipped (no mobile number)');
     }
 
-    // Send SMS
-    if (channel === 'sms' || channel === 'both') {
-      const mobile = student.mobileNumber;
-      if (!mobile) {
-        if (channel === 'sms') {
-          return res.status(400).json({
-            success: false,
-            message: 'Student mobile number not found',
-          });
-        }
-        // If 'both', email already sent, just note SMS was skipped
-        results.push('SMS skipped (no mobile number)');
-      } else {
-        try {
-          await sendStaffMessageSms({ mobile, senderName, senderRole, serviceName: serviceName || 'CORE Platform' });
-          results.push('SMS sent');
-        } catch (smsErr: any) {
-          console.error('SMS send error:', smsErr?.message || smsErr);
-          if (channel === 'sms') {
-            return res.status(500).json({
-              success: false,
-              message: 'Failed to send SMS',
-            });
-          }
-          results.push('SMS failed');
-        }
-      }
+    // Send WhatsApp — Template 6: staff_message_to_student (always; fire-and-forget)
+    if (mobile) {
+      const senderWithRole = `${senderName} - ${senderRole}`;
+      sendWhatsAppStaffMessage(
+        mobile,
+        studentName,
+        serviceName || 'CORE Platform',
+        message.trim(),
+        senderWithRole
+      ).catch((err: any) =>
+        console.error('WhatsApp staff message notification failed:', err.message)
+      );
+      results.push('WhatsApp sent');
+    } else {
+      results.push('WhatsApp skipped (no mobile number)');
     }
 
     return res.status(200).json({

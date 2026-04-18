@@ -237,28 +237,30 @@ Please upload your "Letter of Recommendation" at your earliest convenience on co
 
 ---
 
-### Template 6: `staff_message_to_student`
+### Template 6: `staff message to student`
 **Category:** UTILITY  
 **Language:** English
 
 ```
 Hello, {{1}}
-You have a new message regarding your {{2}}.
-Please find the details below for your reference.
-{{3}}.
 
-🙂 Thanks for taking a moment to read this message.
+You have a new message regarding your {{2}}.
+{{3}} - {{4}}.
+
+Thank you for keeping us in business.
 ```
 
 **Sample:**
 ```
 Hello, Akshay Amin
 You have a new message regarding your Study Abroad service.
-Please find the details below for your reference.
-Your OPS sent a message about "MS in CS at MIT". Please log in to core.admitra.io to view and reply.
+Please upload all the document and complete your profile as soon as possible - Priya Sharma(OPS).
 
-🙂 Thanks for taking a moment to read this message.
+Thank you for keeping us in business.
 ```
+
+How to Use
+WHATSAPP_WEBHOOK_URL?number=919601373545&message=staff%20message%20to%20student,Akshay%20Amin,%20Study%20Abroad%20Service,Please%20upload%20all%20the%20document%20and%20complete%20your%20profile%20as%20soon%20as%20possible,Priya%20Sharma(OPS)
 
 ---
 

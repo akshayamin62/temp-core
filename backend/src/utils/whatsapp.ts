@@ -147,6 +147,43 @@ export const sendWhatsAppStudentSelectedProgram = async (
 };
 
 /**
+ * Template 6: staff_message_to_student
+ * Sent to student when any staff member sends a direct message from Study Abroad or
+ * Education Planning service panels.
+ *
+ * WhatsApp message format:
+ *   staff_message_to_student,{studentName},{serviceName},{message},{senderNameWithRole}
+ *
+ * Variables:
+ *   1: studentName
+ *   2: serviceName  (e.g. "Study Abroad", "Education Planning")
+ *   3: full message body
+ *   4: sender display name with role (e.g. "John Doe - OPS")
+ */
+export const sendWhatsAppStaffMessage = async (
+  mobileNumber: string,
+  studentName: string,
+  serviceName: string,
+  message: string,
+  senderWithRole: string
+): Promise<void> => {
+  // Replace commas in the message body to avoid breaking the webhook's CSV-style param parsing
+  const safeMessage = message.replace(/,/g, ';');
+  const whatsappMessage = `staff message to student,${studentName},${serviceName},${safeMessage},${senderWithRole}`;
+  console.log(whatsappMessage)
+  const url = buildWhatsAppUrl(mobileNumber, whatsappMessage);
+  console.log(url)
+  if (!url) return;
+
+  try {
+    const response = await axios.get(url, { timeout: 15000 });
+    console.log(`✅ WhatsApp staff message sent:`, response.status);
+  } catch (error: any) {
+    console.error(`⚠️ Failed to send WhatsApp staff message:`, error.message);
+  }
+};
+
+/**
  * Template 9: offer_received
  * Sent to student when program status = "Offer Received".
  *
