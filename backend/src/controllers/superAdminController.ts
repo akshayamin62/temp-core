@@ -16,6 +16,8 @@ import FollowUp, { FOLLOWUP_STATUS } from "../models/FollowUp";
 import ServiceProvider from "../models/ServiceProvider";
 import Parent from "../models/Parent";
 import StudentFormAnswer from "../models/StudentFormAnswer";
+import B2BSales from "../models/B2BSales";
+import B2BOps from "../models/B2BOps";
 import { generateSlug, getUniqueSlug } from "./leadController";
 // import { sendEmail } from "../utils/email";
 
@@ -930,7 +932,9 @@ export const getAdminDetails = async (req: Request, res: Response): Promise<Resp
  */
 export const createUserByRole = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { firstName, middleName, lastName, email, phoneNumber, role, adminId, customSlug, companyName, address } = req.body;
+    const { firstName, middleName, lastName, email, role, adminId, customSlug, companyName, address } = req.body;
+    // Accept both phoneNumber (FormData path) and mobileNumber (JSON path)
+    const phoneNumber: string | undefined = req.body.phoneNumber || req.body.mobileNumber;
     const companyLogo = (req as any).file ? `/uploads/admin/${(req as any).file.filename}` : undefined;
 
     // Validation
@@ -997,6 +1001,8 @@ export const createUserByRole = async (req: Request, res: Response): Promise<Res
       USER_ROLE.IVY_EXPERT,
       USER_ROLE.COUNSELOR,
       USER_ROLE.ADVISOR,
+      USER_ROLE.B2B_SALES,
+      USER_ROLE.B2B_OPS,
     ];
 
     if (!allowedRoles.includes(role as USER_ROLE)) {
@@ -1147,6 +1153,26 @@ export const createUserByRole = async (req: Request, res: Response): Promise<Res
         allowedServices: allowedServices,
       });
       await newAdvisor.save();
+    }
+
+    // If creating B2B_SALES role, create B2BSales profile
+    if (role === USER_ROLE.B2B_SALES) {
+      const newB2BSales = new B2BSales({
+        userId: newUser._id,
+        email: email.toLowerCase().trim(),
+        mobileNumber: phoneNumber?.trim() || undefined,
+      });
+      await newB2BSales.save();
+    }
+
+    // If creating B2B_OPS role, create B2BOps profile
+    if (role === USER_ROLE.B2B_OPS) {
+      const newB2BOps = new B2BOps({
+        userId: newUser._id,
+        email: email.toLowerCase().trim(),
+        mobileNumber: phoneNumber?.trim() || undefined,
+      });
+      await newB2BOps.save();
     }
 
     return res.status(201).json({
@@ -2388,6 +2414,20 @@ export const editUserByRole = async (req: Request, res: Response): Promise<Respo
       if (Object.keys(advisorUpdate).length > 0) {
         await Advisor.findOneAndUpdate({ userId }, advisorUpdate, { new: true, runValidators: false });
       }
+    } else if (role === USER_ROLE.B2B_SALES) {
+      const profileUpdate: any = {};
+      if (email !== undefined) profileUpdate.email = email.toLowerCase().trim();
+      if (mobileNumber !== undefined) profileUpdate.mobileNumber = mobileNumber.trim();
+      if (Object.keys(profileUpdate).length > 0) {
+        await B2BSales.findOneAndUpdate({ userId }, profileUpdate, { new: true, runValidators: false });
+      }
+    } else if (role === USER_ROLE.B2B_OPS) {
+      const profileUpdate: any = {};
+      if (email !== undefined) profileUpdate.email = email.toLowerCase().trim();
+      if (mobileNumber !== undefined) profileUpdate.mobileNumber = mobileNumber.trim();
+      if (Object.keys(profileUpdate).length > 0) {
+        await B2BOps.findOneAndUpdate({ userId }, profileUpdate, { new: true, runValidators: false });
+      }
     }
 
     // Fetch updated user
@@ -2441,6 +2481,10 @@ export const getUserWithProfile = async (req: Request, res: Response): Promise<R
       profile = await Advisor.findOne({ userId });
     } else if (role === USER_ROLE.SERVICE_PROVIDER) {
       profile = await ServiceProvider.findOne({ userId });
+    } else if (role === USER_ROLE.B2B_SALES) {
+      profile = await B2BSales.findOne({ userId });
+    } else if (role === USER_ROLE.B2B_OPS) {
+      profile = await B2BOps.findOne({ userId });
     }
 
     return res.status(200).json({

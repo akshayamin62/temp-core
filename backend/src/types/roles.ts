@@ -11,6 +11,8 @@ export enum USER_ROLE {
     SERVICE_PROVIDER = "SERVICE_PROVIDER",
     REFERRER = "REFERRER",
     ADVISOR = "ADVISOR",
+    B2B_SALES = "B2B_SALES",
+    B2B_OPS = "B2B_OPS",
   }
   
 

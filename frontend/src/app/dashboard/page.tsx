@@ -42,6 +42,12 @@ export default function DashboardPage() {
         router.push('/parent/dashboard');
       } else if (user.role === 'REFERRER') {
         router.push('/referrer/dashboard');
+      } else if (user.role === 'B2B_SALES') {
+        router.push('/b2b-sales/dashboard');
+      } else if (user.role === 'B2B_OPS') {
+        router.push('/b2b-ops/dashboard');
+      } else if (user.role === 'ADVISOR') {
+        router.push('/advisor/dashboard');
       } else {
         fetchMyServices();
       }

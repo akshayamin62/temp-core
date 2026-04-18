@@ -965,6 +965,30 @@ export default function RoleUserListPage({
                                 View Detail
                               </button>
                             )}
+                            {roleEnum === USER_ROLE.B2B_SALES && (
+                              <button
+                                onClick={() =>
+                                  router.push(
+                                    `/super-admin/b2b/sales/${user._id || user.id}`,
+                                  )
+                                }
+                                className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white hover:bg-blue-700"
+                              >
+                                View Detail
+                              </button>
+                            )}
+                            {roleEnum === USER_ROLE.B2B_OPS && (
+                              <button
+                                onClick={() =>
+                                  router.push(
+                                    `/super-admin/b2b/ops/${user._id || user.id}`,
+                                  )
+                                }
+                                className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-blue-600 text-white hover:bg-blue-700"
+                              >
+                                View Detail
+                              </button>
+                            )}
                             <button
                               onClick={() =>
                                 handleOpenEdit(user._id || user.id!)

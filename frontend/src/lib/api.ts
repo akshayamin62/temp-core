@@ -1085,6 +1085,93 @@ export const adminTransferAPI = {
     api.post(`/admin/transfers/${transferId}/reject`, data),
 };
 
+// ===== B2B APIs =====
+export const b2bAPI = {
+  // Public
+  submitEnquiry: (data: {
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    email: string;
+    mobileNumber: string;
+    type: string;
+  }) => api.post('/b2b/public/enquiry', data),
+
+  // Super Admin - Leads
+  getAllLeads: (params?: { stage?: string; type?: string }) =>
+    api.get('/b2b/leads', { params }),
+  getLeadDetail: (leadId: string) =>
+    api.get(`/b2b/leads/${leadId}`),
+  assignSales: (leadId: string, b2bSalesId: string | null) =>
+    api.post(`/b2b/leads/${leadId}/assign-sales`, { b2bSalesId }),
+  assignOps: (leadId: string, b2bOpsId: string | null) =>
+    api.post(`/b2b/leads/${leadId}/assign-ops`, { b2bOpsId }),
+  updateLeadStage: (leadId: string, stage: string) =>
+    api.patch(`/b2b/leads/${leadId}/stage`, { stage }),
+
+  // Super Admin - Staff
+  getSalesStaff: () => api.get('/b2b/sales-staff'),
+  getOpsStaff: () => api.get('/b2b/ops-staff'),
+
+  // B2B Sales - own leads
+  getSalesLeads: (params?: { stage?: string; type?: string }) =>
+    api.get('/b2b/sales/leads', { params }),
+
+  // B2B OPS - own leads
+  getOpsLeads: () => api.get('/b2b/ops/leads'),
+
+  // Conversions
+  requestInProcessConversion: (b2bLeadId: string) =>
+    api.post(`/b2b/conversions/request-in-process/${b2bLeadId}`),
+  approveInProcessConversion: (conversionId: string) =>
+    api.post(`/b2b/conversions/approve-in-process/${conversionId}`),
+  requestAdminAdvisorConversion: (b2bLeadId: string, data: FormData) =>
+    api.post(`/b2b/conversions/request-admin-advisor/${b2bLeadId}`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  approveAdminAdvisorConversion: (conversionId: string) =>
+    api.post(`/b2b/conversions/approve-admin-advisor/${conversionId}`),
+  rejectConversion: (conversionId: string, reason: string) =>
+    api.post(`/b2b/conversions/reject/${conversionId}`, { rejectionReason: reason }),
+  getPendingConversions: () => api.get('/b2b/conversions/pending'),
+  getAllConversions: () => api.get('/b2b/conversions/all'),
+  getConversionHistory: (b2bLeadId: string) =>
+    api.get(`/b2b/conversions/history/${b2bLeadId}`),
+
+  // Follow-ups
+  createFollowUp: (data: {
+    b2bLeadId: string;
+    scheduledDate: string;
+    scheduledTime: string;
+    duration: number;
+    meetingType: string;
+    notes?: string;
+  }) => api.post('/b2b/follow-ups', data),
+  getFollowUps: (params?: { startDate?: string; endDate?: string; status?: string }) =>
+    api.get('/b2b/follow-ups', { params }),
+  getFollowUpSummary: () => api.get('/b2b/follow-ups/summary'),
+  getFollowUpById: (followUpId: string) =>
+    api.get(`/b2b/follow-ups/${followUpId}`),
+  updateFollowUp: (followUpId: string, data: {
+    status?: string;
+    stageChangedTo?: string;
+    notes?: string;
+    nextFollowUp?: {
+      scheduledDate: string;
+      scheduledTime: string;
+      duration: number;
+      meetingType: string;
+    };
+  }) => api.patch(`/b2b/follow-ups/${followUpId}`, data),
+  getLeadFollowUpHistory: (b2bLeadId: string) =>
+    api.get(`/b2b/follow-ups/lead/${b2bLeadId}/history`),
+  checkTimeSlotAvailability: (params: {
+    date: string;
+    time: string;
+    duration: number;
+  }) => api.get('/b2b/follow-ups/check-availability', { params }),
+};
+
 export default api;
 
 

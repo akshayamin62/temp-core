@@ -11,6 +11,8 @@ export enum USER_ROLE {
   SERVICE_PROVIDER = 'SERVICE_PROVIDER',
   REFERRER = 'REFERRER',
   ADVISOR = 'ADVISOR',
+  B2B_SALES = 'B2B_SALES',
+  B2B_OPS = 'B2B_OPS',
 }
 
 export interface User {
@@ -316,6 +318,29 @@ export enum LEAD_STAGE {
   CLOSED = 'Closed',
 }
 
+export enum B2B_LEAD_TYPE {
+  FRANCHISE = 'Franchise',
+  INSTITUTION = 'Institution',
+  ADVISOR = 'Advisor',
+}
+
+export enum B2B_LEAD_STAGE {
+  NEW = 'New',
+  HOT = 'Hot',
+  WARM = 'Warm',
+  COLD = 'Cold',
+  IN_PROCESS = 'Proceed for Documentation',
+  CONVERTED = 'Converted',
+  CLOSED = 'Closed',
+}
+
+export enum B2B_CONVERSION_STATUS {
+  PENDING = 'Pending',
+  APPROVED = 'Approved',
+  REJECTED = 'Rejected',
+  DOCUMENT_VERIFICATION = 'Document Verification',
+}
+
 export interface LeadParentDetail {
   firstName: string;
   middleName?: string;
@@ -398,6 +423,9 @@ export enum FOLLOWUP_STATUS {
   FAKE_ENQUIRY = 'Fake / Test Enquiry',
   DUPLICATE_ENQUIRY = 'Duplicate Enquiry',
   CONVERTED_TO_STUDENT = 'Converted to Student',
+  DISCUSS_NEED_TIME = 'Need time to Discuss',
+  PROCEED_FOR_DOCUMENTATION = 'Proceed for Documentation',
+  CONVERTED = 'Converted',
 }
 
 export enum MEETING_TYPE {

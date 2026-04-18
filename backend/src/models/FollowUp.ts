@@ -23,6 +23,9 @@ export enum FOLLOWUP_STATUS {
   FAKE_ENQUIRY = "Fake / Test Enquiry",
   DUPLICATE_ENQUIRY = "Duplicate Enquiry",
   CONVERTED_TO_STUDENT = "Converted to Student",
+  DISCUSS_NEED_TIME = "Need time to Discuss",
+  PROCEED_FOR_DOCUMENTATION = "Proceed for Documentation",
+  CONVERTED = "Converted",
 }
 
 export enum MEETING_TYPE {

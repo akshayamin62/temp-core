@@ -41,6 +41,9 @@ import studentPlanDiscountRoutes from "./routes/studentPlanDiscountRoutes";
 import invoiceRoutes from "./routes/invoiceRoutes";
 import ledgerRoutes from "./routes/ledgerRoutes";
 import advisorRoutes from "./routes/advisorRoutes";
+import b2bLeadRoutes from "./routes/b2bLeadRoutes";
+import b2bFollowUpRoutes from "./routes/b2bFollowUpRoutes";
+import b2bConversionRoutes from "./routes/b2bConversionRoutes";
 
 // Ivy League route imports
 import ivyServiceRoutes from "./routes/ivyService.routes";
@@ -101,6 +104,11 @@ import "./models/CoachingBatch";
 import "./models/Payment";
 import "./models/Invoice";
 import "./models/Ledger";
+import "./models/B2BLead";
+import "./models/B2BSales";
+import "./models/B2BOps";
+import "./models/B2BConversion";
+import "./models/B2BFollowUp";
 
 // Import Ivy League models to register them with Mongoose
 import "./models/ivy/AcademicData";
@@ -239,6 +247,9 @@ app.use("/api/invoices", invoiceRoutes); // Invoice management
 app.use("/api/ledger", ledgerRoutes); // Ledger / financial tracking
 app.use("/api/ivy-league-registration", ivyLeagueRegistrationRoutes); // Ivy League registration form routes
 app.use("/api/referrer", referrerRoutes); // Referrer authenticated routes
+app.use("/api/b2b", b2bLeadRoutes); // B2B lead management routes
+app.use("/api/b2b/follow-ups", b2bFollowUpRoutes); // B2B follow-up routes
+app.use("/api/b2b/conversions", b2bConversionRoutes); // B2B conversion routes
 app.use("/api", leadRoutes); // Lead routes (includes public, admin, counselor, referral endpoints)
 
 // Ivy League routes (all protected by authenticate middleware)
