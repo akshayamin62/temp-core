@@ -1170,6 +1170,14 @@ export const b2bAPI = {
     time: string;
     duration: number;
   }) => api.get('/b2b/follow-ups/check-availability', { params }),
+
+  // ===== Super Admin: B2B Staff Dashboard =====
+  getSalesDashboard: (salesId: string) => api.get(`/b2b/sales/${salesId}/dashboard`),
+  getSalesFollowUps: (salesId: string) => api.get(`/b2b/sales/${salesId}/follow-ups`),
+  getSalesFollowUpSummary: (salesId: string) => api.get(`/b2b/sales/${salesId}/follow-ups/summary`),
+  getOpsDashboard: (opsId: string) => api.get(`/b2b/ops/${opsId}/dashboard`),
+  getOpsFollowUps: (opsId: string) => api.get(`/b2b/ops/${opsId}/follow-ups`),
+  getOpsFollowUpSummary: (opsId: string) => api.get(`/b2b/ops/${opsId}/follow-ups/summary`),
 };
 
 // ===== Onboarding APIs =====

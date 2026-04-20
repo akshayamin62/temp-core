@@ -13,7 +13,13 @@ import {
   getB2BOpsLeads,
   getAllB2BSalesStaff,
   getAllB2BOpsStaff,
+  getB2BSalesDashboardForSA,
+  getB2BOpsDashboardForSA,
 } from "../controllers/b2bLeadController";
+import {
+  getB2BStaffFollowUpsForSA,
+  getB2BStaffFollowUpSummaryForSA,
+} from "../controllers/b2bFollowUpController";
 
 const router = express.Router();
 
@@ -46,6 +52,54 @@ router.get(
   authenticate,
   authorize(USER_ROLE.SUPER_ADMIN),
   getAllB2BOpsStaff
+);
+
+// Get B2B Sales person dashboard (info + leads)
+router.get(
+  "/sales/:salesId/dashboard",
+  authenticate,
+  authorize(USER_ROLE.SUPER_ADMIN),
+  getB2BSalesDashboardForSA
+);
+
+// Get follow-ups for a specific B2B Sales person
+router.get(
+  "/sales/:salesId/follow-ups",
+  authenticate,
+  authorize(USER_ROLE.SUPER_ADMIN),
+  getB2BStaffFollowUpsForSA
+);
+
+// Get follow-up summary for a specific B2B Sales person
+router.get(
+  "/sales/:salesId/follow-ups/summary",
+  authenticate,
+  authorize(USER_ROLE.SUPER_ADMIN),
+  getB2BStaffFollowUpSummaryForSA
+);
+
+// Get B2B OPS person dashboard (info + leads)
+router.get(
+  "/ops/:opsId/dashboard",
+  authenticate,
+  authorize(USER_ROLE.SUPER_ADMIN),
+  getB2BOpsDashboardForSA
+);
+
+// Get follow-ups for a specific B2B OPS person
+router.get(
+  "/ops/:opsId/follow-ups",
+  authenticate,
+  authorize(USER_ROLE.SUPER_ADMIN),
+  getB2BStaffFollowUpsForSA
+);
+
+// Get follow-up summary for a specific B2B OPS person
+router.get(
+  "/ops/:opsId/follow-ups/summary",
+  authenticate,
+  authorize(USER_ROLE.SUPER_ADMIN),
+  getB2BStaffFollowUpSummaryForSA
 );
 
 // Assign B2B Sales to a lead

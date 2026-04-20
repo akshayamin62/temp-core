@@ -582,3 +582,101 @@ export const getAllB2BOpsStaff = async (_req: AuthRequest, res: Response): Promi
     });
   }
 };
+
+/**
+ * SUPER_ADMIN: Get B2B Sales person dashboard (info + assigned leads)
+ */
+export const getB2BSalesDashboardForSA = async (
+  req: AuthRequest,
+  res: Response
+): Promise<Response> => {
+  try {
+    const { salesId } = req.params;
+
+    let staff = await B2BSales.findById(salesId).populate(
+      "userId",
+      "firstName middleName lastName email isActive createdAt"
+    );
+
+    if (!staff) {
+      staff = await B2BSales.findOne({ userId: salesId }).populate(
+        "userId",
+        "firstName middleName lastName email isActive createdAt"
+      );
+    }
+
+    if (!staff) {
+      return res.status(404).json({
+        success: false,
+        message: "B2B Sales person not found",
+      });
+    }
+
+    const leads = await B2BLead.find({ assignedB2BSalesId: staff._id })
+      .populate({
+        path: "assignedB2BOpsId",
+        populate: { path: "userId", select: "firstName middleName lastName email" },
+      })
+      .sort({ createdAt: -1 });
+
+    return res.json({
+      success: true,
+      data: { staff, leads },
+    });
+  } catch (error: any) {
+    console.error("Get B2B Sales dashboard for SA error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch B2B Sales dashboard",
+    });
+  }
+};
+
+/**
+ * SUPER_ADMIN: Get B2B OPS person dashboard (info + assigned leads)
+ */
+export const getB2BOpsDashboardForSA = async (
+  req: AuthRequest,
+  res: Response
+): Promise<Response> => {
+  try {
+    const { opsId } = req.params;
+
+    let staff = await B2BOps.findById(opsId).populate(
+      "userId",
+      "firstName middleName lastName email isActive createdAt"
+    );
+
+    if (!staff) {
+      staff = await B2BOps.findOne({ userId: opsId }).populate(
+        "userId",
+        "firstName middleName lastName email isActive createdAt"
+      );
+    }
+
+    if (!staff) {
+      return res.status(404).json({
+        success: false,
+        message: "B2B OPS person not found",
+      });
+    }
+
+    const leads = await B2BLead.find({ assignedB2BOpsId: staff._id })
+      .populate({
+        path: "assignedB2BSalesId",
+        populate: { path: "userId", select: "firstName middleName lastName email" },
+      })
+      .sort({ createdAt: -1 });
+
+    return res.json({
+      success: true,
+      data: { staff, leads },
+    });
+  } catch (error: any) {
+    console.error("Get B2B OPS dashboard for SA error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch B2B OPS dashboard",
+    });
+  }
+};

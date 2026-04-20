@@ -833,3 +833,127 @@ export const checkB2BTimeSlotAvailability = async (
   }
 };
 
+/**
+ * SUPER_ADMIN: Get follow-ups for a specific B2B staff person (Sales or OPS)
+ * Uses :staffId param — the B2BSales or B2BOps _id
+ */
+export const getB2BStaffFollowUpsForSA = async (
+  req: AuthRequest,
+  res: Response
+): Promise<Response> => {
+  try {
+    const rawId = req.params.salesId || req.params.opsId;
+    const isSales = !!req.params.salesId;
+
+    // Resolve actual B2BSales/B2BOps _id (param may be userId)
+    let resolvedId: string = rawId;
+    const ProfileModel = isSales ? B2BSales : B2BOps;
+    const byId = await ProfileModel.findById(rawId).select('_id');
+    if (!byId) {
+      const byUserId = await ProfileModel.findOne({ userId: rawId }).select('_id');
+      if (byUserId) resolvedId = String(byUserId._id);
+    }
+
+    const followUps = await B2BFollowUp.find({ b2bSalesId: resolvedId })
+      .populate(
+        "b2bLeadId",
+        "firstName middleName lastName email mobileNumber type stage"
+      )
+      .sort({ scheduledDate: 1, scheduledTime: 1 });
+
+    return res.status(200).json({
+      success: true,
+      data: { followUps },
+    });
+  } catch (error) {
+    console.error("Error fetching B2B staff follow-ups for SA:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching follow-ups",
+    });
+  }
+};
+
+/**
+ * SUPER_ADMIN: Get follow-up summary for a specific B2B staff person (Sales or OPS)
+ * Uses :staffId param — the B2BSales or B2BOps _id
+ */
+export const getB2BStaffFollowUpSummaryForSA = async (
+  req: AuthRequest,
+  res: Response
+): Promise<Response> => {
+  try {
+    const rawId = req.params.salesId || req.params.opsId;
+    const isSales = !!req.params.salesId;
+
+    // Resolve actual B2BSales/B2BOps _id (param may be userId)
+    let resolvedId: string = rawId;
+    const ProfileModel = isSales ? B2BSales : B2BOps;
+    const byId = await ProfileModel.findById(rawId).select('_id');
+    if (!byId) {
+      const byUserId = await ProfileModel.findOne({ userId: rawId }).select('_id');
+      if (byUserId) resolvedId = String(byUserId._id);
+    }
+
+    const today = new Date();
+    const { start: todayStart, end: todayEnd } = getDayBounds(today);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const [todayFollowUps, missedFollowUps, upcomingFollowUps] =
+      await Promise.all([
+        B2BFollowUp.find({
+          b2bSalesId: resolvedId,
+          scheduledDate: { $gte: todayStart, $lte: todayEnd },
+        })
+          .populate(
+            "b2bLeadId",
+            "firstName middleName lastName email mobileNumber type stage"
+          )
+          .sort({ scheduledTime: 1 }),
+        B2BFollowUp.find({
+          b2bSalesId: resolvedId,
+          scheduledDate: { $lt: todayStart },
+          status: FOLLOWUP_STATUS.SCHEDULED,
+        })
+          .populate(
+            "b2bLeadId",
+            "firstName middleName lastName email mobileNumber type stage"
+          )
+          .sort({ scheduledDate: -1 }),
+        B2BFollowUp.find({
+          b2bSalesId: resolvedId,
+          scheduledDate: { $gt: todayEnd },
+          status: FOLLOWUP_STATUS.SCHEDULED,
+        })
+          .populate(
+            "b2bLeadId",
+            "firstName middleName lastName email mobileNumber type stage"
+          )
+          .sort({ scheduledDate: 1, scheduledTime: 1 })
+          .limit(10),
+      ]);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        today: todayFollowUps,
+        missed: missedFollowUps,
+        upcoming: upcomingFollowUps,
+        counts: {
+          today: todayFollowUps.length,
+          missed: missedFollowUps.length,
+          upcoming: upcomingFollowUps.length,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching B2B staff follow-up summary for SA:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching follow-up summary",
+    });
+  }
+};
+
