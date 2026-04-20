@@ -588,6 +588,7 @@ export const getProfile = async (
           companyLogo: admin.companyLogo,
           address: admin.address,
           enquiryFormSlug: admin.enquiryFormSlug,
+          isOnboarded: admin.isOnboarded,
         };
       }
     }
@@ -635,6 +636,7 @@ export const getProfile = async (
           address: advisor.address,
           enquiryFormSlug: advisor.enquiryFormSlug,
           allowedServices: advisor.allowedServices,
+          isOnboarded: advisor.isOnboarded,
         };
         responseData.user.companyName = advisor.companyName;
         responseData.user.companyLogo = advisor.companyLogo;

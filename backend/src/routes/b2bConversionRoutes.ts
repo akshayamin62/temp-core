@@ -2,7 +2,6 @@ import express from "express";
 import { authenticate } from "../middleware/auth";
 import { authorize } from "../middleware/authorize";
 import { USER_ROLE } from "../types/roles";
-import { upload } from "../middleware/upload";
 import {
   requestInProcessConversion,
   approveInProcessConversion,
@@ -12,6 +11,7 @@ import {
   getPendingB2BConversions,
   getB2BConversionHistory,
   getAllB2BConversions,
+  directConvertAdminAdvisor,
 } from "../controllers/b2bConversionController";
 
 const router = express.Router();
@@ -37,14 +37,10 @@ router.post(
 
 // ============= STEP 2: B2B OPS → Admin/Advisor =============
 
-// B2B OPS: Request Admin/Advisor conversion (with doc uploads)
+// B2B OPS: Request final approval (no more file uploads)
 router.post(
   "/request-admin-advisor/:b2bLeadId",
   authorize(USER_ROLE.B2B_OPS),
-  upload.fields([
-    { name: "aadharDoc", maxCount: 1 },
-    { name: "panDoc", maxCount: 1 },
-  ]),
   requestAdminAdvisorConversion
 );
 
@@ -53,6 +49,13 @@ router.post(
   "/approve-admin-advisor/:conversionId",
   authorize(USER_ROLE.SUPER_ADMIN),
   approveAdminAdvisorConversion
+);
+
+// B2B OPS: Direct conversion (bypasses Super Admin approval)
+router.post(
+  "/direct-convert/:b2bLeadId",
+  authorize(USER_ROLE.B2B_OPS),
+  directConvertAdminAdvisor
 );
 
 // ============= SHARED =============

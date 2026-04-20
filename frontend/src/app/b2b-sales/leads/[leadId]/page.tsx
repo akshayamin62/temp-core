@@ -49,6 +49,11 @@ export default function B2BSalesLeadDetailPage() {
   const [lead, setLead] = useState<any | null>(null);
   const [updatingStage, setUpdatingStage] = useState(false);
   const [requestingConversion, setRequestingConversion] = useState(false);
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [convTargetRole, setConvTargetRole] = useState<'Admin' | 'Advisor'>('Admin');
+  const [convLoginEmail, setConvLoginEmail] = useState('');
+  const [convMobileNumber, setConvMobileNumber] = useState('');
+  const [convAllowedServices, setConvAllowedServices] = useState<string[]>([]);
 
   // Follow-ups
   const [followUps, setFollowUps] = useState<any[]>([]);
@@ -160,10 +165,24 @@ export default function B2BSalesLeadDetailPage() {
 
   const handleRequestConversion = async () => {
     if (!lead) return;
+    if (!convLoginEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(convLoginEmail)) {
+      toast.error('Please enter a valid login email');
+      return;
+    }
+    if (convTargetRole === 'Advisor' && convAllowedServices.length === 0) {
+      toast.error('Please select at least one allowed service for Advisor');
+      return;
+    }
     try {
       setRequestingConversion(true);
-      await b2bAPI.requestInProcessConversion(leadId);
+      await b2bAPI.requestInProcessConversion(leadId, {
+        targetRole: convTargetRole,
+        loginEmail: convLoginEmail,
+        mobileNumber: convMobileNumber || undefined,
+        allowedServices: convTargetRole === 'Advisor' ? convAllowedServices : undefined,
+      });
       toast.success('Conversion request submitted. Awaiting Super Admin approval.');
+      setShowConvertModal(false);
       fetchLead();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to request conversion');
@@ -383,8 +402,14 @@ export default function B2BSalesLeadDetailPage() {
                       </div>
                     </div>
                     {[B2B_LEAD_STAGE.NEW, B2B_LEAD_STAGE.HOT, B2B_LEAD_STAGE.WARM].includes(lead.stage as B2B_LEAD_STAGE) && !lead.conversionStatus && (
-                      <button onClick={handleRequestConversion} disabled={requestingConversion} className="w-full px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50">
-                        {requestingConversion ? 'Requesting...' : '→ Proceed for Documentation'}
+                      <button onClick={() => {
+                        setConvTargetRole(lead.type === B2B_LEAD_TYPE.ADVISOR ? 'Advisor' : 'Admin');
+                        setConvLoginEmail(lead.email || '');
+                        setConvMobileNumber(lead.mobileNumber || '');
+                        setConvAllowedServices([]);
+                        setShowConvertModal(true);
+                      }} className="w-full px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+                        → Proceed for Documentation
                       </button>
                     )}
                   </div>
@@ -394,14 +419,32 @@ export default function B2BSalesLeadDetailPage() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                 <h3 className="text-sm font-bold text-gray-900 mb-2">Lead Type</h3>
                 <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getTypeColor(lead.type)}`}>{lead.type}</span>
+                {(() => {
+                  const targetRole = lead.createdAdvisorId ? 'Advisor' : lead.createdAdminId ? 'Admin' : (lead.conversionRequestId && typeof lead.conversionRequestId === 'object' ? lead.conversionRequestId.targetRole : null);
+                  const services: string[] = (lead.createdAdvisorId && typeof lead.createdAdvisorId === 'object' ? lead.createdAdvisorId.allowedServices : null) || (lead.conversionRequestId && typeof lead.conversionRequestId === 'object' ? lead.conversionRequestId.allowedServices : null) || [];
+                  if (!targetRole) return null;
+                  const showRoleBadge = targetRole !== lead.type;
+                  if (!showRoleBadge && services.length === 0) return null;
+                  return (
+                    <div className="mt-2">
+                      {showRoleBadge && (
+                        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${targetRole === 'Admin' ? 'bg-blue-100 text-blue-800' : 'bg-teal-100 text-teal-800'}`}>
+                          {targetRole}
+                        </span>
+                      )}
+                      {targetRole === 'Advisor' && services.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {services.map((s: string, i: number) => (
+                            <span key={i} className="px-2 py-0.5 bg-violet-50 text-violet-700 text-xs rounded-full border border-violet-200">
+                              {s.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
-
-              {lead.conversionStatus && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                  <h3 className="text-sm font-bold text-gray-900 mb-2">Conversion Status</h3>
-                  <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${lead.conversionStatus === 'Pending' || lead.conversionStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : lead.conversionStatus === 'Approved' || lead.conversionStatus === 'APPROVED' ? 'bg-green-100 text-green-800' : lead.conversionStatus === 'DOCUMENT_VERIFICATION' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'}`}>{lead.conversionStatus === 'DOCUMENT_VERIFICATION' ? 'Document Verification' : lead.conversionStatus}</span>
-                </div>
-              )}
             </div>
           </div>
 
@@ -505,6 +548,71 @@ export default function B2BSalesLeadDetailPage() {
       </B2BSalesLayout>
 
       <B2BFollowUpFormPanel followUp={selectedFollowUp} isOpen={showFollowUpPanel} onClose={() => { setShowFollowUpPanel(false); setSelectedFollowUp(null); }} onSave={() => { setShowFollowUpPanel(false); setSelectedFollowUp(null); fetchFollowUps(); fetchLead(); }} />
+
+      {/* Convert to In Process Modal */}
+      {showConvertModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowConvertModal(false)}>
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Proceed for Documentation</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Set up the Admin/Advisor account details. Once approved by Super Admin, the account will be created and the lead can begin onboarding.
+            </p>
+
+            {/* Target Role */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Target Role</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="targetRole" value="Admin" checked={convTargetRole === 'Admin'} onChange={() => setConvTargetRole('Admin')} className="w-4 h-4 text-purple-600" />
+                  <span className="text-sm">Admin</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="targetRole" value="Advisor" checked={convTargetRole === 'Advisor'} onChange={() => setConvTargetRole('Advisor')} className="w-4 h-4 text-purple-600" />
+                  <span className="text-sm">Advisor</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Login Email */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Login Email</label>
+              <input type="email" value={convLoginEmail} onChange={(e) => setConvLoginEmail(e.target.value)} placeholder="Enter login email for Admin/Advisor" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
+              <p className="text-xs text-gray-500 mt-1">This email will be used for OTP login</p>
+            </div>
+
+            {/* Mobile Number */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+              <input type="tel" value={convMobileNumber} onChange={(e) => setConvMobileNumber(e.target.value)} placeholder="Enter mobile number" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
+            </div>
+
+            {/* Allowed Services (only for Advisor) */}
+            {convTargetRole === 'Advisor' && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Allowed Services</label>
+                <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                  {['study-abroad', 'ivy-league', 'education-planning', 'coaching-classes'].map((service) => (
+                    <label key={service} className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={convAllowedServices.includes(service)} onChange={(e) => {
+                        if (e.target.checked) setConvAllowedServices([...convAllowedServices, service]);
+                        else setConvAllowedServices(convAllowedServices.filter(s => s !== service));
+                      }} className="w-4 h-4 text-purple-600 rounded" />
+                      <span className="text-sm capitalize">{service.replace(/-/g, ' ')}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setShowConvertModal(false)} className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+              <button onClick={handleRequestConversion} disabled={requestingConversion || !convLoginEmail} className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50">
+                {requestingConversion ? 'Requesting...' : 'Request Conversion'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

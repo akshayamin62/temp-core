@@ -145,6 +145,12 @@ export default function AdminLayout({ children, user: userProp }: AdminLayoutPro
         setInternalUser(profileData.user);
       }
 
+      // Redirect to onboarding if not verified
+      if (profileData.user && !profileData.user.isVerified && !pathname.startsWith('/admin/onboarding')) {
+        router.replace('/admin/onboarding');
+        return;
+      }
+
       // Check if admin field exists with logo and company name
       if (profileData.admin) {
         setAdminProfile({

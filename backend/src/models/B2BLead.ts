@@ -29,6 +29,8 @@ export interface IB2BLead extends Document {
   assignedB2BOpsId?: mongoose.Types.ObjectId;
   conversionRequestId?: mongoose.Types.ObjectId;
   conversionStatus?: "PENDING" | "APPROVED" | "REJECTED" | "DOCUMENT_VERIFICATION";
+  createdAdminId?: mongoose.Types.ObjectId;
+  createdAdvisorId?: mongoose.Types.ObjectId;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -69,6 +71,16 @@ const b2bLeadSchema = new Schema<IB2BLead>(
     conversionStatus: {
       type: String,
       enum: ["PENDING", "APPROVED", "REJECTED", "DOCUMENT_VERIFICATION"],
+      default: null,
+    },
+    createdAdminId: {
+      type: Schema.Types.ObjectId,
+      ref: "Admin",
+      default: null,
+    },
+    createdAdvisorId: {
+      type: Schema.Types.ObjectId,
+      ref: "Advisor",
       default: null,
     },
   },

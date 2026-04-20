@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { authAPI, b2bAPI, serviceAPI } from '@/lib/api';
-import { User, USER_ROLE, B2B_LEAD_STAGE, B2B_LEAD_TYPE, FOLLOWUP_STATUS, MEETING_TYPE, FollowUp, LEAD_STAGE, Service } from '@/types';
+import { authAPI, b2bAPI, serviceAPI, onboardingAPI } from '@/lib/api';
+import { User, USER_ROLE, B2B_LEAD_STAGE, B2B_LEAD_TYPE, FOLLOWUP_STATUS, MEETING_TYPE, FollowUp, LEAD_STAGE, Service, OnboardingProfile, OnboardingDocument } from '@/types';
 import B2BOpsLayout from '@/components/B2BOpsLayout';
+import { BACKEND_URL } from '@/lib/ivyApi';
 import toast, { Toaster } from 'react-hot-toast';
 import { format } from 'date-fns';
 import FollowUpCalendar from '@/components/FollowUpCalendar';
@@ -49,15 +50,14 @@ export default function B2BOpsLeadDetailPage() {
   const [lead, setLead] = useState<any | null>(null);
   const [services, setServices] = useState<Service[]>([]);
 
-  // Conversion form
-  const [showConvertForm, setShowConvertForm] = useState(false);
-  const [companyName, setCompanyName] = useState('');
-  const [companyAddress, setCompanyAddress] = useState('');
-  const [enquiryFormSlug, setEnquiryFormSlug] = useState('');
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [aadharFile, setAadharFile] = useState<File | null>(null);
-  const [panFile, setPanFile] = useState<File | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  // Onboarding review
+  const [showOnboardingReview, setShowOnboardingReview] = useState(false);
+  const [onboardingProfile, setOnboardingProfile] = useState<OnboardingProfile | null>(null);
+  const [loadingOnboarding, setLoadingOnboarding] = useState(false);
+  const [reviewingDoc, setReviewingDoc] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectingDocType, setRejectingDocType] = useState<string | null>(null);
+  const [requestingFinalApproval, setRequestingFinalApproval] = useState(false);
 
   // Follow-ups
   const [followUps, setFollowUps] = useState<any[]>([]);
@@ -158,27 +158,59 @@ export default function B2BOpsLeadDetailPage() {
     }
   };
 
-  const handleSubmitConversion = async () => {
-    if (!companyName.trim()) { toast.error('Company name is required'); return; }
-    const isAdvisor = lead?.type === B2B_LEAD_TYPE.ADVISOR;
-    if (isAdvisor && selectedServices.length === 0) { toast.error('Please select at least one allowed service for Advisor conversion'); return; }
+  const fetchOnboardingProfile = async () => {
+    if (!lead?.createdAdminId && !lead?.createdAdvisorId) return;
+    const raw = lead.createdAdminId || lead.createdAdvisorId;
+    const profileId = typeof raw === 'object' && raw !== null ? raw._id : raw;
+    const role = lead.createdAdminId ? 'Admin' : 'Advisor';
     try {
-      setSubmitting(true);
-      const formData = new FormData();
-      formData.append('companyName', companyName.trim());
-      if (companyAddress.trim()) formData.append('companyAddress', companyAddress.trim());
-      if (enquiryFormSlug.trim()) formData.append('enquiryFormSlug', enquiryFormSlug.trim());
-      if (isAdvisor) selectedServices.forEach((s) => formData.append('allowedServices', s));
-      if (aadharFile) formData.append('aadharDoc', aadharFile);
-      if (panFile) formData.append('panDoc', panFile);
-      await b2bAPI.requestAdminAdvisorConversion(leadId, formData);
-      toast.success('Conversion request submitted. Awaiting Super Admin approval.');
-      setShowConvertForm(false);
+      setLoadingOnboarding(true);
+      const response = await onboardingAPI.getReview(profileId, role);
+      setOnboardingProfile(response.data.data.profile);
+    } catch (error: any) {
+      toast.error('Failed to load onboarding profile');
+    } finally {
+      setLoadingOnboarding(false);
+    }
+  };
+
+  const handleReviewDocument = async (docType: string, action: 'approve' | 'reject') => {
+    if (!onboardingProfile) return;
+    const role = lead.createdAdminId ? 'Admin' : 'Advisor';
+    if (action === 'reject' && !rejectReason.trim()) {
+      toast.error('Please provide a reason for rejection');
+      return;
+    }
+    try {
+      setReviewingDoc(docType);
+      await onboardingAPI.reviewDocument(onboardingProfile._id, {
+        documentType: docType,
+        action,
+        rejectReason: action === 'reject' ? rejectReason : undefined,
+        role,
+      });
+      toast.success(`Document ${action === 'approve' ? 'approved' : 'rejected'}`);
+      setRejectingDocType(null);
+      setRejectReason('');
+      await fetchOnboardingProfile();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || `Failed to ${action} document`);
+    } finally {
+      setReviewingDoc(null);
+    }
+  };
+
+  const handleRequestFinalApproval = async () => {
+    if (!lead) return;
+    try {
+      setRequestingFinalApproval(true);
+      await b2bAPI.requestAdminAdvisorConversion(leadId);
+      toast.success('Final approval request submitted to Super Admin');
       fetchLead();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to submit conversion request');
+      toast.error(error.response?.data?.message || 'Failed to request final approval');
     } finally {
-      setSubmitting(false);
+      setRequestingFinalApproval(false);
     }
   };
 
@@ -269,7 +301,7 @@ export default function B2BOpsLeadDetailPage() {
     }
   };
 
-  const canConvert = lead?.stage === 'Proceed for Documentation' && lead?.conversionStatus !== 'PENDING';
+  const canConvert = lead?.stage === B2B_LEAD_STAGE.IN_PROCESS && (lead?.createdAdminId || lead?.createdAdvisorId) && lead?.conversionStatus !== 'PENDING';
 
   if (loading) {
     return (
@@ -313,8 +345,8 @@ export default function B2BOpsLeadDetailPage() {
                   WhatsApp
                 </a>
                 {canConvert && (
-                  <button onClick={() => setShowConvertForm(true)} className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
-                    Convert to {lead.type === B2B_LEAD_TYPE.ADVISOR ? 'Advisor' : 'Admin'}
+                  <button onClick={() => router.push(`/b2b-ops/leads/${leadId}/verify`)} className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
+                    View Onboarding
                   </button>
                 )}
               </div>
@@ -366,63 +398,145 @@ export default function B2BOpsLeadDetailPage() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                 <h3 className="text-sm font-bold text-gray-900 mb-2">Lead Type</h3>
                 <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getTypeColor(lead.type)}`}>{lead.type}</span>
+                {(() => {
+                  const targetRole = lead.createdAdvisorId ? 'Advisor' : lead.createdAdminId ? 'Admin' : (lead.conversionRequestId && typeof lead.conversionRequestId === 'object' ? lead.conversionRequestId.targetRole : null);
+                  const services: string[] = (lead.createdAdvisorId && typeof lead.createdAdvisorId === 'object' ? lead.createdAdvisorId.allowedServices : null) || (lead.conversionRequestId && typeof lead.conversionRequestId === 'object' ? lead.conversionRequestId.allowedServices : null) || [];
+                  if (!targetRole) return null;
+                  const showRoleBadge = targetRole !== lead.type;
+                  if (!showRoleBadge && services.length === 0) return null;
+                  return (
+                    <div className="mt-2">
+                      {showRoleBadge && (
+                        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${targetRole === 'Admin' ? 'bg-blue-100 text-blue-800' : 'bg-teal-100 text-teal-800'}`}>
+                          {targetRole}
+                        </span>
+                      )}
+                      {targetRole === 'Advisor' && services.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {services.map((s: string, i: number) => (
+                            <span key={i} className="px-2 py-0.5 bg-violet-50 text-violet-700 text-xs rounded-full border border-violet-200">
+                              {s.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
-
-              {lead.conversionStatus && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                  <h3 className="text-sm font-bold text-gray-900 mb-2">Conversion Status</h3>
-                  <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${lead.conversionStatus === 'Pending' || lead.conversionStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : lead.conversionStatus === 'Approved' || lead.conversionStatus === 'APPROVED' ? 'bg-green-100 text-green-800' : lead.conversionStatus === 'DOCUMENT_VERIFICATION' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'}`}>{lead.conversionStatus === 'DOCUMENT_VERIFICATION' ? 'Document Verification' : lead.conversionStatus}</span>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Conversion Form */}
-          {showConvertForm && (
-            <div className="mb-6 bg-white rounded-xl shadow-sm border-2 border-green-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Convert to {lead.type === B2B_LEAD_TYPE.ADVISOR ? 'Advisor' : 'Admin'}</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
-                  <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Enter company name" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-gray-900" />
+          {/* Onboarding Review Panel */}
+          {showOnboardingReview && (
+            <div className="mb-6 bg-white rounded-xl shadow-sm border-2 border-blue-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Onboarding Review — {lead.type === B2B_LEAD_TYPE.ADVISOR ? 'Advisor' : 'Admin'}</h3>
+                <button onClick={() => setShowOnboardingReview(false)} className="text-gray-400 hover:text-gray-600">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              {loadingOnboarding ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Company Address</label>
-                  <textarea value={companyAddress} onChange={(e) => setCompanyAddress(e.target.value)} placeholder="Enter company address" rows={2} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-gray-900" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Enquiry Form Slug</label>
-                  <input type="text" value={enquiryFormSlug} onChange={(e) => setEnquiryFormSlug(e.target.value)} placeholder="Auto-generated from company name if left empty" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-gray-900" />
-                  <p className="text-xs text-gray-400 mt-1">URL-friendly identifier for the enquiry form</p>
-                </div>
-                {lead.type === B2B_LEAD_TYPE.ADVISOR && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Allowed Services *</label>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {services.filter((s) => s.isActive).map((service) => (
-                        <label key={service._id} className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                          <input type="checkbox" checked={selectedServices.includes(service._id)} onChange={(e) => { if (e.target.checked) setSelectedServices([...selectedServices, service._id]); else setSelectedServices(selectedServices.filter((s) => s !== service._id)); }} className="rounded border-gray-300 text-green-600 focus:ring-green-500" />
-                          <span className="text-sm text-gray-900">{service.name}</span>
-                        </label>
-                      ))}
+              ) : !onboardingProfile ? (
+                <p className="text-gray-500 text-center py-6">No onboarding profile found. The account may not have been created yet.</p>
+              ) : (
+                <div className="space-y-6">
+                  {/* Profile Details */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Company Details</h4>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div><span className="text-gray-500">Company Name:</span> <span className="font-medium">{onboardingProfile.companyName || <span className="text-red-500 italic">Not filled</span>}</span></div>
+                      <div><span className="text-gray-500">Slug:</span> <span className="font-medium">{onboardingProfile.enquiryFormSlug || <span className="text-red-500 italic">Not filled</span>}</span></div>
+                      <div><span className="text-gray-500">Address:</span> <span className="font-medium">{onboardingProfile.address || '-'}</span></div>
+                      <div><span className="text-gray-500">Mobile:</span> <span className="font-medium">{onboardingProfile.mobileNumber || '-'}</span></div>
+                      <div><span className="text-gray-500">Email:</span> <span className="font-medium">{onboardingProfile.email}</span></div>
+                      <div><span className="text-gray-500">Submitted:</span> <span className="font-medium">{onboardingProfile.onboardingSubmittedAt ? new Date(onboardingProfile.onboardingSubmittedAt).toLocaleString() : <span className="text-yellow-600 italic">Not yet submitted</span>}</span></div>
                     </div>
                   </div>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  {/* Documents Review */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Aadhar Document</label>
-                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setAadharFile(e.target.files?.[0] || null)} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Documents</h4>
+                    {onboardingProfile.documents.length === 0 ? (
+                      <p className="text-gray-400 text-sm italic">No documents uploaded yet</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {onboardingProfile.documents.map((doc) => (
+                          <div key={doc.type} className={`border rounded-lg p-4 ${doc.status === 'REJECTED' ? 'border-red-300 bg-red-50' : doc.status === 'APPROVED' ? 'border-green-300 bg-green-50' : 'border-yellow-300 bg-yellow-50'}`}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span className="font-medium text-gray-900 capitalize">{doc.type.replace(/-/g, ' ')}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${doc.status === 'APPROVED' ? 'bg-green-100 text-green-700' : doc.status === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>{doc.status}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {doc.url && (
+                                  <a href={`${BACKEND_URL}/${doc.url.replace(/^\//, '')}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline">View</a>
+                                )}
+                                {doc.status === 'PENDING' && (
+                                  <>
+                                    <button
+                                      onClick={() => handleReviewDocument(doc.type, 'approve')}
+                                      disabled={reviewingDoc === doc.type}
+                                      className="px-3 py-1 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 disabled:opacity-50"
+                                    >
+                                      {reviewingDoc === doc.type ? '...' : 'Approve'}
+                                    </button>
+                                    <button
+                                      onClick={() => setRejectingDocType(rejectingDocType === doc.type ? null : doc.type)}
+                                      className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700"
+                                    >
+                                      Reject
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            {doc.status === 'REJECTED' && doc.rejectReason && (
+                              <p className="text-sm text-red-600 mt-2">Reason: {doc.rejectReason}</p>
+                            )}
+                            {rejectingDocType === doc.type && (
+                              <div className="mt-3 flex gap-2">
+                                <input
+                                  type="text"
+                                  value={rejectReason}
+                                  onChange={(e) => setRejectReason(e.target.value)}
+                                  placeholder="Reason for rejection"
+                                  className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+                                />
+                                <button
+                                  onClick={() => handleReviewDocument(doc.type, 'reject')}
+                                  disabled={reviewingDoc === doc.type || !rejectReason.trim()}
+                                  className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50"
+                                >
+                                  Confirm Reject
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">PAN Document</label>
-                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setPanFile(e.target.files?.[0] || null)} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
-                  </div>
+
+                  {/* Request Final Approval */}
+                  {onboardingProfile.onboardingSubmittedAt && onboardingProfile.documents.every(d => d.status === 'APPROVED') && lead.conversionStatus !== 'PENDING' && (
+                    <div className="border-t border-gray-200 pt-4">
+                      <button
+                        onClick={handleRequestFinalApproval}
+                        disabled={requestingFinalApproval}
+                        className="w-full px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
+                      >
+                        {requestingFinalApproval ? 'Requesting...' : 'Request Final Approval from Super Admin'}
+                      </button>
+                      <p className="text-xs text-gray-500 mt-1 text-center">All documents are approved. Request Super Admin to grant full access.</p>
+                    </div>
+                  )}
                 </div>
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                  <button onClick={() => setShowConvertForm(false)} className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
-                  <button onClick={handleSubmitConversion} disabled={submitting} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">{submitting ? 'Submitting...' : 'Submit Conversion Request'}</button>
-                </div>
-              </div>
+              )}
             </div>
           )}
 

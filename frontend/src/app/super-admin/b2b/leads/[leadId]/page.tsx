@@ -3,100 +3,50 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { authAPI, b2bAPI } from '@/lib/api';
-import { User, USER_ROLE, B2B_LEAD_STAGE, B2B_LEAD_TYPE } from '@/types';
+import { User, USER_ROLE, B2B_LEAD_STAGE, B2B_LEAD_TYPE, FOLLOWUP_STATUS, MEETING_TYPE, FollowUp, LEAD_STAGE } from '@/types';
 import SuperAdminLayout from '@/components/SuperAdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
+import { format } from 'date-fns';
+import FollowUpCalendar from '@/components/FollowUpCalendar';
+import FollowUpSidebar from '@/components/FollowUpSidebar';
+import B2BFollowUpFormPanel from '@/components/B2BFollowUpFormPanel';
 
-interface B2BLeadDetail {
-  _id: string;
-  firstName: string;
-  middleName?: string;
-  lastName: string;
-  email: string;
-  mobileNumber: string;
-  type: string;
-  stage: string;
-  source: string;
-  assignedB2BSalesId?: {
-    _id: string;
-    userId: {
-      _id: string;
-      firstName: string;
-      middleName?: string;
-      lastName: string;
-      email: string;
+// Adapter: map B2B follow-up data to FollowUp shape for calendar/sidebar components
+function adaptB2BFollowUps(b2bFollowUps: any[]): FollowUp[] {
+  return b2bFollowUps.map((fu: any) => {
+    const lead = fu.b2bLeadId || {};
+    const leadName = [lead.firstName, lead.middleName, lead.lastName].filter(Boolean).join(' ');
+    const stageMap: Record<string, string> = {
+      [B2B_LEAD_STAGE.NEW]: LEAD_STAGE.NEW,
+      [B2B_LEAD_STAGE.HOT]: LEAD_STAGE.HOT,
+      [B2B_LEAD_STAGE.WARM]: LEAD_STAGE.WARM,
+      [B2B_LEAD_STAGE.COLD]: LEAD_STAGE.COLD,
+      [B2B_LEAD_STAGE.CONVERTED]: LEAD_STAGE.CONVERTED,
+      [B2B_LEAD_STAGE.CLOSED]: LEAD_STAGE.CLOSED,
     };
-  };
-  assignedB2BOpsId?: {
-    _id: string;
-    userId: {
-      _id: string;
-      firstName: string;
-      middleName?: string;
-      lastName: string;
-      email: string;
+    return {
+      ...fu,
+      leadId: {
+        _id: lead._id || '',
+        name: leadName,
+        email: lead.email || '',
+        mobileNumber: lead.mobileNumber || '',
+        stage: stageMap[lead.stage] || lead.stage || LEAD_STAGE.NEW,
+        serviceTypes: [],
+        createdAt: lead.createdAt || '',
+      },
     };
-  };
-  conversionStatus?: string;
-  conversionRequestId?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface B2BFollowUp {
-  _id: string;
-  b2bLeadId: string;
-  b2bSalesId: { userId: { firstName: string; lastName: string } };
-  scheduledDate: string;
-  scheduledTime: string;
-  duration: number;
-  meetingType: string;
-  status: string;
-  stageAtFollowUp: string;
-  stageChangedTo?: string;
-  followUpNumber: number;
-  notes?: string;
-  completedAt?: string;
-  createdAt: string;
-}
-
-interface B2BConversionHistory {
-  _id: string;
-  step: string;
-  status: string;
-  targetRole?: string;
-  companyName?: string;
-  companyAddress?: string;
-  allowedServices?: string[];
-  rejectionReason?: string;
-  requestedBy: { firstName: string; lastName: string };
-  approvedBy?: { firstName: string; lastName: string };
-  rejectedBy?: { firstName: string; lastName: string };
-  createdAt: string;
-  approvedAt?: string;
-  rejectedAt?: string;
+  });
 }
 
 interface B2BSalesStaff {
   _id: string;
-  userId: {
-    _id: string;
-    firstName: string;
-    middleName?: string;
-    lastName: string;
-    email: string;
-  };
+  userId: { _id: string; firstName: string; middleName?: string; lastName: string; email: string };
 }
 
 interface B2BOpsStaff {
   _id: string;
-  userId: {
-    _id: string;
-    firstName: string;
-    middleName?: string;
-    lastName: string;
-    email: string;
-  };
+  userId: { _id: string; firstName: string; middleName?: string; lastName: string; email: string };
 }
 
 export default function SuperAdminB2BLeadDetailPage() {
@@ -106,15 +56,7 @@ export default function SuperAdminB2BLeadDetailPage() {
 
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [lead, setLead] = useState<B2BLeadDetail | null>(null);
-
-  // Follow-ups
-  const [followUps, setFollowUps] = useState<B2BFollowUp[]>([]);
-  const [loadingFollowUps, setLoadingFollowUps] = useState(false);
-
-  // Conversion history
-  const [conversions, setConversions] = useState<B2BConversionHistory[]>([]);
-  const [loadingConversions, setLoadingConversions] = useState(false);
+  const [lead, setLead] = useState<any | null>(null);
 
   // Assign Sales modal
   const [showAssignSalesModal, setShowAssignSalesModal] = useState(false);
@@ -128,20 +70,26 @@ export default function SuperAdminB2BLeadDetailPage() {
   const [selectedOpsId, setSelectedOpsId] = useState('');
   const [assigningOps, setAssigningOps] = useState(false);
 
-  // Stage update
-  const [updatingStage, setUpdatingStage] = useState(false);
+  // Follow-ups
+  const [followUps, setFollowUps] = useState<any[]>([]);
+  const [loadingFollowUps, setLoadingFollowUps] = useState(false);
+  const [showScheduleForm, setShowScheduleForm] = useState(false);
+  const [newFollowUp, setNewFollowUp] = useState({ date: '', time: '', duration: 30, meetingType: MEETING_TYPE.ONLINE });
+  const [scheduling, setScheduling] = useState(false);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [availabilityStatus, setAvailabilityStatus] = useState<{ checked: boolean; available: boolean; message: string } | null>(null);
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  // Follow-up panel
+  const [selectedFollowUp, setSelectedFollowUp] = useState<any | null>(null);
+  const [showFollowUpPanel, setShowFollowUpPanel] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      fetchLead();
-      fetchFollowUps();
-      fetchConversions();
-    }
-  }, [user, leadId]);
+  // Sidebar categorization
+  const [todayFollowUps, setTodayFollowUps] = useState<FollowUp[]>([]);
+  const [missedFollowUps, setMissedFollowUps] = useState<FollowUp[]>([]);
+  const [upcomingFollowUps, setUpcomingFollowUps] = useState<FollowUp[]>([]);
+
+  useEffect(() => { checkAuth(); }, []);
+  useEffect(() => { if (user) { fetchLead(); fetchFollowUps(); } }, [user, leadId]);
 
   const checkAuth = async () => {
     try {
@@ -156,18 +104,22 @@ export default function SuperAdminB2BLeadDetailPage() {
     } catch {
       toast.error('Authentication failed');
       router.push('/login');
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchLead = async () => {
     try {
-      setLoading(true);
       const response = await b2bAPI.getLeadDetail(leadId);
       setLead(response.data.data.lead);
-    } catch {
-      toast.error('Failed to fetch lead details');
-    } finally {
-      setLoading(false);
+    } catch (error: any) {
+      if (error.response?.status === 404 || error.response?.status === 403) {
+        toast.error('Lead not found or access denied');
+        router.push('/super-admin/b2b/leads');
+      } else {
+        toast.error('Failed to fetch lead details');
+      }
     }
   };
 
@@ -175,29 +127,40 @@ export default function SuperAdminB2BLeadDetailPage() {
     try {
       setLoadingFollowUps(true);
       const response = await b2bAPI.getLeadFollowUpHistory(leadId);
-      setFollowUps(response.data.data.followUps || []);
-    } catch {
-      console.error('Failed to fetch follow-ups');
+      const allFollowUps = response.data.data.followUps || [];
+      setFollowUps(allFollowUps);
+
+      const adapted = adaptB2BFollowUps(allFollowUps);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const todayList: FollowUp[] = [];
+      const missedList: FollowUp[] = [];
+      const upcomingList: FollowUp[] = [];
+
+      adapted.forEach((fu) => {
+        const fuDate = new Date(fu.scheduledDate);
+        fuDate.setHours(0, 0, 0, 0);
+        if (fu.status === FOLLOWUP_STATUS.SCHEDULED) {
+          if (fuDate.getTime() === today.getTime()) todayList.push(fu);
+          else if (fuDate < today) missedList.push(fu);
+          else upcomingList.push(fu);
+        }
+      });
+
+      setTodayFollowUps(todayList);
+      setMissedFollowUps(missedList);
+      setUpcomingFollowUps(upcomingList);
+    } catch (error) {
+      console.error('Error fetching follow-ups:', error);
     } finally {
       setLoadingFollowUps(false);
     }
   };
 
-  const fetchConversions = async () => {
-    try {
-      setLoadingConversions(true);
-      const response = await b2bAPI.getConversionHistory(leadId);
-      setConversions(response.data.data.conversions || []);
-    } catch {
-      console.error('Failed to fetch conversions');
-    } finally {
-      setLoadingConversions(false);
-    }
-  };
-
-  const getFullName = (u: { firstName: string; middleName?: string; lastName: string }) => {
-    return [u.firstName, u.middleName, u.lastName].filter(Boolean).join(' ');
-  };
+  const getFullName = (u: any) => [u?.firstName, u?.middleName, u?.lastName].filter(Boolean).join(' ');
 
   const openAssignSalesModal = async () => {
     setSelectedSalesId(lead?.assignedB2BSalesId?._id || '');
@@ -249,29 +212,61 @@ export default function SuperAdminB2BLeadDetailPage() {
     }
   };
 
-  const handleStageUpdate = async (newStage: string) => {
+  const checkAvailability = async () => {
+    if (!newFollowUp.date || !newFollowUp.time) { toast.error('Please select date and time first'); return; }
     try {
-      setUpdatingStage(true);
-      await b2bAPI.updateLeadStage(leadId, newStage);
-      toast.success(`Stage updated to ${newStage}`);
-      fetchLead();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update stage');
+      setCheckingAvailability(true);
+      const response = await b2bAPI.checkTimeSlotAvailability({ date: newFollowUp.date, time: newFollowUp.time, duration: newFollowUp.duration });
+      const { isAvailable, conflictingTime, conflictingLead } = response.data.data;
+      if (!isAvailable) {
+        const msg = `Time slot conflicts with follow-up at ${conflictingTime}${conflictingLead ? ` for ${conflictingLead}` : ''}`;
+        setAvailabilityStatus({ checked: true, available: false, message: `✗ ${msg}` });
+        toast.error(msg);
+      } else {
+        setAvailabilityStatus({ checked: true, available: true, message: '✓ Time slot is available!' });
+        toast.success('Time slot is available!');
+      }
+    } catch {
+      toast.error('Failed to check availability');
+      setAvailabilityStatus(null);
     } finally {
-      setUpdatingStage(false);
+      setCheckingAvailability(false);
     }
+  };
+
+  const handleScheduleFollowUp = async () => {
+    if (!newFollowUp.date || !newFollowUp.time) { toast.error('Please select date and time'); return; }
+    try {
+      setScheduling(true);
+      await b2bAPI.createFollowUp({ b2bLeadId: leadId, scheduledDate: newFollowUp.date, scheduledTime: newFollowUp.time, duration: newFollowUp.duration, meetingType: newFollowUp.meetingType });
+      toast.success('Follow-up scheduled successfully');
+      setShowScheduleForm(false);
+      setNewFollowUp({ date: '', time: '', duration: 30, meetingType: MEETING_TYPE.ONLINE });
+      setAvailabilityStatus(null);
+      fetchFollowUps();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to schedule follow-up');
+    } finally {
+      setScheduling(false);
+    }
+  };
+
+  const handleFollowUpClick = (followUp: any) => {
+    const original = followUps.find((fu: any) => fu._id === followUp._id);
+    setSelectedFollowUp(original || followUp);
+    setShowFollowUpPanel(true);
   };
 
   const getStageColor = (stage: string) => {
     switch (stage) {
-      case B2B_LEAD_STAGE.NEW: return 'bg-blue-100 text-blue-800';
-      case B2B_LEAD_STAGE.HOT: return 'bg-red-100 text-red-800';
-      case B2B_LEAD_STAGE.WARM: return 'bg-orange-100 text-orange-800';
-      case B2B_LEAD_STAGE.COLD: return 'bg-cyan-100 text-cyan-800';
-      case B2B_LEAD_STAGE.IN_PROCESS: return 'bg-purple-100 text-purple-800';
-      case B2B_LEAD_STAGE.CONVERTED: return 'bg-green-100 text-green-800';
-      case B2B_LEAD_STAGE.CLOSED: return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case B2B_LEAD_STAGE.NEW: return 'bg-blue-100 text-blue-800 border-blue-200';
+      case B2B_LEAD_STAGE.HOT: return 'bg-red-100 text-red-800 border-red-200';
+      case B2B_LEAD_STAGE.WARM: return 'bg-orange-100 text-orange-800 border-orange-200';
+      case B2B_LEAD_STAGE.COLD: return 'bg-cyan-100 text-cyan-800 border-cyan-200';
+      case B2B_LEAD_STAGE.IN_PROCESS: return 'bg-purple-100 text-purple-800 border-purple-200';
+      case B2B_LEAD_STAGE.CONVERTED: return 'bg-green-100 text-green-800 border-green-200';
+      case B2B_LEAD_STAGE.CLOSED: return 'bg-gray-100 text-gray-600 border-gray-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -284,329 +279,330 @@ export default function SuperAdminB2BLeadDetailPage() {
     }
   };
 
-  const getConversionStatusColor = (status: string) => {
-    switch (status) {
-      case 'Pending': return 'bg-yellow-100 text-yellow-800';
-      case 'Approved': return 'bg-green-100 text-green-800';
-      case 'Rejected': return 'bg-red-100 text-red-800';
-      case 'DOCUMENT_VERIFICATION': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const getFollowUpStatusColor = (status: string) => {
     switch (status) {
-      case 'Scheduled': return 'bg-blue-100 text-blue-800';
-      case 'Completed': return 'bg-green-100 text-green-800';
-      case 'Missed': return 'bg-red-100 text-red-800';
-      case 'Rescheduled': return 'bg-orange-100 text-orange-800';
-      case 'Cancelled': return 'bg-gray-100 text-gray-800';
+      case FOLLOWUP_STATUS.SCHEDULED: return 'bg-blue-100 text-blue-800';
+      case FOLLOWUP_STATUS.INTERESTED_NEED_TIME:
+      case FOLLOWUP_STATUS.INTERESTED_DISCUSSING: return 'bg-green-100 text-green-800';
+      case FOLLOWUP_STATUS.NOT_INTERESTED:
+      case FOLLOWUP_STATUS.NOT_REQUIRED:
+      case FOLLOWUP_STATUS.REPEATEDLY_NOT_RESPONDING: return 'bg-gray-200 text-gray-700';
+      case FOLLOWUP_STATUS.CALL_NOT_ANSWERED:
+      case FOLLOWUP_STATUS.PHONE_SWITCHED_OFF:
+      case FOLLOWUP_STATUS.NUMBER_BUSY:
+      case FOLLOWUP_STATUS.CALL_DISCONNECTED: return 'bg-yellow-100 text-yellow-800';
+      case FOLLOWUP_STATUS.CALL_BACK_LATER:
+      case FOLLOWUP_STATUS.BUSY_RESCHEDULE: return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  // Stages that can be manually set (excluding In Process and Converted which need conversion flow)
-  const manualStages = [
-    B2B_LEAD_STAGE.NEW,
-    B2B_LEAD_STAGE.HOT,
-    B2B_LEAD_STAGE.WARM,
-    B2B_LEAD_STAGE.COLD,
-    B2B_LEAD_STAGE.CLOSED,
-  ];
-
-  if (loading && !user) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="spinner mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
   }
 
-  if (!user) return null;
+  if (!user || !lead) return null;
+
+  const leadName = getFullName(lead);
+  const adaptedFollowUps = adaptB2BFollowUps(followUps);
 
   return (
     <>
       <Toaster position="top-right" />
       <SuperAdminLayout user={user}>
         <div className="p-8">
-          {/* Back button & Header */}
+          {/* Back Button & Header */}
           <div className="mb-6">
-            <button
-              onClick={() => router.push('/super-admin/b2b/leads')}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
+            <button onClick={() => router.push('/super-admin/b2b/leads')} className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 transition-colors">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
               Back to B2B Leads
             </button>
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900">{leadName}</h2>
+                <p className="text-gray-600 mt-1">B2B Lead Details</p>
+              </div>
+              <div className="flex gap-2">
+                <a href={`mailto:${lead.email}`} className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                  Send Email
+                </a>
+                <a href={`https://wa.me/${lead.mobileNumber?.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                  WhatsApp
+                </a>
+              </div>
+            </div>
           </div>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="spinner"></div>
-            </div>
-          ) : !lead ? (
-            <div className="text-center py-20">
-              <p className="text-gray-500 text-lg">Lead not found</p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Lead Info Card */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex items-start justify-between mb-6">
+          {/* Main Info Cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            {/* Contact Information */}
+            <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Contact Information</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Mobile Number</label>
+                  <a href={`tel:${lead.mobileNumber}`} className="text-blue-600 hover:underline font-medium">{lead.mobileNumber}</a>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Email Address</label>
+                  <a href={`mailto:${lead.email}`} className="text-blue-600 hover:underline text-sm break-all">{lead.email}</a>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">City</label>
+                  <p className="text-gray-900 font-medium">{lead.city || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Submitted On</label>
+                  <p className="text-gray-900">{new Date(lead.createdAt).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Assigned B2B Sales</label>
+                  <p className="text-gray-900 font-medium">
+                    {lead.assignedB2BSalesId?.userId ? getFullName(lead.assignedB2BSalesId.userId) : <span className="text-gray-400">Not assigned</span>}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Assigned B2B OPS</label>
+                  <p className="text-gray-900 font-medium">
+                    {lead.assignedB2BOpsId?.userId ? getFullName(lead.assignedB2BOpsId.userId) : <span className="text-gray-400">Not assigned</span>}
+                  </p>
+                </div>
+                {lead.companyName && (
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{getFullName(lead)}</h2>
-                    <div className="flex items-center gap-3 mt-2">
-                      <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getTypeColor(lead.type)}`}>
-                        {lead.type}
-                      </span>
-                      <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getStageColor(lead.stage)}`}>
-                        {lead.stage}
-                      </span>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Company Name</label>
+                    <p className="text-gray-900 font-medium">{lead.companyName}</p>
+                  </div>
+                )}
+                {lead.designation && (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Designation</label>
+                    <p className="text-gray-900 font-medium">{lead.designation}</p>
+                  </div>
+                )}
+              </div>
+              {lead.notes && (
+                <>
+                  <hr className="my-4 border-gray-200" />
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Notes</label>
+                    <p className="text-gray-900 text-sm whitespace-pre-wrap">{lead.notes}</p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Right Column - Stage, Type, Actions */}
+            <div className="space-y-4">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <h3 className="text-sm font-bold text-gray-900 mb-2">Stage</h3>
+                <div className={`w-full px-3 py-2 rounded-lg border-2 text-sm font-medium ${getStageColor(lead.stage)}`}>
+                  {lead.stage === B2B_LEAD_STAGE.IN_PROCESS ? 'Proceed for Documentation' : lead.stage}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <h3 className="text-sm font-bold text-gray-900 mb-2">Lead Type</h3>
+                <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getTypeColor(lead.type)}`}>{lead.type}</span>
+                {(() => {
+                  const targetRole = lead.createdAdvisorId ? 'Advisor' : lead.createdAdminId ? 'Admin' : (lead.conversionRequestId && typeof lead.conversionRequestId === 'object' ? lead.conversionRequestId.targetRole : null);
+                  const services: string[] = (lead.createdAdvisorId && typeof lead.createdAdvisorId === 'object' ? lead.createdAdvisorId.allowedServices : null) || (lead.conversionRequestId && typeof lead.conversionRequestId === 'object' ? lead.conversionRequestId.allowedServices : null) || [];
+                  if (!targetRole) return null;
+                  const showRoleBadge = targetRole !== lead.type;
+                  if (!showRoleBadge && services.length === 0) return null;
+                  return (
+                    <div className="mt-2">
+                      {showRoleBadge && (
+                        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${targetRole === 'Admin' ? 'bg-blue-100 text-blue-800' : 'bg-teal-100 text-teal-800'}`}>
+                          {targetRole}
+                        </span>
+                      )}
+                      {targetRole === 'Advisor' && services.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {services.map((s: string, i: number) => (
+                            <span key={i} className="px-2 py-0.5 bg-violet-50 text-violet-700 text-xs rounded-full border border-violet-200">
+                              {s.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 space-y-2">
+                <h3 className="text-sm font-bold text-gray-900 mb-3">Actions</h3>
+                <button onClick={openAssignSalesModal} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                  {lead.assignedB2BSalesId ? 'Reassign B2B Sales' : 'Assign B2B Sales'}
+                </button>
+                <button onClick={openAssignOpsModal} className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium">
+                  {lead.assignedB2BOpsId ? 'Reassign B2B OPS' : 'Assign B2B OPS'}
+                </button>
+                {(lead.createdAdminId || lead.createdAdvisorId) && (
+                  <button onClick={() => router.push(`/super-admin/b2b/leads/${leadId}/profile`)} className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 border border-gray-300 transition-colors text-sm font-medium">
+                    View Profile
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Follow-Up Calendar and Overview */}
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-3">
+              <FollowUpCalendar followUps={adaptedFollowUps} onFollowUpSelect={handleFollowUpClick} leadName={leadName} />
+            </div>
+            <div className="lg:col-span-1">
+              <FollowUpSidebar today={todayFollowUps} missed={missedFollowUps} upcoming={upcomingFollowUps} onFollowUpClick={handleFollowUpClick} leadName={leadName} basePath="/super-admin/b2b/leads" showLeadLink={false} />
+            </div>
+          </div>
+
+          {/* Follow-Up History */}
+          <div className="mt-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Follow-Up History</h3>
+                <button onClick={() => setShowScheduleForm(!showScheduleForm)} className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                  Schedule Follow-Up
+                </button>
+              </div>
+
+              {/* Schedule Form */}
+              {showScheduleForm && (
+                <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="grid grid-cols-4 gap-3 mb-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
+                      <input type="date" value={newFollowUp.date} onChange={(e) => { setNewFollowUp({ ...newFollowUp, date: e.target.value }); setAvailabilityStatus(null); }} min={format(new Date(), 'yyyy-MM-dd')} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Time</label>
+                      <input type="time" value={newFollowUp.time} onChange={(e) => { setNewFollowUp({ ...newFollowUp, time: e.target.value }); setAvailabilityStatus(null); }} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Duration</label>
+                      <select value={newFollowUp.duration} onChange={(e) => { setNewFollowUp({ ...newFollowUp, duration: parseInt(e.target.value) }); setAvailabilityStatus(null); }} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value={15}>15 min</option><option value={30}>30 min</option><option value={45}>45 min</option><option value={60}>60 min</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Meeting Type</label>
+                      <select value={newFollowUp.meetingType} onChange={(e) => setNewFollowUp({ ...newFollowUp, meetingType: e.target.value as MEETING_TYPE })} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value={MEETING_TYPE.ONLINE}>Online</option><option value={MEETING_TYPE.FACE_TO_FACE}>Face to Face</option>
+                      </select>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={openAssignSalesModal}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                    >
-                      {lead.assignedB2BSalesId ? 'Reassign Sales' : 'Assign Sales'}
+                  {availabilityStatus && (
+                    <div className={`mb-3 p-2 rounded-lg text-sm font-medium ${availabilityStatus.available ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>{availabilityStatus.message}</div>
+                  )}
+                  <div className="flex justify-between items-center gap-2">
+                    <button onClick={checkAvailability} disabled={checkingAvailability || !newFollowUp.date || !newFollowUp.time} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1">
+                      {checkingAvailability ? 'Checking...' : (<><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>Check Availability</>)}
                     </button>
-                    {lead.stage === B2B_LEAD_STAGE.IN_PROCESS && (
-                      <button
-                        onClick={openAssignOpsModal}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
-                      >
-                        {lead.assignedB2BOpsId ? 'Reassign OPS' : 'Assign OPS'}
-                      </button>
-                    )}
+                    <div className="flex gap-2">
+                      <button onClick={() => { setShowScheduleForm(false); setAvailabilityStatus(null); }} className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                      <button onClick={handleScheduleFollowUp} disabled={scheduling} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1">{scheduling ? 'Scheduling...' : 'Schedule'}</button>
+                    </div>
                   </div>
                 </div>
+              )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Email</p>
-                    <p className="text-sm text-gray-900 mt-1">{lead.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</p>
-                    <p className="text-sm text-gray-900 mt-1">{lead.mobileNumber}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Source</p>
-                    <p className="text-sm text-gray-900 mt-1">{lead.source || 'B2B Enquiry Form'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned B2B Sales</p>
-                    <p className="text-sm text-gray-900 mt-1">
-                      {lead.assignedB2BSalesId?.userId
-                        ? getFullName(lead.assignedB2BSalesId.userId)
-                        : <span className="text-gray-400">Not assigned</span>}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned B2B OPS</p>
-                    <p className="text-sm text-gray-900 mt-1">
-                      {lead.assignedB2BOpsId?.userId
-                        ? getFullName(lead.assignedB2BOpsId.userId)
-                        : <span className="text-gray-400">Not assigned</span>}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Created</p>
-                    <p className="text-sm text-gray-900 mt-1">
-                      {new Date(lead.createdAt).toLocaleDateString('en-GB')} at{' '}
-                      {new Date(lead.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Stage Update */}
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Update Stage</p>
-                  <div className="flex flex-wrap gap-2">
-                    {manualStages.map((stage) => (
-                      <button
-                        key={stage}
-                        onClick={() => handleStageUpdate(stage)}
-                        disabled={updatingStage || lead.stage === stage}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                          lead.stage === stage
-                            ? 'bg-blue-600 text-white cursor-default'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50'
-                        }`}
-                      >
-                        {stage}
-                      </button>
-                    ))}
-                    <span className="px-3 py-1.5 text-xs text-gray-400 border border-dashed border-gray-300 rounded-lg">
-                      In Process / Converted — via conversion flow only
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Follow-Up History */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                <div className="p-6 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">Follow-Up History</h3>
-                  <p className="text-sm text-gray-500 mt-1">View-only — follow-ups are managed by B2B Sales</p>
-                </div>
+              {/* Follow-Up History List */}
+              <div className="space-y-3">
                 {loadingFollowUps ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="spinner"></div>
-                  </div>
-                ) : followUps.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <p className="text-gray-400">No follow-ups scheduled yet</p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-200">
-                    {followUps.map((followUp) => (
-                      <div key={followUp._id} className="p-4 hover:bg-gray-50">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm font-medium text-gray-500">#{followUp.followUpNumber}</span>
-                            <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getFollowUpStatusColor(followUp.status)}`}>
-                              {followUp.status}
-                            </span>
-                            <span className="text-sm text-gray-600">
-                              {new Date(followUp.scheduledDate).toLocaleDateString('en-GB')} at {followUp.scheduledTime}
-                            </span>
-                            <span className="text-xs text-gray-400">({followUp.duration} min, {followUp.meetingType})</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {followUp.stageChangedTo && (
-                              <span className="text-xs text-gray-500">
-                                Stage → <span className="font-medium">{followUp.stageChangedTo}</span>
-                              </span>
-                            )}
-                          </div>
+                  <div className="flex items-center justify-center py-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div></div>
+                ) : followUps.length > 0 ? (
+                  followUps.map((followUp: any, index: number) => (
+                    <div key={followUp._id} onClick={() => handleFollowUpClick(followUp)} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 hover:shadow-sm transition-all">
+                      <div className={`w-2 h-2 mt-2 rounded-full ${followUp.status === FOLLOWUP_STATUS.SCHEDULED ? 'bg-blue-500' : followUp.status === FOLLOWUP_STATUS.INTERESTED_NEED_TIME || followUp.status === FOLLOWUP_STATUS.INTERESTED_DISCUSSING ? 'bg-green-500' : followUp.status === FOLLOWUP_STATUS.NOT_INTERESTED || followUp.status === FOLLOWUP_STATUS.NOT_REQUIRED ? 'bg-gray-500' : 'bg-yellow-500'}`}></div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium text-gray-900">{format(new Date(followUp.scheduledDate), 'dd/MM/yyyy')} at {followUp.scheduledTime}</span>
+                          {followUp.meetingType && (
+                            <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">{followUp.meetingType}</span>
+                          )}
+                          <span className={`px-2 py-0.5 text-xs rounded-full ${getFollowUpStatusColor(followUp.status)}`}>{followUp.status}</span>
                         </div>
-                        {followUp.notes && (
-                          <p className="text-sm text-gray-600 mt-2 ml-8">{followUp.notes}</p>
+                        {followUp.notes && <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">{followUp.notes}</p>}
+                        {followUp.stageChangedTo && <p className="text-xs text-gray-500 mt-1">Stage changed to: <span className="font-medium">{followUp.stageChangedTo}</span></p>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">{followUp.duration} min</span>
+                        {index === 0 ? (
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        ) : (
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                         )}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Conversion History */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                <div className="p-6 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">Conversion History</h3>
-                </div>
-                {loadingConversions ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="spinner"></div>
-                  </div>
-                ) : conversions.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <p className="text-gray-400">No conversion requests yet</p>
-                  </div>
+                    </div>
+                  ))
                 ) : (
-                  <div className="divide-y divide-gray-200">
-                    {conversions.map((conversion) => (
-                      <div key={conversion._id} className="p-4 hover:bg-gray-50">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${
-                              conversion.step === 'TO_IN_PROCESS'
-                                ? 'bg-purple-100 text-purple-800'
-                                : 'bg-green-100 text-green-800'
-                            }`}>
-                              {conversion.step === 'TO_IN_PROCESS' ? 'To In Process' : `To ${conversion.targetRole}`}
-                            </span>
-                            <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getConversionStatusColor(conversion.status)}`}>
-                              {conversion.status}
-                            </span>
-                          </div>
-                          <span className="text-xs text-gray-400">
-                            {new Date(conversion.createdAt).toLocaleDateString('en-GB')}
-                          </span>
-                        </div>
-                        <div className="mt-2 text-sm text-gray-600">
-                          <span>Requested by: {conversion.requestedBy?.firstName} {conversion.requestedBy?.lastName}</span>
-                          {conversion.companyName && <span className="ml-4">Company: {conversion.companyName}</span>}
-                          {conversion.allowedServices && conversion.allowedServices.length > 0 && (
-                            <div className="mt-1 flex gap-1">
-                              {conversion.allowedServices.map((s, i) => (
-                                <span key={i} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">{s}</span>
-                              ))}
-                            </div>
-                          )}
-                          {conversion.rejectionReason && (
-                            <p className="mt-1 text-red-600 text-sm">Rejection: {conversion.rejectionReason}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-gray-500 text-center py-6">No follow-ups scheduled yet</p>
                 )}
               </div>
             </div>
-          )}
+          </div>
         </div>
-
-        {/* Assign Sales Modal */}
-        {showAssignSalesModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowAssignSalesModal(false)}>
-            <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Assign B2B Sales</h3>
-              <select
-                value={selectedSalesId}
-                onChange={(e) => setSelectedSalesId(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 mb-4"
-              >
-                <option value="">Unassign</option>
-                {salesStaff.map((staff) => (
-                  <option key={staff._id} value={staff._id}>
-                    {staff.userId.firstName} {staff.userId.lastName} — {staff.userId.email}
-                  </option>
-                ))}
-              </select>
-              <div className="flex justify-end gap-3">
-                <button onClick={() => setShowAssignSalesModal(false)} className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
-                <button onClick={handleAssignSales} disabled={assigningSales} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
-                  {assigningSales ? 'Assigning...' : 'Assign'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Assign OPS Modal */}
-        {showAssignOpsModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowAssignOpsModal(false)}>
-            <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Assign B2B OPS</h3>
-              <select
-                value={selectedOpsId}
-                onChange={(e) => setSelectedOpsId(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 mb-4"
-              >
-                <option value="">Unassign</option>
-                {opsStaff.map((staff) => (
-                  <option key={staff._id} value={staff._id}>
-                    {staff.userId.firstName} {staff.userId.lastName} — {staff.userId.email}
-                  </option>
-                ))}
-              </select>
-              <div className="flex justify-end gap-3">
-                <button onClick={() => setShowAssignOpsModal(false)} className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
-                <button onClick={handleAssignOps} disabled={assigningOps} className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50">
-                  {assigningOps ? 'Assigning...' : 'Assign'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </SuperAdminLayout>
+
+      <B2BFollowUpFormPanel followUp={selectedFollowUp} isOpen={showFollowUpPanel} onClose={() => { setShowFollowUpPanel(false); setSelectedFollowUp(null); }} onSave={() => { setShowFollowUpPanel(false); setSelectedFollowUp(null); fetchFollowUps(); fetchLead(); }} />
+
+      {/* Assign Sales Modal */}
+      {showAssignSalesModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowAssignSalesModal(false)}>
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Assign B2B Sales</h3>
+            <select value={selectedSalesId} onChange={(e) => setSelectedSalesId(e.target.value)} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 mb-4">
+              <option value="">Unassign</option>
+              {salesStaff.map((staff) => (
+                <option key={staff._id} value={staff._id}>
+                  {staff.userId.firstName} {staff.userId.lastName} — {staff.userId.email}
+                </option>
+              ))}
+            </select>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setShowAssignSalesModal(false)} className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+              <button onClick={handleAssignSales} disabled={assigningSales} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                {assigningSales ? 'Assigning...' : 'Assign'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign OPS Modal */}
+      {showAssignOpsModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowAssignOpsModal(false)}>
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Assign B2B OPS</h3>
+            <select value={selectedOpsId} onChange={(e) => setSelectedOpsId(e.target.value)} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 mb-4">
+              <option value="">Unassign</option>
+              {opsStaff.map((staff) => (
+                <option key={staff._id} value={staff._id}>
+                  {staff.userId.firstName} {staff.userId.lastName} — {staff.userId.email}
+                </option>
+              ))}
+            </select>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setShowAssignOpsModal(false)} className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+              <button onClick={handleAssignOps} disabled={assigningOps} className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50">
+                {assigningOps ? 'Assigning...' : 'Assign'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

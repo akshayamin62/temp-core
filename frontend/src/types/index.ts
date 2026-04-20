@@ -398,6 +398,33 @@ export interface AdminInfo {
   services: string[];
   allowedServices?: string[];
   ownerType?: string;
+  isOnboarded?: boolean;
+}
+
+export interface OnboardingDocument {
+  type: string;
+  url: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  rejectReason?: string;
+}
+
+export interface OnboardingProfile {
+  _id: string;
+  userId: string;
+  email: string;
+  mobileNumber?: string;
+  companyName?: string;
+  address?: string;
+  companyLogo?: string;
+  enquiryFormSlug?: string;
+  allowedServices?: string[];
+  isOnboarded: boolean;
+  assignedB2BOpsId?: any;
+  b2bLeadId?: any;
+  documents: OnboardingDocument[];
+  onboardingSubmittedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Follow-Up Types

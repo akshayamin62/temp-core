@@ -72,11 +72,16 @@ interface B2BConversion {
     lastName: string;
     email: string;
     type: string;
+    createdAdvisorId?: { _id: string; companyName?: string; allowedServices?: string[] } | null;
+    createdAdminId?: { _id: string; companyName?: string } | null;
   };
   step: string;
   status: string;
   targetRole?: string;
   companyName?: string;
+  loginEmail?: string;
+  mobileNumber?: string;
+  allowedServices?: string[];
   requestedBy: {
     _id: string;
     firstName: string;
@@ -116,6 +121,12 @@ export default function SuperAdminB2BLeadsPage() {
   const [rejectingConversionId, setRejectingConversionId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [rejecting, setRejecting] = useState(false);
+
+  // Step 2 Approval modal
+  const [showApproveStep2Modal, setShowApproveStep2Modal] = useState(false);
+  const [approvingConversion, setApprovingConversion] = useState<B2BConversion | null>(null);
+  const [enquirySlug, setEnquirySlug] = useState('');
+  const [approving, setApproving] = useState(false);
 
   // Copy URL state
   const [copied, setCopied] = useState(false);
@@ -218,18 +229,50 @@ export default function SuperAdminB2BLeadsPage() {
     }
   };
 
-  const handleApproveConversion = async (conversionId: string, step: string) => {
+  const handleApproveConversion = async (conversionId: string, step: string, conversion?: B2BConversion) => {
     try {
       if (step === 'TO_IN_PROCESS') {
         await b2bAPI.approveInProcessConversion(conversionId);
+        toast.success('Conversion approved successfully');
+        fetchPendingConversions();
+        fetchLeads();
       } else {
-        await b2bAPI.approveAdminAdvisorConversion(conversionId);
+        // Step 2: Open modal with details and slug editor
+        if (conversion) {
+          setApprovingConversion(conversion);
+          // Generate default slug from profile's companyName (most up-to-date), then conversion's, then lead name
+          const profileCompanyName =
+            (typeof conversion.b2bLeadId?.createdAdvisorId === 'object' && conversion.b2bLeadId?.createdAdvisorId?.companyName) ||
+            (typeof conversion.b2bLeadId?.createdAdminId === 'object' && conversion.b2bLeadId?.createdAdminId?.companyName) ||
+            null;
+          const rawSlugSource = profileCompanyName || conversion.companyName ||
+            [conversion.b2bLeadId?.firstName, conversion.b2bLeadId?.lastName].filter(Boolean).join(' ');
+          const slugSource = rawSlugSource.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+          setEnquirySlug(slugSource);
+          setShowApproveStep2Modal(true);
+        }
       }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to approve');
+    }
+  };
+
+  const handleConfirmStep2Approval = async () => {
+    if (!approvingConversion) return;
+    try {
+      setApproving(true);
+      await b2bAPI.approveAdminAdvisorConversion(approvingConversion._id, {
+        enquiryFormSlug: enquirySlug.trim() || undefined,
+      });
       toast.success('Conversion approved successfully');
+      setShowApproveStep2Modal(false);
+      setApprovingConversion(null);
       fetchPendingConversions();
       fetchLeads();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to approve');
+    } finally {
+      setApproving(false);
     }
   };
 
@@ -528,20 +571,12 @@ export default function SuperAdminB2BLeadsPage() {
                               {new Date(lead.createdAt).toLocaleDateString('en-GB')}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => router.push(`/super-admin/b2b/leads/${lead._id}`)}
-                                  className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-xs"
-                                >
-                                  View
-                                </button>
-                                <button
-                                  onClick={() => openAssignModal(lead._id)}
-                                  className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-xs"
-                                >
-                                  Assign
-                                </button>
-                              </div>
+                              <button
+                                onClick={() => router.push(`/super-admin/b2b/leads/${lead._id}`)}
+                                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-xs"
+                              >
+                                View Detail
+                              </button>
                             </td>
                           </tr>
                         ))}
@@ -580,35 +615,75 @@ export default function SuperAdminB2BLeadsPage() {
                 <div className="divide-y divide-gray-200">
                   {pendingConversions.map((conversion) => (
                     <div key={conversion._id} className="p-6 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h4 className="text-sm font-semibold text-gray-900">
-                              {conversion.b2bLeadId?.firstName} {conversion.b2bLeadId?.lastName}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          {/* Header: Name + Badges */}
+                          <div className="flex items-center gap-2 flex-wrap mb-3">
+                            <h4 className="text-base font-semibold text-gray-900">
+                              {conversion.b2bLeadId?.firstName} {conversion.b2bLeadId?.middleName ? `${conversion.b2bLeadId.middleName} ` : ''}{conversion.b2bLeadId?.lastName}
                             </h4>
                             <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${
                               conversion.step === 'TO_IN_PROCESS'
                                 ? 'bg-purple-100 text-purple-800'
                                 : 'bg-green-100 text-green-800'
                             }`}>
-                              {conversion.step === 'TO_IN_PROCESS' ? 'Proceed for Documentation' : `Convert to ${conversion.targetRole}`}
+                              {conversion.step === 'TO_IN_PROCESS' ? `Step 1: Documentation (${conversion.targetRole})` : `Step 2: Convert to ${conversion.targetRole}`}
                             </span>
                             <span className={`px-2 py-0.5 text-xs rounded-full ${getTypeColor(conversion.b2bLeadId?.type || '')}`}>
                               {conversion.b2bLeadId?.type}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-600">
-                            Requested by: {conversion.requestedBy?.firstName} {conversion.requestedBy?.lastName}
-                          </p>
-                          {conversion.companyName && (
-                            <p className="text-sm text-gray-600">Company: {conversion.companyName}</p>
+
+                          {/* Details Grid */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
+                            {conversion.loginEmail && (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-gray-500 font-medium">Login Email:</span>
+                                <span className="text-gray-800">{conversion.loginEmail}</span>
+                              </div>
+                            )}
+                            {conversion.mobileNumber && (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-gray-500 font-medium">Mobile:</span>
+                                <span className="text-gray-800">{conversion.mobileNumber}</span>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-gray-500 font-medium">Lead Email:</span>
+                              <span className="text-gray-800">{conversion.b2bLeadId?.email}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-gray-500 font-medium">Requested by:</span>
+                              <span className="text-gray-800">{conversion.requestedBy?.firstName} {conversion.requestedBy?.lastName}</span>
+                            </div>
+                            {conversion.companyName && (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-gray-500 font-medium">Company:</span>
+                                <span className="text-gray-800">{conversion.companyName}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Allowed Services for Advisor */}
+                          {conversion.targetRole === 'Advisor' && conversion.allowedServices && conversion.allowedServices.length > 0 && (
+                            <div className="mt-2.5">
+                              <span className="text-sm text-gray-500 font-medium">Services: </span>
+                              <div className="inline-flex flex-wrap gap-1.5 mt-1">
+                                {conversion.allowedServices.map((service, idx) => (
+                                  <span key={idx} className="px-2 py-0.5 bg-violet-50 text-violet-700 text-xs rounded-full border border-violet-200">
+                                    {service.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
                           )}
-                          <p className="text-xs text-gray-400 mt-1">
+
+                          <p className="text-xs text-gray-400 mt-2">
                             {new Date(conversion.createdAt).toLocaleDateString('en-GB')} at{' '}
                             {new Date(conversion.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
                           <button
                             onClick={() => router.push(`/super-admin/b2b/leads/${conversion.b2bLeadId?._id}`)}
                             className="px-3 py-1.5 text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors text-xs font-medium"
@@ -616,7 +691,7 @@ export default function SuperAdminB2BLeadsPage() {
                             View Lead
                           </button>
                           <button
-                            onClick={() => handleApproveConversion(conversion._id, conversion.step)}
+                            onClick={() => handleApproveConversion(conversion._id, conversion.step, conversion)}
                             className="px-4 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium"
                           >
                             Approve
@@ -698,6 +773,116 @@ export default function SuperAdminB2BLeadsPage() {
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
                 >
                   {rejecting ? 'Rejecting...' : 'Reject'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2 Approval Modal */}
+        {showApproveStep2Modal && approvingConversion && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => { setShowApproveStep2Modal(false); setApprovingConversion(null); }}>
+            <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                Approve {approvingConversion.targetRole} Conversion
+              </h3>
+              <p className="text-sm text-gray-500 mb-5">Review details and set enquiry form slug before approval</p>
+
+              {/* Lead Details */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 font-medium">Lead Name</span>
+                  <span className="text-gray-900 font-medium">
+                    {approvingConversion.b2bLeadId?.firstName} {approvingConversion.b2bLeadId?.middleName ? `${approvingConversion.b2bLeadId.middleName} ` : ''}{approvingConversion.b2bLeadId?.lastName}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 font-medium">Lead Email</span>
+                  <span className="text-gray-900">{approvingConversion.b2bLeadId?.email}</span>
+                </div>
+                {approvingConversion.loginEmail && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500 font-medium">Login Email</span>
+                    <span className="text-gray-900">{approvingConversion.loginEmail}</span>
+                  </div>
+                )}
+                {approvingConversion.mobileNumber && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500 font-medium">Mobile</span>
+                    <span className="text-gray-900">{approvingConversion.mobileNumber}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 font-medium">Target Role</span>
+                  <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                    approvingConversion.targetRole === 'Admin' ? 'bg-blue-100 text-blue-700' : 'bg-teal-100 text-teal-700'
+                  }`}>
+                    {approvingConversion.targetRole}
+                  </span>
+                </div>
+                {(() => {
+                  const profile = approvingConversion.b2bLeadId?.createdAdvisorId || approvingConversion.b2bLeadId?.createdAdminId;
+                  const companyName = typeof profile === 'object' && profile ? profile.companyName : null;
+                  const advisorProfile = approvingConversion.b2bLeadId?.createdAdvisorId;
+                  const services: string[] =
+                    (advisorProfile && typeof advisorProfile === 'object' && advisorProfile.allowedServices?.length)
+                      ? advisorProfile.allowedServices!
+                      : (approvingConversion.allowedServices || []);
+                  return (
+                    <>
+                      {companyName && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500 font-medium">Company</span>
+                          <span className="text-gray-900">{companyName}</span>
+                        </div>
+                      )}
+                      {approvingConversion.targetRole === 'Advisor' && services.length > 0 && (
+                        <div className="pt-1">
+                          <span className="text-sm text-gray-500 font-medium">Allowed Services</span>
+                          <div className="flex flex-wrap gap-1.5 mt-1">
+                            {services.map((service: string, idx: number) => (
+                              <span key={idx} className="px-2 py-0.5 bg-violet-50 text-violet-700 text-xs rounded-full border border-violet-200">
+                                {service.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* Enquiry Form Slug */}
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Enquiry Form Slug
+                </label>
+                <input
+                  type="text"
+                  value={enquirySlug}
+                  onChange={(e) => setEnquirySlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))}
+                  placeholder="e.g., acme-consultants"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  This slug will be used for the enquiry form URL: /enquiry/{enquirySlug || 'slug'}
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => { setShowApproveStep2Modal(false); setApprovingConversion(null); }}
+                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmStep2Approval}
+                  disabled={approving}
+                  className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
+                >
+                  {approving ? 'Approving...' : 'Confirm & Approve'}
                 </button>
               </div>
             </div>

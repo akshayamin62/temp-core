@@ -44,6 +44,7 @@ import advisorRoutes from "./routes/advisorRoutes";
 import b2bLeadRoutes from "./routes/b2bLeadRoutes";
 import b2bFollowUpRoutes from "./routes/b2bFollowUpRoutes";
 import b2bConversionRoutes from "./routes/b2bConversionRoutes";
+import onboardingRoutes from "./routes/onboardingRoutes";
 
 // Ivy League route imports
 import ivyServiceRoutes from "./routes/ivyService.routes";
@@ -250,6 +251,7 @@ app.use("/api/referrer", referrerRoutes); // Referrer authenticated routes
 app.use("/api/b2b", b2bLeadRoutes); // B2B lead management routes
 app.use("/api/b2b/follow-ups", b2bFollowUpRoutes); // B2B follow-up routes
 app.use("/api/b2b/conversions", b2bConversionRoutes); // B2B conversion routes
+app.use("/api/onboarding", onboardingRoutes); // Admin/Advisor onboarding routes
 app.use("/api", leadRoutes); // Lead routes (includes public, admin, counselor, referral endpoints)
 
 // Ivy League routes (all protected by authenticate middleware)

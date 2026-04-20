@@ -333,12 +333,20 @@ export default function B2BOpsLeadsPage() {
                           </span>
                         </td>
                         <td className="px-4 py-4 text-center">
-                          <button
-                            onClick={() => router.push(`/b2b-ops/leads/${lead._id}`)}
-                            className="px-3 py-1.5 text-xs font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
-                          >
-                            {lead.stage === 'Proceed for Documentation' ? 'Verify & Convert' : 'View Details'}
-                          </button>
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => router.push(`/b2b-ops/leads/${lead._id}`)}
+                              className="px-3 py-1.5 text-xs font-medium text-blue-600 border border-blue-300 hover:bg-blue-50 rounded-lg transition-colors"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() => router.push(`/b2b-ops/leads/${lead._id}/verify`)}
+                              className="px-3 py-1.5 text-xs font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+                            >
+                              Verify
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

@@ -34,7 +34,12 @@ export default function B2BSalesLeadsPage() {
   // Convert to In Process modal
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [convertingLeadId, setConvertingLeadId] = useState<string | null>(null);
+  const [convertingLeadType, setConvertingLeadType] = useState<string>('');
   const [converting, setConverting] = useState(false);
+  const [convTargetRole, setConvTargetRole] = useState<'Admin' | 'Advisor'>('Admin');
+  const [convLoginEmail, setConvLoginEmail] = useState('');
+  const [convMobileNumber, setConvMobileNumber] = useState('');
+  const [convAllowedServices, setConvAllowedServices] = useState<string[]>([]);
 
   useEffect(() => {
     checkAuth();
@@ -94,11 +99,27 @@ export default function B2BSalesLeadsPage() {
 
   const handleConvertToInProcess = async () => {
     if (!convertingLeadId) return;
+    if (!convLoginEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(convLoginEmail)) {
+      toast.error('Please enter a valid login email');
+      return;
+    }
+    if (convTargetRole === 'Advisor' && convAllowedServices.length === 0) {
+      toast.error('Please select at least one allowed service for Advisor');
+      return;
+    }
     try {
       setConverting(true);
-      await b2bAPI.requestInProcessConversion(convertingLeadId);
+      await b2bAPI.requestInProcessConversion(convertingLeadId, {
+        targetRole: convTargetRole,
+        loginEmail: convLoginEmail,
+        mobileNumber: convMobileNumber || undefined,
+        allowedServices: convTargetRole === 'Advisor' ? convAllowedServices : undefined,
+      });
       toast.success('Conversion request submitted. Awaiting Super Admin approval.');
       setShowConvertModal(false);
+      setConvLoginEmail('');
+      setConvMobileNumber('');
+      setConvAllowedServices([]);
       fetchLeads();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to request conversion');
@@ -416,6 +437,11 @@ export default function B2BSalesLeadsPage() {
                               <button
                                 onClick={() => {
                                   setConvertingLeadId(lead._id);
+                                  setConvertingLeadType(lead.type);
+                                  setConvTargetRole(lead.type === B2B_LEAD_TYPE.ADVISOR ? 'Advisor' : 'Admin');
+                                  setConvLoginEmail(lead.email || '');
+                                  setConvMobileNumber(lead.mobileNumber || '');
+                                  setConvAllowedServices([]);
                                   setShowConvertModal(true);
                                 }}
                                 className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
@@ -437,18 +463,99 @@ export default function B2BSalesLeadsPage() {
         {/* Convert to In Process Modal */}
         {showConvertModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowConvertModal(false)}>
-            <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Proceed for Documentation</h3>
               <p className="text-sm text-gray-600 mb-4">
-                This will send a conversion request to the Super Admin. Once approved, the lead will move to &quot;Proceed for Documentation&quot; stage and can be assigned to B2B OPS for verification.
+                Set up the Admin/Advisor account details. Once approved by Super Admin, the account will be created and the lead can begin onboarding.
               </p>
-              <div className="flex justify-end gap-3">
+
+              {/* Target Role */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Target Role</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="targetRole"
+                      value="Admin"
+                      checked={convTargetRole === 'Admin'}
+                      onChange={() => setConvTargetRole('Admin')}
+                      className="w-4 h-4 text-purple-600"
+                    />
+                    <span className="text-sm">Admin</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="targetRole"
+                      value="Advisor"
+                      checked={convTargetRole === 'Advisor'}
+                      onChange={() => setConvTargetRole('Advisor')}
+                      className="w-4 h-4 text-purple-600"
+                    />
+                    <span className="text-sm">Advisor</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Login Email */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Login Email</label>
+                <input
+                  type="email"
+                  value={convLoginEmail}
+                  onChange={(e) => setConvLoginEmail(e.target.value)}
+                  placeholder="Enter login email for Admin/Advisor"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">This email will be used for OTP login</p>
+              </div>
+
+              {/* Mobile Number */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+                <input
+                  type="tel"
+                  value={convMobileNumber}
+                  onChange={(e) => setConvMobileNumber(e.target.value)}
+                  placeholder="Enter mobile number"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+
+              {/* Allowed Services (only for Advisor) */}
+              {convTargetRole === 'Advisor' && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Allowed Services</label>
+                  <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                    {['study-abroad', 'ivy-league', 'education-planning', 'coaching-classes'].map((service) => (
+                      <label key={service} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={convAllowedServices.includes(service)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setConvAllowedServices([...convAllowedServices, service]);
+                            } else {
+                              setConvAllowedServices(convAllowedServices.filter(s => s !== service));
+                            }
+                          }}
+                          className="w-4 h-4 text-purple-600 rounded"
+                        />
+                        <span className="text-sm capitalize">{service.replace(/-/g, ' ')}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 mt-6">
                 <button onClick={() => setShowConvertModal(false)} className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
                   Cancel
                 </button>
                 <button
                   onClick={handleConvertToInProcess}
-                  disabled={converting}
+                  disabled={converting || !convLoginEmail}
                   className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
                 >
                   {converting ? 'Requesting...' : 'Request Conversion'}

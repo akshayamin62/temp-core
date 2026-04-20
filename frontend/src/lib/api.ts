@@ -1121,16 +1121,16 @@ export const b2bAPI = {
   getOpsLeads: () => api.get('/b2b/ops/leads'),
 
   // Conversions
-  requestInProcessConversion: (b2bLeadId: string) =>
-    api.post(`/b2b/conversions/request-in-process/${b2bLeadId}`),
+  requestInProcessConversion: (b2bLeadId: string, data: { targetRole: string; loginEmail: string; mobileNumber?: string; allowedServices?: string[] }) =>
+    api.post(`/b2b/conversions/request-in-process/${b2bLeadId}`, data),
   approveInProcessConversion: (conversionId: string) =>
     api.post(`/b2b/conversions/approve-in-process/${conversionId}`),
-  requestAdminAdvisorConversion: (b2bLeadId: string, data: FormData) =>
-    api.post(`/b2b/conversions/request-admin-advisor/${b2bLeadId}`, data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
-  approveAdminAdvisorConversion: (conversionId: string) =>
-    api.post(`/b2b/conversions/approve-admin-advisor/${conversionId}`),
+  requestAdminAdvisorConversion: (b2bLeadId: string) =>
+    api.post(`/b2b/conversions/request-admin-advisor/${b2bLeadId}`),
+  directConvertAdminAdvisor: (b2bLeadId: string) =>
+    api.post(`/b2b/conversions/direct-convert/${b2bLeadId}`),
+  approveAdminAdvisorConversion: (conversionId: string, data?: { enquiryFormSlug?: string }) =>
+    api.post(`/b2b/conversions/approve-admin-advisor/${conversionId}`, data || {}),
   rejectConversion: (conversionId: string, reason: string) =>
     api.post(`/b2b/conversions/reject/${conversionId}`, { rejectionReason: reason }),
   getPendingConversions: () => api.get('/b2b/conversions/pending'),
@@ -1170,6 +1170,55 @@ export const b2bAPI = {
     time: string;
     duration: number;
   }) => api.get('/b2b/follow-ups/check-availability', { params }),
+};
+
+// ===== Onboarding APIs =====
+export const onboardingAPI = {
+  // Admin/Advisor onboarding
+  getProfile: () => api.get('/onboarding/profile'),
+  updateProfile: (data: { companyName?: string; address?: string; enquiryFormSlug?: string; mobileNumber?: string }) =>
+    api.put('/onboarding/profile', data),
+  uploadDocument: (documentType: string, file: File) => {
+    const formData = new FormData();
+    formData.append('document', file);
+    formData.append('documentType', documentType);
+    return api.post('/onboarding/upload-document', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  submit: () => api.post('/onboarding/submit'),
+
+  // OPS/Super Admin review
+  getReview: (profileId: string, role: string) =>
+    api.get(`/onboarding/review/${profileId}`, { params: { role } }),
+  reviewDocument: (profileId: string, data: { documentType: string; action: 'approve' | 'reject'; rejectReason?: string; role: string }) =>
+    api.post(`/onboarding/review/${profileId}/document`, data),
+
+  // Super Admin OPS assignment
+  assignOps: (profileId: string, data: { opsId: string; role: string }) =>
+    api.post(`/onboarding/assign-ops/${profileId}`, data),
+
+  // View document inline (returns blob)
+  viewDocument: (profileId: string, documentType: string, role: string) =>
+    api.get(`/onboarding/document/${profileId}/${documentType}/view`, {
+      params: { role },
+      responseType: 'blob' as const,
+    }),
+
+  // OPS/SA upload document for a profile
+  uploadDocumentForProfile: (profileId: string, documentType: string, file: File, role: string) => {
+    const formData = new FormData();
+    formData.append('document', file);
+    formData.append('documentType', documentType);
+    formData.append('role', role);
+    return api.post(`/onboarding/review/${profileId}/upload-document`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  // OPS/SA update company details on a profile
+  updateCompanyDetails: (profileId: string, data: { companyName?: string; address?: string; role: string }) =>
+    api.put(`/onboarding/review/${profileId}/company-details`, data),
 };
 
 export default api;

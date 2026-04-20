@@ -17,6 +17,8 @@ export interface IB2BConversion extends Document {
   requestedBy: Types.ObjectId;
   targetRole: "Admin" | "Advisor";
   status: B2B_CONVERSION_STATUS;
+  loginEmail?: string; // Email for Admin/Advisor account creation (provided by B2B Sales)
+  mobileNumber?: string; // Mobile number for Admin/Advisor (editable by B2B Sales)
   // Company details filled by B2B OPS during step 2
   companyName?: string;
   companyAddress?: string;
@@ -62,6 +64,8 @@ const b2bConversionSchema = new Schema<IB2BConversion>(
       enum: Object.values(B2B_CONVERSION_STATUS),
       default: B2B_CONVERSION_STATUS.PENDING,
     },
+    loginEmail: { type: String, lowercase: true, trim: true },
+    mobileNumber: { type: String, trim: true },
     companyName: { type: String, trim: true },
     companyAddress: { type: String, trim: true },
     enquiryFormSlug: { type: String, lowercase: true, trim: true },

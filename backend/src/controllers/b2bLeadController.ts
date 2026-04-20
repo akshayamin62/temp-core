@@ -188,6 +188,14 @@ export const getB2BLeadDetail = async (req: AuthRequest, res: Response): Promise
       .populate({
         path: "assignedB2BOpsId",
         populate: { path: "userId", select: "firstName middleName lastName email" },
+      })
+      .populate({
+        path: "conversionRequestId",
+        select: "targetRole allowedServices step status",
+      })
+      .populate({
+        path: "createdAdvisorId",
+        select: "allowedServices",
       });
 
     if (!lead) {

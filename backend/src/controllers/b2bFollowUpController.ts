@@ -402,10 +402,23 @@ export const getB2BFollowUpById = async (
           }
         }
       } else {
+        // First try: follow-up directly owned by this sales person
         followUp = await B2BFollowUp.findOne({
           _id: followUpId,
           b2bSalesId: profile._id,
         }).populate("b2bLeadId", "firstName middleName lastName email mobileNumber type stage");
+
+        // Fallback: follow-up may have been created by OPS for a lead assigned to this sales person
+        if (!followUp) {
+          const candidate = await B2BFollowUp.findById(followUpId)
+            .populate("b2bLeadId", "firstName middleName lastName email mobileNumber type stage assignedB2BSalesId");
+          if (candidate) {
+            const candidateLead = candidate.b2bLeadId as any;
+            if (candidateLead && String(candidateLead.assignedB2BSalesId) === String(profile._id)) {
+              followUp = candidate;
+            }
+          }
+        }
       }
     }
 

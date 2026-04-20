@@ -82,6 +82,12 @@ export default function AdvisorLayout({ children, user: userProp }: AdvisorLayou
         setInternalUser(profileData.user);
       }
 
+      // Redirect to onboarding if not verified
+      if (profileData.user && !profileData.user.isVerified && !pathname.startsWith('/advisor/onboarding')) {
+        router.replace('/advisor/onboarding');
+        return;
+      }
+
       if (profileData.advisor) {
         setAdvisorProfile({
           companyLogo: profileData.advisor.companyLogo,
