@@ -54,6 +54,7 @@ import {
   getAllReferrersForSuperAdmin,
   createReferrerForSuperAdmin,
   toggleReferrerStatusForSuperAdmin,
+  getReferrerDashboardForSuperAdmin,
 } from "../controllers/referrerController";
 
 const router = Router();
@@ -359,6 +360,13 @@ router.post("/referrer", createReferrerForSuperAdmin);
  * @access  Super Admin only
  */
 router.patch("/referrer/:referrerId/toggle-status", toggleReferrerStatusForSuperAdmin);
+
+/**
+ * @route   GET /api/super-admin/referrer/:referrerId/dashboard
+ * @desc    Get referrer dashboard with leads and stats
+ * @access  Super Admin only
+ */
+router.get("/referrer/:referrerId/dashboard", getReferrerDashboardForSuperAdmin);
 
 // ============= ADVISOR ROUTES =============
 

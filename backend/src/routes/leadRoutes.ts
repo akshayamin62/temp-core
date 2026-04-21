@@ -21,6 +21,8 @@ const router = express.Router();
 import {
   getReferralInfo,
   submitReferralEnquiry,
+  getAdminInfoForReferrerRegistration,
+  registerAsReferrer,
 } from "../controllers/referrerController";
 
 // ============= PUBLIC ROUTES (No Auth Required) =============
@@ -36,6 +38,12 @@ router.get("/public/referral/:referralSlug/info", getReferralInfo);
 
 // Submit referral enquiry form
 router.post("/public/referral/:referralSlug/submit", submitReferralEnquiry);
+
+// Get admin info for referrer registration form
+router.get("/public/referrer-registration/:adminSlug/info", getAdminInfoForReferrerRegistration);
+
+// Submit referrer registration form
+router.post("/public/referrer-registration/:adminSlug/submit", registerAsReferrer);
 
 // ============= ADMIN ROUTES =============
 

@@ -6,7 +6,6 @@ export interface IReferrer extends Document {
   email: string;
   mobileNumber?: string;
   referralSlug: string;
-  isActive: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -48,10 +47,6 @@ const referrerSchema = new Schema<IReferrer>(
       unique: true,
       trim: true,
       lowercase: true,
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
     },
   },
   { timestamps: true }

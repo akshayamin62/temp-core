@@ -241,6 +241,9 @@ export const superAdminAPI = {
   toggleReferrerStatus: (referrerId: string) =>
     api.patch(`/super-admin/referrer/${referrerId}/toggle-status`),
 
+  getReferrerDashboard: (referrerId: string) =>
+    api.get(`/super-admin/referrer/${referrerId}/dashboard`),
+
   // Advisor management
   getAdvisors: () => api.get('/super-admin/advisors'),
   getAdvisorDetails: (id: string) => api.get(`/super-admin/advisors/${id}`),
@@ -541,6 +544,9 @@ export const adminAPI = {
 
   toggleReferrerStatus: (referrerId: string) =>
     api.patch(`/admin/referrer/${referrerId}/toggle-status`),
+
+  getReferrerDashboard: (referrerId: string) =>
+    api.get(`/admin/referrer/${referrerId}/dashboard`),
 };
 
 // Lead API
@@ -629,6 +635,20 @@ export const referralAPI = {
       occupation: string;
     };
   }) => api.post(`/public/referral/${referralSlug}/submit`, data),
+};
+
+// Public Referrer Registration API
+export const referrerRegistrationAPI = {
+  getAdminInfo: (adminSlug: string) =>
+    api.get(`/public/referrer-registration/${adminSlug}/info`),
+
+  register: (adminSlug: string, data: {
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    email: string;
+    mobileNumber: string;
+  }) => api.post(`/public/referrer-registration/${adminSlug}/submit`, data),
 };
 
 // Referrer API (for REFERRER role authenticated pages)

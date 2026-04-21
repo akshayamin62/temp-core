@@ -160,7 +160,6 @@ export const getReferrers = async (req: AuthRequest, res: Response): Promise<Res
           email: r.email,
           mobileNumber: r.mobileNumber,
           referralSlug: r.referralSlug,
-          isActive: r.isActive,
           leadCount: countMap[r._id.toString()] || 0,
           createdAt: r.createdAt,
         })),
@@ -204,16 +203,19 @@ export const toggleReferrerStatus = async (req: AuthRequest, res: Response): Pro
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    user.isActive = !user.isActive;
+    // If user is not verified, verify & activate
+    if (!user.isVerified) {
+      user.isVerified = true;
+      user.isActive = true;
+    } else {
+      user.isActive = !user.isActive;
+    }
     await user.save();
-
-    referrer.isActive = user.isActive;
-    await referrer.save();
 
     return res.status(200).json({
       success: true,
       message: `Referrer ${user.isActive ? "activated" : "deactivated"} successfully`,
-      data: { isActive: user.isActive },
+      data: { isActive: user.isActive, isVerified: user.isVerified },
     });
   } catch (error: any) {
     console.error("Toggle referrer status error:", error);
@@ -266,7 +268,6 @@ export const getAllReferrersForSuperAdmin = async (req: AuthRequest, res: Respon
           email: r.email,
           mobileNumber: r.mobileNumber,
           referralSlug: r.referralSlug,
-          isActive: r.isActive,
           leadCount: countMap[r._id.toString()] || 0,
           createdAt: r.createdAt,
         })),
@@ -407,16 +408,19 @@ export const toggleReferrerStatusForSuperAdmin = async (req: AuthRequest, res: R
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    user.isActive = !user.isActive;
+    // If user is not verified, verify & activate
+    if (!user.isVerified) {
+      user.isVerified = true;
+      user.isActive = true;
+    } else {
+      user.isActive = !user.isActive;
+    }
     await user.save();
-
-    referrer.isActive = user.isActive;
-    await referrer.save();
 
     return res.status(200).json({
       success: true,
-      message: `Referrer ${referrer.isActive ? "activated" : "deactivated"} successfully`,
-      data: { isActive: referrer.isActive },
+      message: `Referrer ${user.isActive ? "activated" : "deactivated"} successfully`,
+      data: { isActive: user.isActive, isVerified: user.isVerified },
     });
   } catch (error: any) {
     console.error("Toggle referrer status for super admin error:", error);
@@ -437,7 +441,7 @@ export const getReferralInfo = async (req: Request, res: Response): Promise<Resp
     const { referralSlug } = req.params;
 
     const referrer = await Referrer.findOne({ referralSlug: referralSlug.toLowerCase() })
-      .populate("userId", "firstName middleName lastName");
+      .populate("userId", "firstName middleName lastName isActive");
 
     if (!referrer) {
       return res.status(404).json({
@@ -446,7 +450,8 @@ export const getReferralInfo = async (req: Request, res: Response): Promise<Resp
       });
     }
 
-    if (!referrer.isActive) {
+    const referrerUser = referrer.userId as any;
+    if (!referrerUser?.isActive) {
       return res.status(410).json({
         success: false,
         message: "This referral link is no longer active",
@@ -464,7 +469,6 @@ export const getReferralInfo = async (req: Request, res: Response): Promise<Resp
       });
     }
 
-    const referrerUser = referrer.userId as any;
     const adminUser = admin.userId as any;
 
     return res.json({
@@ -510,7 +514,8 @@ export const submitReferralEnquiry = async (req: Request, res: Response): Promis
       }
     }
 
-    const referrer = await Referrer.findOne({ referralSlug: referralSlug.toLowerCase() });
+    const referrer = await Referrer.findOne({ referralSlug: referralSlug.toLowerCase() })
+      .populate("userId", "isActive");
     if (!referrer) {
       return res.status(404).json({
         success: false,
@@ -518,7 +523,8 @@ export const submitReferralEnquiry = async (req: Request, res: Response): Promis
       });
     }
 
-    if (!referrer.isActive) {
+    const referrerUser = referrer.userId as any;
+    if (!referrerUser?.isActive) {
       return res.status(410).json({
         success: false,
         message: "This referral link is no longer active",
@@ -894,5 +900,225 @@ export const getReferrerStudentFormAnswers = async (req: AuthRequest, res: Respo
   } catch (error: any) {
     console.error("Get referrer student form answers error:", error);
     return res.status(500).json({ success: false, message: "Failed to fetch form answers" });
+  }
+};
+
+// ============= ADMIN/SA REFERRER DASHBOARD ENDPOINTS =============
+
+/**
+ * ADMIN: Get referrer dashboard (stats + leads)
+ */
+export const getReferrerDashboardForAdmin = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const { referrerId } = req.params;
+    const adminUserId = req.user?.userId;
+
+    if (!adminUserId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const referrer = await Referrer.findOne({ _id: referrerId, adminId: adminUserId })
+      .populate("userId", "firstName middleName lastName email profilePicture isActive isVerified createdAt");
+
+    if (!referrer) {
+      return res.status(404).json({ success: false, message: "Referrer not found or unauthorized" });
+    }
+
+    const leads = await Lead.find({ referrerId: referrer._id })
+      .select("name email mobileNumber city serviceTypes stage source createdAt")
+      .sort({ createdAt: -1 });
+
+    const stageCounts: Record<string, number> = {};
+    Object.values(LEAD_STAGE).forEach((s) => { stageCounts[s] = 0; });
+    leads.forEach((l: any) => { stageCounts[l.stage] = (stageCounts[l.stage] || 0) + 1; });
+
+    const totalStudents = await Student.countDocuments({ referrerId: referrer._id });
+
+    return res.json({
+      success: true,
+      data: {
+        referrer: {
+          _id: referrer._id,
+          userId: referrer.userId,
+          email: referrer.email,
+          mobileNumber: referrer.mobileNumber,
+          referralSlug: referrer.referralSlug,
+          createdAt: referrer.createdAt,
+        },
+        leads,
+        stageCounts,
+        totalStudents,
+      },
+    });
+  } catch (error: any) {
+    console.error("Get referrer dashboard for admin error:", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch referrer dashboard" });
+  }
+};
+
+/**
+ * SUPER ADMIN: Get referrer dashboard (stats + leads)
+ */
+export const getReferrerDashboardForSuperAdmin = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const { referrerId } = req.params;
+
+    const referrer = await Referrer.findById(referrerId)
+      .populate("userId", "firstName middleName lastName email profilePicture isActive isVerified createdAt")
+      .populate("adminId", "firstName middleName lastName email");
+
+    if (!referrer) {
+      return res.status(404).json({ success: false, message: "Referrer not found" });
+    }
+
+    // Get admin company name
+    const adminProfile = await Admin.findOne({ userId: (referrer.adminId as any)?._id }).select("companyName");
+
+    const leads = await Lead.find({ referrerId: referrer._id })
+      .select("name email mobileNumber city serviceTypes stage source createdAt")
+      .sort({ createdAt: -1 });
+
+    const stageCounts: Record<string, number> = {};
+    Object.values(LEAD_STAGE).forEach((s) => { stageCounts[s] = 0; });
+    leads.forEach((l: any) => { stageCounts[l.stage] = (stageCounts[l.stage] || 0) + 1; });
+
+    const totalStudents = await Student.countDocuments({ referrerId: referrer._id });
+
+    return res.json({
+      success: true,
+      data: {
+        referrer: {
+          _id: referrer._id,
+          userId: referrer.userId,
+          adminId: referrer.adminId,
+          adminCompanyName: adminProfile?.companyName,
+          email: referrer.email,
+          mobileNumber: referrer.mobileNumber,
+          referralSlug: referrer.referralSlug,
+          createdAt: referrer.createdAt,
+        },
+        leads,
+        stageCounts,
+        totalStudents,
+      },
+    });
+  } catch (error: any) {
+    console.error("Get referrer dashboard for super admin error:", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch referrer dashboard" });
+  }
+};
+
+// ============= PUBLIC REFERRER REGISTRATION =============
+
+/**
+ * PUBLIC: Get admin info for referrer registration form
+ */
+export const getAdminInfoForReferrerRegistration = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { adminSlug } = req.params;
+
+    const admin = await Admin.findOne({ enquiryFormSlug: adminSlug.toLowerCase() })
+      .populate("userId", "firstName middleName lastName");
+
+    if (!admin) {
+      return res.status(404).json({ success: false, message: "Invalid registration link" });
+    }
+
+    const adminUser = admin.userId as any;
+
+    return res.json({
+      success: true,
+      data: {
+        adminName: [adminUser?.firstName, adminUser?.middleName, adminUser?.lastName].filter(Boolean).join(" ") || "Kareer Studio",
+        companyName: admin.companyName || "Kareer Studio",
+        companyLogo: admin.companyLogo || null,
+      },
+    });
+  } catch (error: any) {
+    console.error("Get admin info for referrer registration error:", error);
+    return res.status(500).json({ success: false, message: "Failed to load registration form" });
+  }
+};
+
+/**
+ * PUBLIC: Register as a referrer (inactive + unverified until admin approves)
+ */
+export const registerAsReferrer = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { adminSlug } = req.params;
+    const { firstName, middleName, lastName, email, mobileNumber } = req.body;
+
+    if (!firstName || !lastName || !email) {
+      return res.status(400).json({
+        success: false,
+        message: "First name, last name, and email are required",
+      });
+    }
+
+    if (!mobileNumber || !mobileNumber.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number is required",
+      });
+    }
+
+    const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,5}[-\s.]?[0-9]{1,5}$/;
+    if (!phoneRegex.test(mobileNumber.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid phone number format",
+      });
+    }
+
+    const admin = await Admin.findOne({ enquiryFormSlug: adminSlug.toLowerCase() });
+    if (!admin) {
+      return res.status(404).json({ success: false, message: "Invalid registration link" });
+    }
+
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "A user with this email already exists",
+      });
+    }
+
+    // Create user as UNVERIFIED + INACTIVE
+    const newUser = new User({
+      firstName: firstName.trim(),
+      middleName: middleName?.trim() || undefined,
+      lastName: lastName.trim(),
+      email: email.toLowerCase().trim(),
+      role: USER_ROLE.REFERRER,
+      isVerified: false,
+      isActive: false,
+    });
+    await newUser.save();
+
+    const newReferrer = new Referrer({
+      userId: newUser._id,
+      adminId: admin.userId,
+      email: email.toLowerCase().trim(),
+      mobileNumber: mobileNumber?.trim() || undefined,
+      referralSlug: "temp",
+    });
+    await newReferrer.save();
+
+    const fullName = [firstName, lastName].filter(Boolean).join(" ");
+    const baseSlug = generateSlug(fullName);
+    const referralSlug = `${baseSlug}-${newReferrer._id}`;
+    newReferrer.referralSlug = referralSlug;
+    await newReferrer.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Registration submitted successfully! Your account is pending approval.",
+    });
+  } catch (error: any) {
+    console.error("Register as referrer error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to submit registration. Please try again later.",
+    });
   }
 };

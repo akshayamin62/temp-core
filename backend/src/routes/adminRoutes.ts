@@ -12,6 +12,7 @@ import {
   createReferrer,
   getReferrers,
   toggleReferrerStatus,
+  getReferrerDashboardForAdmin,
 } from "../controllers/referrerController";
 import {
   getPendingTransfers,
@@ -101,6 +102,13 @@ router.get("/referrers", getReferrers);
  * @access  Admin only
  */
 router.patch("/referrer/:referrerId/toggle-status", toggleReferrerStatus);
+
+/**
+ * @route   GET /api/admin/referrer/:referrerId/dashboard
+ * @desc    Get referrer dashboard with leads and stats
+ * @access  Admin only
+ */
+router.get("/referrer/:referrerId/dashboard", getReferrerDashboardForAdmin);
 
 // ============= STUDENT TRANSFER ROUTES =============
 
