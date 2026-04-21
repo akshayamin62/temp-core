@@ -5,7 +5,7 @@ import B2BSales from "../models/B2BSales";
 import B2BOps from "../models/B2BOps";
 import { USER_ROLE } from "../types/roles";
 import mongoose from "mongoose";
-import { sendEmail } from "../utils/email";
+import { sendEmail, sendB2BEnquiryConfirmationEmail } from "../utils/email";
 import UserModel from "../models/User";
 
 /**
@@ -57,7 +57,13 @@ export const submitB2BEnquiry = async (req: Request, res: Response): Promise<Res
 
     await newLead.save();
 
-    // Notify Super Admin via email
+    // Send confirmation email to enquirer and notify Super Admins
+    try {
+      await sendB2BEnquiryConfirmationEmail(email.toLowerCase().trim(), firstName.trim(), type);
+    } catch (emailErr) {
+      console.error("Failed to send B2B enquiry confirmation email:", emailErr);
+    }
+
     try {
       const superAdmins = await UserModel.find({ role: USER_ROLE.SUPER_ADMIN, isActive: true }).select("email").lean();
       for (const sa of superAdmins) {

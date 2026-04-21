@@ -917,3 +917,108 @@ export const sendOfferReceivedEmail = async (
     text,
   });
 };
+
+/**
+ * Send B2B enquiry confirmation email to the enquirer
+ */
+export const sendB2BEnquiryConfirmationEmail = async (
+  email: string,
+  firstName: string,
+  type: string
+): Promise<void> => {
+  const typeLabel =
+    type === 'Franchise' ? 'Franchise Partner'
+    : type === 'Advisor' ? 'Advisor'
+    : type === 'Referrer' ? 'Referrer'
+    : type;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Your ADMITra Business Opportunity Enquiry</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.8; color: #333; background-color: #f9f9f9; margin: 0; padding: 0;">
+      <div style="max-width: 620px; margin: 30px auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+        <!-- Header -->
+        <div style="background-color: #1e3a5f; padding: 28px 36px;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">ADMITra</h1>
+          <p style="color: #a8c4e0; margin: 4px 0 0; font-size: 13px;">Business Opportunity Enquiry</p>
+        </div>
+
+        <!-- Body -->
+        <div style="padding: 36px;">
+          <p style="margin-top: 0;">Hi ${firstName},</p>
+
+          <p>Thank you for reaching out and showing interest in exploring a business opportunity with <strong>ADMITra</strong>.</p>
+
+          <p>We've received your enquiry for business collaboration as a <strong>${typeLabel}</strong>, and it's great to see your interest in building something meaningful in the education and study abroad space.</p>
+
+          <p>Before we move ahead, it's important you understand how we operate.</p>
+
+          <p><strong>ADMITra is not built like a typical commission-driven model.</strong><br>
+          We focus on structured consulting, long-term client relationships, and a system-driven approach that allows our partners to build credible and sustainable income streams.</p>
+
+          <p style="margin-bottom: 8px;">Depending on the path you choose:</p>
+          <ul style="margin: 0 0 16px; padding-left: 20px; color: #444;">
+            <li style="margin-bottom: 6px;">As a <strong>Referrer</strong>, you leverage your network and earn through qualified conversions</li>
+            <li style="margin-bottom: 6px;">As an <strong>Advisor</strong>, you actively guide students and parents using our frameworks</li>
+            <li style="margin-bottom: 6px;">As a <strong>Franchise Partner</strong>, you build and scale your own consulting setup using the ADMITra ecosystem</li>
+          </ul>
+
+          <p>Each model has a different level of involvement, earning potential, and commitment — so the next step is to understand what fits you best.</p>
+
+          <p style="margin-bottom: 8px;">I'd suggest we connect for a short discussion to:</p>
+          <ul style="margin: 0 0 16px; padding-left: 20px; color: #444;">
+            <li style="margin-bottom: 6px;">Understand your background and expectations</li>
+            <li style="margin-bottom: 6px;">Walk you through the model in detail</li>
+            <li style="margin-bottom: 6px;">Clarify the earning structure and onboarding process</li>
+          </ul>
+
+          <!-- Team note -->
+          <div style="background-color: #f0f4ff; border-left: 4px solid #3b82f6; border-radius: 4px; padding: 14px 18px; margin: 24px 0;">
+            <p style="margin: 0; color: #1e40af; font-size: 14px;">Our team will review your enquiry and reach out to you shortly to schedule a convenient time for a discussion. Please keep an eye on your email.</p>
+          </div>
+
+          <p>Looking forward to connecting for mutual benefits.</p>
+
+          <p style="margin-bottom: 4px;">Regards,</p>
+          <p style="margin: 0; font-weight: 600; color: #1e3a5f;">Makrand Bhatt</p>
+          <p style="margin: 2px 0; color: #555; font-size: 14px;">Founder</p>
+          <p style="margin: 0; color: #555; font-size: 14px; font-weight: 600;">ADMITra</p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #f5f7fa; padding: 18px 36px; border-top: 1px solid #e0e0e0;">
+          <p style="margin: 0; font-size: 12px; color: #999;">This is an automated confirmation from ADMITra. Please do not reply to this email.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `Hi ${firstName},
+
+Thank you for reaching out and showing interest in exploring a business opportunity with ADMITra.
+
+We've received your enquiry for business collaboration as a ${typeLabel}.
+
+ADMITra is not built like a typical commission-driven model. We focus on structured consulting, long-term client relationships, and a system-driven approach that allows our partners to build credible and sustainable income streams.
+
+Our team will review your enquiry and reach out to you shortly.
+
+Looking forward to connecting for mutual benefits.
+
+Regards,
+Makrand Bhatt
+Founder, ADMITra`;
+
+  await sendEmail({
+    to: email,
+    subject: 'Your ADMITra Business Opportunity Enquiry',
+    html,
+    text,
+  });
+};
