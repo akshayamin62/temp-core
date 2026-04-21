@@ -122,12 +122,21 @@ export default function BecomeReferrerPage() {
         <div className="max-w-lg mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            {adminInfo?.companyLogo && (
+            {adminInfo?.companyLogo ? (
               <img
-                src={`${BACKEND_URL}/${adminInfo.companyLogo}`}
+                src={adminInfo.companyLogo.startsWith('http')
+                  ? adminInfo.companyLogo
+                  : `${BACKEND_URL}/${adminInfo.companyLogo.replace(/\\/g, '/').replace(/^\//, '')}`}
                 alt={adminInfo.companyName}
                 className="h-16 mx-auto mb-4 object-contain"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
               />
+            ) : (
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-purple-600 font-bold text-2xl">
+                  {adminInfo?.companyName?.charAt(0) || 'K'}
+                </span>
+              </div>
             )}
             <h1 className="text-2xl font-bold text-gray-900">
               Become a Referrer

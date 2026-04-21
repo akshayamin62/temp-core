@@ -208,7 +208,10 @@ const otpLimiter = rateLimit({
 // Company logos under /uploads/admin are public (needed for enquiry/referral pages)
 // Everything else requires authentication
 import { getUploadBaseDir } from './utils/uploadDir';
-app.use('/uploads/admin', express.static(path.join(getUploadBaseDir(), 'admin')));
+app.use('/uploads/admin', (_req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(path.join(getUploadBaseDir(), 'admin')));
 app.use('/uploads', authenticate, express.static(getUploadBaseDir()));
 
 // OTP verify routes get the stricter limiter (5 attempts per 10 min) on top of authLimiter

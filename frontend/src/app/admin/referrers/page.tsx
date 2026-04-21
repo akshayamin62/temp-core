@@ -36,7 +36,7 @@ export default function ReferrersListPage() {
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending'>('active');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'deactivated'>('all');
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [referrerRegUrl, setReferrerRegUrl] = useState('');
   const [formData, setFormData] = useState({
@@ -125,7 +125,8 @@ export default function ReferrersListPage() {
     const matchesStatus =
       statusFilter === 'all' ||
       (statusFilter === 'active' && isVerified && isActive) ||
-      (statusFilter === 'pending' && !isVerified);
+      (statusFilter === 'pending' && !isVerified) ||
+      (statusFilter === 'deactivated' && isVerified && !isActive);
 
     return matchesSearch && matchesStatus;
   });
@@ -211,6 +212,58 @@ export default function ReferrersListPage() {
             </button>
           </div>
 
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div
+              onClick={() => setStatusFilter('all')}
+              className={`bg-white rounded-xl shadow-sm border-2 p-5 cursor-pointer transition-all hover:shadow-md ${statusFilter === 'all' ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'}`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                </div>
+                <h3 className="text-3xl font-extrabold text-gray-900">{referrers.length}</h3>
+              </div>
+              <p className="text-sm font-semibold text-gray-700 mt-3">Total</p>
+            </div>
+            <div
+              onClick={() => setStatusFilter('active')}
+              className={`bg-white rounded-xl shadow-sm border-2 p-5 cursor-pointer transition-all hover:shadow-md ${statusFilter === 'active' ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-200'}`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <h3 className="text-3xl font-extrabold text-gray-900">{referrers.filter(r => r.userId?.isVerified && r.userId?.isActive).length}</h3>
+              </div>
+              <p className="text-sm font-semibold text-gray-700 mt-3">Active</p>
+            </div>
+            <div
+              onClick={() => setStatusFilter('pending')}
+              className={`bg-white rounded-xl shadow-sm border-2 p-5 cursor-pointer transition-all hover:shadow-md ${statusFilter === 'pending' ? 'border-amber-500 ring-2 ring-amber-200' : 'border-gray-200'}`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <h3 className="text-3xl font-extrabold text-gray-900">{referrers.filter(r => !r.userId?.isVerified).length}</h3>
+              </div>
+              <p className="text-sm font-semibold text-gray-700 mt-3">Pending</p>
+            </div>
+            <div
+              onClick={() => setStatusFilter('deactivated')}
+              className={`bg-white rounded-xl shadow-sm border-2 p-5 cursor-pointer transition-all hover:shadow-md ${statusFilter === 'deactivated' ? 'border-gray-500 ring-2 ring-gray-200' : 'border-gray-200'}`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 bg-gray-200 text-gray-600 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                </div>
+                <h3 className="text-3xl font-extrabold text-gray-900">{referrers.filter(r => r.userId?.isVerified && !r.userId?.isActive).length}</h3>
+              </div>
+              <p className="text-sm font-semibold text-gray-700 mt-3">Deactivated</p>
+            </div>
+          </div>
+
           {/* Search and Filter */}
           <div className="mb-6 flex gap-4">
             <div className="flex-1 relative">
@@ -232,12 +285,13 @@ export default function ReferrersListPage() {
             </div>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'pending')}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'pending' | 'deactivated')}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
               <option value="pending">Pending</option>
+              <option value="deactivated">Deactivated</option>
             </select>
           </div>
 
@@ -478,18 +532,18 @@ export default function ReferrersListPage() {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => router.push(`/admin/referrers/${referrer._id}`)}
-                            className="px-3 py-1 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                           >
                             View Detail
                           </button>
                           <button
                             onClick={() => handleToggleStatus(referrer._id, referrer.userId?.isVerified, referrer.userId?.isActive)}
-                            className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
+                            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                               !referrer.userId?.isVerified
-                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                ? 'bg-green-600 text-white hover:bg-green-700'
                                 : referrer.userId?.isActive
-                                ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                                : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                ? 'bg-yellow-600 text-white hover:bg-yellow-700'
+                                : 'bg-blue-600 text-white hover:bg-blue-700'
                             }`}
                           >
                             {!referrer.userId?.isVerified ? 'Verify & Activate' : referrer.userId?.isActive ? 'Deactivate' : 'Activate'}

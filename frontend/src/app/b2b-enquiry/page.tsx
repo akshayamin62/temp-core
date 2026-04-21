@@ -173,7 +173,7 @@ export default function B2BEnquiryPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Partnership Type *</label>
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { value: B2B_LEAD_TYPE.FRANCHISE, label: 'Franchise', desc: 'Open a franchise' },
+                  { value: B2B_LEAD_TYPE.FRANCHISE, label: 'Franchise', desc: 'Be our franchise' },
                   { value: B2B_LEAD_TYPE.INSTITUTION, label: 'Institution', desc: 'Partner as institution' },
                   { value: B2B_LEAD_TYPE.ADVISOR, label: 'Advisor', desc: 'Become an advisor' },
                 ].map((option) => (
