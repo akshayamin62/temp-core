@@ -393,6 +393,12 @@ export default function B2BOpsLeadDetailPage() {
                     {lead.stage}
                   </div>
                 </div>
+                <button
+                  onClick={() => router.push(`/b2b-ops/leads/${leadId}/verify`)}
+                  className="mt-3 w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 border border-gray-300 transition-colors text-sm font-medium"
+                >
+                  View Profile
+                </button>
               </div>
 
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">

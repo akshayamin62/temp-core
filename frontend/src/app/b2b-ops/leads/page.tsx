@@ -336,16 +336,11 @@ export default function B2BOpsLeadsPage() {
                           <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => router.push(`/b2b-ops/leads/${lead._id}`)}
-                              className="px-3 py-1.5 text-xs font-medium text-blue-600 border border-blue-300 hover:bg-blue-50 rounded-lg transition-colors"
+                              className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
                             >
                               View
                             </button>
-                            <button
-                              onClick={() => router.push(`/b2b-ops/leads/${lead._id}/verify`)}
-                              className="px-3 py-1.5 text-xs font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
-                            >
-                              Verify
-                            </button>
+
                           </div>
                         </td>
                       </tr>

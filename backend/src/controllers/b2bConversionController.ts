@@ -111,6 +111,10 @@ export const requestInProcessConversion = async (req: AuthRequest, res: Response
 
     await conversionRequest.save();
 
+    // Sync edited email/mobile back to lead for consistency
+    if (loginEmail) lead.email = loginEmail.toLowerCase();
+    if (mobileNumber) lead.mobileNumber = mobileNumber;
+
     lead.conversionRequestId = conversionRequest._id as mongoose.Types.ObjectId;
     lead.conversionStatus = "PENDING";
     await lead.save();

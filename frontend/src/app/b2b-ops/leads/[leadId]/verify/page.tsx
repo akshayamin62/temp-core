@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Fragment } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { authAPI, b2bAPI, onboardingAPI } from '@/lib/api';
 import { User, USER_ROLE, B2B_LEAD_STAGE, B2B_LEAD_TYPE, OnboardingProfile, OnboardingDocument } from '@/types';
@@ -372,8 +372,6 @@ export default function B2BOpsVerifyPage() {
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                         <div><span className="text-gray-500 block">Company Name</span><span className="font-medium">{onboardingProfile.companyName || <span className="text-red-500 italic">Not filled</span>}</span></div>
-                        <div><span className="text-gray-500 block">Email</span><span className="font-medium">{onboardingProfile.email || '-'}</span></div>
-                        <div><span className="text-gray-500 block">Mobile</span><span className="font-medium">{onboardingProfile.mobileNumber || '-'}</span></div>
                         <div><span className="text-gray-500 block">Address</span><span className="font-medium">{onboardingProfile.address || <span className="text-red-500 italic">Not filled</span>}</span></div>
                         <div><span className="text-gray-500 block">Onboarding Status</span><span className="font-medium">{onboardingProfile.isOnboarded ? <span className="text-green-600">Completed</span> : onboardingProfile.onboardingSubmittedAt ? <span className="text-blue-600">Submitted for Review</span> : <span className="text-yellow-600">In Progress</span>}</span></div>
                         {onboardingProfile.onboardingSubmittedAt && (
