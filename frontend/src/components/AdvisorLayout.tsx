@@ -5,7 +5,6 @@ import { User, USER_ROLE } from '@/types';
 import { useState, useEffect } from 'react';
 import { authAPI } from '@/lib/api';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
-import { BACKEND_URL } from '@/lib/ivyApi';
 import AuthImage from '@/components/AuthImage';
 
 interface AdvisorLayoutProps {
@@ -116,22 +115,9 @@ export default function AdvisorLayout({ children, user: userProp }: AdvisorLayou
         <div className="h-16 border-b border-gray-200 flex items-center justify-between px-4">
           {sidebarOpen && (
             <div className="flex items-center gap-2">
-              {advisorProfile?.companyLogo ? (
-                <img
-                  src={`${BACKEND_URL}/${advisorProfile.companyLogo.replace(/^\//, '')}`}
-                  alt="Company Logo"
-                  className="w-8 h-8 rounded-lg object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const fallback = target.nextElementSibling as HTMLElement;
-                    if (fallback) fallback.style.display = 'flex';
-                  }}
-                />
-              ) : null}
-              <div className={`w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center ${advisorProfile?.companyLogo ? 'hidden' : ''}`}>
+              <div className={`w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center`}>
                 <span className="text-white font-bold text-sm">
-                  {advisorProfile?.companyName?.charAt(0) || 'A'}
+                  A
                 </span>
               </div>
               <span className="font-semibold text-gray-900">

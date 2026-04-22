@@ -10,6 +10,7 @@ import TeamMeetCalendar from '@/components/TeamMeetCalendar';
 import TeamMeetSidebar from '@/components/TeamMeetSidebar';
 import TeamMeetFormPanel from '@/components/TeamMeetFormPanel';
 import { getFullName, getInitials } from '@/utils/nameHelpers';
+import AuthImage from '@/components/AuthImage';
 
 interface DashboardStats {
   totalCounselors: number;
@@ -32,8 +33,6 @@ interface DashboardStats {
     mobileNumber?: string;
   };
 }
-
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
 
 export default function SuperAdminAdminDashboardPage() {
   const router = useRouter();
@@ -147,22 +146,18 @@ export default function SuperAdminAdminDashboardPage() {
               </svg>
             </button>
             <div className="flex items-center gap-3">
-              {stats?.admin?.companyLogo ? (
-                <img
-                  src={`${API_URL}/${stats.admin.companyLogo.replace(/^\//, '')}`}
-                  alt={stats.admin.companyName || 'Company Logo'}
-                  className="w-10 h-10 rounded-lg object-cover border border-gray-200"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <span className="text-lg font-bold text-blue-600">
-                    {stats?.admin?.companyName?.charAt(0) || getInitials(stats?.admin) || 'A'}
-                  </span>
-                </div>
-              )}
+              <AuthImage
+                path={stats?.admin?.companyLogo}
+                alt={stats?.admin?.companyName || 'Company Logo'}
+                className="w-10 h-10 rounded-lg object-cover border border-gray-200"
+                fallback={
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <span className="text-lg font-bold text-blue-600">
+                      {stats?.admin?.companyName?.charAt(0) || getInitials(stats?.admin) || 'A'}
+                    </span>
+                  </div>
+                }
+              />
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">
                   {stats?.admin?.companyName || getFullName(stats?.admin) || 'Admin Dashboard'}

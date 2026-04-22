@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { referrerRegistrationAPI } from '@/lib/api';
-import { BACKEND_URL } from '@/lib/ivyApi';
 import toast, { Toaster } from 'react-hot-toast';
+import AuthImage from '@/components/AuthImage';
 
 interface AdminInfo {
   adminName: string;
@@ -72,9 +72,9 @@ export default function BecomeReferrerPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4" />
+          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
@@ -122,28 +122,24 @@ export default function BecomeReferrerPage() {
         <div className="max-w-lg mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            {adminInfo?.companyLogo ? (
-              <img
-                src={adminInfo.companyLogo.startsWith('http')
-                  ? adminInfo.companyLogo
-                  : `${BACKEND_URL}/${adminInfo.companyLogo.replace(/\\/g, '/').replace(/^\//, '')}`}
-                alt={adminInfo.companyName}
-                className="h-16 mx-auto mb-4 object-contain"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-              />
-            ) : (
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-purple-600 font-bold text-2xl">
-                  {adminInfo?.companyName?.charAt(0) || 'K'}
-                </span>
-              </div>
-            )}
+            <AuthImage
+              path={adminInfo?.companyLogo}
+              alt={adminInfo?.companyName}
+              className="w-24 h-24 rounded-2xl object-cover mx-auto mb-4 shadow-lg border border-gray-200"
+              fallback={
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-blue-600 font-bold text-2xl">
+                    {adminInfo?.companyName?.charAt(0) || 'K'}
+                  </span>
+                </div>
+              }
+            />
             <h1 className="text-2xl font-bold text-gray-900">
               Become a Referrer
             </h1>
             <p className="text-gray-600 mt-2">
               Register as a referrer for{' '}
-              <span className="font-semibold text-purple-700">{adminInfo?.companyName}</span>
+              <span className="font-semibold text-blue-700">{adminInfo?.companyName}</span>
             </p>
           </div>
 
@@ -160,7 +156,7 @@ export default function BecomeReferrerPage() {
                     required
                     value={formData.firstName}
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="First name"
                   />
                 </div>
@@ -173,7 +169,7 @@ export default function BecomeReferrerPage() {
                     type="text"
                     value={formData.middleName}
                     onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Middle name (optional)"
                   />
                 </div>
@@ -187,7 +183,7 @@ export default function BecomeReferrerPage() {
                     required
                     value={formData.lastName}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Last name"
                   />
                 </div>
@@ -201,7 +197,7 @@ export default function BecomeReferrerPage() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="your@email.com"
                   />
                 </div>
@@ -221,7 +217,7 @@ export default function BecomeReferrerPage() {
                       setFormData({ ...formData, mobileNumber: value });
                     }
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="+1234567890"
                 />
               </div>
@@ -229,7 +225,7 @@ export default function BecomeReferrerPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 mt-2"
+                className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 mt-2"
               >
                 {submitting ? 'Submitting...' : 'Register as Referrer'}
               </button>

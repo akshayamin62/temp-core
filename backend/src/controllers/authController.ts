@@ -11,7 +11,7 @@ import { Request } from "express";
 import { AuthRequest } from "../middleware/auth";
 import path from "path";
 import fs from "fs";
-import { getUploadBaseDir } from "../utils/uploadDir";
+import { getUploadBaseDir, ensureDir } from "../utils/uploadDir";
 import {
   sendOTPEmail,
 } from "../utils/email";
@@ -728,7 +728,9 @@ export const updateSPProfile = async (req: AuthRequest, res: Response): Promise<
 };
 
 /**
- * Upload profile picture for current user
+ * Upload profile picture for current user.
+ * For ADMIN / ADVISOR the file is stored in the public admin/ folder so that
+ * it doubles as their company logo and is accessible on public pages.
  */
 export const uploadProfilePic = async (req: Request, res: Response): Promise<Response> => {
   try {
@@ -746,17 +748,42 @@ export const uploadProfilePic = async (req: Request, res: Response): Promise<Res
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Delete old profile picture if exists
+    const isCompanyRole = user.role === USER_ROLE.ADMIN || user.role === USER_ROLE.ADVISOR;
+
+    let relativePath: string;
+    if (isCompanyRole) {
+      // Store in admin/ (publicly accessible) so the logo works on public enquiry/referral pages
+      const adminDir = path.join(getUploadBaseDir(), 'admin');
+      ensureDir(adminDir);
+      const ext = path.extname(req.file.originalname);
+      const newFilename = `logo_${Date.now()}${ext}`;
+      const newFilePath = path.join(adminDir, newFilename);
+      fs.renameSync(req.file.path, newFilePath);
+      relativePath = `/uploads/admin/${newFilename}`;
+    } else {
+      relativePath = `profile-pictures/${req.file.filename}`;
+    }
+
+    // Delete old file from wherever it was stored
     if (user.profilePicture) {
-      const oldPath = path.join(getUploadBaseDir(), 'profile-pictures', path.basename(user.profilePicture));
-      if (fs.existsSync(oldPath)) {
-        fs.unlinkSync(oldPath);
+      const oldRelative = user.profilePicture.startsWith('/uploads/')
+        ? user.profilePicture.slice('/uploads/'.length)
+        : user.profilePicture;
+      const oldFilePath = path.join(getUploadBaseDir(), oldRelative);
+      if (fs.existsSync(oldFilePath)) {
+        try { fs.unlinkSync(oldFilePath); } catch {}
       }
     }
 
-    const relativePath = `profile-pictures/${req.file.filename}`;
     user.profilePicture = relativePath;
     await user.save();
+
+    // Keep Admin / Advisor companyLogo in sync with profilePicture
+    if (user.role === USER_ROLE.ADMIN) {
+      await Admin.findOneAndUpdate({ userId }, { companyLogo: relativePath });
+    } else if (user.role === USER_ROLE.ADVISOR) {
+      await Advisor.findOneAndUpdate({ userId }, { companyLogo: relativePath });
+    }
 
     return res.status(200).json({
       success: true,
@@ -785,12 +812,22 @@ export const removeProfilePic = async (req: Request, res: Response): Promise<Res
     }
 
     if (user.profilePicture) {
-      const filePath = path.join(getUploadBaseDir(), 'profile-pictures', path.basename(user.profilePicture));
+      const oldRelative = user.profilePicture.startsWith('/uploads/')
+        ? user.profilePicture.slice('/uploads/'.length)
+        : user.profilePicture;
+      const filePath = path.join(getUploadBaseDir(), oldRelative);
       if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+        try { fs.unlinkSync(filePath); } catch {}
       }
       user.profilePicture = undefined;
       await user.save();
+    }
+
+    // Keep Admin / Advisor companyLogo in sync
+    if (user.role === USER_ROLE.ADMIN) {
+      await Admin.findOneAndUpdate({ userId }, { $unset: { companyLogo: 1 } });
+    } else if (user.role === USER_ROLE.ADVISOR) {
+      await Advisor.findOneAndUpdate({ userId }, { $unset: { companyLogo: 1 } });
     }
 
     return res.status(200).json({
