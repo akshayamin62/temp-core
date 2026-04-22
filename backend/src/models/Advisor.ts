@@ -24,6 +24,7 @@ export interface IAdvisor extends Document {
   b2bLeadId?: mongoose.Types.ObjectId;
   documents: IAdvisorDocument[];
   onboardingSubmittedAt?: Date;
+  b2bProfileData?: Record<string, any>;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -112,6 +113,10 @@ const advisorSchema = new Schema<IAdvisor>(
     onboardingSubmittedAt: {
       type: Date,
       default: null,
+    },
+    b2bProfileData: {
+      type: Schema.Types.Mixed,
+      default: {},
     },
   },
   { timestamps: true }

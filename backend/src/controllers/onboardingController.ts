@@ -70,7 +70,7 @@ export const updateOnboardingProfile = async (req: AuthRequest, res: Response): 
   try {
     const userId = req.user?.userId;
     const role = req.user?.role;
-    const { companyName, address, enquiryFormSlug, mobileNumber } = req.body;
+    const { companyName, address, enquiryFormSlug, mobileNumber, b2bProfileData } = req.body;
 
     if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -94,6 +94,10 @@ export const updateOnboardingProfile = async (req: AuthRequest, res: Response): 
     if (companyName !== undefined) profile.companyName = companyName.trim();
     if (address !== undefined) profile.address = address.trim();
     if (mobileNumber !== undefined) profile.mobileNumber = mobileNumber.trim();
+    if (b2bProfileData !== undefined) {
+      profile.b2bProfileData = { ...(profile.b2bProfileData || {}), ...b2bProfileData };
+      profile.markModified('b2bProfileData');
+    }
 
     // Handle slug
     if (enquiryFormSlug !== undefined) {
@@ -594,5 +598,45 @@ export const updateCompanyDetailsByReviewer = async (req: AuthRequest, res: Resp
   } catch (error) {
     console.error("Error updating company details by reviewer:", error);
     return res.status(500).json({ success: false, message: "Failed to update company details" });
+  }
+};
+
+/**
+ * PUT /onboarding/review/:profileId/b2b-profile
+ * B2B OPS or Super Admin updates the b2bProfileData fields on an Admin/Advisor profile
+ */
+export const updateB2BProfileByReviewer = async (req: AuthRequest, res: Response): Promise<Response> => {
+  try {
+    const { profileId } = req.params;
+    const { b2bProfileData, role } = req.body;
+
+    if (!role || !['Admin', 'Advisor'].includes(role)) {
+      return res.status(400).json({ success: false, message: "Role must be 'Admin' or 'Advisor'" });
+    }
+
+    if (!b2bProfileData || typeof b2bProfileData !== 'object') {
+      return res.status(400).json({ success: false, message: "b2bProfileData is required" });
+    }
+
+    const profile: any = role === 'Admin'
+      ? await Admin.findById(profileId)
+      : await Advisor.findById(profileId);
+
+    if (!profile) {
+      return res.status(404).json({ success: false, message: "Profile not found" });
+    }
+
+    profile.b2bProfileData = { ...(profile.b2bProfileData || {}), ...b2bProfileData };
+    profile.markModified('b2bProfileData');
+    await profile.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "B2B profile data updated",
+      data: profile,
+    });
+  } catch (error) {
+    console.error("Error updating B2B profile by reviewer:", error);
+    return res.status(500).json({ success: false, message: "Failed to update B2B profile data" });
   }
 };

@@ -11,6 +11,11 @@ import {
   approveB2BLeadDocument,
   rejectB2BLeadDocument,
   deleteB2BLeadDocument,
+  seedDefaultDocumentFields,
+  getDocumentFieldsByAdmin,
+  getDocumentFieldsByAdvisor,
+  getDocumentsByAdmin,
+  getDocumentsByAdvisor,
 } from "../controllers/b2bLeadDocumentController";
 import { authenticate } from "../middleware/auth";
 import { authorize } from "../middleware/authorize";
@@ -33,6 +38,37 @@ router.get(
   "/my-documents",
   authorize(USER_ROLE.ADMIN, USER_ROLE.ADVISOR),
   getMyB2BLeadDocuments
+);
+
+router.post(
+  "/seed-defaults",
+  authorize(USER_ROLE.ADMIN, USER_ROLE.ADVISOR),
+  seedDefaultDocumentFields
+);
+
+// ─── Entity-based fetch for B2B_OPS / SUPER_ADMIN ────────────────────────
+router.get(
+  "/fields/by-admin/:adminId",
+  authorize(USER_ROLE.SUPER_ADMIN, USER_ROLE.B2B_OPS),
+  getDocumentFieldsByAdmin
+);
+
+router.get(
+  "/fields/by-advisor/:advisorId",
+  authorize(USER_ROLE.SUPER_ADMIN, USER_ROLE.B2B_OPS),
+  getDocumentFieldsByAdvisor
+);
+
+router.get(
+  "/by-admin/:adminId",
+  authorize(USER_ROLE.SUPER_ADMIN, USER_ROLE.B2B_OPS),
+  getDocumentsByAdmin
+);
+
+router.get(
+  "/by-advisor/:advisorId",
+  authorize(USER_ROLE.SUPER_ADMIN, USER_ROLE.B2B_OPS),
+  getDocumentsByAdvisor
 );
 
 // ─── Document Fields ───────────────────────────────────────────────────────

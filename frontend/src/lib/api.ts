@@ -1204,7 +1204,7 @@ export const b2bAPI = {
 export const onboardingAPI = {
   // Admin/Advisor onboarding
   getProfile: () => api.get('/onboarding/profile'),
-  updateProfile: (data: { companyName?: string; address?: string; enquiryFormSlug?: string; mobileNumber?: string }) =>
+  updateProfile: (data: { companyName?: string; address?: string; enquiryFormSlug?: string; mobileNumber?: string; b2bProfileData?: Record<string, any> }) =>
     api.put('/onboarding/profile', data),
   uploadDocument: (documentType: string, file: File) => {
     const formData = new FormData();
@@ -1243,6 +1243,10 @@ export const onboardingAPI = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+
+  // OPS/Super Admin updates b2bProfileData on a profile
+  updateB2BProfileByReviewer: (profileId: string, data: { b2bProfileData: Record<string, any>; role: string }) =>
+    api.put(`/onboarding/review/${profileId}/b2b-profile`, data),
 
   // OPS/SA update company details on a profile
   updateCompanyDetails: (profileId: string, data: { companyName?: string; address?: string; role: string }) =>

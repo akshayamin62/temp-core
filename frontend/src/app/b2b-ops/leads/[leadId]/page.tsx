@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { authAPI, b2bAPI, serviceAPI, onboardingAPI } from '@/lib/api';
-import { User, USER_ROLE, B2B_LEAD_STAGE, B2B_LEAD_TYPE, FOLLOWUP_STATUS, MEETING_TYPE, FollowUp, LEAD_STAGE, Service, OnboardingProfile, OnboardingDocument } from '@/types';
+import { b2bLeadDocumentAPI } from '@/lib/b2bLeadDocumentAPI';
+import { User, USER_ROLE, B2B_LEAD_STAGE, B2B_LEAD_TYPE, FOLLOWUP_STATUS, MEETING_TYPE, FollowUp, LEAD_STAGE, Service, OnboardingProfile, B2BDocumentField, B2BLeadDocument } from '@/types';
+import B2BProfileForm from '@/components/B2BProfileForm';
 import B2BOpsLayout from '@/components/B2BOpsLayout';
 import { BACKEND_URL } from '@/lib/ivyApi';
 import toast, { Toaster } from 'react-hot-toast';
@@ -50,14 +52,19 @@ export default function B2BOpsLeadDetailPage() {
   const [lead, setLead] = useState<any | null>(null);
   const [services, setServices] = useState<Service[]>([]);
 
-  // Onboarding review
-  const [showOnboardingReview, setShowOnboardingReview] = useState(false);
-  const [onboardingProfile, setOnboardingProfile] = useState<OnboardingProfile | null>(null);
+  // Onboarding review + B2B Profile
+  const [onboardingProfile, setOnboardingProfile] = useState<any | null>(null);
   const [loadingOnboarding, setLoadingOnboarding] = useState(false);
-  const [reviewingDoc, setReviewingDoc] = useState<string | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
-  const [rejectingDocType, setRejectingDocType] = useState<string | null>(null);
+  const [b2bDocFields, setB2BDocFields] = useState<B2BDocumentField[]>([]);
+  const [b2bDocuments, setB2BDocuments] = useState<B2BLeadDocument[]>([]);
+  const [loadingB2BDocs, setLoadingB2BDocs] = useState(false);
+  const [reviewingDocId, setReviewingDocId] = useState<string | null>(null);
   const [requestingFinalApproval, setRequestingFinalApproval] = useState(false);
+
+  // Edit mode
+  const [profileData, setProfileData] = useState<Record<string, string>>({});
+  const [savingSection, setSavingSection] = useState<string | null>(null);
+  const [uploadingDocId, setUploadingDocId] = useState<string | null>(null);
 
   // Follow-ups
   const [followUps, setFollowUps] = useState<any[]>([]);
@@ -79,6 +86,7 @@ export default function B2BOpsLeadDetailPage() {
 
   useEffect(() => { checkAuth(); }, []);
   useEffect(() => { if (user) { fetchLead(); fetchFollowUps(); fetchServices(); } }, [user, leadId]);
+  useEffect(() => { if (lead) { fetchOnboardingProfile(); fetchB2BDocuments(); } }, [lead?._id]);
 
   const checkAuth = async () => {
     try {
@@ -158,45 +166,104 @@ export default function B2BOpsLeadDetailPage() {
     }
   };
 
+  const getEntityId = (l: any): string | null => {
+    const raw = l?.createdAdminId || l?.createdAdvisorId;
+    if (!raw) return null;
+    return typeof raw === 'object' && raw !== null ? raw._id : raw;
+  };
+
   const fetchOnboardingProfile = async () => {
     if (!lead?.createdAdminId && !lead?.createdAdvisorId) return;
-    const raw = lead.createdAdminId || lead.createdAdvisorId;
-    const profileId = typeof raw === 'object' && raw !== null ? raw._id : raw;
+    const entityId = getEntityId(lead);
+    if (!entityId) return;
     const role = lead.createdAdminId ? 'Admin' : 'Advisor';
     try {
       setLoadingOnboarding(true);
-      const response = await onboardingAPI.getReview(profileId, role);
-      setOnboardingProfile(response.data.data.profile);
-    } catch (error: any) {
-      toast.error('Failed to load onboarding profile');
+      const response = await onboardingAPI.getReview(entityId, role);
+      const profile = response.data.data.profile;
+      setOnboardingProfile(profile);
+      setProfileData(profile?.b2bProfileData || {});
+    } catch {
+      // silent - profile may not exist yet
     } finally {
       setLoadingOnboarding(false);
     }
   };
 
-  const handleReviewDocument = async (docType: string, action: 'approve' | 'reject') => {
-    if (!onboardingProfile) return;
-    const role = lead.createdAdminId ? 'Admin' : 'Advisor';
-    if (action === 'reject' && !rejectReason.trim()) {
-      toast.error('Please provide a reason for rejection');
-      return;
-    }
+  const fetchB2BDocuments = async () => {
+    const entityId = getEntityId(lead);
+    if (!entityId) return;
+    const isAdmin = !!lead?.createdAdminId;
     try {
-      setReviewingDoc(docType);
-      await onboardingAPI.reviewDocument(onboardingProfile._id, {
-        documentType: docType,
-        action,
-        rejectReason: action === 'reject' ? rejectReason : undefined,
-        role,
-      });
-      toast.success(`Document ${action === 'approve' ? 'approved' : 'rejected'}`);
-      setRejectingDocType(null);
-      setRejectReason('');
-      await fetchOnboardingProfile();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || `Failed to ${action} document`);
+      setLoadingB2BDocs(true);
+      const [fieldsRes, docsRes] = await Promise.all([
+        isAdmin ? b2bLeadDocumentAPI.getFieldsByAdmin(entityId) : b2bLeadDocumentAPI.getFieldsByAdvisor(entityId),
+        isAdmin ? b2bLeadDocumentAPI.getDocsByAdmin(entityId) : b2bLeadDocumentAPI.getDocsByAdvisor(entityId),
+      ]);
+      setB2BDocFields(fieldsRes.data.data.fields || []);
+      setB2BDocuments(docsRes.data.data.documents || []);
+    } catch {
+      // silent
     } finally {
-      setReviewingDoc(null);
+      setLoadingB2BDocs(false);
+    }
+  };
+
+  const handleFieldChange = (key: string, value: string) => {
+    setProfileData(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSaveSection = async (sectionId: string) => {
+    const entityId = getEntityId(lead);
+    if (!entityId) return;
+    const role = lead.createdAdminId ? 'Admin' : 'Advisor';
+    try {
+      setSavingSection(sectionId);
+      await onboardingAPI.updateB2BProfileByReviewer(entityId, { b2bProfileData: profileData, role });
+      toast.success('Section saved');
+    } catch {
+      toast.error('Failed to save section');
+    } finally {
+      setSavingSection(null);
+    }
+  };
+
+  const handleUploadDoc = async (field: B2BDocumentField, file: File) => {
+    try {
+      setUploadingDocId(field._id);
+      await b2bLeadDocumentAPI.uploadDocument(null, field._id, field.documentKey, field.documentName, file);
+      toast.success('Document uploaded');
+      await fetchB2BDocuments();
+    } catch {
+      toast.error('Failed to upload document');
+    } finally {
+      setUploadingDocId(null);
+    }
+  };
+
+  const handleApproveDoc = async (docId: string) => {
+    try {
+      setReviewingDocId(docId);
+      await b2bLeadDocumentAPI.approveDocument(docId);
+      toast.success('Document approved');
+      await fetchB2BDocuments();
+    } catch {
+      toast.error('Failed to approve document');
+    } finally {
+      setReviewingDocId(null);
+    }
+  };
+
+  const handleRejectDoc = async (docId: string, message: string) => {
+    try {
+      setReviewingDocId(docId);
+      await b2bLeadDocumentAPI.rejectDocument(docId, message);
+      toast.success('Document rejected');
+      await fetchB2BDocuments();
+    } catch {
+      toast.error('Failed to reject document');
+    } finally {
+      setReviewingDocId(null);
     }
   };
 
@@ -433,118 +500,41 @@ export default function B2BOpsLeadDetailPage() {
             </div>
           </div>
 
-          {/* Onboarding Review Panel */}
-          {showOnboardingReview && (
-            <div className="mb-6 bg-white rounded-xl shadow-sm border-2 border-blue-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Onboarding Review — {lead.type === B2B_LEAD_TYPE.ADVISOR ? 'Advisor' : 'Admin'}</h3>
-                <button onClick={() => setShowOnboardingReview(false)} className="text-gray-400 hover:text-gray-600">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-              </div>
-
-              {loadingOnboarding ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-                </div>
-              ) : !onboardingProfile ? (
-                <p className="text-gray-500 text-center py-6">No onboarding profile found. The account may not have been created yet.</p>
-              ) : (
-                <div className="space-y-6">
-                  {/* Profile Details */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Company Details</h4>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div><span className="text-gray-500">Company Name:</span> <span className="font-medium">{onboardingProfile.companyName || <span className="text-red-500 italic">Not filled</span>}</span></div>
-                      <div><span className="text-gray-500">Slug:</span> <span className="font-medium">{onboardingProfile.enquiryFormSlug || <span className="text-red-500 italic">Not filled</span>}</span></div>
-                      <div><span className="text-gray-500">Address:</span> <span className="font-medium">{onboardingProfile.address || '-'}</span></div>
-                      <div><span className="text-gray-500">Mobile:</span> <span className="font-medium">{onboardingProfile.mobileNumber || '-'}</span></div>
-                      <div><span className="text-gray-500">Email:</span> <span className="font-medium">{onboardingProfile.email}</span></div>
-                      <div><span className="text-gray-500">Submitted:</span> <span className="font-medium">{onboardingProfile.onboardingSubmittedAt ? new Date(onboardingProfile.onboardingSubmittedAt).toLocaleString() : <span className="text-yellow-600 italic">Not yet submitted</span>}</span></div>
-                    </div>
-                  </div>
-
-                  {/* Documents Review */}
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Documents</h4>
-                    {onboardingProfile.documents.length === 0 ? (
-                      <p className="text-gray-400 text-sm italic">No documents uploaded yet</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {onboardingProfile.documents.map((doc) => (
-                          <div key={doc.type} className={`border rounded-lg p-4 ${doc.status === 'REJECTED' ? 'border-red-300 bg-red-50' : doc.status === 'APPROVED' ? 'border-green-300 bg-green-50' : 'border-yellow-300 bg-yellow-50'}`}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <span className="font-medium text-gray-900 capitalize">{doc.type.replace(/-/g, ' ')}</span>
-                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${doc.status === 'APPROVED' ? 'bg-green-100 text-green-700' : doc.status === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>{doc.status}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {doc.url && (
-                                  <a href={`${BACKEND_URL}/${doc.url.replace(/^\//, '')}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline">View</a>
-                                )}
-                                {doc.status === 'PENDING' && (
-                                  <>
-                                    <button
-                                      onClick={() => handleReviewDocument(doc.type, 'approve')}
-                                      disabled={reviewingDoc === doc.type}
-                                      className="px-3 py-1 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 disabled:opacity-50"
-                                    >
-                                      {reviewingDoc === doc.type ? '...' : 'Approve'}
-                                    </button>
-                                    <button
-                                      onClick={() => setRejectingDocType(rejectingDocType === doc.type ? null : doc.type)}
-                                      className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700"
-                                    >
-                                      Reject
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                            {doc.status === 'REJECTED' && doc.rejectReason && (
-                              <p className="text-sm text-red-600 mt-2">Reason: {doc.rejectReason}</p>
-                            )}
-                            {rejectingDocType === doc.type && (
-                              <div className="mt-3 flex gap-2">
-                                <input
-                                  type="text"
-                                  value={rejectReason}
-                                  onChange={(e) => setRejectReason(e.target.value)}
-                                  placeholder="Reason for rejection"
-                                  className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
-                                />
-                                <button
-                                  onClick={() => handleReviewDocument(doc.type, 'reject')}
-                                  disabled={reviewingDoc === doc.type || !rejectReason.trim()}
-                                  className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50"
-                                >
-                                  Confirm Reject
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Request Final Approval */}
-                  {onboardingProfile.onboardingSubmittedAt && onboardingProfile.documents.every(d => d.status === 'APPROVED') && lead.conversionStatus !== 'PENDING' && (
-                    <div className="border-t border-gray-200 pt-4">
-                      <button
-                        onClick={handleRequestFinalApproval}
-                        disabled={requestingFinalApproval}
-                        className="w-full px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
-                      >
-                        {requestingFinalApproval ? 'Requesting...' : 'Request Final Approval from Super Admin'}
-                      </button>
-                      <p className="text-xs text-gray-500 mt-1 text-center">All documents are approved. Request Super Admin to grant full access.</p>
-                    </div>
-                  )}
+          {/* B2B Profile & Documents */}
+          {(loadingOnboarding || loadingB2BDocs) ? (
+            <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex justify-center py-10">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+            </div>
+          ) : onboardingProfile ? (
+            <div className="mb-6 space-y-4">
+              <B2BProfileForm
+                profileData={profileData}
+                readonlyData={{ firstName: lead.firstName || '', lastName: lead.lastName || '', email: lead.email || '' }}
+                b2bDocFields={b2bDocFields}
+                b2bDocuments={b2bDocuments}
+                loadingDocs={loadingB2BDocs}
+                readOnly={false}
+                savingSection={savingSection}
+                onFieldChange={handleFieldChange}
+                onSaveSection={handleSaveSection}
+                uploadingDocId={uploadingDocId}
+                onUploadDoc={handleUploadDoc}
+                canReviewDocs={true}
+                reviewingDocId={reviewingDocId}
+                onApproveDoc={handleApproveDoc}
+                onRejectDoc={handleRejectDoc}
+              />
+              {onboardingProfile.onboardingSubmittedAt && lead.conversionStatus !== 'PENDING' && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between gap-4">
+                  <p className="text-sm text-gray-600">Profile submitted. You can request final approval from Super Admin.</p>
+                  <button onClick={handleRequestFinalApproval} disabled={requestingFinalApproval}
+                    className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium text-sm shrink-0">
+                    {requestingFinalApproval ? 'Requesting...' : 'Request Final Approval'}
+                  </button>
                 </div>
               )}
             </div>
-          )}
+          ) : null}
 
           {/* Follow-Up Calendar and Overview */}
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-4 gap-6">

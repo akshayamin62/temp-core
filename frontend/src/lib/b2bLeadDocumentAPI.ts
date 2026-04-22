@@ -23,6 +23,31 @@ export const b2bLeadDocumentAPI = {
     return api.delete(`/b2b-lead-documents/fields/${fieldId}`);
   },
 
+  // Seed default document fields (admin/advisor)
+  seedDefaults: () => {
+    return api.post('/b2b-lead-documents/seed-defaults');
+  },
+
+  // Get fields for a specific admin (b2b-ops/super-admin)
+  getFieldsByAdmin: (adminId: string) => {
+    return api.get(`/b2b-lead-documents/fields/by-admin/${adminId}`);
+  },
+
+  // Get fields for a specific advisor (b2b-ops/super-admin)
+  getFieldsByAdvisor: (advisorId: string) => {
+    return api.get(`/b2b-lead-documents/fields/by-advisor/${advisorId}`);
+  },
+
+  // Get documents for a specific admin (b2b-ops/super-admin)
+  getDocsByAdmin: (adminId: string) => {
+    return api.get(`/b2b-lead-documents/by-admin/${adminId}`);
+  },
+
+  // Get documents for a specific advisor (b2b-ops/super-admin)
+  getDocsByAdvisor: (advisorId: string) => {
+    return api.get(`/b2b-lead-documents/by-advisor/${advisorId}`);
+  },
+
   // ─── Documents ───────────────────────────────────────────────────────────
 
   // Get documents for a lead (ops/super-admin)

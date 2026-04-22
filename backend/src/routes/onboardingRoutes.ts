@@ -14,6 +14,7 @@ import {
   viewOnboardingDocument,
   uploadOnboardingDocumentByReviewer,
   updateCompanyDetailsByReviewer,
+  updateB2BProfileByReviewer,
 } from "../controllers/onboardingController";
 
 const router = express.Router();
@@ -81,6 +82,13 @@ router.put(
   "/review/:profileId/company-details",
   authorize([USER_ROLE.B2B_OPS, USER_ROLE.SUPER_ADMIN]),
   updateCompanyDetailsByReviewer
+);
+
+// OPS/Super Admin updates b2bProfileData fields on a profile
+router.put(
+  "/review/:profileId/b2b-profile",
+  authorize([USER_ROLE.B2B_OPS, USER_ROLE.SUPER_ADMIN]),
+  updateB2BProfileByReviewer
 );
 
 // View onboarding document inline (stream)

@@ -22,6 +22,7 @@ export interface IAdmin extends Document {
   b2bLeadId?: mongoose.Types.ObjectId;
   documents: IAdminDocument[];
   onboardingSubmittedAt?: Date;
+  b2bProfileData?: Record<string, any>;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -108,6 +109,10 @@ const adminSchema = new Schema<IAdmin>(
     onboardingSubmittedAt: {
       type: Date,
       default: null,
+    },
+    b2bProfileData: {
+      type: Schema.Types.Mixed,
+      default: {},
     },
   },
   { timestamps: true }

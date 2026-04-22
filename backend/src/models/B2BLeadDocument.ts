@@ -7,7 +7,9 @@ export enum B2BDocumentStatus {
 }
 
 export interface IB2BLeadDocument extends Document {
-  b2bLeadId: mongoose.Types.ObjectId;
+  b2bLeadId?: mongoose.Types.ObjectId;
+  adminId?: mongoose.Types.ObjectId;
+  advisorId?: mongoose.Types.ObjectId;
   documentFieldId: mongoose.Types.ObjectId;
   documentName: string;
   documentKey: string;
@@ -34,8 +36,23 @@ const b2bLeadDocumentSchema = new Schema<IB2BLeadDocument>(
     b2bLeadId: {
       type: Schema.Types.ObjectId,
       ref: "B2BLead",
-      required: true,
+      required: false,
       index: true,
+      default: null,
+    },
+    adminId: {
+      type: Schema.Types.ObjectId,
+      ref: "Admin",
+      required: false,
+      index: true,
+      default: null,
+    },
+    advisorId: {
+      type: Schema.Types.ObjectId,
+      ref: "Advisor",
+      required: false,
+      index: true,
+      default: null,
     },
     documentFieldId: {
       type: Schema.Types.ObjectId,
@@ -71,7 +88,11 @@ const b2bLeadDocumentSchema = new Schema<IB2BLeadDocument>(
 );
 
 b2bLeadDocumentSchema.index({ b2bLeadId: 1, documentKey: 1 });
+b2bLeadDocumentSchema.index({ adminId: 1, documentKey: 1 });
+b2bLeadDocumentSchema.index({ advisorId: 1, documentKey: 1 });
 b2bLeadDocumentSchema.index({ b2bLeadId: 1, status: 1 });
+b2bLeadDocumentSchema.index({ adminId: 1, status: 1 });
+b2bLeadDocumentSchema.index({ advisorId: 1, status: 1 });
 
 const B2BLeadDocument = mongoose.model<IB2BLeadDocument>(
   "B2BLeadDocument",
