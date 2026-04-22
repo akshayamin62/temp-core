@@ -228,6 +228,76 @@ export interface SPDocument {
   updatedAt?: string;
 }
 
+// B2B Lead Document Types
+export enum B2BDocumentStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
+
+export interface B2BDocumentField {
+  _id: string;
+  b2bLeadId: string;
+  documentName: string;
+  documentKey: string;
+  required: boolean;
+  helpText?: string;
+  order: number;
+  isActive: boolean;
+  createdBy: {
+    _id: string;
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    email: string;
+  };
+  createdByRole: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface B2BLeadDocument {
+  _id: string;
+  b2bLeadId: string;
+  documentFieldId: B2BDocumentField | string;
+  documentName: string;
+  documentKey: string;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  mimeType: string;
+  uploadedAt: string;
+  uploadedBy: {
+    _id: string;
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    email: string;
+  };
+  uploadedByRole: string;
+  status: B2BDocumentStatus;
+  approvedBy?: {
+    _id: string;
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    email: string;
+  };
+  approvedAt?: string;
+  rejectedBy?: {
+    _id: string;
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    email: string;
+  };
+  rejectedAt?: string;
+  rejectionMessage?: string;
+  version: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface ServiceProviderProfile {
   _id: string;
   userId: string;

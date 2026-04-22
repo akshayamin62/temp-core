@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState, useRef, Fragment } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { authAPI, b2bAPI, onboardingAPI } from '@/lib/api';
-import { User, USER_ROLE, B2B_LEAD_STAGE, B2B_LEAD_TYPE, OnboardingProfile, OnboardingDocument } from '@/types';
+import { b2bLeadDocumentAPI } from '@/lib/b2bLeadDocumentAPI';
+import { User, USER_ROLE, B2B_LEAD_STAGE, B2B_LEAD_TYPE, OnboardingProfile, OnboardingDocument, B2BDocumentField, B2BLeadDocument, B2BDocumentStatus } from '@/types';
 import B2BOpsLayout from '@/components/B2BOpsLayout';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -49,6 +50,23 @@ export default function B2BOpsVerifyPage() {
   const [companyForm, setCompanyForm] = useState({ companyName: '', address: '' });
   const [savingCompany, setSavingCompany] = useState(false);
 
+  // B2B Lead Documents
+  const [b2bDocFields, setB2BDocFields] = useState<B2BDocumentField[]>([]);
+  const [b2bDocuments, setB2BDocuments] = useState<B2BLeadDocument[]>([]);
+  const [loadingB2BDocs, setLoadingB2BDocs] = useState(false);
+  const [addingField, setAddingField] = useState(false);
+  const [newFieldName, setNewFieldName] = useState('');
+  const [newFieldRequired, setNewFieldRequired] = useState(false);
+  const [newFieldHelpText, setNewFieldHelpText] = useState('');
+  const [showAddField, setShowAddField] = useState(false);
+  const [uploadingB2BDoc, setUploadingB2BDoc] = useState<string | null>(null);
+  const b2bFileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [viewingB2BDoc, setViewingB2BDoc] = useState<B2BLeadDocument | null>(null);
+  const [viewB2BBlobUrl, setViewB2BBlobUrl] = useState<string | null>(null);
+  const [rejectingB2BDocId, setRejectingB2BDocId] = useState<string | null>(null);
+  const [b2bRejectMessage, setB2BRejectMessage] = useState('');
+  const [reviewingB2BDoc, setReviewingB2BDoc] = useState<string | null>(null);
+
   useEffect(() => { checkAuth(); }, []);
   useEffect(() => { if (user) fetchLead(); }, [user, leadId]);
   useEffect(() => {
@@ -56,6 +74,9 @@ export default function B2BOpsVerifyPage() {
       fetchOnboardingProfile();
     }
   }, [lead?.createdAdminId, lead?.createdAdvisorId]);
+  useEffect(() => {
+    if (lead?._id) fetchB2BDocuments();
+  }, [lead?._id]);
 
   const checkAuth = async () => {
     try {
@@ -201,6 +222,154 @@ export default function B2BOpsVerifyPage() {
     }
   };
 
+  const fetchB2BDocuments = async () => {
+    try {
+      setLoadingB2BDocs(true);
+      const [fieldsRes, docsRes] = await Promise.all([
+        b2bLeadDocumentAPI.getFields(leadId),
+        b2bLeadDocumentAPI.getDocuments(leadId),
+      ]);
+      setB2BDocFields(fieldsRes.data.data.fields || []);
+      setB2BDocuments(docsRes.data.data.documents || []);
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingB2BDocs(false);
+    }
+  };
+
+  const handleAddB2BDocField = async () => {
+    if (!newFieldName.trim()) { toast.error('Document name is required'); return; }
+    try {
+      setAddingField(true);
+      await b2bLeadDocumentAPI.addField({ leadId, documentName: newFieldName.trim(), required: true, helpText: newFieldHelpText.trim() || undefined });
+      toast.success('Document field added');
+      setNewFieldName('');
+      setNewFieldRequired(false);
+      setNewFieldHelpText('');
+      setShowAddField(false);
+      await fetchB2BDocuments();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to add field');
+    } finally {
+      setAddingField(false);
+    }
+  };
+
+  const handleDeleteB2BDocField = async (fieldId: string) => {
+    try {
+      await b2bLeadDocumentAPI.deleteField(fieldId);
+      toast.success('Document field removed');
+      await fetchB2BDocuments();
+    } catch {
+      toast.error('Failed to remove field');
+    }
+  };
+
+  const handleUploadB2BDocument = async (field: B2BDocumentField, file: File) => {
+    try {
+      setUploadingB2BDoc(field._id);
+      await b2bLeadDocumentAPI.uploadDocument(leadId, field._id, field.documentKey, field.documentName, file);
+      toast.success(`${field.documentName} uploaded`);
+      await fetchB2BDocuments();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to upload document');
+    } finally {
+      setUploadingB2BDoc(null);
+    }
+  };
+
+  const handleViewB2BDocument = async (doc: B2BLeadDocument) => {
+    try {
+      const response = await b2bLeadDocumentAPI.viewDocument(doc._id);
+      const blob = new Blob([response.data], { type: doc.mimeType });
+      const url = URL.createObjectURL(blob);
+      setViewB2BBlobUrl(url);
+      setViewingB2BDoc(doc);
+    } catch {
+      toast.error('Failed to load document');
+    }
+  };
+
+  const closeB2BViewer = () => {
+    if (viewB2BBlobUrl) URL.revokeObjectURL(viewB2BBlobUrl);
+    setViewingB2BDoc(null);
+    setViewB2BBlobUrl(null);
+  };
+
+  const handleApproveB2BDocument = async (docId: string) => {
+    try {
+      setReviewingB2BDoc(docId);
+      await b2bLeadDocumentAPI.approveDocument(docId);
+      toast.success('Document approved');
+      await fetchB2BDocuments();
+    } catch { toast.error('Failed to approve document'); }
+    finally { setReviewingB2BDoc(null); }
+  };
+
+  const handleRejectB2BDocument = async (docId: string) => {
+    if (!b2bRejectMessage.trim()) { toast.error('Rejection message required'); return; }
+    try {
+      setReviewingB2BDoc(docId);
+      await b2bLeadDocumentAPI.rejectDocument(docId, b2bRejectMessage.trim());
+      toast.success('Document rejected');
+      setRejectingB2BDocId(null);
+      setB2BRejectMessage('');
+      await fetchB2BDocuments();
+    } catch { toast.error('Failed to reject document'); }
+    finally { setReviewingB2BDoc(null); }
+  };
+
+  const handleDownloadB2BDocument = async (doc: B2BLeadDocument) => {
+    try {
+      const response = await b2bLeadDocumentAPI.viewDocument(doc._id);
+      const blob = new Blob([response.data], { type: response.headers['content-type'] || 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', doc.fileName || doc.documentName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch { toast.error('Failed to download document'); }
+  };
+
+  const handleDownloadOnboardingDoc = async (docType: string) => {
+    if (!onboardingProfile) return;
+    const role = lead.createdAdminId ? 'Admin' : 'Advisor';
+    try {
+      const response = await onboardingAPI.viewDocument(onboardingProfile._id, docType, role);
+      const blob = new Blob([response.data], { type: response.headers['content-type'] || 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', DOC_LABELS[docType] || docType);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch { toast.error('Failed to download document'); }
+  };
+
+  const getDocForField = (fieldId: string): B2BLeadDocument | undefined =>
+    b2bDocuments.find(d => (typeof d.documentFieldId === 'object' ? d.documentFieldId._id : d.documentFieldId) === fieldId);
+
+  const getB2BStatusBadge = (status: B2BDocumentStatus) => {
+    switch (status) {
+      case B2BDocumentStatus.APPROVED: return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Approved</span>;
+      case B2BDocumentStatus.PENDING: return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending Review</span>;
+      case B2BDocumentStatus.REJECTED: return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Rejected</span>;
+      default: return null;
+    }
+  };
+
+  // B2B docs readiness: all fields must have an uploaded+approved doc
+  const allB2BDocsReady = b2bDocFields.length === 0 || b2bDocFields.every(f => {
+    const doc = getDocForField(f._id);
+    return doc && doc.status === B2BDocumentStatus.APPROVED;
+  });
+
   const getFullName = (u: any) => [u?.firstName, u?.middleName, u?.lastName].filter(Boolean).join(' ');
   const getStageColor = (stage: string) => {
     switch (stage) {
@@ -226,7 +395,7 @@ export default function B2BOpsVerifyPage() {
     return doc && doc.url;
   });
   const allUploadedDocsApproved = onboardingProfile?.documents && onboardingProfile.documents.length > 0 && onboardingProfile.documents.every(d => d.status === 'APPROVED');
-  const allDocsReady = allRequiredDocsUploaded && allUploadedDocsApproved;
+  const allDocsReady = allRequiredDocsUploaded && allUploadedDocsApproved && allB2BDocsReady;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -381,9 +550,9 @@ export default function B2BOpsVerifyPage() {
                     )}
                   </div>
 
-                  {/* Documents - matching advisor onboarding style */}
+                  {/* Documents */}
                   <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Required Documents</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Documents</h3>
                     <p className="text-sm text-gray-500 mb-6">Review and manage uploaded documents. You can also upload documents on behalf of the admin/advisor.</p>
 
                     <div className="space-y-4">
@@ -420,12 +589,18 @@ export default function B2BOpsVerifyPage() {
                                 <div className="flex items-center gap-2 shrink-0">
                                   {doc && <div className="shrink-0">{getStatusBadge(doc.status)}</div>}
                                   {doc?.url && (
-                                    <button onClick={() => handleViewDocument(docType)} className="px-4 py-2 bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 rounded-lg hover:from-blue-100 hover:to-blue-200 transition-all text-xs font-semibold flex items-center gap-1.5 border border-blue-200 shadow-sm">
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                      </svg>
-                                      View
-                                    </button>
+                                    <>
+                                      <button onClick={() => handleViewDocument(docType)} className="px-4 py-2 bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 rounded-lg hover:from-blue-100 hover:to-blue-200 transition-all text-xs font-semibold flex items-center gap-1.5 border border-blue-200 shadow-sm">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        View
+                                      </button>
+                                      <button onClick={() => handleDownloadOnboardingDoc(docType)} className="px-4 py-2 bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 rounded-lg hover:from-gray-100 hover:to-gray-200 transition-all text-xs font-semibold flex items-center gap-1.5 border border-gray-300 shadow-sm">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                        Download
+                                      </button>
+                                    </>
                                   )}
                                   <input ref={(el) => { fileInputRefs.current[docType] = el; }} type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleUploadDocument(docType, file); e.target.value = ''; }} />
                                   <button onClick={() => fileInputRefs.current[docType]?.click()} disabled={isUploading} className="px-5 py-2.5 rounded-lg transition-all text-sm font-semibold flex items-center gap-2 shadow-md hover:shadow-lg whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 disabled:opacity-50">
@@ -473,61 +648,6 @@ export default function B2BOpsVerifyPage() {
                     </div>
                   </div>
 
-                  {/* Request Final Approval */}
-                  {lead.stage !== B2B_LEAD_STAGE.CONVERTED && lead.conversionStatus !== 'APPROVED' && lead.conversionStatus !== 'PENDING' && (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Request Final Approval</h3>
-                      {allDocsReady && onboardingProfile?.companyName && onboardingProfile?.address ? (
-                        <p className="text-sm text-gray-600 mb-4">All requirements are met. Request Super Admin approval to activate the account.</p>
-                      ) : (
-                        <div className="mb-4">
-                          <p className="text-sm text-gray-600 mb-2">Complete the following requirements to enable conversion:</p>
-                          <ul className="space-y-1.5 text-sm">
-                            <li className="flex items-center gap-2">
-                              {onboardingProfile?.companyName ? (
-                                <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                              ) : (
-                                <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                              )}
-                              <span className={onboardingProfile?.companyName ? 'text-green-700' : 'text-red-600'}>Company Name</span>
-                            </li>
-                            <li className="flex items-center gap-2">
-                              {onboardingProfile?.address ? (
-                                <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                              ) : (
-                                <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                              )}
-                              <span className={onboardingProfile?.address ? 'text-green-700' : 'text-red-600'}>Address</span>
-                            </li>
-                            <li className="flex items-center gap-2">
-                              {allRequiredDocsUploaded ? (
-                                <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                              ) : (
-                                <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                              )}
-                              <span className={allRequiredDocsUploaded ? 'text-green-700' : 'text-red-600'}>All required documents uploaded</span>
-                            </li>
-                            {/* <li className="flex items-center gap-2">
-                              {allUploadedDocsApproved ? (
-                                <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                              ) : (
-                                <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                              )}
-                              <span className={allUploadedDocsApproved ? 'text-green-700' : 'text-red-600'}>All uploaded documents approved</span>
-                            </li> */}
-                          </ul>
-                        </div>
-                      )}
-                      <button
-                        onClick={handleRequestApproval}
-                        disabled={converting || !allDocsReady || !onboardingProfile?.companyName || !onboardingProfile?.address}
-                        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                      >
-                        {converting ? 'Requesting...' : 'Request Final Approval from Super Admin'}
-                      </button>
-                    </div>
-                  )}
-
                   {lead.conversionStatus === 'PENDING' && lead.stage !== B2B_LEAD_STAGE.CONVERTED && (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-center gap-3">
                       <svg className="w-6 h-6 text-yellow-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -551,8 +671,212 @@ export default function B2BOpsVerifyPage() {
               )}
             </div>
           )}
+
+          {/* B2B Lead Documents Section - always shown */}
+          <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">B2B Lead Documents</h3>
+                <p className="text-sm text-gray-500 mt-0.5">Documents required by this B2B lead. All fields are required.</p>
+              </div>
+              <button
+                onClick={() => setShowAddField(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                Add Document Field
+              </button>
+            </div>
+
+            {/* Add Field Form */}
+            {showAddField && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                <h4 className="font-medium text-gray-900 mb-3">New Document Field</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={newFieldName}
+                    onChange={e => setNewFieldName(e.target.value)}
+                    placeholder="Document name (e.g. Franchise Agreement)"
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="text"
+                    value={newFieldHelpText}
+                    onChange={e => setNewFieldHelpText(e.target.value)}
+                    placeholder="Help text (optional)"
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <button onClick={handleAddB2BDocField} disabled={addingField} className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                    {addingField ? 'Adding...' : 'Add Field'}
+                  </button>
+                  <button onClick={() => { setShowAddField(false); setNewFieldName(''); setNewFieldHelpText(''); setNewFieldRequired(false); }} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-200">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {loadingB2BDocs ? (
+              <div className="text-center py-8 text-gray-500 text-sm">Loading documents...</div>
+            ) : b2bDocFields.length === 0 ? (
+              <div className="text-center py-8 text-gray-400 text-sm">
+                No document fields yet. Click &ldquo;Add Document Field&rdquo; to create one.
+              </div>
+            ) : (
+              <div className="space-y-4 mt-4">
+                {b2bDocFields.map(field => {
+                  const doc = getDocForField(field._id);
+                  const isUploading = uploadingB2BDoc === field._id;
+                  return (
+                    <div key={field._id}>
+                      <div className={`border-2 rounded-xl p-5 hover:shadow-md transition-all duration-200 bg-gradient-to-br from-white to-gray-50 ${
+                        doc
+                          ? doc.status === B2BDocumentStatus.APPROVED ? 'border-green-300'
+                          : doc.status === B2BDocumentStatus.PENDING ? 'border-yellow-300'
+                          : 'border-red-300'
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}>
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <svg className="w-5 h-5 text-gray-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <h4 className="font-medium text-gray-900">{field.documentName}</h4>
+                                {field.required && <span className="text-sm text-red-500 font-bold">*</span>}
+                              </div>
+                              {field.helpText && <p className="text-sm text-gray-500 mt-0.5">{field.helpText}</p>}
+                              {doc?.rejectionMessage && <p className="text-sm text-red-600 mt-0.5">Reason: {doc.rejectionMessage}</p>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {doc && <div className="shrink-0">{getB2BStatusBadge(doc.status)}</div>}
+                            {doc && (
+                              <>
+                                <button onClick={() => handleViewB2BDocument(doc)} className="px-4 py-2 bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 rounded-lg hover:from-blue-100 hover:to-blue-200 transition-all text-xs font-semibold flex items-center gap-1.5 border border-blue-200 shadow-sm">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                  View
+                                </button>
+                                <button onClick={() => handleDownloadB2BDocument(doc)} className="px-4 py-2 bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 rounded-lg hover:from-gray-100 hover:to-gray-200 transition-all text-xs font-semibold flex items-center gap-1.5 border border-gray-300 shadow-sm">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                  Download
+                                </button>
+                              </>
+                            )}
+                            <input ref={el => { b2bFileInputRefs.current[field._id] = el; }} type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" className="hidden" onChange={e => { const file = e.target.files?.[0]; if (file) handleUploadB2BDocument(field, file); e.target.value = ''; }} />
+                            <button onClick={() => b2bFileInputRefs.current[field._id]?.click()} disabled={isUploading} className="px-5 py-2.5 rounded-lg transition-all text-sm font-semibold flex items-center gap-2 shadow-md hover:shadow-lg whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 disabled:opacity-50">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12" /></svg>
+                              {isUploading ? 'Uploading...' : doc ? 'Reupload' : 'Upload'}
+                            </button>
+                            {doc?.status === B2BDocumentStatus.PENDING && (
+                              <>
+                                <button onClick={() => handleApproveB2BDocument(doc._id)} disabled={reviewingB2BDoc === doc._id} className="px-3 py-2 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 shadow-sm">
+                                  {reviewingB2BDoc === doc._id ? '...' : 'Approve'}
+                                </button>
+                                <button onClick={() => setRejectingB2BDocId(rejectingB2BDocId === doc._id ? null : doc._id)} className="px-3 py-2 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 shadow-sm">
+                                  Reject
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {doc && rejectingB2BDocId === doc._id && (
+                        <div className="flex gap-2 mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <input type="text" value={b2bRejectMessage} onChange={e => setB2BRejectMessage(e.target.value)} placeholder="Reason for rejection" className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm" />
+                          <button onClick={() => handleRejectB2BDocument(doc._id)} disabled={!b2bRejectMessage.trim()} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium">Confirm Reject</button>
+                          <button onClick={() => { setRejectingB2BDocId(null); setB2BRejectMessage(''); }} className="px-3 py-1.5 text-gray-600 border border-gray-300 rounded-lg text-xs hover:bg-gray-50">Cancel</button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Stats */}
+            {b2bDocFields.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-200 flex items-center gap-6 text-sm">
+                <span className="text-gray-600">Fields: <strong>{b2bDocFields.length}</strong></span>
+                <span className="text-blue-600">Uploaded: <strong>{b2bDocuments.length}</strong></span>
+                <span className="text-green-600">Approved: <strong>{b2bDocuments.filter(d => d.status === B2BDocumentStatus.APPROVED).length}</strong></span>
+                <span className="text-yellow-600">Pending: <strong>{b2bDocuments.filter(d => d.status === B2BDocumentStatus.PENDING).length}</strong></span>
+              </div>
+            )}
+          </div>
+
+          {/* Request Final Approval - always at the bottom */}
+          {lead && lead.stage !== B2B_LEAD_STAGE.CONVERTED && lead.conversionStatus !== 'APPROVED' && lead.conversionStatus !== 'PENDING' && onboardingProfile && (
+            <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Request Final Approval</h3>
+              {allDocsReady && onboardingProfile?.companyName && onboardingProfile?.address ? (
+                <p className="text-sm text-gray-600 mb-4">All requirements are met. Request Super Admin approval to activate the account.</p>
+              ) : (
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600 mb-2">Complete the following requirements to enable conversion:</p>
+                  <ul className="space-y-1.5 text-sm">
+                    <li className="flex items-center gap-2">
+                      {onboardingProfile?.companyName ? <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> : <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>}
+                      <span className={onboardingProfile?.companyName ? 'text-green-700' : 'text-red-600'}>Company Name</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      {onboardingProfile?.address ? <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> : <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>}
+                      <span className={onboardingProfile?.address ? 'text-green-700' : 'text-red-600'}>Address</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      {allRequiredDocsUploaded ? <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> : <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>}
+                      <span className={allRequiredDocsUploaded ? 'text-green-700' : 'text-red-600'}>All required documents uploaded</span>
+                    </li>
+                    {b2bDocFields.length > 0 && (
+                      <li className="flex items-center gap-2">
+                        {allB2BDocsReady ? <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> : <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>}
+                        <span className={allB2BDocsReady ? 'text-green-700' : 'text-red-600'}>All B2B lead documents approved</span>
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
+              <button
+                onClick={handleRequestApproval}
+                disabled={converting || !allDocsReady || !onboardingProfile?.companyName || !onboardingProfile?.address}
+                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                {converting ? 'Requesting...' : 'Request Final Approval from Super Admin'}
+              </button>
+            </div>
+          )}
         </div>
       </B2BOpsLayout>
+
+      {/* B2B Document Viewer Modal */}
+      {viewingB2BDoc && viewB2BBlobUrl && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="font-semibold text-gray-900">{viewingB2BDoc.documentName}</h3>
+              <button onClick={closeB2BViewer} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              {viewingB2BDoc.mimeType.startsWith('image/') ? (
+                <img src={viewB2BBlobUrl} alt={viewingB2BDoc.documentName} className="max-w-full mx-auto" />
+              ) : viewingB2BDoc.mimeType === 'application/pdf' ? (
+                <iframe src={viewB2BBlobUrl} className="w-full h-[70vh]" title={viewingB2BDoc.documentName} />
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-600 mb-4">Cannot preview this file type</p>
+                  <a href={viewB2BBlobUrl} download className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Download</a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Document Viewer Modal */}
       {viewingDoc && viewBlobUrl && (
