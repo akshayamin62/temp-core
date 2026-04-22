@@ -96,9 +96,11 @@ export default function B2BEnquiryPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 max-w-lg w-full">
           <div className="text-center mb-8">
-            <div className="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-xl">B2B</span>
-            </div>
+            <img
+              src="/admitra-logo.jpeg"
+              alt="Admitra Logo"
+              className="w-14 h-14 rounded-xl object-cover mx-auto mb-4"
+            />
             <h1 className="text-2xl font-bold text-gray-900">B2B Partnership Enquiry</h1>
             <p className="text-gray-600 mt-2">Interested in partnering with us? Fill out the form below.</p>
           </div>
