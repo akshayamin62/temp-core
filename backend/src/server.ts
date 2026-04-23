@@ -158,6 +158,8 @@ app.use(helmet({
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
+  'https://admitra.io',
+  'https://www.admitra.io',
   'https://core.admitra.io',
   'https://temp-core.admitra.io',
   'https://www.core.admitra.io',
