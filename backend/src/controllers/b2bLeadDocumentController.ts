@@ -33,18 +33,27 @@ export const getB2BDocumentFields = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// Add document field for a lead (B2B_OPS or SUPER_ADMIN)
+// Add document field (B2B_OPS or SUPER_ADMIN) — supports leadId, adminId, or advisorId
 export const addB2BDocumentField = async (req: AuthRequest, res: Response) => {
   try {
-    const { leadId, documentName, required, helpText } = req.body;
+    const { leadId, adminId, advisorId, documentName, required, helpText } = req.body;
 
-    if (!leadId || !documentName) {
-      return res.status(400).json({ success: false, message: "leadId and documentName are required" });
+    if (!documentName) {
+      return res.status(400).json({ success: false, message: "documentName is required" });
+    }
+    if (!leadId && !adminId && !advisorId) {
+      return res.status(400).json({ success: false, message: "leadId, adminId, or advisorId is required" });
     }
 
-    const lead = await B2BLead.findById(leadId);
-    if (!lead) {
-      return res.status(404).json({ success: false, message: "B2B Lead not found" });
+    let entityFilter: Record<string, any> = {};
+    if (adminId) {
+      entityFilter = { adminId };
+    } else if (advisorId) {
+      entityFilter = { advisorId };
+    } else {
+      const lead = await B2BLead.findById(leadId);
+      if (!lead) return res.status(404).json({ success: false, message: "B2B Lead not found" });
+      entityFilter = { b2bLeadId: leadId };
     }
 
     const documentKey = `b2b_${documentName
@@ -52,11 +61,11 @@ export const addB2BDocumentField = async (req: AuthRequest, res: Response) => {
       .replace(/[^a-z0-9]+/g, "_")
       .replace(/^_|_$/g, "")}_${Date.now()}`;
 
-    const maxOrderField = await B2BDocumentField.findOne({ b2bLeadId: leadId, isActive: true }).sort({ order: -1 });
-    const nextOrder = maxOrderField ? maxOrderField.order + 1 : 1;
+    const maxOrderField = await B2BDocumentField.findOne({ ...entityFilter, isActive: true }).sort({ order: -1 });
+    const nextOrder = maxOrderField ? maxOrderField.order + 1 : 100;
 
     const newField = await B2BDocumentField.create({
-      b2bLeadId: leadId,
+      ...entityFilter,
       documentName,
       documentKey,
       required: required || false,
@@ -74,6 +83,48 @@ export const addB2BDocumentField = async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     console.error("Add B2B document field error:", error);
+    return res.status(500).json({ success: false, message: "Failed to add document field" });
+  }
+};
+
+// Add document field for own entity (ADMIN / ADVISOR self-service)
+export const addMyB2BDocumentField = async (req: AuthRequest, res: Response) => {
+  try {
+    const { documentName, required, helpText } = req.body;
+    if (!documentName) {
+      return res.status(400).json({ success: false, message: "documentName is required" });
+    }
+    const entity = await resolveMyEntityId(req.user!.userId, req.user!.role);
+    if (!entity) {
+      return res.status(404).json({ success: false, message: "Entity not found" });
+    }
+    const documentKey = `b2b_${documentName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "")}_${Date.now()}`;
+    const entityFilter = entity.entityType === "admin"
+      ? { adminId: entity.entityId }
+      : { advisorId: entity.entityId };
+    const maxOrderField = await B2BDocumentField.findOne({ ...entityFilter, isActive: true }).sort({ order: -1 });
+    const nextOrder = maxOrderField ? maxOrderField.order + 1 : 100;
+    const newField = await B2BDocumentField.create({
+      ...entityFilter,
+      documentName,
+      documentKey,
+      required: required || false,
+      helpText: helpText || undefined,
+      order: nextOrder,
+      isActive: true,
+      createdBy: new mongoose.Types.ObjectId(req.user!.userId),
+      createdByRole: req.user!.role as "ADMIN" | "ADVISOR",
+    });
+    return res.status(201).json({
+      success: true,
+      message: "Document field created successfully",
+      data: { field: newField },
+    });
+  } catch (error: any) {
+    console.error("Add my B2B document field error:", error);
     return res.status(500).json({ success: false, message: "Failed to add document field" });
   }
 };
@@ -338,9 +389,9 @@ export const uploadB2BLeadDocument = async (req: AuthRequest, res: Response) => 
       return res.status(400).json({ success: false, message: "No file uploaded" });
     }
 
-    if (!documentKey || !documentFieldId) {
+    if (!documentKey) {
       fs.unlinkSync(file.path);
-      return res.status(400).json({ success: false, message: "documentKey and documentFieldId are required" });
+      return res.status(400).json({ success: false, message: "documentKey is required" });
     }
 
     let storeDir: string;
@@ -436,7 +487,9 @@ export const uploadB2BLeadDocument = async (req: AuthRequest, res: Response) => 
         b2bLeadId: b2bLeadIdRef ?? undefined,
         adminId: adminIdRef ?? undefined,
         advisorId: advisorIdRef ?? undefined,
-        documentFieldId: new mongoose.Types.ObjectId(documentFieldId),
+        documentFieldId: documentFieldId && mongoose.Types.ObjectId.isValid(documentFieldId)
+          ? new mongoose.Types.ObjectId(documentFieldId)
+          : undefined,
         documentName,
         documentKey,
         fileName: finalFilename,

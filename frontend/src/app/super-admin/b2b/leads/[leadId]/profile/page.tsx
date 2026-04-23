@@ -168,6 +168,24 @@ export default function SuperAdminB2BLeadProfilePage() {
     }
   };
 
+  const handleAddDocField = async (data: { documentName: string; required: boolean; helpText: string }) => {
+    const entityId = getEntityId(lead);
+    if (!entityId) return;
+    const isAdmin = !!lead.createdAdminId;
+    try {
+      if (isAdmin) {
+        await b2bLeadDocumentAPI.addFieldForAdmin(entityId, data);
+      } else {
+        await b2bLeadDocumentAPI.addFieldForAdvisor(entityId, data);
+      }
+      toast.success(`"${data.documentName}" added`);
+      await fetchB2BDocuments();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to add document field');
+      throw err;
+    }
+  };
+
   const getFullName = (u: any) => [u?.firstName, u?.middleName, u?.lastName].filter(Boolean).join(' ');
 
   const getStageColor = (stage: string) => {
@@ -276,6 +294,7 @@ export default function SuperAdminB2BLeadProfilePage() {
                   reviewingDocId={reviewingDocId}
                   onApproveDoc={handleApproveDoc}
                   onRejectDoc={handleRejectDoc}
+                  onAddDocField={handleAddDocField}
                 />
               )}
 

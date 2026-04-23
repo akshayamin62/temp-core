@@ -178,6 +178,24 @@ export default function B2BOpsVerifyPage() {
     }
   };
 
+  const handleAddDocField = async (data: { documentName: string; required: boolean; helpText: string }) => {
+    const entityId = getEntityId(lead);
+    if (!entityId) return;
+    const isAdmin = !!lead.createdAdminId;
+    try {
+      if (isAdmin) {
+        await b2bLeadDocumentAPI.addFieldForAdmin(entityId, data);
+      } else {
+        await b2bLeadDocumentAPI.addFieldForAdvisor(entityId, data);
+      }
+      toast.success(`"${data.documentName}" added`);
+      await fetchB2BDocuments();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to add document field');
+      throw err;
+    }
+  };
+
   const handleRequestApproval = async () => {
     if (!lead) return;
     try {
@@ -343,6 +361,7 @@ export default function B2BOpsVerifyPage() {
                   reviewingDocId={reviewingDocId}
                   onApproveDoc={handleApproveDoc}
                   onRejectDoc={handleRejectDoc}
+                  onAddDocField={handleAddDocField}
                 />
               )}
 

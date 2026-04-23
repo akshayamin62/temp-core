@@ -18,7 +18,6 @@ export default function AdminOnboardingPage() {
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState<ProfileData>({});
   const [savingSection, setSavingSection] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [b2bDocFields, setB2BDocFields] = useState<B2BDocumentField[]>([]);
   const [b2bDocuments, setB2BDocuments] = useState<B2BLeadDocument[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
@@ -55,7 +54,6 @@ export default function AdminOnboardingPage() {
   const fetchAndSeedDocs = async () => {
     setLoadingDocs(true);
     try {
-      await b2bLeadDocumentAPI.seedDefaults();
       const [fr, dr] = await Promise.all([b2bLeadDocumentAPI.getMyFields(), b2bLeadDocumentAPI.getMyDocuments()]);
       setB2BDocFields(fr.data.data.fields || []);
       setB2BDocuments(dr.data.data.documents || []);
@@ -120,24 +118,16 @@ export default function AdminOnboardingPage() {
     }
   };
 
-  const handleSubmit = async () => {
-    for (const section of B2B_FORM_SECTIONS) {
-      for (const field of section.fields) {
-        if (!field.required || field.type === 'readonly') continue;
-        if (field.conditionalOn && profileData[field.conditionalOn] !== field.conditionalValue) continue;
-        if (!profileData[field.key]?.trim()) { toast.error(`${section.title}: "${field.label}" is required`); return; }
-      }
-    }
-    setSubmitting(true);
+  const handleAddDocField = async (data: { documentName: string; required: boolean; helpText: string }) => {
     try {
-      await onboardingAPI.updateProfile({ b2bProfileData: profileData });
-      await onboardingAPI.submit();
-      toast.success('Submitted for review!');
-      router.push('/admin/dashboard');
+      await b2bLeadDocumentAPI.addMyField(data);
+      toast.success(`"${data.documentName}" added`);
+      const [fr, dr] = await Promise.all([b2bLeadDocumentAPI.getMyFields(), b2bLeadDocumentAPI.getMyDocuments()]);
+      setB2BDocFields(fr.data.data.fields || []);
+      setB2BDocuments(dr.data.data.documents || []);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to submit');
-    } finally {
-      setSubmitting(false);
+      toast.error(err.response?.data?.message || 'Failed to add document field');
+      throw err;
     }
   };
 
@@ -177,16 +167,7 @@ export default function AdminOnboardingPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-4">
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-          <svg className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-sm text-blue-800">
-            Save each section individually using the <strong>Save Section</strong> button, then click <strong>Submit for Review</strong> when all sections are complete.
-          </p>
-        </div>
-
+      <div className="max-w-7xl mx-auto px-6 py-8">
         <B2BProfileForm
           profileData={profileData}
           readonlyData={readonlyData}
@@ -199,20 +180,8 @@ export default function AdminOnboardingPage() {
           onSaveSection={handleSaveSection}
           uploadingDocId={uploadingDocId}
           onUploadDoc={handleUploadDoc}
+          onAddDocField={handleAddDocField}
         />
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-gray-500">
-            <span className="font-medium text-gray-700">{overallPct}%</span> of required fields completed
-          </p>
-          <button onClick={handleSubmit} disabled={submitting}
-            className="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {submitting ? 'Submitting\u2026' : 'Submit for Review'}
-          </button>
-        </div>
       </div>
     </div>
   );

@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { authAPI, b2bAPI, serviceAPI, onboardingAPI } from '@/lib/api';
-import { b2bLeadDocumentAPI } from '@/lib/b2bLeadDocumentAPI';
-import { User, USER_ROLE, B2B_LEAD_STAGE, B2B_LEAD_TYPE, FOLLOWUP_STATUS, MEETING_TYPE, FollowUp, LEAD_STAGE, Service, OnboardingProfile, B2BDocumentField, B2BLeadDocument } from '@/types';
-import B2BProfileForm from '@/components/B2BProfileForm';
+import { authAPI, b2bAPI, serviceAPI } from '@/lib/api';
+import { User, USER_ROLE, B2B_LEAD_STAGE, B2B_LEAD_TYPE, FOLLOWUP_STATUS, MEETING_TYPE, FollowUp, LEAD_STAGE, Service } from '@/types';
 import B2BOpsLayout from '@/components/B2BOpsLayout';
 import { BACKEND_URL } from '@/lib/ivyApi';
 import toast, { Toaster } from 'react-hot-toast';
@@ -52,19 +50,7 @@ export default function B2BOpsLeadDetailPage() {
   const [lead, setLead] = useState<any | null>(null);
   const [services, setServices] = useState<Service[]>([]);
 
-  // Onboarding review + B2B Profile
-  const [onboardingProfile, setOnboardingProfile] = useState<any | null>(null);
-  const [loadingOnboarding, setLoadingOnboarding] = useState(false);
-  const [b2bDocFields, setB2BDocFields] = useState<B2BDocumentField[]>([]);
-  const [b2bDocuments, setB2BDocuments] = useState<B2BLeadDocument[]>([]);
-  const [loadingB2BDocs, setLoadingB2BDocs] = useState(false);
-  const [reviewingDocId, setReviewingDocId] = useState<string | null>(null);
   const [requestingFinalApproval, setRequestingFinalApproval] = useState(false);
-
-  // Edit mode
-  const [profileData, setProfileData] = useState<Record<string, string>>({});
-  const [savingSection, setSavingSection] = useState<string | null>(null);
-  const [uploadingDocId, setUploadingDocId] = useState<string | null>(null);
 
   // Follow-ups
   const [followUps, setFollowUps] = useState<any[]>([]);
@@ -86,7 +72,6 @@ export default function B2BOpsLeadDetailPage() {
 
   useEffect(() => { checkAuth(); }, []);
   useEffect(() => { if (user) { fetchLead(); fetchFollowUps(); fetchServices(); } }, [user, leadId]);
-  useEffect(() => { if (lead) { fetchOnboardingProfile(); fetchB2BDocuments(); } }, [lead?._id]);
 
   const checkAuth = async () => {
     try {
@@ -163,107 +148,6 @@ export default function B2BOpsLeadDetailPage() {
       setServices(response.data.data?.services || response.data.services || []);
     } catch {
       console.error('Failed to fetch services');
-    }
-  };
-
-  const getEntityId = (l: any): string | null => {
-    const raw = l?.createdAdminId || l?.createdAdvisorId;
-    if (!raw) return null;
-    return typeof raw === 'object' && raw !== null ? raw._id : raw;
-  };
-
-  const fetchOnboardingProfile = async () => {
-    if (!lead?.createdAdminId && !lead?.createdAdvisorId) return;
-    const entityId = getEntityId(lead);
-    if (!entityId) return;
-    const role = lead.createdAdminId ? 'Admin' : 'Advisor';
-    try {
-      setLoadingOnboarding(true);
-      const response = await onboardingAPI.getReview(entityId, role);
-      const profile = response.data.data.profile;
-      setOnboardingProfile(profile);
-      setProfileData(profile?.b2bProfileData || {});
-    } catch {
-      // silent - profile may not exist yet
-    } finally {
-      setLoadingOnboarding(false);
-    }
-  };
-
-  const fetchB2BDocuments = async () => {
-    const entityId = getEntityId(lead);
-    if (!entityId) return;
-    const isAdmin = !!lead?.createdAdminId;
-    try {
-      setLoadingB2BDocs(true);
-      const [fieldsRes, docsRes] = await Promise.all([
-        isAdmin ? b2bLeadDocumentAPI.getFieldsByAdmin(entityId) : b2bLeadDocumentAPI.getFieldsByAdvisor(entityId),
-        isAdmin ? b2bLeadDocumentAPI.getDocsByAdmin(entityId) : b2bLeadDocumentAPI.getDocsByAdvisor(entityId),
-      ]);
-      setB2BDocFields(fieldsRes.data.data.fields || []);
-      setB2BDocuments(docsRes.data.data.documents || []);
-    } catch {
-      // silent
-    } finally {
-      setLoadingB2BDocs(false);
-    }
-  };
-
-  const handleFieldChange = (key: string, value: string) => {
-    setProfileData(prev => ({ ...prev, [key]: value }));
-  };
-
-  const handleSaveSection = async (sectionId: string) => {
-    const entityId = getEntityId(lead);
-    if (!entityId) return;
-    const role = lead.createdAdminId ? 'Admin' : 'Advisor';
-    try {
-      setSavingSection(sectionId);
-      await onboardingAPI.updateB2BProfileByReviewer(entityId, { b2bProfileData: profileData, role });
-      toast.success('Section saved');
-    } catch {
-      toast.error('Failed to save section');
-    } finally {
-      setSavingSection(null);
-    }
-  };
-
-  const handleUploadDoc = async (field: B2BDocumentField, file: File) => {
-    try {
-      setUploadingDocId(field._id);
-      await b2bLeadDocumentAPI.uploadDocument(null, field._id, field.documentKey, field.documentName, file);
-      toast.success('Document uploaded');
-      await fetchB2BDocuments();
-    } catch {
-      toast.error('Failed to upload document');
-    } finally {
-      setUploadingDocId(null);
-    }
-  };
-
-  const handleApproveDoc = async (docId: string) => {
-    try {
-      setReviewingDocId(docId);
-      await b2bLeadDocumentAPI.approveDocument(docId);
-      toast.success('Document approved');
-      await fetchB2BDocuments();
-    } catch {
-      toast.error('Failed to approve document');
-    } finally {
-      setReviewingDocId(null);
-    }
-  };
-
-  const handleRejectDoc = async (docId: string, message: string) => {
-    try {
-      setReviewingDocId(docId);
-      await b2bLeadDocumentAPI.rejectDocument(docId, message);
-      toast.success('Document rejected');
-      await fetchB2BDocuments();
-    } catch {
-      toast.error('Failed to reject document');
-    } finally {
-      setReviewingDocId(null);
     }
   };
 
@@ -499,42 +383,6 @@ export default function B2BOpsLeadDetailPage() {
               </div>
             </div>
           </div>
-
-          {/* B2B Profile & Documents */}
-          {(loadingOnboarding || loadingB2BDocs) ? (
-            <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex justify-center py-10">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-            </div>
-          ) : onboardingProfile ? (
-            <div className="mb-6 space-y-4">
-              <B2BProfileForm
-                profileData={profileData}
-                readonlyData={{ firstName: lead.firstName || '', lastName: lead.lastName || '', email: lead.email || '' }}
-                b2bDocFields={b2bDocFields}
-                b2bDocuments={b2bDocuments}
-                loadingDocs={loadingB2BDocs}
-                readOnly={false}
-                savingSection={savingSection}
-                onFieldChange={handleFieldChange}
-                onSaveSection={handleSaveSection}
-                uploadingDocId={uploadingDocId}
-                onUploadDoc={handleUploadDoc}
-                canReviewDocs={true}
-                reviewingDocId={reviewingDocId}
-                onApproveDoc={handleApproveDoc}
-                onRejectDoc={handleRejectDoc}
-              />
-              {onboardingProfile.onboardingSubmittedAt && lead.conversionStatus !== 'PENDING' && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between gap-4">
-                  <p className="text-sm text-gray-600">Profile submitted. You can request final approval from Super Admin.</p>
-                  <button onClick={handleRequestFinalApproval} disabled={requestingFinalApproval}
-                    className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium text-sm shrink-0">
-                    {requestingFinalApproval ? 'Requesting...' : 'Request Final Approval'}
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : null}
 
           {/* Follow-Up Calendar and Overview */}
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-4 gap-6">

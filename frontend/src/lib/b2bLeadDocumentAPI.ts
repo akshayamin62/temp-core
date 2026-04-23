@@ -13,9 +13,24 @@ export const b2bLeadDocumentAPI = {
     return api.get('/b2b-lead-documents/my-fields');
   },
 
-  // Add a document field
-  addField: (data: { leadId: string; documentName: string; required?: boolean; helpText?: string }) => {
+  // Add a document field (OPS/SA) — supports leadId, adminId, or advisorId
+  addField: (data: { leadId?: string; adminId?: string; advisorId?: string; documentName: string; required?: boolean; helpText?: string }) => {
     return api.post('/b2b-lead-documents/fields', data);
+  },
+
+  // Add a document field for own entity (admin/advisor self-service)
+  addMyField: (data: { documentName: string; required?: boolean; helpText?: string }) => {
+    return api.post('/b2b-lead-documents/my-fields', data);
+  },
+
+  // Add a document field targeting a specific admin (OPS/SA)
+  addFieldForAdmin: (adminId: string, data: { documentName: string; required?: boolean; helpText?: string }) => {
+    return api.post('/b2b-lead-documents/fields', { adminId, ...data });
+  },
+
+  // Add a document field targeting a specific advisor (OPS/SA)
+  addFieldForAdvisor: (advisorId: string, data: { documentName: string; required?: boolean; helpText?: string }) => {
+    return api.post('/b2b-lead-documents/fields', { advisorId, ...data });
   },
 
   // Delete (soft) a document field

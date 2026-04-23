@@ -2,6 +2,7 @@ import express from "express";
 import {
   getB2BDocumentFields,
   addB2BDocumentField,
+  addMyB2BDocumentField,
   deleteB2BDocumentField,
   getMyB2BDocumentFields,
   getMyB2BLeadDocuments,
@@ -44,6 +45,12 @@ router.post(
   "/seed-defaults",
   authorize(USER_ROLE.ADMIN, USER_ROLE.ADVISOR),
   seedDefaultDocumentFields
+);
+
+router.post(
+  "/my-fields",
+  authorize(USER_ROLE.ADMIN, USER_ROLE.ADVISOR),
+  addMyB2BDocumentField
 );
 
 // ─── Entity-based fetch for B2B_OPS / SUPER_ADMIN ────────────────────────

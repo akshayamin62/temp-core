@@ -4,7 +4,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Country, State, City } from 'country-state-city';
 import { b2bLeadDocumentAPI } from '@/lib/b2bLeadDocumentAPI';
 import { B2BDocumentField, B2BLeadDocument, B2BDocumentStatus } from '@/types';
-import { B2B_FORM_SECTIONS, DOCUMENT_SECTION_KEYS } from '@/config/b2bOnboardingConfig';
+import { B2B_FORM_SECTIONS } from '@/config/b2bOnboardingConfig';
+import { B2B_DOCUMENTS_CONFIG, B2B_DOC_SECTION_ORDER, PREDEFINED_DOC_KEYS, type B2BDocumentConfigField } from '@/config/b2bDocumentsConfig';
 
 export interface B2BProfileFormProps {
   profileData: Record<string, string>;
@@ -25,6 +26,8 @@ export interface B2BProfileFormProps {
   reviewingDocId?: string | null;
   onApproveDoc?: (docId: string) => void;
   onRejectDoc?: (docId: string, message: string) => void;
+  /** allow adding new document fields */
+  onAddDocField?: (data: { documentName: string; required: boolean; helpText: string }) => Promise<void>;
 }
 
 // ─── Tab definitions ─────────────────────────────────────────────────────────
@@ -38,14 +41,7 @@ const FORM_TABS = [
   { id: '__documents__', title: 'Documents' },
 ];
 
-const DOC_SECTION_ORDER = [
-  'Business Registration',
-  'Tax & Financial',
-  'KYC Documents',
-  'Authorized Signatory',
-];
-
-// ─── Main component ───────────────────────────────────────────────────────────
+// Main component
 export default function B2BProfileForm({
   profileData,
   readonlyData,
@@ -62,6 +58,7 @@ export default function B2BProfileForm({
   reviewingDocId = null,
   onApproveDoc,
   onRejectDoc,
+  onAddDocField,
 }: B2BProfileFormProps) {
   const [activeTab, setActiveTab] = useState<string>('basic_identity');
 
@@ -79,6 +76,16 @@ export default function B2BProfileForm({
   // Reject modal
   const [rejectDocId, setRejectDocId] = useState<string | null>(null);
   const [rejectMsg, setRejectMsg] = useState('');
+
+  // Add Document modal
+  const [showAddDocModal, setShowAddDocModal] = useState(false);
+  const [newDocName, setNewDocName] = useState('');
+  const [newDocHelpText, setNewDocHelpText] = useState('');
+  const [newDocRequired, setNewDocRequired] = useState(false);
+  const [addingDoc, setAddingDoc] = useState(false);
+
+  // Field-level validation errors (key → error message)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // File input refs
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -153,15 +160,9 @@ export default function B2BProfileForm({
   };
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-  const getDocForField = useCallback(
-    (fieldId: string) =>
-      b2bDocuments.find(d => {
-        const id =
-          typeof d.documentFieldId === 'string'
-            ? d.documentFieldId
-            : (d.documentFieldId as any)?._id;
-        return id === fieldId;
-      }),
+  // For config-based (predefined) docs — match uploaded doc by documentKey
+  const getDocByKey = useCallback(
+    (key: string) => b2bDocuments.find(d => d.documentKey === key),
     [b2bDocuments]
   );
 
@@ -192,8 +193,9 @@ export default function B2BProfileForm({
 
     const val = getFieldValue(field.key);
     const isRequired = !!field.required;
+    const hasError = !!fieldErrors[field.key];
     const labelEl = (
-      <label className="text-sm font-medium text-gray-700">
+      <label className="text-base font-medium text-gray-700">
         {field.label}
         {isRequired && <span className="text-red-500 ml-1">*</span>}
       </label>
@@ -213,7 +215,7 @@ export default function B2BProfileForm({
       return (
         <div key={field.key} className={`flex flex-col gap-1 ${colSpan}`}>
           {labelEl}
-          <div className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-sm text-gray-800 min-h-9.5 break-words">
+          <div className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-base text-gray-800 min-h-9.5 break-words">
             {displayVal || <span className="text-gray-400 italic">Not filled</span>}
           </div>
         </div>
@@ -244,9 +246,9 @@ export default function B2BProfileForm({
           {labelEl}
           <select
             value={val}
-            onChange={e => onFieldChange?.(field.key, e.target.value)}
+            onChange={e => { onFieldChange?.(field.key, e.target.value); if (fieldErrors[field.key]) setFieldErrors(prev => { const n = { ...prev }; delete n[field.key]; return n; }); }}
             disabled={disabled}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+            className={`px-3 py-2 border rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500 ${hasError ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
           >
             <option value="">{field.placeholder || `Select ${field.label}`}</option>
             {options.map(o => (
@@ -255,7 +257,8 @@ export default function B2BProfileForm({
               </option>
             ))}
           </select>
-          {field.hint && <p className="text-xs text-gray-500">{field.hint}</p>}
+          {hasError && <p className="text-sm text-red-600">{fieldErrors[field.key]}</p>}
+          {!hasError && field.hint && <p className="text-sm text-gray-500">{field.hint}</p>}
         </div>
       );
     }
@@ -268,12 +271,13 @@ export default function B2BProfileForm({
           <textarea
             rows={3}
             value={val}
-            onChange={e => onFieldChange?.(field.key, e.target.value)}
+            onChange={e => { onFieldChange?.(field.key, e.target.value); if (fieldErrors[field.key]) setFieldErrors(prev => { const n = { ...prev }; delete n[field.key]; return n; }); }}
             placeholder={field.placeholder}
             maxLength={field.maxLength}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+            className={`px-3 py-2 border rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${hasError ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
           />
-          {field.hint && <p className="text-xs text-gray-500">{field.hint}</p>}
+          {hasError && <p className="text-sm text-red-600">{fieldErrors[field.key]}</p>}
+          {!hasError && field.hint && <p className="text-sm text-gray-500">{field.hint}</p>}
         </div>
       );
     }
@@ -285,20 +289,37 @@ export default function B2BProfileForm({
         <input
           type={field.type || 'text'}
           value={val}
-          onChange={e => onFieldChange?.(field.key, e.target.value)}
+          onChange={e => { onFieldChange?.(field.key, e.target.value); if (fieldErrors[field.key]) setFieldErrors(prev => { const n = { ...prev }; delete n[field.key]; return n; }); }}
           placeholder={field.placeholder}
           maxLength={field.maxLength}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className={`px-3 py-2 border rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${hasError ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
         />
-        {field.hint && <p className="text-xs text-gray-500">{field.hint}</p>}
+        {hasError && <p className="text-sm text-red-600">{fieldErrors[field.key]}</p>}
+        {!hasError && field.hint && <p className="text-sm text-gray-500">{field.hint}</p>}
       </div>
     );
   };
 
-  // ── Single doc card ───────────────────────────────────────────────────────
-  const renderDocCard = (field: B2BDocumentField) => {
-    const doc = getDocForField(field._id);
-    const isUploading = uploadingDocId === field._id;
+  // ── Shared doc card renderer ─────────────────────────────────────────────
+  // Accepts a common shape covering both DB fields and config fields
+  const renderDocCardShared = ({
+    cardKey,
+    documentKey,
+    documentName,
+    required,
+    helpText,
+    uploadField,
+  }: {
+    cardKey: string;
+    documentKey: string;
+    documentName: string;
+    required: boolean;
+    helpText?: string;
+    /** The original B2BDocumentField (DB) or a synthetic config field passed to onUploadDoc */
+    uploadField: B2BDocumentField;
+  }) => {
+    const doc = getDocByKey(documentKey);
+    const isUploading = uploadingDocId === cardKey;
     const isReviewing = reviewingDocId === doc?._id;
     const borderColor = !doc
       ? 'border-gray-200'
@@ -309,17 +330,17 @@ export default function B2BProfileForm({
       : 'border-yellow-400';
 
     return (
-      <div key={field._id}>
+      <div key={cardKey}>
         <div className={`border-2 ${borderColor} rounded-xl p-4 bg-white`}>
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-semibold text-gray-900">{field.documentName}</span>
-                {field.required && <span className="text-red-500 text-sm font-bold">*</span>}
+                <span className="text-base font-semibold text-gray-900">{documentName}</span>
+                {required && <span className="text-red-500 text-base font-bold">*</span>}
               </div>
-              {field.helpText && <p className="text-xs text-gray-500 mt-0.5">{field.helpText}</p>}
+              {helpText && <p className="text-sm text-gray-500 mt-0.5">{helpText}</p>}
               {doc?.status === B2BDocumentStatus.REJECTED && doc.rejectionMessage && (
-                <p className="text-xs text-red-600 mt-1">Rejected: {doc.rejectionMessage}</p>
+                <p className="text-sm text-red-600 mt-1">Rejected: {doc.rejectionMessage}</p>
               )}
             </div>
 
@@ -355,16 +376,16 @@ export default function B2BProfileForm({
                   <input
                     type="file"
                     className="hidden"
-                    ref={el => { fileInputRefs.current[field._id] = el; }}
+                    ref={el => { fileInputRefs.current[cardKey] = el; }}
                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                     onChange={e => {
                       const f = e.target.files?.[0];
-                      if (f) onUploadDoc(field, f);
+                      if (f) onUploadDoc(uploadField, f);
                       e.target.value = '';
                     }}
                   />
                   <button
-                    onClick={() => fileInputRefs.current[field._id]?.click()}
+                    onClick={() => fileInputRefs.current[cardKey]?.click()}
                     disabled={isUploading}
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                   >
@@ -431,17 +452,8 @@ export default function B2BProfileForm({
     );
   };
 
-  // ── Group doc fields by section ───────────────────────────────────────────
-  const docsBySection: Record<string, B2BDocumentField[]> = {};
-  const docSectionByKey: Record<string, string> = {};
-  Object.entries(DOCUMENT_SECTION_KEYS).forEach(([sectionName, fields]) => {
-    fields.forEach(f => { docSectionByKey[f.documentKey] = sectionName; });
-  });
-  b2bDocFields.forEach(f => {
-    const sec = docSectionByKey[f.documentKey] || 'Other';
-    if (!docsBySection[sec]) docsBySection[sec] = [];
-    docsBySection[sec].push(f);
-  });
+  // Extra fields added by OPS/SA (not in predefined config)
+  const customDocFields = b2bDocFields.filter(f => !PREDEFINED_DOC_KEYS.has(f.documentKey));
 
   // authPersonName field from authorized_signatory section
   const authPersonNameField = B2B_FORM_SECTIONS.find(s => s.id === 'authorized_signatory')?.fields.find(f => f.key === 'authPersonName');
@@ -511,7 +523,26 @@ export default function B2BProfileForm({
         {!readOnly && onSaveSection && hasEditableFields && (
           <div className="mt-6 flex justify-end">
             <button
-              onClick={() => onSaveSection(sectionId)}
+              onClick={() => {
+                // Client-side validation before saving
+                const section = B2B_FORM_SECTIONS.find(s => s.id === sectionId);
+                const newErrors: Record<string, string> = {};
+                section?.fields.forEach((f: any) => {
+                  if (!f.required || f.type === 'readonly') return;
+                  if (f.conditionalOn && profileData[f.conditionalOn] !== f.conditionalValue) return;
+                  if (!getFieldValue(f.key)?.trim()) {
+                    newErrors[f.key] = `${f.label} is required`;
+                  } else if (f.pattern && !new RegExp(f.pattern).test(getFieldValue(f.key))) {
+                    newErrors[f.key] = `${f.label} has invalid format`;
+                  }
+                });
+                if (Object.keys(newErrors).length > 0) {
+                  setFieldErrors(newErrors);
+                  return;
+                }
+                setFieldErrors({});
+                onSaveSection(sectionId);
+              }}
               disabled={isSaving}
               className="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
             >
@@ -547,8 +578,23 @@ export default function B2BProfileForm({
 
     return (
       <div className="space-y-6">
-        {DOC_SECTION_ORDER.map(secName => {
-          const fields = docsBySection[secName] || [];
+        {/* Add Document button */}
+        {onAddDocField && (
+          <div className="flex justify-end">
+            <button
+              onClick={() => { setNewDocName(''); setNewDocHelpText(''); setNewDocRequired(false); setShowAddDocModal(true); }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Document
+            </button>
+          </div>
+        )}
+        {/* Predefined doc sections from config */}
+        {B2B_DOC_SECTION_ORDER.map(secName => {
+          const configFields = B2B_DOCUMENTS_CONFIG.filter(f => f.section === secName);
           const isAuthSignatory = secName === 'Authorized Signatory';
 
           return (
@@ -567,12 +613,21 @@ export default function B2BProfileForm({
                   </div>
                 )}
 
-                {fields.length === 0 ? (
-                  <p className="text-sm text-gray-400 italic text-center py-4">
-                    No documents configured for this section.
-                  </p>
-                ) : (
-                  fields.map(field => renderDocCard(field))
+                {configFields.map(cf =>
+                  renderDocCardShared({
+                    cardKey: `config_${cf.documentKey}`,
+                    documentKey: cf.documentKey,
+                    documentName: cf.documentName,
+                    required: cf.required,
+                    helpText: cf.helpText,
+                    uploadField: {
+                      _id: cf.documentKey,
+                      documentKey: cf.documentKey,
+                      documentName: cf.documentName,
+                      required: cf.required,
+                      helpText: cf.helpText,
+                    } as B2BDocumentField,
+                  })
                 )}
               </div>
 
@@ -603,6 +658,28 @@ export default function B2BProfileForm({
             </div>
           );
         })}
+
+        {/* Additional custom document fields added by OPS/Super-Admin */}
+        {customDocFields.length > 0 && (
+          <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <div className="bg-gray-50 px-5 py-3 border-b border-gray-200 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-purple-500 inline-block" />
+              <h3 className="text-sm font-semibold text-gray-800">Additional Documents</h3>
+            </div>
+            <div className="p-5 space-y-3">
+              {customDocFields.map(field =>
+                renderDocCardShared({
+                  cardKey: field._id,
+                  documentKey: field.documentKey,
+                  documentName: field.documentName,
+                  required: field.required,
+                  helpText: field.helpText,
+                  uploadField: field,
+                })
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -633,6 +710,82 @@ export default function B2BProfileForm({
       <div className="p-6">
         {activeTab === '__documents__' ? renderDocumentsTab() : renderInfoTab(activeTab)}
       </div>
+
+      {/* Add Document modal */}
+      {showAddDocModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between p-5 border-b">
+              <h3 className="text-base font-semibold text-gray-900">Add Document Field</h3>
+              <button onClick={() => setShowAddDocModal(false)} className="p-1.5 hover:bg-gray-100 rounded-full">
+                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-base font-medium text-gray-700">Document Name <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  value={newDocName}
+                  onChange={e => setNewDocName(e.target.value)}
+                  placeholder="e.g. Trade License"
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-base font-medium text-gray-700">Description (optional)</label>
+                <textarea
+                  rows={2}
+                  value={newDocHelpText}
+                  onChange={e => setNewDocHelpText(e.target.value)}
+                  placeholder="Brief description or instructions"
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                />
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={newDocRequired}
+                  onChange={e => setNewDocRequired(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-base text-gray-700">Mark as required</span>
+              </label>
+            </div>
+            <div className="flex justify-end gap-3 p-5 border-t">
+              <button
+                onClick={() => setShowAddDocModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!newDocName.trim()) return;
+                  setAddingDoc(true);
+                  try {
+                    await onAddDocField!({ documentName: newDocName.trim(), required: newDocRequired, helpText: newDocHelpText.trim() });
+                    setShowAddDocModal(false);
+                  } finally {
+                    setAddingDoc(false);
+                  }
+                }}
+                disabled={!newDocName.trim() || addingDoc}
+                className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {addingDoc ? (
+                  <>
+                    <div className="animate-spin h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent" />
+                    Adding...
+                  </>
+                ) : 'Add Document'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Document viewer modal */}
       {viewingDoc && viewBlobUrl && (

@@ -10,7 +10,7 @@ export interface IB2BLeadDocument extends Document {
   b2bLeadId?: mongoose.Types.ObjectId;
   adminId?: mongoose.Types.ObjectId;
   advisorId?: mongoose.Types.ObjectId;
-  documentFieldId: mongoose.Types.ObjectId;
+  documentFieldId?: mongoose.Types.ObjectId;
   documentName: string;
   documentKey: string;
   fileName: string;
@@ -57,7 +57,8 @@ const b2bLeadDocumentSchema = new Schema<IB2BLeadDocument>(
     documentFieldId: {
       type: Schema.Types.ObjectId,
       ref: "B2BDocumentField",
-      required: true,
+      required: false,
+      default: null,
     },
     documentName: { type: String, required: true },
     documentKey: { type: String, required: true },
