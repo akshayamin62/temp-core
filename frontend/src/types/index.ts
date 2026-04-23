@@ -471,13 +471,6 @@ export interface AdminInfo {
   isOnboarded?: boolean;
 }
 
-export interface OnboardingDocument {
-  type: string;
-  url: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  rejectReason?: string;
-}
-
 export interface OnboardingProfile {
   _id: string;
   userId: string;
@@ -491,7 +484,6 @@ export interface OnboardingProfile {
   isOnboarded: boolean;
   assignedB2BOpsId?: any;
   b2bLeadId?: any;
-  documents: OnboardingDocument[];
   onboardingSubmittedAt?: string;
   createdAt: string;
   updatedAt: string;

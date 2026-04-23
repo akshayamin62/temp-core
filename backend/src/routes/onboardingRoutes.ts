@@ -2,17 +2,12 @@ import express from "express";
 import { authenticate } from "../middleware/auth";
 import { authorize } from "../middleware/authorize";
 import { USER_ROLE } from "../types/roles";
-import { upload } from "../middleware/upload";
 import {
   getOnboardingProfile,
   updateOnboardingProfile,
-  uploadOnboardingDocument,
   submitOnboarding,
   getOnboardingReview,
-  reviewOnboardingDocument,
   assignOpsToProfile,
-  viewOnboardingDocument,
-  uploadOnboardingDocumentByReviewer,
   updateCompanyDetailsByReviewer,
   updateB2BProfileByReviewer,
 } from "../controllers/onboardingController";
@@ -38,14 +33,6 @@ router.put(
   updateOnboardingProfile
 );
 
-// Upload a document
-router.post(
-  "/upload-document",
-  authorize([USER_ROLE.ADMIN, USER_ROLE.ADVISOR]),
-  upload.single("document"),
-  uploadOnboardingDocument
-);
-
 // Submit onboarding for review
 router.post(
   "/submit",
@@ -62,21 +49,6 @@ router.get(
   getOnboardingReview
 );
 
-// Approve/reject a document
-router.post(
-  "/review/:profileId/document",
-  authorize([USER_ROLE.B2B_OPS, USER_ROLE.SUPER_ADMIN]),
-  reviewOnboardingDocument
-);
-
-// OPS/Super Admin uploads a document for a profile
-router.post(
-  "/review/:profileId/upload-document",
-  authorize([USER_ROLE.B2B_OPS, USER_ROLE.SUPER_ADMIN]),
-  upload.single("document"),
-  uploadOnboardingDocumentByReviewer
-);
-
 // OPS/Super Admin updates company details on a profile
 router.put(
   "/review/:profileId/company-details",
@@ -89,13 +61,6 @@ router.put(
   "/review/:profileId/b2b-profile",
   authorize([USER_ROLE.B2B_OPS, USER_ROLE.SUPER_ADMIN]),
   updateB2BProfileByReviewer
-);
-
-// View onboarding document inline (stream)
-router.get(
-  "/document/:profileId/:documentType/view",
-  authorize([USER_ROLE.ADMIN, USER_ROLE.ADVISOR, USER_ROLE.B2B_OPS, USER_ROLE.SUPER_ADMIN]),
-  viewOnboardingDocument
 );
 
 // ============= OPS ASSIGNMENT =============

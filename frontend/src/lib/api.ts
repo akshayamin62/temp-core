@@ -1206,43 +1206,15 @@ export const onboardingAPI = {
   getProfile: () => api.get('/onboarding/profile'),
   updateProfile: (data: { companyName?: string; address?: string; enquiryFormSlug?: string; mobileNumber?: string; b2bProfileData?: Record<string, any> }) =>
     api.put('/onboarding/profile', data),
-  uploadDocument: (documentType: string, file: File) => {
-    const formData = new FormData();
-    formData.append('document', file);
-    formData.append('documentType', documentType);
-    return api.post('/onboarding/upload-document', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-  },
   submit: () => api.post('/onboarding/submit'),
 
   // OPS/Super Admin review
   getReview: (profileId: string, role: string) =>
     api.get(`/onboarding/review/${profileId}`, { params: { role } }),
-  reviewDocument: (profileId: string, data: { documentType: string; action: 'approve' | 'reject'; rejectReason?: string; role: string }) =>
-    api.post(`/onboarding/review/${profileId}/document`, data),
 
   // Super Admin OPS assignment
   assignOps: (profileId: string, data: { opsId: string; role: string }) =>
     api.post(`/onboarding/assign-ops/${profileId}`, data),
-
-  // View document inline (returns blob)
-  viewDocument: (profileId: string, documentType: string, role: string) =>
-    api.get(`/onboarding/document/${profileId}/${documentType}/view`, {
-      params: { role },
-      responseType: 'blob' as const,
-    }),
-
-  // OPS/SA upload document for a profile
-  uploadDocumentForProfile: (profileId: string, documentType: string, file: File, role: string) => {
-    const formData = new FormData();
-    formData.append('document', file);
-    formData.append('documentType', documentType);
-    formData.append('role', role);
-    return api.post(`/onboarding/review/${profileId}/upload-document`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-  },
 
   // OPS/Super Admin updates b2bProfileData on a profile
   updateB2BProfileByReviewer: (profileId: string, data: { b2bProfileData: Record<string, any>; role: string }) =>

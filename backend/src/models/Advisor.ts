@@ -1,14 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-export interface IAdvisorDocument {
-  type: string;
-  url: string;
-  status: "PENDING" | "APPROVED" | "REJECTED";
-  rejectReason?: string;
-  fileName?: string;
-  mimeType?: string;
-}
-
 export interface IAdvisor extends Document {
   userId: mongoose.Types.ObjectId;
   email: string;
@@ -22,7 +13,6 @@ export interface IAdvisor extends Document {
   isOnboarded: boolean;
   assignedB2BOpsId?: mongoose.Types.ObjectId;
   b2bLeadId?: mongoose.Types.ObjectId;
-  documents: IAdvisorDocument[];
   onboardingSubmittedAt?: Date;
   b2bProfileData?: Record<string, any>;
   createdAt?: Date;
@@ -92,23 +82,6 @@ const advisorSchema = new Schema<IAdvisor>(
       type: Schema.Types.ObjectId,
       ref: "B2BLead",
       default: null,
-    },
-    documents: {
-      type: [
-        {
-          type: { type: String, required: true },
-          url: { type: String, required: true },
-          status: {
-            type: String,
-            enum: ["PENDING", "APPROVED", "REJECTED"],
-            default: "PENDING",
-          },
-          rejectReason: { type: String },
-          fileName: { type: String },
-          mimeType: { type: String },
-        },
-      ],
-      default: [],
     },
     onboardingSubmittedAt: {
       type: Date,

@@ -407,17 +407,6 @@ export const requestAdminAdvisorConversion = async (req: AuthRequest, res: Respo
       });
     }
 
-    // Check all documents are approved
-    const pendingOrRejectedDocs = profile.documents?.filter(
-      (doc: any) => doc.status !== "APPROVED"
-    );
-    if (pendingOrRejectedDocs && pendingOrRejectedDocs.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "All documents must be approved before requesting final approval",
-      });
-    }
-
     const conversionRequest = new B2BConversion({
       b2bLeadId: lead._id,
       step: B2B_CONVERSION_STEP.TO_ADMIN_ADVISOR,
@@ -803,12 +792,6 @@ export const directConvertAdminAdvisor = async (req: AuthRequest, res: Response)
     // Verify OPS is assigned
     if (!profile.assignedB2BOpsId || profile.assignedB2BOpsId.toString() !== opsProfile._id.toString()) {
       return res.status(403).json({ success: false, message: "You are not assigned to this account" });
-    }
-
-    // Check all uploaded documents are approved
-    const unapprovedDocs = profile.documents?.filter((doc: any) => doc.status !== "APPROVED");
-    if (unapprovedDocs && unapprovedDocs.length > 0) {
-      return res.status(400).json({ success: false, message: "All uploaded documents must be approved before conversion" });
     }
 
     // Direct conversion: set isOnboarded = true
