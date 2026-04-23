@@ -526,6 +526,12 @@ export default function B2BProfileForm({
 
     return (
       <div>
+        {section.description && (
+          <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 p-3">
+            <p className="text-sm text-blue-900">{section.description}</p>
+          </div>
+        )}
+
         {/* Copy shortcuts */}
         {!readOnly && sectionId === 'poc_details' && (
           <div className="mb-4">

@@ -82,7 +82,7 @@ export const B2B_FORM_SECTIONS: FormSection[] = [
     id: 'basic_identity',
     title: 'Basic Identity & Contact Details',
     icon: 'user',
-    description: 'Personal and contact information of the primary business owner / applicant.',
+    description: '',
     fields: [
       { key: 'firstName', label: 'First Name', type: 'readonly', required: true },
       { key: 'middleName', label: 'Middle Name', type: 'text', placeholder: 'Middle name (optional)' },
@@ -116,8 +116,8 @@ export const B2B_FORM_SECTIONS: FormSection[] = [
       },
       { key: 'cin', label: 'CIN (Company Identification Number)', type: 'text', placeholder: 'For Pvt Ltd companies', hint: 'Required for Private Limited Companies', conditionalOn: 'legalEntityType', conditionalValue: 'Pvt Ltd (Private Limited Company)' },
       { key: 'llpin', label: 'LLPIN', type: 'text', placeholder: 'For LLP entities', hint: 'Required for LLP entities', conditionalOn: 'legalEntityType', conditionalValue: 'LLP (Limited Liability Partnership)' },
-      { key: 'udyamNumber', label: 'UDYAM Number', type: 'text', required: true, placeholder: 'For Proprietorship/Partnership entities', hint: 'Required for Proprietorship and Partnership entities', conditionalOn: 'legalEntityType', conditionalValues: ['Proprietorship', 'Partnership'] },
-      { key: 'trustRegistrationNumber', label: 'Trust Registration Number', type: 'text', required: true, placeholder: 'For Trust entities', hint: 'Required for Trust entities', conditionalOn: 'legalEntityType', conditionalValue: 'Trust' },
+      { key: 'udyamNumber', label: 'UDYAM Number', type: 'text', required: true, placeholder: 'e.g. UDYAM-MH-12-1234567', hint: 'Required for Proprietorship and Partnership entities (e.g. UDYAM-MH-12-1234567)', conditionalOn: 'legalEntityType', conditionalValues: ['Proprietorship', 'Partnership'] },
+      { key: 'trustRegistrationNumber', label: 'Trust Registration Number', type: 'text', required: true, placeholder: 'e.g. E/12345/Mumbai', hint: 'Required for Trust entities (e.g. E/12345/Mumbai)', conditionalOn: 'legalEntityType', conditionalValue: 'Trust' },
       { key: 'gstNumber', label: 'GST Number', type: 'text', placeholder: 'e.g. 22AAAAA0000A1Z5', pattern: '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$', hint: 'Valid 15-character GST number', maxLength: 15 },
     ],
     documentFields: DOCUMENT_SECTION_KEYS['Business Registration'],
@@ -146,7 +146,7 @@ export const B2B_FORM_SECTIONS: FormSection[] = [
     id: 'company_details',
     title: 'Company Details',
     icon: 'office',
-    description: 'Official company contact details, address, and online presence.',
+    description: 'Official company contact details.',
     fields: [
       { key: 'companyOfficialName', label: 'Company Name', type: 'text', required: true, placeholder: 'Official company name', maxLength: 200 },
       { key: 'companyMobile', label: 'Company Mobile Number', type: 'tel', required: true, placeholder: '10-digit mobile', pattern: '^[6-9]\\d{9}$' },
@@ -182,7 +182,7 @@ export const B2B_FORM_SECTIONS: FormSection[] = [
     id: 'escalation_matrix',
     title: 'Escalation Matrix Details',
     icon: 'escalation',
-    description: 'Senior contact for escalations and issue resolution. This must be different from the POC details.',
+    description: 'This must be different from the POC details.',
     fields: [
       { key: 'escFirstName', label: 'First Name', type: 'text', required: true, placeholder: 'Escalation contact first name', maxLength: 100 },
       { key: 'escMiddleName', label: 'Middle Name', type: 'text', placeholder: 'Middle name (optional)', maxLength: 100 },

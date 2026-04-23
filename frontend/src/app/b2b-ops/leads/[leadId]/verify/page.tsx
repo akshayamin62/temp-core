@@ -246,6 +246,10 @@ export default function B2BOpsVerifyPage() {
     email: lead?.email || '',
   };
 
+  const advisorAllowedServices = Array.isArray(onboardingProfile?.allowedServices)
+    ? onboardingProfile.allowedServices.filter(Boolean)
+    : [];
+
   return (
     <>
       <Toaster position="top-right" />
@@ -279,12 +283,19 @@ export default function B2BOpsVerifyPage() {
                       <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getStageColor(lead.stage)}`}>
                         {lead.stage}
                       </span>
-                      <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getTypeColor(lead.type)}`}>
-                        {lead.type}
-                      </span>
+                      {!(lead.createdAdvisorId && lead.type === B2B_LEAD_TYPE.ADVISOR) && (
+                        <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getTypeColor(lead.type)}`}>
+                          {lead.type}
+                        </span>
+                      )}
                       <span className={`px-3 py-1 text-sm font-semibold rounded-full ${lead.createdAdminId ? 'bg-blue-100 text-blue-700' : 'bg-teal-100 text-teal-700'}`}>
                         {lead.createdAdminId ? 'Admin' : 'Advisor'}
                       </span>
+                      {!!lead.createdAdvisorId && advisorAllowedServices.length > 0 && (
+                        <span className="px-3 py-1 text-sm font-semibold rounded-full bg-cyan-100 text-cyan-800">
+                          Allowed Services: {advisorAllowedServices.join(', ')}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
