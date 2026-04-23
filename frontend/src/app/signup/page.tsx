@@ -10,6 +10,7 @@ import { Country, State, City, ICountry, IState, ICity } from 'country-state-cit
 
 export default function SignupPage() {
   const router = useRouter();
+  const [acceptLegal, setAcceptLegal] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     middleName: '',
@@ -121,6 +122,11 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!acceptLegal) {
+      toast.error('Please accept Terms, Privacy and Cookie Policy to continue');
+      return;
+    }
     
     if (!formData.email) {
       toast.error('Please enter your email');
@@ -761,10 +767,38 @@ export default function SignupPage() {
               </div>
             </div>
 
+            {/* Legal Consent */}
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptLegal}
+                  onChange={(e) => setAcceptLegal(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  required
+                />
+                <span className="text-sm text-gray-700">
+                  I agree to the{' '}
+                  <Link href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    Terms of Service
+                  </Link>
+                  {', '}
+                  <Link href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    Privacy Policy
+                  </Link>
+                  {' and '}
+                  <Link href="/cookie-policy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    Cookie Policy
+                  </Link>
+                  .
+                </span>
+              </label>
+            </div>
+
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !acceptLegal}
               className="w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold text-lg rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none btn-glow"
             >
               {loading ? (

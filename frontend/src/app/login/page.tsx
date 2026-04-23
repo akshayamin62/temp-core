@@ -400,6 +400,24 @@ export default function LoginPage() {
               Create New Account
             </Link>
           </div>
+
+          <div className="mt-6 border-t border-gray-200 pt-4">
+            <p className="text-xs text-gray-500 text-center">
+              By continuing, you agree to our{' '}
+              <Link href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                Terms of Service
+              </Link>
+              {', '}
+              <Link href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                Privacy Policy
+              </Link>
+              {' and '}
+              <Link href="/cookie-policy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                Cookie Policy
+              </Link>
+              .
+            </p>
+          </div>
         </div>
 
       </div>
