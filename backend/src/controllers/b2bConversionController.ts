@@ -736,8 +736,8 @@ export const getPendingB2BConversions = async (req: AuthRequest, res: Response):
         path: "b2bLeadId",
         select: "firstName middleName lastName email mobileNumber type stage createdAdvisorId createdAdminId",
         populate: [
-          { path: "createdAdvisorId", select: "companyName allowedServices" },
-          { path: "createdAdminId", select: "companyName" },
+          { path: "createdAdvisorId", select: "companyName allowedServices b2bProfileData" },
+          { path: "createdAdminId", select: "companyName b2bProfileData" },
         ],
       })
       .populate({

@@ -72,8 +72,8 @@ interface B2BConversion {
     lastName: string;
     email: string;
     type: string;
-    createdAdvisorId?: { _id: string; companyName?: string; allowedServices?: string[] } | null;
-    createdAdminId?: { _id: string; companyName?: string } | null;
+    createdAdvisorId?: { _id: string; companyName?: string; allowedServices?: string[]; b2bProfileData?: Record<string, any> } | null;
+    createdAdminId?: { _id: string; companyName?: string; b2bProfileData?: Record<string, any> } | null;
   };
   step: string;
   status: string;
@@ -240,12 +240,24 @@ export default function SuperAdminB2BLeadsPage() {
         // Step 2: Open modal with details and slug editor
         if (conversion) {
           setApprovingConversion(conversion);
-          // Generate default slug from profile's companyName (most up-to-date), then conversion's, then lead name
-          const profileCompanyName =
-            (typeof conversion.b2bLeadId?.createdAdvisorId === 'object' && conversion.b2bLeadId?.createdAdvisorId?.companyName) ||
-            (typeof conversion.b2bLeadId?.createdAdminId === 'object' && conversion.b2bLeadId?.createdAdminId?.companyName) ||
+          // Generate slug from company fields first, then fallback to lead name.
+          const advisorProfile = typeof conversion.b2bLeadId?.createdAdvisorId === 'object' ? conversion.b2bLeadId.createdAdvisorId : null;
+          const adminProfile = typeof conversion.b2bLeadId?.createdAdminId === 'object' ? conversion.b2bLeadId.createdAdminId : null;
+          const profileCompanyFromB2BData =
+            advisorProfile?.b2bProfileData?.companyOfficialName ||
+            advisorProfile?.b2bProfileData?.companyName ||
+            adminProfile?.b2bProfileData?.companyOfficialName ||
+            adminProfile?.b2bProfileData?.companyName ||
             null;
-          const rawSlugSource = profileCompanyName || conversion.companyName ||
+          const profileCompanyName =
+            advisorProfile?.companyName ||
+            adminProfile?.companyName ||
+            null;
+
+          const rawSlugSource =
+            profileCompanyFromB2BData ||
+            profileCompanyName ||
+            conversion.companyName ||
             [conversion.b2bLeadId?.firstName, conversion.b2bLeadId?.lastName].filter(Boolean).join(' ');
           const slugSource = rawSlugSource.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
           setEnquirySlug(slugSource);
