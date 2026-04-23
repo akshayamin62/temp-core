@@ -31,6 +31,7 @@ interface DashboardStats {
     companyLogo?: string;
     address?: string;
     mobileNumber?: string;
+    b2bLeadId?: string;
   };
 }
 
@@ -314,7 +315,7 @@ export default function SuperAdminAdminDashboardPage() {
               {/* Quick Actions */}
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
                   <ActionCard
                     title="View Counselors"
                     description="View all counselors under this admin"
@@ -364,6 +365,20 @@ export default function SuperAdminAdminDashboardPage() {
                     onClick={() => router.push(`/super-admin/roles/admin/${adminId}/service-pricing`)}
                     color="purple"
                   />
+                  {stats?.admin?.b2bLeadId && (
+                    <ActionCard
+                      title="View B2B Profile"
+                      description="Open linked B2B onboarding profile"
+                      icon={
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h6m-8 8h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      }
+                      buttonText="View Profile"
+                      onClick={() => router.push(`/super-admin/b2b/leads/${stats.admin.b2bLeadId}/profile`)}
+                      color="green"
+                    />
+                  )}
                 </div>
               </div>
 

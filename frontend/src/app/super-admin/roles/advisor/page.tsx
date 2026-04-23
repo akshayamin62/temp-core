@@ -9,7 +9,7 @@ export default function AdvisorUsersPage() {
       role="advisor"
       roleDisplayName="Advisor"
       roleEnum={USER_ROLE.ADVISOR}
-      canAddUser={true}
+      canAddUser={false}
     />
   );
 }

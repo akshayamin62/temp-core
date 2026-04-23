@@ -9,7 +9,7 @@ export default function AdminUsersPage() {
       role="admin"
       roleDisplayName="Admin"
       roleEnum={USER_ROLE.ADMIN}
-      canAddUser={true}
+      canAddUser={false}
     />
   );
 }

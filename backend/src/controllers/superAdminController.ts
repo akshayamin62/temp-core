@@ -1252,6 +1252,7 @@ export const getAdminDashboardStats = async (req: Request, res: Response): Promi
           companyLogo: adminProfile.companyLogo,
           address: adminProfile.address,
           mobileNumber: adminProfile.mobileNumber,
+          b2bLeadId: adminProfile.b2bLeadId,
         },
       },
     });
@@ -2684,6 +2685,7 @@ export const getAdvisorDashboardStats = async (req: Request, res: Response): Pro
           companyLogo: advisorProfile.companyLogo,
           address: advisorProfile.address,
           mobileNumber: advisorProfile.mobileNumber,
+          b2bLeadId: advisorProfile.b2bLeadId,
         },
       },
     });
