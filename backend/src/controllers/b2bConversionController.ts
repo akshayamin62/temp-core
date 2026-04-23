@@ -614,10 +614,12 @@ export const rejectB2BConversion = async (req: AuthRequest, res: Response): Prom
       });
     }
 
+    const resolvedRejectionReason = rejectionReason || reason || "No reason provided";
+
     conversion.status = B2B_CONVERSION_STATUS.REJECTED;
     conversion.rejectedBy = new mongoose.Types.ObjectId(userId);
     conversion.rejectedAt = new Date();
-    conversion.rejectionReason = rejectionReason || reason || "No reason provided";
+    conversion.rejectionReason = resolvedRejectionReason;
     await conversion.save();
 
     // Update lead
@@ -626,6 +628,83 @@ export const rejectB2BConversion = async (req: AuthRequest, res: Response): Prom
       lead.conversionStatus = "REJECTED";
       lead.conversionRequestId = undefined;
       await lead.save();
+    }
+
+    // Send rejection emails based on conversion step
+    try {
+      if (lead) {
+        const leadName = [lead.firstName, lead.middleName, lead.lastName].filter(Boolean).join(" ");
+
+        if (conversion.step === B2B_CONVERSION_STEP.TO_ADMIN_ADVISOR) {
+          // Step 2 rejection: notify Admin/Advisor profile and assigned B2B OPS
+          let profileEmail: string | null = null;
+          if (lead.createdAdminId) {
+            const admin = await Admin.findById(lead.createdAdminId).select("email").lean();
+            profileEmail = admin?.email || null;
+          } else if (lead.createdAdvisorId) {
+            const advisor = await Advisor.findById(lead.createdAdvisorId).select("email").lean();
+            profileEmail = advisor?.email || null;
+          }
+
+          let opsEmail: string | null = null;
+          if (lead.assignedB2BOpsId) {
+            const ops = await B2BOps.findById(lead.assignedB2BOpsId).select("userId").lean();
+            if (ops?.userId) {
+              const opsUser = await User.findById(ops.userId).select("email").lean();
+              opsEmail = opsUser?.email || null;
+            }
+          }
+
+          const recipients = [profileEmail, opsEmail].filter((e): e is string => !!e);
+          if (recipients.length > 0) {
+            for (const to of recipients) {
+              await sendEmail({
+                to,
+                subject: `B2B Final Approval Rejected: ${leadName}`,
+                html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+                  <h2 style="color:#dc2626;">B2B Final Approval Rejected</h2>
+                  <p>The Super Admin has rejected the final approval request.</p>
+                  <table style="width:100%;border-collapse:collapse;margin:15px 0;">
+                    <tr><td style="padding:6px 0;font-weight:bold;">Lead:</td><td>${leadName}</td></tr>
+                    <tr><td style="padding:6px 0;font-weight:bold;">Target Role:</td><td>${conversion.targetRole}</td></tr>
+                    <tr><td style="padding:6px 0;font-weight:bold;">Reason:</td><td>${resolvedRejectionReason}</td></tr>
+                  </table>
+                  <p>Please review and update the profile/documents before re-requesting approval.</p>
+                </div>`,
+                text: `B2B Final Approval Rejected for ${leadName}. Target Role: ${conversion.targetRole}. Reason: ${resolvedRejectionReason}`,
+              });
+            }
+          }
+        } else if (conversion.step === B2B_CONVERSION_STEP.TO_IN_PROCESS) {
+          // Step 1 rejection: notify B2B Sales requester and B2B lead
+          const requester = await User.findById(conversion.requestedBy).select("email").lean();
+          const salesEmail = requester?.email || null;
+          const leadEmail = lead.email || null;
+          const recipients = [salesEmail, leadEmail].filter((e): e is string => !!e);
+
+          if (recipients.length > 0) {
+            for (const to of recipients) {
+              await sendEmail({
+                to,
+                subject: `B2B Documentation Proceed Rejected: ${leadName}`,
+                html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+                  <h2 style="color:#dc2626;">B2B Documentation Proceed Rejected</h2>
+                  <p>The Super Admin has rejected the request to proceed with documentation/in-process conversion.</p>
+                  <table style="width:100%;border-collapse:collapse;margin:15px 0;">
+                    <tr><td style="padding:6px 0;font-weight:bold;">Lead:</td><td>${leadName}</td></tr>
+                    <tr><td style="padding:6px 0;font-weight:bold;">Target Role:</td><td>${conversion.targetRole}</td></tr>
+                    <tr><td style="padding:6px 0;font-weight:bold;">Reason:</td><td>${resolvedRejectionReason}</td></tr>
+                  </table>
+                  <p>Please review lead details and resubmit when ready.</p>
+                </div>`,
+                text: `B2B Documentation Proceed Rejected for ${leadName}. Target Role: ${conversion.targetRole}. Reason: ${resolvedRejectionReason}`,
+              });
+            }
+          }
+        }
+      }
+    } catch (emailError) {
+      console.error("Failed to send rejection emails:", emailError);
     }
 
     return res.status(200).json({

@@ -320,7 +320,7 @@ export default function B2BOpsVerifyPage() {
               </div>
 
               {/* Conversion status banners */}
-              {lead.approvalRequestedAt && !lead.convertedAt && (
+              {lead.conversionStatus === 'PENDING' && lead.stage !== B2B_LEAD_STAGE.CONVERTED && (
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
                   <svg className="w-6 h-6 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -377,7 +377,7 @@ export default function B2BOpsVerifyPage() {
               )}
 
               {/* Request Final Approval */}
-              {onboardingProfile && lead.stage !== B2B_LEAD_STAGE.CONVERTED && !lead.approvalRequestedAt && (
+              {onboardingProfile && lead.stage !== B2B_LEAD_STAGE.CONVERTED && lead.conversionStatus !== 'PENDING' && (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                   <h3 className="text-base font-semibold text-gray-900 mb-1">Request Final Approval</h3>
                   <p className="text-sm text-gray-500 mb-4">
