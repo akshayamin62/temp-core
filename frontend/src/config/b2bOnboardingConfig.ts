@@ -2,7 +2,7 @@
 // Defines all sections, form fields, and document fields for the comprehensive
 // B2B onboarding form used by Admin and Advisor.
 
-export type FieldType = 'text' | 'email' | 'tel' | 'select' | 'textarea' | 'readonly';
+export type FieldType = 'text' | 'email' | 'tel' | 'select' | 'textarea' | 'readonly' | 'checkbox';
 
 export interface FormField {
   key: string;
@@ -17,6 +17,7 @@ export interface FormField {
   minLength?: number;
   conditionalOn?: string;  // key of another field
   conditionalValue?: string;
+  conditionalValues?: string[];
 }
 
 export interface DocumentSeedField {
@@ -69,6 +70,7 @@ export const LEGAL_ENTITY_TYPES = [
   'Partnership',
   'LLP (Limited Liability Partnership)',
   'Pvt Ltd (Private Limited Company)',
+  'Public Limited Company',
   'Trust',
   'Society',
   'Other',
@@ -92,6 +94,7 @@ export const B2B_FORM_SECTIONS: FormSection[] = [
       { key: 'email', label: 'Personal Email', type: 'readonly', required: true },
       { key: 'officeAddress', label: 'Office Address', type: 'textarea', required: true, placeholder: 'Complete office address', maxLength: 500 },
       { key: 'registeredAddress', label: 'Registered Address', type: 'textarea', required: true, placeholder: 'Complete registered address', maxLength: 500 },
+      { key: 'sameAsOfficeAddress', label: 'Same as Office Address', type: 'checkbox' },
       { key: 'country', label: 'Country', type: 'select', required: true },
       { key: 'state', label: 'State', type: 'select', required: true },
       { key: 'city', label: 'City', type: 'select', required: true },
@@ -113,6 +116,8 @@ export const B2B_FORM_SECTIONS: FormSection[] = [
       },
       { key: 'cin', label: 'CIN (Company Identification Number)', type: 'text', placeholder: 'For Pvt Ltd companies', hint: 'Required for Private Limited Companies', conditionalOn: 'legalEntityType', conditionalValue: 'Pvt Ltd (Private Limited Company)' },
       { key: 'llpin', label: 'LLPIN', type: 'text', placeholder: 'For LLP entities', hint: 'Required for LLP entities', conditionalOn: 'legalEntityType', conditionalValue: 'LLP (Limited Liability Partnership)' },
+      { key: 'udyamNumber', label: 'UDYAM Number', type: 'text', required: true, placeholder: 'For Proprietorship/Partnership entities', hint: 'Required for Proprietorship and Partnership entities', conditionalOn: 'legalEntityType', conditionalValues: ['Proprietorship', 'Partnership'] },
+      { key: 'trustRegistrationNumber', label: 'Trust Registration Number', type: 'text', required: true, placeholder: 'For Trust entities', hint: 'Required for Trust entities', conditionalOn: 'legalEntityType', conditionalValue: 'Trust' },
       { key: 'gstNumber', label: 'GST Number', type: 'text', placeholder: 'e.g. 22AAAAA0000A1Z5', pattern: '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$', hint: 'Valid 15-character GST number', maxLength: 15 },
     ],
     documentFields: DOCUMENT_SECTION_KEYS['Business Registration'],
@@ -126,9 +131,10 @@ export const B2B_FORM_SECTIONS: FormSection[] = [
     description: 'Tax identification numbers and banking details for payment and compliance.',
     fields: [
       { key: 'panIndividual', label: 'PAN Card (Individual)', type: 'text', required: true, placeholder: 'e.g. ABCDE1234F', pattern: '^[A-Z]{5}[0-9]{4}[A-Z]{1}$', hint: '10-character PAN number', maxLength: 10 },
-      { key: 'panCompany', label: 'PAN Card (Company)', type: 'text', placeholder: 'e.g. ABCDE1234F', pattern: '^[A-Z]{5}[0-9]{4}[A-Z]{1}$', hint: '10-character company PAN number', maxLength: 10 },
+      { key: 'panCompany', label: 'PAN Card (Company)', type: 'text', required: true, placeholder: 'e.g. ABCDE1234F', pattern: '^[A-Z]{5}[0-9]{4}[A-Z]{1}$', hint: '10-character company PAN number', maxLength: 10 },
       { key: 'tan', label: 'TAN (Tax Deduction Account Number)', type: 'text', placeholder: 'e.g. MUMC03164F (if applicable)', maxLength: 10 },
       { key: 'bankAccountName', label: 'Bank Account Name', type: 'text', required: true, placeholder: 'As per bank records', maxLength: 200 },
+      { key: 'accountType', label: 'Account Type', type: 'select', required: true, options: ['Saving', 'Current'], placeholder: 'Select account type' },
       { key: 'bankAccountNumber', label: 'Bank Account Number', type: 'text', required: true, placeholder: 'Account number', pattern: '^\\d{9,18}$', hint: '9-18 digit account number', maxLength: 18 },
       { key: 'ifscCode', label: 'IFSC Code', type: 'text', required: true, placeholder: 'e.g. HDFC0001234', pattern: '^[A-Z]{4}0[A-Z0-9]{6}$', hint: '11-character IFSC code', maxLength: 11 },
     ],
@@ -160,7 +166,7 @@ export const B2B_FORM_SECTIONS: FormSection[] = [
     id: 'poc_details',
     title: 'Point of Contact (POC) Details',
     icon: 'contact',
-    description: 'Primary point of contact for day-to-day communication.',
+    description: 'POC (Point of Contact) details for day-to-day communication and coordination.',
     fields: [
       { key: 'pocFirstName', label: 'First Name', type: 'text', required: true, placeholder: 'POC first name', maxLength: 100 },
       { key: 'pocMiddleName', label: 'Middle Name', type: 'text', placeholder: 'Middle name (optional)', maxLength: 100 },
@@ -176,7 +182,7 @@ export const B2B_FORM_SECTIONS: FormSection[] = [
     id: 'escalation_matrix',
     title: 'Escalation Matrix Details',
     icon: 'escalation',
-    description: 'Senior contact for escalations and issue resolution.',
+    description: 'Senior contact for escalations and issue resolution. This must be different from the POC details.',
     fields: [
       { key: 'escFirstName', label: 'First Name', type: 'text', required: true, placeholder: 'Escalation contact first name', maxLength: 100 },
       { key: 'escMiddleName', label: 'Middle Name', type: 'text', placeholder: 'Middle name (optional)', maxLength: 100 },
@@ -225,6 +231,14 @@ export function getSectionCompletion(
 
   for (const field of section.fields) {
     if (!field.required) continue;
+    if (field.conditionalOn) {
+      const controllingValue = formData[field.conditionalOn];
+      if (field.conditionalValues?.length) {
+        if (!field.conditionalValues.includes(controllingValue)) continue;
+      } else if (field.conditionalValue !== undefined && controllingValue !== field.conditionalValue) {
+        continue;
+      }
+    }
     total++;
     if (field.type === 'readonly') {
       const val = field.key === 'firstName' ? readonlyData.firstName : field.key === 'lastName' ? readonlyData.lastName : readonlyData.email;

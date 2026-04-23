@@ -62,6 +62,23 @@ export default function B2BProfileForm({
 }: B2BProfileFormProps) {
   const [activeTab, setActiveTab] = useState<string>('basic_identity');
 
+  const isTruthy = (value: string | undefined) => value === 'true' || value === '1' || value === 'yes';
+
+  const shouldShowField = useCallback(
+    (field: any) => {
+      if (!field.conditionalOn) return true;
+      const controllingValue = profileData[field.conditionalOn];
+      if (Array.isArray(field.conditionalValues) && field.conditionalValues.length > 0) {
+        return field.conditionalValues.includes(controllingValue);
+      }
+      if (field.conditionalValue !== undefined) {
+        return controllingValue === field.conditionalValue;
+      }
+      return true;
+    },
+    [profileData]
+  );
+
   // Location dropdown option lists
   const [countries] = useState(() => Country.getAllCountries());
   const [states1, setStates1] = useState<any[]>([]);
@@ -114,6 +131,14 @@ export default function B2BProfileForm({
         : []
     );
   }, [profileData.companyCountry, profileData.companyState]);
+
+  // Keep registered address in sync when "Same as Office Address" is checked.
+  useEffect(() => {
+    if (!onFieldChange) return;
+    if (isTruthy(profileData.sameAsOfficeAddress) && profileData.registeredAddress !== (profileData.officeAddress || '')) {
+      onFieldChange('registeredAddress', profileData.officeAddress || '');
+    }
+  }, [profileData.sameAsOfficeAddress, profileData.officeAddress, profileData.registeredAddress, onFieldChange]);
 
   const getFieldValue = (key: string): string => {
     if (key === 'firstName') return readonlyData.firstName;
@@ -188,7 +213,7 @@ export default function B2BProfileForm({
 
   // ── Field renderer ────────────────────────────────────────────────────────
   const renderField = (field: any): React.ReactNode => {
-    if (field.conditionalOn && profileData[field.conditionalOn] !== field.conditionalValue)
+    if (!shouldShowField(field))
       return null;
 
     const val = getFieldValue(field.key);
@@ -211,6 +236,8 @@ export default function B2BProfileForm({
         displayVal = states1.find((s: any) => s.isoCode === val)?.name || val;
       } else if (field.key === 'companyState') {
         displayVal = states4.find((s: any) => s.isoCode === val)?.name || val;
+      } else if (field.type === 'checkbox') {
+        displayVal = isTruthy(val) ? 'Yes' : 'No';
       }
       return (
         <div key={field.key} className={`flex flex-col gap-1 ${colSpan}`}>
@@ -218,6 +245,38 @@ export default function B2BProfileForm({
           <div className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-base text-gray-800 min-h-9.5 break-words">
             {displayVal || <span className="text-gray-400 italic">Not filled</span>}
           </div>
+        </div>
+      );
+    }
+
+    // ── Checkbox ──
+    if (field.type === 'checkbox') {
+      const checked = isTruthy(val);
+      return (
+        <div key={field.key} className={`flex items-center gap-2 ${colSpan}`}>
+          <input
+            id={field.key}
+            type="checkbox"
+            checked={checked}
+            onChange={e => {
+              const next = e.target.checked;
+              onFieldChange?.(field.key, next ? 'true' : 'false');
+              if (field.key === 'sameAsOfficeAddress' && next) {
+                onFieldChange?.('registeredAddress', profileData.officeAddress || '');
+              }
+              if (fieldErrors[field.key]) {
+                setFieldErrors(prev => {
+                  const n = { ...prev };
+                  delete n[field.key];
+                  return n;
+                });
+              }
+            }}
+            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <label htmlFor={field.key} className="text-base font-medium text-gray-700 cursor-pointer">
+            {field.label}
+          </label>
         </div>
       );
     }
@@ -468,36 +527,12 @@ export default function B2BProfileForm({
     return (
       <div>
         {/* Copy shortcuts */}
-        {!readOnly && sectionId === 'company_details' && (
+        {!readOnly && sectionId === 'poc_details' && (
           <div className="mb-4">
             <button
               onClick={() => {
-                const map: Record<string, string> = {
-                  companyOfficialName: 'companyName',
-                  companyMobile: 'primaryMobile',
-                  companyOfficeAddress: 'officeAddress',
-                  companyCountry: 'country',
-                  companyState: 'state',
-                  companyCity: 'city',
-                  companyPinCode: 'pinCode',
-                };
-                Object.entries(map).forEach(([dst, src]) => onFieldChange?.(dst, profileData[src] || ''));
-              }}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              Copy from Basic Identity
-            </button>
-          </div>
-        )}
-        {!readOnly && sectionId === 'escalation_matrix' && (
-          <div className="mb-4">
-            <button
-              onClick={() => {
-                const keys = ['escFirstName', 'escMiddleName', 'escLastName', 'escDesignation', 'escMobile', 'escEmail'];
-                const src = ['pocFirstName', 'pocMiddleName', 'pocLastName', 'pocDesignation', 'pocMobile', 'pocEmail'];
+                const keys = ['pocFirstName', 'pocMiddleName', 'pocLastName', 'pocDesignation', 'pocMobile', 'pocEmail'];
+                const src = ['firstName', 'middleName', 'lastName', 'designation', 'primaryMobile', 'email'];
                 keys.forEach((k, i) => onFieldChange?.(k, profileData[src[i]] || ''));
               }}
               className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
@@ -505,7 +540,7 @@ export default function B2BProfileForm({
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
-              Copy from POC Details
+              Copy from Basic Identity
             </button>
           </div>
         )}
@@ -529,13 +564,31 @@ export default function B2BProfileForm({
                 const newErrors: Record<string, string> = {};
                 section?.fields.forEach((f: any) => {
                   if (!f.required || f.type === 'readonly') return;
-                  if (f.conditionalOn && profileData[f.conditionalOn] !== f.conditionalValue) return;
+                  if (!shouldShowField(f)) return;
                   if (!getFieldValue(f.key)?.trim()) {
                     newErrors[f.key] = `${f.label} is required`;
                   } else if (f.pattern && !new RegExp(f.pattern).test(getFieldValue(f.key))) {
                     newErrors[f.key] = `${f.label} has invalid format`;
                   }
                 });
+
+                if (sectionId === 'escalation_matrix') {
+                  const pairs: Array<[string, string]> = [
+                    ['escFirstName', 'pocFirstName'],
+                    ['escMiddleName', 'pocMiddleName'],
+                    ['escLastName', 'pocLastName'],
+                    ['escDesignation', 'pocDesignation'],
+                    ['escMobile', 'pocMobile'],
+                    ['escEmail', 'pocEmail'],
+                  ];
+                  const sameAsPoc = pairs.every(([escKey, pocKey]) =>
+                    (profileData[escKey] || '').trim().toLowerCase() === (profileData[pocKey] || '').trim().toLowerCase()
+                  );
+                  if (sameAsPoc) {
+                    newErrors.escEmail = 'Escalation matrix details must be different from POC details';
+                  }
+                }
+
                 if (Object.keys(newErrors).length > 0) {
                   setFieldErrors(newErrors);
                   return;

@@ -65,12 +65,20 @@ export const B2B_DOCUMENTS_CONFIG: B2BDocumentConfigField[] = [
     order: 6,
   },
   {
-    documentKey: 'latest_itr',
-    documentName: 'Latest ITR',
+    documentKey: 'tan_document',
+    documentName: 'TAN Document',
     section: 'Tax & Financial',
-    required: false,
-    helpText: 'Latest Income Tax Return (optional but recommended)',
+    required: true,
+    helpText: 'TAN allotment document',
     order: 7,
+  },
+  {
+    documentKey: 'gst_document',
+    documentName: 'GST Document',
+    section: 'Tax & Financial',
+    required: true,
+    helpText: 'GST certificate or GST proof document',
+    order: 8,
   },
   // ── KYC Documents ─────────────────────────────────────────────────────
   {
@@ -79,7 +87,7 @@ export const B2B_DOCUMENTS_CONFIG: B2BDocumentConfigField[] = [
     section: 'KYC Documents',
     required: true,
     helpText: 'Individual / Authorized Signatory Aadhaar card',
-    order: 8,
+    order: 9,
   },
   {
     documentKey: 'pan_card_individual',
@@ -87,7 +95,7 @@ export const B2B_DOCUMENTS_CONFIG: B2BDocumentConfigField[] = [
     section: 'KYC Documents',
     required: true,
     helpText: 'Individual PAN card',
-    order: 9,
+    order: 10,
   },
   {
     documentKey: 'passport_photo',
@@ -95,7 +103,7 @@ export const B2B_DOCUMENTS_CONFIG: B2BDocumentConfigField[] = [
     section: 'KYC Documents',
     required: true,
     helpText: 'Recent passport-size photograph',
-    order: 10,
+    order: 11,
   },
   {
     documentKey: 'address_proof',
@@ -103,7 +111,7 @@ export const B2B_DOCUMENTS_CONFIG: B2BDocumentConfigField[] = [
     section: 'KYC Documents',
     required: true,
     helpText: 'Electricity bill / Rent agreement / Bank statement',
-    order: 11,
+    order: 12,
   },
   // ── Authorized Signatory ───────────────────────────────────────────────
   {
@@ -112,7 +120,7 @@ export const B2B_DOCUMENTS_CONFIG: B2BDocumentConfigField[] = [
     section: 'Authorized Signatory',
     required: true,
     helpText: 'ID proof of the authorized signatory',
-    order: 12,
+    order: 13,
   },
   {
     documentKey: 'board_resolution',
@@ -120,7 +128,7 @@ export const B2B_DOCUMENTS_CONFIG: B2BDocumentConfigField[] = [
     section: 'Authorized Signatory',
     required: true,
     helpText: 'Board resolution or authorization letter',
-    order: 13,
+    order: 14,
   },
   {
     documentKey: 'digital_signature',
@@ -128,7 +136,7 @@ export const B2B_DOCUMENTS_CONFIG: B2BDocumentConfigField[] = [
     section: 'Authorized Signatory',
     required: false,
     helpText: 'Digital Signature Certificate (if required for contracts)',
-    order: 14,
+    order: 15,
   },
 ];
 
