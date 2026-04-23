@@ -535,6 +535,10 @@ export default function RoleUserListPage({
     pluralSuffix = "es";
   } else if (roleDisplayName.toLowerCase() === "ops") {
     pluralSuffix = "";
+  } else if (roleDisplayName.toLowerCase() === "b2b sales") {
+    pluralSuffix = "";
+  } else if (roleDisplayName.toLowerCase() === "b2b ops") {
+    pluralSuffix = "";
   } else if (roleDisplayName.toLowerCase() === "advisor") {
     pluralSuffix = "s";
   } else {
