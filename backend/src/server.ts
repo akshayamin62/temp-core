@@ -158,12 +158,18 @@ app.use(helmet({
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
+
+  // OLD domains (keep or remove)
   'https://admitra.io',
   'https://www.admitra.io',
   'https://core.admitra.io',
   'https://temp-core.admitra.io',
   'https://www.core.admitra.io',
   'https://www.temp-core.admitra.io',
+
+  // ✅ ADD THESE
+  'https://careerstudio.net',
+  'https://www.careerstudio.net',
 ];
 
 app.use(cors({
