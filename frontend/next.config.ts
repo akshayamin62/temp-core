@@ -3,6 +3,7 @@ import path from "path";
 
 const nextConfig = {
   basePath: '/temp-core',
+  assetPrefix: '/temp-core',
 };
 
 export default nextConfig;
