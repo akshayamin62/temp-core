@@ -2,6 +2,8 @@
 // Defines all sections, form fields, and document fields for the comprehensive
 // B2B onboarding form used by Admin and Advisor.
 
+import { B2B_DOCUMENTS_CONFIG, type B2BDocumentConfigField } from './b2bDocumentsConfig';
+
 export type FieldType = 'text' | 'email' | 'tel' | 'select' | 'textarea' | 'readonly' | 'checkbox';
 
 export interface FormField {
@@ -20,50 +22,27 @@ export interface FormField {
   conditionalValues?: string[];
 }
 
-export interface DocumentSeedField {
-  documentName: string;
-  documentKey: string;
-  section: string;
-  required: boolean;
-  helpText?: string;
-  order: number;
-}
-
 export interface FormSection {
   id: string;
   title: string;
   icon: string;
   description: string;
   fields: FormField[];
-  documentFields?: DocumentSeedField[];  // document upload fields within this section
+  documentFields?: B2BDocumentConfigField[];  // document upload fields within this section
 }
 
-// ─── Default document fields that are auto-seeded on backend ─────────────────
-// This mirrors backend's DEFAULT_DOCUMENT_FIELDS for UI organization purposes.
-export const DOCUMENT_SECTION_KEYS: Record<string, DocumentSeedField[]> = {
-  'Business Registration': [
-    { documentName: 'Registration Certificate', documentKey: 'registration_certificate', section: 'Business Registration', required: true, helpText: 'Company/business registration certificate', order: 1 },
-    { documentName: 'GST Registration Certificate', documentKey: 'gst_certificate', section: 'Business Registration', required: false, helpText: 'GST registration certificate (if applicable)', order: 2 },
-    { documentName: 'Shop & Establishment License', documentKey: 'shop_establishment_license', section: 'Business Registration', required: false, helpText: 'If applicable', order: 3 },
-    { documentName: 'Partnership Deed', documentKey: 'partnership_deed', section: 'Business Registration', required: false, helpText: 'If applicable (Partnership firms)', order: 4 },
-  ],
-  'Tax & Financial': [
-    { documentName: 'PAN Card (Company)', documentKey: 'pan_card_company', section: 'Tax & Financial', required: true, helpText: 'Company PAN card', order: 5 },
-    { documentName: 'Cancelled Cheque / Bank Proof', documentKey: 'cancelled_cheque', section: 'Tax & Financial', required: true, helpText: 'Cancelled cheque or bank statement as proof', order: 6 },
-    { documentName: 'Latest ITR', documentKey: 'latest_itr', section: 'Tax & Financial', required: false, helpText: 'Latest Income Tax Return (optional but recommended)', order: 7 },
-  ],
-  'KYC Documents': [
-    { documentName: 'Aadhaar Card', documentKey: 'aadhaar_card', section: 'KYC Documents', required: true, helpText: 'Individual / Authorized Signatory Aadhaar card', order: 8 },
-    { documentName: 'PAN Card (Individual)', documentKey: 'pan_card_individual', section: 'KYC Documents', required: true, helpText: 'Individual PAN card', order: 9 },
-    { documentName: 'Passport-size Photograph', documentKey: 'passport_photo', section: 'KYC Documents', required: true, helpText: 'Recent passport-size photograph', order: 10 },
-    { documentName: 'Address Proof', documentKey: 'address_proof', section: 'KYC Documents', required: true, helpText: 'Electricity bill / Rent agreement / Bank statement', order: 11 },
-  ],
-  'Authorized Signatory': [
-    { documentName: 'ID Proof (Authorized Person)', documentKey: 'auth_id_proof', section: 'Authorized Signatory', required: true, helpText: 'ID proof of the authorized signatory', order: 12 },
-    { documentName: 'Board Resolution / Authorization Letter', documentKey: 'board_resolution', section: 'Authorized Signatory', required: true, helpText: 'Board resolution or authorization letter', order: 13 },
-    { documentName: 'Digital Signature (DSC)', documentKey: 'digital_signature', section: 'Authorized Signatory', required: false, helpText: 'Digital Signature Certificate (if required for contracts)', order: 14 },
-  ],
+const SECTION_DOC_GROUP_MAP: Record<string, B2BDocumentConfigField['section']> = {
+  business_registration: 'Business Registration',
+  tax_financial: 'Tax & Financial',
+  kyc_documents: 'KYC Documents',
+  authorized_signatory: 'Authorized Signatory',
 };
+
+function getSectionDocumentFields(sectionId: string): B2BDocumentConfigField[] {
+  const sectionName = SECTION_DOC_GROUP_MAP[sectionId];
+  if (!sectionName) return [];
+  return B2B_DOCUMENTS_CONFIG.filter((doc) => doc.section === sectionName);
+}
 
 export const LEGAL_ENTITY_TYPES = [
   'Proprietorship',
@@ -120,7 +99,7 @@ export const B2B_FORM_SECTIONS: FormSection[] = [
       { key: 'trustRegistrationNumber', label: 'Trust Registration Number', type: 'text', required: true, placeholder: 'e.g. E/12345/Mumbai', hint: 'Required for Trust entities (e.g. E/12345/Mumbai)', conditionalOn: 'legalEntityType', conditionalValue: 'Trust' },
       { key: 'gstNumber', label: 'GST Number', type: 'text', placeholder: 'e.g. 22AAAAA0000A1Z5', pattern: '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$', hint: 'Valid 15-character GST number', maxLength: 15 },
     ],
-    documentFields: DOCUMENT_SECTION_KEYS['Business Registration'],
+    documentFields: getSectionDocumentFields('business_registration'),
   },
 
   // ─── Section 3: Tax & Financial Details ──────────────────────────────────
@@ -138,7 +117,7 @@ export const B2B_FORM_SECTIONS: FormSection[] = [
       { key: 'bankAccountNumber', label: 'Bank Account Number', type: 'text', required: true, placeholder: 'Account number', pattern: '^\\d{9,18}$', hint: '9-18 digit account number', maxLength: 18 },
       { key: 'ifscCode', label: 'IFSC Code', type: 'text', required: true, placeholder: 'e.g. HDFC0001234', pattern: '^[A-Z]{4}0[A-Z0-9]{6}$', hint: '11-character IFSC code', maxLength: 11 },
     ],
-    documentFields: DOCUMENT_SECTION_KEYS['Tax & Financial'],
+    documentFields: getSectionDocumentFields('tax_financial'),
   },
 
   // ─── Section 4: Company Details ───────────────────────────────────────────
@@ -200,7 +179,7 @@ export const B2B_FORM_SECTIONS: FormSection[] = [
     icon: 'shield',
     description: 'Mandatory KYC documents required for compliance verification.',
     fields: [],
-    documentFields: DOCUMENT_SECTION_KEYS['KYC Documents'],
+    documentFields: getSectionDocumentFields('kyc_documents'),
   },
 
   // ─── Section 8: Authorized Signatory Details ─────────────────────────────
@@ -212,7 +191,7 @@ export const B2B_FORM_SECTIONS: FormSection[] = [
     fields: [
       { key: 'authPersonName', label: 'Name of Authorized Person', type: 'text', required: true, placeholder: 'Full name of authorized signatory', maxLength: 200 },
     ],
-    documentFields: DOCUMENT_SECTION_KEYS['Authorized Signatory'],
+    documentFields: getSectionDocumentFields('authorized_signatory'),
   },
 ];
 

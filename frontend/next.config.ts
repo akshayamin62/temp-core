@@ -1,10 +1,12 @@
 import type { NextConfig } from "next";
 import path from "path";
 
-const nextConfig = {
-  basePath: '/temp-core',
-  assetPrefix: '/temp-core',
-  trailingSlash: false,
+const nextConfig: NextConfig = {
+  /* config options here */
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
 };
 
 export default nextConfig;
+

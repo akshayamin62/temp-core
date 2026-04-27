@@ -191,6 +191,12 @@ export default function B2BProfileForm({
     [b2bDocuments]
   );
 
+  // Match DB-backed document field by key so uploads use a real field _id
+  const getFieldByKey = useCallback(
+    (key: string) => b2bDocFields.find(f => f.documentKey === key),
+    [b2bDocFields]
+  );
+
   const getStatusBadge = (status: B2BDocumentStatus) => {
     if (status === B2BDocumentStatus.APPROVED)
       return (
@@ -672,22 +678,23 @@ export default function B2BProfileForm({
                   </div>
                 )}
 
-                {configFields.map(cf =>
-                  renderDocCardShared({
+                {configFields.map(cf => {
+                  const dbField = getFieldByKey(cf.documentKey);
+                  return renderDocCardShared({
                     cardKey: `config_${cf.documentKey}`,
                     documentKey: cf.documentKey,
                     documentName: cf.documentName,
                     required: cf.required,
                     helpText: cf.helpText,
-                    uploadField: {
+                    uploadField: dbField || ({
                       _id: cf.documentKey,
                       documentKey: cf.documentKey,
                       documentName: cf.documentName,
                       required: cf.required,
                       helpText: cf.helpText,
-                    } as B2BDocumentField,
-                  })
-                )}
+                    } as B2BDocumentField),
+                  });
+                })}
               </div>
 
               {/* Save button for Authorized Signatory (for authPersonName) */}

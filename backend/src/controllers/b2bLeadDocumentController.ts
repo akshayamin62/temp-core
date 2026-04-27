@@ -282,7 +282,11 @@ export const getMyB2BLeadDocuments = async (req: AuthRequest, res: Response) => 
       ? { adminId: entity.entityId }
       : { advisorId: entity.entityId };
 
-    const documents = await B2BLeadDocument.find(entityFilter)
+    const queryFilter: Record<string, any> = entity.b2bLeadId
+      ? { $or: [entityFilter, { b2bLeadId: entity.b2bLeadId }] }
+      : entityFilter;
+
+    const documents = await B2BLeadDocument.find(queryFilter)
       .populate("documentFieldId", "documentName documentKey required helpText section")
       .sort({ createdAt: 1 });
 
@@ -360,7 +364,16 @@ export const getB2BLeadDocuments = async (req: AuthRequest, res: Response) => {
   try {
     const { leadId } = req.params;
 
-    const documents = await B2BLeadDocument.find({ b2bLeadId: leadId })
+    const lead = await B2BLead.findById(leadId).select("createdAdminId createdAdvisorId");
+    if (!lead) {
+      return res.status(404).json({ success: false, message: "B2B Lead not found" });
+    }
+
+    const scopeFilters: Record<string, any>[] = [{ b2bLeadId: lead._id }];
+    if (lead.createdAdminId) scopeFilters.push({ adminId: lead.createdAdminId });
+    if (lead.createdAdvisorId) scopeFilters.push({ advisorId: lead.createdAdvisorId });
+
+    const documents = await B2BLeadDocument.find({ $or: scopeFilters })
       .populate("uploadedBy", "firstName middleName lastName email")
       .populate("approvedBy", "firstName middleName lastName email")
       .populate("rejectedBy", "firstName middleName lastName email")
@@ -464,6 +477,11 @@ export const uploadB2BLeadDocument = async (req: AuthRequest, res: Response) => 
       const oldFilePath = path.join(process.cwd(), existingDoc.filePath);
       if (fs.existsSync(oldFilePath)) {
         fs.unlinkSync(oldFilePath);
+      }
+
+      // Keep cross-scope visibility intact when admin/advisor uploads are linked to a lead.
+      if (!existingDoc.b2bLeadId && b2bLeadIdRef) {
+        existingDoc.b2bLeadId = b2bLeadIdRef;
       }
 
       existingDoc.fileName = finalFilename;

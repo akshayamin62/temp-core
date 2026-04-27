@@ -99,7 +99,7 @@ export default function SuperAdminB2BLeadProfilePage() {
       setLoadingB2BDocs(true);
       const [fieldsRes, docsRes] = await Promise.all([
         isAdmin ? b2bLeadDocumentAPI.getFieldsByAdmin(entityId) : b2bLeadDocumentAPI.getFieldsByAdvisor(entityId),
-        isAdmin ? b2bLeadDocumentAPI.getDocsByAdmin(entityId) : b2bLeadDocumentAPI.getDocsByAdvisor(entityId),
+        b2bLeadDocumentAPI.getDocuments(leadId),
       ]);
       setB2BDocFields(fieldsRes.data.data.fields || []);
       setB2BDocuments(docsRes.data.data.documents || []);
@@ -158,7 +158,7 @@ export default function SuperAdminB2BLeadProfilePage() {
   const handleUploadDoc = async (field: B2BDocumentField, file: File) => {
     try {
       setUploadingDocId(field._id);
-      await b2bLeadDocumentAPI.uploadDocument(null, field._id, field.documentKey, field.documentName, file);
+      await b2bLeadDocumentAPI.uploadDocument(leadId, field._id, field.documentKey, field.documentName, file);
       toast.success('Document uploaded');
       await fetchB2BDocuments();
     } catch {
