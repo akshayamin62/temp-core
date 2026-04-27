@@ -573,6 +573,506 @@ Admitra Team
 
 ---
 
+## PHASE 10 (NEW): Lead, B2B Lead, Referrer & Follow-Up & Team Meet Notifications
+
+> Status: **PENDING APPROVAL** — templates below are proposals for review before implementation.
+
+---
+
+### Notification Events Table
+
+| # | Event | Trigger Point | Notify Who | Email | WhatsApp |
+|---|-------|---------------|------------|-------|----------|
+| 33 | Admin/Advisor lead enquiry submitted | `leadController.submitEnquiry` | Lead (enquirer) | ✅ | ✅ |
+| 34 | Referral enquiry submitted | `referrerController.submitReferralEnquiry` | Lead (enquirer) | ✅ | ✅ |
+| 35 | B2B enquiry submitted (Franchise / Advisor / Referrer) | `b2bLeadController.submitB2BEnquiry` | B2B Lead (enquirer) | ✅ (exists) | ✅ (new) |
+| 36 | Counselor / B2B Sales creates a follow-up | `followUpController.createFollowUp` / `b2bFollowUpController.createB2BFollowUp` | Lead | ✅ (exists for meeting email) | ✅ (new) |
+| 37 | Follow-up status saved / updated | `followUpController.updateFollowUp` / `b2bFollowUpController.updateB2BFollowUp` | Lead | ✅ | ✅ |
+| 38 | Team meet created (sender → receiver) | `teamMeetController.createTeamMeet` | Receiver | ✅ (exists `sendMeetingPendingEmail`) | ✅ (new) |
+| 39 | Team meet accepted / confirmed | `teamMeetController.acceptTeamMeet` | Both sender & receiver | ✅ (exists `sendMeetingConfirmedEmail`) | ✅ (new — include Zoho link if online) |
+| 40 | Team meet rejected | `teamMeetController.rejectTeamMeet` | Sender | ✅ | ✅ |
+| 41 | Team meet cancelled | `teamMeetController.cancelTeamMeet` | Both sender & receiver | ✅ | ✅ |
+
+---
+
+### WhatsApp Template 12: `enquiry welcome` — Unified Enquiry Welcome (Lead / Referral / B2B)
+
+**Category:** UTILITY
+**Language:** English
+**Triggers:**
+- `leadController.submitEnquiry` (admin/advisor slug)
+- `referrerController.submitReferralEnquiry`
+- `b2bLeadController.submitB2BEnquiry`
+**Recipient:** The person who just submitted any enquiry form
+
+> **Note:** Templates 12 and 13 are merged into one. `{{2}}` is dynamically set by the system based on enquiry type.
+
+```
+Hello, {{1}}
+
+Thank you for your enquiry!
+
+We have received {{2}}.
+
+Our team will review your details and get in touch with you shortly.
+
+Thank you for keeping us in business.
+```
+
+**Variables:**
+| Var | Value |
+|-----|-------|
+| `{{1}}` | Enquirer's name (full name for Lead/Referral; first name for B2B) |
+| `{{2}}` | Dynamically set: |
+| | **Lead**: `your request for {serviceTypes}` (e.g. `your request for Study Abroad; Coaching`) |
+| | **B2B**: `your {type} partnership enquiry` (e.g. `your Franchise partnership enquiry`) |
+| | **Referral**: `your request for referral with {admin company name}` (e.g. `your request for referral with Kareer Studio`) |
+
+**Sample (Lead):**
+```
+Hello, Akshay Amin
+
+Thank you for your enquiry!
+
+We have received your request for Study Abroad; Coaching.
+
+Our team will review your details and get in touch with you shortly.
+
+Thank you for keeping us in business.
+```
+
+**Sample (B2B):**
+```
+Hello, Akshay
+
+Thank you for your enquiry!
+
+We have received your Franchise partnership enquiry.
+
+Our team will review your details and get in touch with you shortly.
+
+Thank you for keeping us in business.
+```
+
+**Sample (Referral):**
+```
+Hello, Akshay Amin
+
+Thank you for your enquiry!
+
+We have received your request for referral with Kareer Studio.
+
+Our team will review your details and get in touch with you shortly.
+
+Thank you for keeping us in business.
+```
+
+**How to use:**
+```
+WHATSAPP_WEBHOOK_URL?number=91{mobileNumber}&message=enquiry%20welcome,Akshay%20Amin,your%20request%20for%20Study%20Abroad
+```
+
+---
+
+### WhatsApp Templates 14–19: Reuse `general 3 line notification`
+
+> **All follow-up and team meet notification templates reuse the single existing template: `general 3 line notification`.**
+> No new WhatsApp templates need to be created for these notifications.
+
+**Template structure (existing):**
+```
+Hello, {{1}}
+{{2}}
+Please find the details below for your reference.
+{{3}}.
+
+Thank you for keeping us in business.
+```
+
+**Webhook format:**
+```
+WHATSAPP_WEBHOOK_URL?number=91{mobileNumber}&message=general%203%20line%20notification,{name},{line2},{line3}
+```
+
+---
+
+#### Template 14: Follow-Up Scheduled (to Lead)
+**Trigger:** `followUpController.createFollowUp` / `b2bFollowUpController.createB2BFollowUp`
+
+| Variable | Value |
+|----------|-------|
+| `{{1}}` | Lead full name |
+| `{{2}}` | `A follow-up session has been scheduled for you.` |
+| `{{3}}` | **Online:** `Follow-up #{n} with {counselor} on {date} at {time} ({duration} mins). Join at: {zohoUrl}` |
+| | **Offline:** `Follow-up #{n} with {counselor} on {date} at {time} ({duration} mins). Offline meeting.` |
+
+**Sample (Online):**
+```
+Hello, Akshay Amin
+A follow-up session has been scheduled for you.
+Please find the details below for your reference.
+Follow-up #1 with Priya Sharma on Monday; 28 Apr 2026 at 11:00 AM (30 mins). Join at: https://meeting.zoho.com/xyz.
+
+Thank you for keeping us in business.
+```
+
+---
+
+#### Template 15: Follow-Up Status Updated (to Lead)
+**Trigger:** `followUpController.updateFollowUp` / `b2bFollowUpController.updateB2BFollowUp`
+
+| Variable | Value |
+|----------|-------|
+| `{{1}}` | Lead full name |
+| `{{2}}` | `There is an update on your follow-up session.` |
+| `{{3}}` | `Follow-up #{n} - Status: {statusLabel}. {notes if present}` |
+
+**Status label map:**
+| System Value | Display |
+|---|---|
+| `SCHEDULED` | Scheduled | `COMPLETED` | Completed | `NO_SHOW` | No Show | `RESCHEDULED` | Rescheduled | `CANCELLED` | Cancelled | `INTERESTED` | Interested | `NOT_INTERESTED` | Not Interested | `CONVERTED_TO_STUDENT` | Converted to Student | `CONVERTED` | Converted |
+
+**Sample:**
+```
+Hello, Akshay Amin
+There is an update on your follow-up session.
+Please find the details below for your reference.
+Follow-up #1 - Status: Completed. Thank you for your time today.
+
+Thank you for keeping us in business.
+```
+
+---
+
+#### Template 16: Team Meet Requested (to Receiver)
+**Trigger:** `teamMeetController.createTeamMeet` *(Zoho link not yet available — created on accept)*
+
+| Variable | Value |
+|----------|-------|
+| `{{1}}` | Receiver full name |
+| `{{2}}` | `You have a new meeting request from {senderName}.` |
+| `{{3}}` | `"{subject}" on {date} at {time} ({duration} mins; {type}). Kindly log in to confirm or decline.` |
+
+**Sample:**
+```
+Hello, Priya Sharma
+You have a new meeting request from Akshay Amin.
+Please find the details below for your reference.
+"Application Review" on Tuesday; 29 Apr 2026 at 3:00 PM (30 mins; Online). Kindly log in to confirm or decline.
+
+Thank you for keeping us in business.
+```
+
+---
+
+#### Template 17: Team Meet Confirmed (to Both Parties)
+**Trigger:** `teamMeetController.acceptTeamMeet` *(Zoho meeting created at this point)*
+
+| Variable | Value |
+|----------|-------|
+| `{{1}}` | Participant full name |
+| `{{2}}` | `Your meeting with {otherParty} has been confirmed.` |
+| `{{3}}` | **Online:** `"{subject}" on {date} at {time} ({duration} mins). Meeting ID: {id} \| Password: {pass} \| Join at: {url}` |
+| | **Offline:** `"{subject}" on {date} at {time} ({duration} mins). In-Person meeting. Please be on time.` |
+
+**Sample (Online):**
+```
+Hello, Akshay Amin
+Your meeting with Priya Sharma has been confirmed.
+Please find the details below for your reference.
+"Application Review" on Tuesday; 29 Apr 2026 at 3:00 PM (30 mins). Meeting ID: 1036588582 | Password: nsPd75 | Join at: https://meeting.zoho.com/xyz.
+
+Thank you for keeping us in business.
+```
+
+---
+
+#### Template 18: Team Meet Rejected (to Sender)
+**Trigger:** `teamMeetController.rejectTeamMeet`
+
+| Variable | Value |
+|----------|-------|
+| `{{1}}` | Sender full name |
+| `{{2}}` | `Your meeting request was declined by {receiverName}.` |
+| `{{3}}` | `"{subject}" on {date} at {time}. Reason: {rejectionMessage}. You can reschedule from your dashboard.` |
+
+**Sample:**
+```
+Hello, Akshay Amin
+Your meeting request was declined by Priya Sharma.
+Please find the details below for your reference.
+"Application Review" on Tuesday; 29 Apr 2026 at 3:00 PM. Reason: I am unavailable at this time. You can reschedule from your dashboard.
+
+Thank you for keeping us in business.
+```
+
+---
+
+#### Template 19: Team Meet Cancelled (to Receiver)
+**Trigger:** `teamMeetController.cancelTeamMeet`
+
+| Variable | Value |
+|----------|-------|
+| `{{1}}` | Receiver full name |
+| `{{2}}` | `A meeting has been cancelled.` |
+| `{{3}}` | `"{subject}" with {senderName} that was scheduled on {date} at {time} has been cancelled.` |
+
+**Sample:**
+```
+Hello, Priya Sharma
+A meeting has been cancelled.
+Please find the details below for your reference.
+"Application Review" with Akshay Amin that was scheduled on Tuesday; 29 Apr 2026 at 3:00 PM has been cancelled.
+
+Thank you for keeping us in business.
+```
+
+---
+
+### Email Template 11: Enquiry Welcome (Lead / Referral)
+
+**Subject:** `Thank you for your enquiry — {serviceTypes}`
+**Trigger:** `leadController.submitEnquiry`, `referrerController.submitReferralEnquiry`
+
+```
+Hi {leadName},
+
+Thank you for reaching out to us!
+
+We have received your enquiry for the following service(s):
+📌 {serviceTypes}
+
+Our team will review your details and get in touch with you shortly.
+
+In the meantime, if you have any questions, feel free to reply to this email.
+
+Best regards,
+Admitra Team
+```
+
+---
+
+### Email Template 12: B2B Enquiry Welcome
+
+**Subject:** `Thank you for your B2B partnership enquiry — {type}`
+**Trigger:** `b2bLeadController.submitB2BEnquiry`
+**Note:** This partially exists (`sendB2BEnquiryConfirmationEmail`). The current email should be verified against this template.
+
+```
+Hi {firstName},
+
+Thank you for your interest in becoming a {type} partner with Admitra!
+
+We have received your enquiry and our partnerships team will review your application.
+You can expect to hear from us within 1-2 business days.
+
+Here's what happens next:
+1. Our team reviews your application
+2. A B2B Sales representative will be assigned to your profile
+3. They will contact you to discuss next steps
+
+Best regards,
+Admitra Team
+```
+
+---
+
+### Email Template 13: Follow-Up Scheduled (to Lead)
+
+**Subject:** `Follow-up Session Scheduled — {date} at {time}`
+**Trigger:** `followUpController.createFollowUp`, `b2bFollowUpController.createB2BFollowUp`
+
+```
+Hi {leadName},
+
+A follow-up session has been scheduled for you:
+
+📋 Follow-up #: {followUpNumber}
+👤 With: {counselorName}
+📅 Date: {date}
+🕐 Time: {time}
+⏱ Duration: {duration} minutes
+📍 Type: {meetingType}
+{🔗 Join Link: {zohoMeetingUrl} (if online)}
+{🔑 Meeting ID: {zohoMeetingId} | Password: {zohoMeetingPassword} (if online)}
+
+{notes if present}
+
+Best regards,
+Admitra Team
+```
+
+---
+
+### Email Template 14: Follow-Up Status Updated (to Lead)
+
+**Subject:** `Follow-up #{followUpNumber} — Status: {statusLabel}`
+**Trigger:** `followUpController.updateFollowUp`, `b2bFollowUpController.updateB2BFollowUp`
+
+```
+Hi {leadName},
+
+There is an update on your follow-up session:
+
+📋 Follow-up #: {followUpNumber}
+👤 With: {counselorName}
+📅 Date: {date}
+📊 Status: {statusLabel}
+{📝 Notes: {notes} (if present)}
+
+If you have any questions, feel free to contact us.
+
+Best regards,
+Admitra Team
+```
+
+---
+
+### Email Template 15: Team Meet Request (to Receiver)
+
+**Subject:** `Meeting Request — "{subject}" on {date}`
+**Trigger:** `teamMeetController.createTeamMeet`
+**Note:** `sendMeetingPendingEmail` already exists in `utils/email.ts`. Verify it matches this format.
+
+```
+Hi {receiverName},
+
+{senderName} has requested a meeting with you:
+
+📋 Subject: {subject}
+📅 Date: {date}
+🕐 Time: {time}
+⏱ Duration: {duration} minutes
+📍 Type: {Online / In-Person}
+{📎 Attachment: {attachmentName} (if any)}
+{📝 Description: {description} (if any)}
+
+Please log in to confirm or decline this meeting request:
+https://core.admitra.io/dashboard
+
+Best regards,
+Admitra Team
+```
+
+---
+
+### Email Template 16: Team Meet Confirmed — Online (to Both Parties)
+
+**Subject:** `Meeting Confirmed — "{subject}" on {date} | Zoho Details Inside`
+**Trigger:** `teamMeetController.acceptTeamMeet` (Online)
+**Note:** `sendMeetingConfirmedEmail` already exists. Verify it includes Zoho Meeting ID, Password, and Link.
+
+```
+Hi {participantName},
+
+Your meeting has been confirmed:
+
+📋 Subject: {subject}
+📅 Date: {date}
+🕐 Time: {time}
+⏱ Duration: {duration} minutes
+📍 Type: Online (Zoho Meeting)
+
+🔗 Join Link: {zohoMeetingUrl}
+🆔 Meeting ID: {zohoMeetingId}
+🔑 Password: {zohoMeetingPassword}
+
+Please join 2 minutes before the scheduled time.
+
+Best regards,
+Admitra Team
+```
+
+---
+
+### Email Template 17: Team Meet Confirmed — In-Person (to Both Parties)
+
+**Subject:** `Meeting Confirmed — "{subject}" on {date}`
+**Trigger:** `teamMeetController.acceptTeamMeet` (In-Person / Face-to-Face)
+
+```
+Hi {participantName},
+
+Your in-person meeting has been confirmed:
+
+📋 Subject: {subject}
+📅 Date: {date}
+🕐 Time: {time}
+⏱ Duration: {duration} minutes
+📍 Type: In-Person
+
+Please be on time for the meeting.
+
+Best regards,
+Admitra Team
+```
+
+---
+
+### Email Template 18: Team Meet Rejected (to Sender)
+
+**Subject:** `Meeting Request Declined — "{subject}"`
+**Trigger:** `teamMeetController.rejectTeamMeet`
+
+```
+Hi {senderName},
+
+Your meeting request has been declined by {receiverName}:
+
+📋 Subject: {subject}
+📅 Date: {date}
+🕐 Time: {time}
+❌ Reason: {rejectionMessage}
+
+You can reschedule the meeting from your dashboard:
+https://core.admitra.io/dashboard
+
+Best regards,
+Admitra Team
+```
+
+---
+
+### Email Template 19: Team Meet Cancelled (to Both Parties)
+
+**Subject:** `Meeting Cancelled — "{subject}" on {date}`
+**Trigger:** `teamMeetController.cancelTeamMeet`
+
+```
+Hi {participantName},
+
+The following meeting has been cancelled:
+
+📋 Subject: {subject}
+📅 Date: {date}
+🕐 Time: {time}
+👤 Cancelled by: {senderName}
+
+If you wish to reschedule, please log in:
+https://core.admitra.io/dashboard
+
+Best regards,
+Admitra Team
+```
+
+---
+
+### System Analysis — What Already Exists vs What Is New
+
+| Notification | Current State | Action Needed |
+|-------------|---------------|---------------|
+| B2B enquiry email to enquirer | ✅ `sendB2BEnquiryConfirmationEmail` exists | Add WhatsApp (Template 13) |
+| Lead enquiry email to enquirer | ❌ No welcome email to lead | Add email (Template 11) + WhatsApp (Template 12) |
+| Referral enquiry email to enquirer | ❌ No welcome email to lead | Add email (Template 11) + WhatsApp (Template 12) |
+| Follow-up created — email to lead | ✅ `sendMeetingScheduledEmail` to lead already in controller | Add WhatsApp (Template 14); verify email matches Template 13 |
+| Follow-up status update — email | ❌ Not implemented | Add email (Template 14) + WhatsApp (Template 15) |
+| Team meet created — email to receiver | ✅ `sendMeetingPendingEmail` exists | Add WhatsApp (Template 16); verify email matches Template 15 |
+| Team meet confirmed — email to both | ✅ `sendMeetingConfirmedEmail` exists | Add WhatsApp (Template 17); verify Zoho ID/password/link are included in email |
+| Team meet rejected — email to sender | ❌ Not implemented | Add email (Template 18) + WhatsApp (Template 18) |
+| Team meet cancelled — email to both | ❌ Not implemented | Add email (Template 19) + WhatsApp (Template 19) |
+
+---
+
 ## Red Dot In-App Notification System — Design
 
 ### Architecture

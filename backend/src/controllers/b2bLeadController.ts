@@ -7,6 +7,7 @@ import { USER_ROLE } from "../types/roles";
 import mongoose from "mongoose";
 import { sendEmail, sendB2BEnquiryConfirmationEmail } from "../utils/email";
 import UserModel from "../models/User";
+import { sendWhatsAppEnquiryWelcome, sendWhatsAppGeneralNotification } from "../utils/whatsapp";
 
 /**
  * PUBLIC: Submit B2B enquiry form (no auth required)
@@ -57,6 +58,13 @@ export const submitB2BEnquiry = async (req: Request, res: Response): Promise<Res
 
     await newLead.save();
 
+    // WhatsApp welcome notification to B2B enquirer (non-blocking)
+    sendWhatsAppEnquiryWelcome(
+      mobileNumber.trim(),
+      firstName.trim(),
+      `your ${type} partnership enquiry`
+    ).catch((err) => console.error('Failed to send WhatsApp B2B enquiry welcome:', err));
+
     // Send confirmation email to enquirer and notify Super Admins
     try {
       await sendB2BEnquiryConfirmationEmail(email.toLowerCase().trim(), firstName.trim(), type);
@@ -65,7 +73,7 @@ export const submitB2BEnquiry = async (req: Request, res: Response): Promise<Res
     }
 
     try {
-      const superAdmins = await UserModel.find({ role: USER_ROLE.SUPER_ADMIN, isActive: true }).select("email").lean();
+      const superAdmins = await UserModel.find({ role: USER_ROLE.SUPER_ADMIN, isActive: true }).select('email firstName middleName lastName mobileNumber').lean();
       for (const sa of superAdmins) {
         await sendEmail({
           to: sa.email,
@@ -83,6 +91,16 @@ export const submitB2BEnquiry = async (req: Request, res: Response): Promise<Res
           </div>`,
           text: `New B2B Enquiry: ${firstName} ${lastName} (${type}) - Email: ${email} - Phone: ${mobileNumber}`,
         });
+        // WhatsApp notification to super admin
+        if (sa.mobileNumber) {
+          const saName = [sa.firstName, sa.middleName, sa.lastName].filter(Boolean).join(' ');
+          sendWhatsAppGeneralNotification(
+            sa.mobileNumber,
+            saName,
+            `New B2B enquiry from ${firstName.trim()} ${lastName.trim()}.`,
+            `${type} partnership | Mobile: ${mobileNumber.trim()}`
+          ).catch((err) => console.error('Failed to send WhatsApp B2B enquiry notification to super admin:', err));
+        }
       }
     } catch (emailErr) {
       console.error("Failed to send B2B enquiry notification email:", emailErr);

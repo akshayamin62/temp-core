@@ -675,7 +675,7 @@ export default function AdminStudentFormViewPage() {
                         <h3 className="text-xl font-semibold text-white">{currentSection.title}</h3>
                         {currentSection.description && <p className="text-indigo-100 text-sm mt-1">{currentSection.description}</p>}
                       </div>
-                      <ProgramSection studentId={studentId} sectionType={currentSection.title === 'Apply to Program' ? 'available' : 'applied'} registrationId={registrationId} userRole="ADMIN" isReadOnly={true} />
+                      <ProgramSection studentId={studentId} sectionType={currentSection.title === 'Apply to Program' ? 'available' : 'applied'} registrationId={registrationId} userRole="ADMIN" />
                     </div>
                   ) : (
                     <FormSectionRenderer

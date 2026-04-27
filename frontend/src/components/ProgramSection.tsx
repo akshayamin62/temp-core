@@ -74,7 +74,7 @@ interface Program {
   };
 }
 
-type UserRole = 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN' | 'COUNSELOR' | 'PARENT' | 'EDUPLAN_COACH' | 'IVY_EXPERT' | 'REFERRER';
+type UserRole = 'STUDENT' | 'OPS' | 'SUPER_ADMIN' | 'ADMIN' | 'COUNSELOR' | 'PARENT' | 'EDUPLAN_COACH' | 'IVY_EXPERT' | 'REFERRER' | 'ADVISOR';
 type SectionType = 'available' | 'applied';
 
 interface ProgramSectionProps {
@@ -173,7 +173,7 @@ export default function ProgramSection({
         response = await programAPI.getSuperAdminStudentPrograms(studentId, sectionType === 'applied' ? 'applied' : 'all', registrationId);
         const progs = response.data.data.programs || [];
         setPrograms(sectionType === 'available' ? sortAvailablePrograms(progs) : progs);
-      } else if ((userRole === 'ADMIN' || userRole === 'COUNSELOR' || userRole === 'PARENT' || userRole === 'REFERRER') && studentId) {
+      } else if ((userRole === 'ADMIN' || userRole === 'COUNSELOR' || userRole === 'ADVISOR' || userRole === 'PARENT' || userRole === 'REFERRER') && studentId) {
         response = await axios.get(
           `${API_URL}/programs/ops/student/${studentId}/programs?section=${sectionType === 'applied' ? 'applied' : 'all'}${regParam}`,
           { headers: { Authorization: `Bearer ${token}` } }
@@ -226,6 +226,10 @@ export default function ProgramSection({
         endpoint = `${API_URL}/programs/ops/programs`;
       } else if (userRole === 'SUPER_ADMIN') {
         endpoint = `${API_URL}/programs/super-admin/programs/create`;
+      } else if (userRole === 'ADMIN' || userRole === 'COUNSELOR') {
+        endpoint = `${API_URL}/programs/admin/student/${studentId}/programs`;
+      } else if (userRole === 'ADVISOR') {
+        endpoint = `${API_URL}/programs/advisor/student/${studentId}/programs`;
       }
 
       await axios.post(endpoint, programData, { headers: { Authorization: `Bearer ${token}` } });

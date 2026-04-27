@@ -475,6 +475,8 @@ export const programAPI = {
   deleteAvailableProgramOps: (programId: string) => api.delete(`/programs/ops/programs/${programId}`),
   deleteAvailableProgramSuperAdmin: (programId: string) => api.delete(`/programs/super-admin/programs/${programId}`),
   createSuperAdminProgram: (studentId: string, data: any) => api.post('/programs/super-admin/programs/create', { ...data, studentId }),
+  createAdminStudentProgram: (studentId: string, data: any) => api.post(`/programs/admin/student/${studentId}/programs`, { ...data, studentId }),
+  createAdvisorStudentProgram: (studentId: string, data: any) => api.post(`/programs/advisor/student/${studentId}/programs`, { ...data, studentId }),
   uploadSuperAdminProgramsExcel: (file: File, studentId: string) => {
     const formData = new FormData();
     formData.append('file', file);

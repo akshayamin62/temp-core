@@ -55,6 +55,12 @@ router.get('/ops/programs', authorize([USER_ROLE.OPS]), getOpsPrograms);
 router.get('/ops/student/:studentId/programs', authorize([USER_ROLE.OPS, USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN, USER_ROLE.PARENT, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT, USER_ROLE.REFERRER, USER_ROLE.ADVISOR]), checkAdvisorStudentAccess, getOpsStudentPrograms);
 router.post('/ops/programs', authorize([USER_ROLE.OPS]), createProgram);
 router.post('/ops/student/:studentId/programs', authorize([USER_ROLE.OPS]), createProgram);
+
+// Admin and Counselor routes for creating programs for a student
+router.post('/admin/student/:studentId/programs', authorize([USER_ROLE.ADMIN, USER_ROLE.COUNSELOR]), createProgram);
+
+// Advisor routes for creating programs for their assigned students
+router.post('/advisor/student/:studentId/programs', authorize([USER_ROLE.ADVISOR]), createProgram);
 router.post('/ops/programs/upload-excel', authorize([USER_ROLE.OPS]), upload.single('file'), uploadProgramsFromExcel);
 router.post('/ops/student/:studentId/programs/upload-excel', authorize([USER_ROLE.OPS]), upload.single('file'), uploadProgramsFromExcel);
 router.put('/ops/programs/:programId/status', authorize([USER_ROLE.OPS]), updateProgramStatus);

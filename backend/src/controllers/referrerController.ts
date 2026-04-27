@@ -10,6 +10,8 @@ import StudentFormAnswer from "../models/StudentFormAnswer";
 import LeadStudentConversion from "../models/LeadStudentConversion";
 import { USER_ROLE } from "../types/roles";
 import { generateSlug } from "./leadController";
+import { sendWhatsAppEnquiryWelcome, sendWhatsAppGeneralNotification } from "../utils/whatsapp";
+import { sendEmail } from "../utils/email";
 
 /**
  * Generate a unique referral slug (checks Referrer collection)
@@ -515,7 +517,7 @@ export const submitReferralEnquiry = async (req: Request, res: Response): Promis
     }
 
     const referrer = await Referrer.findOne({ referralSlug: referralSlug.toLowerCase() })
-      .populate("userId", "isActive");
+      .populate("userId", "isActive firstName middleName lastName");
     if (!referrer) {
       return res.status(404).json({
         success: false,
@@ -572,6 +574,99 @@ export const submitReferralEnquiry = async (req: Request, res: Response): Promis
     });
 
     await newLead.save();
+
+    // WhatsApp welcome notification to lead — always send, regardless of admin lookup
+    // Fetch companyName for the message, but don't let admin DB errors block this
+    let companyNameForWA = 'us';
+    try {
+      const adminDocForWA = await Admin.findOne({ userId: referrer.adminId }).select('companyName mobileNumber email');
+      companyNameForWA = adminDocForWA?.companyName || 'us';
+
+      if (adminDocForWA) {
+        const adminUser = await User.findById(referrer.adminId).select('firstName middleName lastName');
+        const adminName = adminUser
+          ? [adminUser.firstName, adminUser.middleName, adminUser.lastName].filter(Boolean).join(' ')
+          : 'Admin';
+        const serviceTypesList = (serviceTypes as string[]).join('; ');
+
+        // WhatsApp to admin (only if mobile number is set)
+        if (adminDocForWA.mobileNumber) {
+          sendWhatsAppGeneralNotification(
+            adminDocForWA.mobileNumber,
+            adminName,
+            `New referral enquiry received from ${name.trim()}.`,
+            `Services: ${serviceTypesList} | City: ${city.trim()}`
+          ).catch((err) => console.error('Failed to send WhatsApp referral notification to admin:', err));
+        }
+
+        // Email to admin (always, if email is present)
+        if (adminDocForWA.email) {
+          sendEmail({
+            to: adminDocForWA.email,
+            subject: `New Referral Enquiry from ${name.trim()}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #1e3a5f;">New Referral Enquiry Received</h2>
+                <p>Hi ${adminName},</p>
+                <p>A new enquiry has been submitted through your referrer <strong>${[referrerUser.firstName, referrerUser.middleName, referrerUser.lastName].filter(Boolean).join(' ') || 'a referrer'}</strong>'s link.</p>
+                <table style="width:100%; border-collapse: collapse; margin: 16px 0;">
+                  <tr><td style="padding: 8px; border: 1px solid #e0e0e0; font-weight: bold; background: #f5f5f5;">Name</td><td style="padding: 8px; border: 1px solid #e0e0e0;">${name.trim()}</td></tr>
+                  <tr><td style="padding: 8px; border: 1px solid #e0e0e0; font-weight: bold; background: #f5f5f5;">Email</td><td style="padding: 8px; border: 1px solid #e0e0e0;">${email.toLowerCase().trim()}</td></tr>
+                  <tr><td style="padding: 8px; border: 1px solid #e0e0e0; font-weight: bold; background: #f5f5f5;">Mobile</td><td style="padding: 8px; border: 1px solid #e0e0e0;">${mobileNumber.trim()}</td></tr>
+                  <tr><td style="padding: 8px; border: 1px solid #e0e0e0; font-weight: bold; background: #f5f5f5;">City</td><td style="padding: 8px; border: 1px solid #e0e0e0;">${city.trim()}</td></tr>
+                  <tr><td style="padding: 8px; border: 1px solid #e0e0e0; font-weight: bold; background: #f5f5f5;">Services</td><td style="padding: 8px; border: 1px solid #e0e0e0;">${serviceTypesList}</td></tr>
+                </table>
+                <p style="color: #666; font-size: 12px;">This is an automated notification.</p>
+              </div>
+            `,
+          }).catch((err) => console.error('Failed to send email to admin for referral enquiry:', err));
+        }
+      }
+    } catch (waErr) {
+      console.error('Failed to look up admin for WhatsApp/email admin notification (non-fatal):', waErr);
+    }
+
+    // Notify the referrer person about new enquiry from their link
+    const referrerFullName = [referrerUser.firstName, referrerUser.middleName, referrerUser.lastName].filter(Boolean).join(' ') || 'Referrer';
+    const serviceTypesListForReferrer = (serviceTypes as string[]).join('; ');
+
+    if (referrer.mobileNumber) {
+      sendWhatsAppGeneralNotification(
+        referrer.mobileNumber,
+        referrerFullName,
+        `A new enquiry was submitted through your referral link.`,
+        `${name.trim()} from ${city.trim()} is interested in: ${serviceTypesListForReferrer}`
+      ).catch((err) => console.error('Failed to send WhatsApp notification to referrer person:', err));
+    }
+
+    // Email to referrer (always)
+    if (referrer.email) {
+      sendEmail({
+        to: referrer.email,
+        subject: `New Enquiry via Your Referral Link`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #1e3a5f;">New Enquiry Through Your Referral Link</h2>
+            <p>Hi ${referrerFullName},</p>
+            <p>Great news! Someone submitted an enquiry through your referral link.</p>
+            <table style="width:100%; border-collapse: collapse; margin: 16px 0;">
+              <tr><td style="padding: 8px; border: 1px solid #e0e0e0; font-weight: bold; background: #f5f5f5;">Name</td><td style="padding: 8px; border: 1px solid #e0e0e0;">${name.trim()}</td></tr>
+              <tr><td style="padding: 8px; border: 1px solid #e0e0e0; font-weight: bold; background: #f5f5f5;">City</td><td style="padding: 8px; border: 1px solid #e0e0e0;">${city.trim()}</td></tr>
+              <tr><td style="padding: 8px; border: 1px solid #e0e0e0; font-weight: bold; background: #f5f5f5;">Interested in</td><td style="padding: 8px; border: 1px solid #e0e0e0;">${serviceTypesListForReferrer}</td></tr>
+            </table>
+            <p>Our team will follow up with them shortly.</p>
+            <p style="color: #666; font-size: 12px;">This is an automated notification.</p>
+          </div>
+        `,
+      }).catch((err) => console.error('Failed to send email to referrer for new enquiry:', err));
+    }
+
+    // Always send enquiry welcome WhatsApp to the lead (uses companyName if fetched, or 'us' as fallback)
+    sendWhatsAppEnquiryWelcome(
+      mobileNumber.trim(),
+      name.trim(),
+      `your request for referral with ${companyNameForWA}`
+    ).catch((err) => console.error('Failed to send WhatsApp enquiry welcome to referral lead:', err));
 
     return res.status(201).json({
       success: true,
@@ -1109,6 +1204,77 @@ export const registerAsReferrer = async (req: Request, res: Response): Promise<R
     const referralSlug = `${baseSlug}-${newReferrer._id}`;
     newReferrer.referralSlug = referralSlug;
     await newReferrer.save();
+
+    // Notify admin of new referrer registration
+    try {
+      const adminName = await User.findById(admin.userId).select('firstName middleName lastName');
+      const adminDisplayName = adminName
+        ? [adminName.firstName, adminName.middleName, adminName.lastName].filter(Boolean).join(' ')
+        : 'Admin';
+      const referrerName = [firstName, middleName, lastName].filter(Boolean).join(' ');
+
+      if (admin.mobileNumber) {
+        sendWhatsAppGeneralNotification(
+          admin.mobileNumber,
+          adminDisplayName,
+          `New referrer registration from ${referrerName}.`,
+          `Email: ${email.toLowerCase().trim()} | Mobile: ${mobileNumber.trim()} | Status: Pending Approval`
+        ).catch((err) => console.error('Failed to send WhatsApp to admin for new referrer registration:', err));
+      }
+
+      if (admin.email) {
+        sendEmail({
+          to: admin.email,
+          subject: `New Referrer Registration – ${referrerName}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #1e3a5f;">New Referrer Registration</h2>
+              <p>Hi ${adminDisplayName},</p>
+              <p>A new person has registered to become a referrer on your platform. Their account is currently <strong>pending your approval</strong>.</p>
+              <table style="width:100%; border-collapse: collapse; margin: 16px 0;">
+                <tr><td style="padding: 8px; border: 1px solid #e0e0e0; font-weight: bold; background: #f5f5f5;">Name</td><td style="padding: 8px; border: 1px solid #e0e0e0;">${referrerName}</td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #e0e0e0; font-weight: bold; background: #f5f5f5;">Email</td><td style="padding: 8px; border: 1px solid #e0e0e0;">${email.toLowerCase().trim()}</td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #e0e0e0; font-weight: bold; background: #f5f5f5;">Mobile</td><td style="padding: 8px; border: 1px solid #e0e0e0;">${mobileNumber.trim()}</td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #e0e0e0; font-weight: bold; background: #f5f5f5;">Status</td><td style="padding: 8px; border: 1px solid #e0e0e0;">Pending Approval</td></tr>
+              </table>
+              <p>Please log in to your dashboard to review and approve this registration.</p>
+              <p style="color: #666; font-size: 12px;">This is an automated notification.</p>
+            </div>
+          `,
+        }).catch((err) => console.error('Failed to send email to admin for new referrer registration:', err));
+      }
+    } catch (notifyErr) {
+      console.error('Failed to notify admin of new referrer registration (non-fatal):', notifyErr);
+    }
+
+    // Welcome notification to the new referrer
+    try {
+      const referrerName = [firstName, middleName, lastName].filter(Boolean).join(' ');
+      if (mobileNumber?.trim()) {
+        sendWhatsAppGeneralNotification(
+          mobileNumber.trim(),
+          referrerName,
+          `Your referrer registration has been submitted successfully.`,
+          `Your account is pending approval. You will be notified once approved`
+        ).catch((err) => console.error('Failed to send WhatsApp welcome to new referrer:', err));
+      }
+      sendEmail({
+        to: email.toLowerCase().trim(),
+        subject: `Your Referrer Registration – Pending Approval`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #1e3a5f;">Registration Submitted Successfully</h2>
+            <p>Hi ${referrerName},</p>
+            <p>Thank you for registering as a referrer. Your application has been submitted and is currently <strong>pending approval</strong> by the admin.</p>
+            <p>Once your account is approved, you will receive your unique referral link that you can share to earn commissions.</p>
+            <p>If you have any questions, please contact the admin directly.</p>
+            <p style="color: #666; font-size: 12px;">This is an automated notification.</p>
+          </div>
+        `,
+      }).catch((err) => console.error('Failed to send welcome email to new referrer:', err));
+    } catch (notifyErr) {
+      console.error('Failed to send welcome notification to new referrer (non-fatal):', notifyErr);
+    }
 
     return res.status(201).json({
       success: true,

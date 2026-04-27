@@ -31,7 +31,7 @@ export interface IProgram extends Document {
   studyLevel: string;
   duration: number; // in months
   ieltsScore: number;
-  applicationFee: string; // With currency symbol from Excel
+  applicationFee: string; // With currency prefix e.g. "GBP 250"
   yearlyTuitionFees: string; // With currency symbol from Excel
   priority?: number; // Student's priority (if selected)
   intake?: string; // Student's selected intake

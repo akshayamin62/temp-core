@@ -675,7 +675,7 @@ export default function CounselorStudentFormViewPage() {
                         <h3 className="text-xl font-semibold text-white">{currentSection.title}</h3>
                         {currentSection.description && <p className="text-blue-100 text-sm mt-1">{currentSection.description}</p>}
                       </div>
-                      <ProgramSection studentId={studentId} sectionType={currentSection.title === 'Apply to Program' ? 'available' : 'applied'} registrationId={registrationId} userRole="COUNSELOR" isReadOnly={true} />
+                      <ProgramSection studentId={studentId} sectionType={currentSection.title === 'Apply to Program' ? 'available' : 'applied'} registrationId={registrationId} userRole="COUNSELOR" />
                     </div>
                   ) : (
                     <FormSectionRenderer

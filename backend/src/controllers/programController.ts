@@ -2,6 +2,9 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import Program, { PROGRAM_STATUS } from '../models/Program';
 import Ops from '../models/Ops';
+import Admin from '../models/Admin';
+import Counselor from '../models/Counselor';
+import Advisor from '../models/Advisor';
 import Student from '../models/Student';
 import { USER_ROLE } from '../types/roles';
 import User from '../models/User';
@@ -249,7 +252,14 @@ export const createProgram = async (req: AuthRequest, res: Response): Promise<Re
     const userId = req.user?.userId;
     const user = await User.findById(userId);
     
-    if (user?.role !== USER_ROLE.OPS && user?.role !== USER_ROLE.STUDENT && user?.role !== USER_ROLE.SUPER_ADMIN) {
+    if (
+      user?.role !== USER_ROLE.OPS &&
+      user?.role !== USER_ROLE.STUDENT &&
+      user?.role !== USER_ROLE.SUPER_ADMIN &&
+      user?.role !== USER_ROLE.ADMIN &&
+      user?.role !== USER_ROLE.COUNSELOR &&
+      user?.role !== USER_ROLE.ADVISOR
+    ) {
       return res.status(403).json({
         success: false,
         message: 'Access denied',
@@ -319,7 +329,7 @@ export const createProgram = async (req: AuthRequest, res: Response): Promise<Re
         studentObjectId = student._id;
       }
     } else if (user.role === USER_ROLE.SUPER_ADMIN) {
-      // Admin creates program - must provide studentId
+      // Super admin creates program - must provide studentId
       if (!studentId) {
         return res.status(400).json({
           success: false,
@@ -334,7 +344,68 @@ export const createProgram = async (req: AuthRequest, res: Response): Promise<Re
         });
       }
       studentObjectId = student._id;
-      // No opsId for admin-created programs
+      opsObjectId = null;
+    } else if (user.role === USER_ROLE.ADMIN) {
+      if (!studentId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Student ID is required',
+        });
+      }
+      const student = await Student.findById(studentId);
+      if (!student) {
+        return res.status(404).json({
+          success: false,
+          message: 'Student not found',
+        });
+      }
+      studentObjectId = student._id;
+      opsObjectId = null;
+    } else if (user.role === USER_ROLE.COUNSELOR) {
+      if (!studentId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Student ID is required',
+        });
+      }
+      const student = await Student.findById(studentId);
+      if (!student) {
+        return res.status(404).json({
+          success: false,
+          message: 'Student not found',
+        });
+      }
+      studentObjectId = student._id;
+      opsObjectId = null;
+    } else if (user.role === USER_ROLE.ADVISOR) {
+      if (!studentId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Student ID is required',
+        });
+      }
+      const advisor = await Advisor.findOne({ userId });
+      if (!advisor) {
+        return res.status(404).json({
+          success: false,
+          message: 'Advisor record not found',
+        });
+      }
+      const student = await Student.findById(studentId);
+      if (!student) {
+        return res.status(404).json({
+          success: false,
+          message: 'Student not found',
+        });
+      }
+      // Verify this student belongs to the advisor
+      if (!student.advisorId || student.advisorId.toString() !== advisor._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only add programs for students assigned to you',
+        });
+      }
+      studentObjectId = student._id;
       opsObjectId = null;
     }
 

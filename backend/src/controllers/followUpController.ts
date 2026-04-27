@@ -9,6 +9,7 @@ import mongoose from "mongoose";
 import { USER_ROLE } from "../types/roles";
 import { createZohoMeeting } from "../utils/zohoMeeting";
 import { sendMeetingScheduledEmail } from "../utils/email";
+import { sendWhatsAppGeneralNotification } from "../utils/whatsapp";
 
 /**
  * Helper: Get start and end of a day
@@ -274,6 +275,19 @@ export const createFollowUp = async (
         ...meetingEmailDetails,
         otherPartyName: lead.name,
       }).catch((err) => console.error("Failed to send meeting email to counselor:", err));
+    }
+
+    // WhatsApp notification to lead (non-blocking)
+    if (lead.mobileNumber) {
+      const meetingInfo = effectiveMeetingType === MEETING_TYPE.ONLINE
+        ? `Join at: ${followUp.zohoMeetingUrl || 'Link pending'}`
+        : 'Offline meeting';
+      sendWhatsAppGeneralNotification(
+        lead.mobileNumber,
+        lead.name,
+        'A follow-up session has been scheduled for you.',
+        `Follow-up #${followUpNumber} with ${counselorFullName} on ${formattedDate} at ${scheduledTime} (${duration} mins). ${meetingInfo}`
+      ).catch((err) => console.error('Failed to send follow-up WhatsApp to lead:', err));
     }
 
     return res.status(201).json({
@@ -794,10 +808,51 @@ export const updateFollowUp = async (
           otherPartyName: lead?.name || "Lead",
         }).catch((err) => console.error("Failed to send next follow-up email to counselor:", err));
       }
+
+      // WhatsApp notification to lead for new follow-up (non-blocking)
+      if (lead?.mobileNumber) {
+        const nextMeetingInfo = nextEffectiveMeetingType === MEETING_TYPE.ONLINE
+          ? `Join at: ${newFollowUp.zohoMeetingUrl || 'Link pending'}`
+          : 'Offline meeting';
+        sendWhatsAppGeneralNotification(
+          lead.mobileNumber,
+          lead.name,
+          'A new follow-up session has been scheduled for you.',
+          `Follow-up #${nextFollowUpNumber} with ${counselorFullNameNext} on ${nextFormattedDate} at ${nextFollowUp.scheduledTime} (${nextFollowUp.duration || 30} mins). ${nextMeetingInfo}`
+        ).catch((err) => console.error('Failed to send next follow-up WhatsApp to lead:', err));
+      }
     }
 
     // Populate and return updated follow-up
     await followUp.populate("leadId", "name email mobileNumber city serviceTypes stage conversionStatus");
+
+    // WhatsApp status update to lead (only if status was updated)
+    if (status) {
+      const populatedLead = followUp.leadId as any;
+      if (populatedLead?.mobileNumber) {
+        const statusLabels: Record<string, string> = {
+          SCHEDULED: 'Scheduled',
+          COMPLETED: 'Completed',
+          NO_SHOW: 'No Show',
+          RESCHEDULED: 'Rescheduled',
+          CANCELLED: 'Cancelled',
+          INTERESTED: 'Interested',
+          NOT_INTERESTED: 'Not Interested',
+          CONVERTED_TO_STUDENT: 'Converted to Student',
+          CONVERTED: 'Converted',
+        };
+        const statusLabel = statusLabels[status] || status;
+        const detailLine = followUp.notes
+          ? `Follow-up #${followUp.followUpNumber} - Status: ${statusLabel}. ${followUp.notes}`
+          : `Follow-up #${followUp.followUpNumber} - Status: ${statusLabel}`;
+        sendWhatsAppGeneralNotification(
+          populatedLead.mobileNumber,
+          populatedLead.name,
+          'There is an update on your follow-up session.',
+          detailLine
+        ).catch((err) => console.error('Failed to send follow-up status WhatsApp:', err));
+      }
+    }
 
     return res.status(200).json({
       success: true,

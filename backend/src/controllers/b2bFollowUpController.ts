@@ -9,6 +9,7 @@ import { USER_ROLE } from "../types/roles";
 import mongoose from "mongoose";
 import { createZohoMeeting } from "../utils/zohoMeeting";
 import { sendMeetingScheduledEmail } from "../utils/email";
+import { sendWhatsAppGeneralNotification } from "../utils/whatsapp";
 
 /**
  * Helper: Get the B2B profile (Sales or Ops) for the current user
@@ -230,6 +231,19 @@ export const createB2BFollowUp = async (
         ...meetingEmailDetails,
         otherPartyName: leadFullName,
       }).catch((err) => console.error("Failed to send B2B meeting email to staff:", err));
+    }
+
+    // WhatsApp notification to B2B lead (non-blocking)
+    if (lead.mobileNumber) {
+      const meetingInfo = effectiveMeetingType === MEETING_TYPE.ONLINE
+        ? `Join at: ${followUp.zohoMeetingUrl || 'Link pending'}`
+        : 'Offline meeting';
+      sendWhatsAppGeneralNotification(
+        lead.mobileNumber,
+        leadFullName,
+        'A follow-up session has been scheduled for you.',
+        `Follow-up #${followUpNumber} with ${staffFullName} on ${formattedDate} at ${scheduledTime} (${duration} mins). ${meetingInfo}`
+      ).catch((err) => console.error('Failed to send B2B follow-up WhatsApp to lead:', err));
     }
 
     return res.status(201).json({
@@ -673,9 +687,51 @@ export const updateB2BFollowUp = async (
           otherPartyName: leadFullName,
         }).catch((err) => console.error("Failed to send next B2B follow-up email to staff:", err));
       }
+
+      // WhatsApp notification to lead for new B2B follow-up (non-blocking)
+      if (lead?.mobileNumber) {
+        const nextMeetingInfo = nextEffectiveMeetingType === MEETING_TYPE.ONLINE
+          ? `Join at: ${newFollowUp.zohoMeetingUrl || 'Link pending'}`
+          : 'Offline meeting';
+        sendWhatsAppGeneralNotification(
+          lead.mobileNumber,
+          leadFullName,
+          'A new follow-up session has been scheduled for you.',
+          `Follow-up #${nextFollowUpNumber} with ${staffFullNameNext} on ${nextFormattedDate} at ${nextFollowUp.scheduledTime} (${nextFollowUp.duration || 30} mins). ${nextMeetingInfo}`
+        ).catch((err) => console.error('Failed to send next B2B follow-up WhatsApp to lead:', err));
+      }
     }
 
     await followUp.populate("b2bLeadId", "firstName middleName lastName email mobileNumber type stage");
+
+    // WhatsApp status update to B2B lead (only if status was updated)
+    if (status) {
+      const populatedLead = followUp.b2bLeadId as any;
+      if (populatedLead?.mobileNumber) {
+        const leadFullNameForWA = [populatedLead.firstName, populatedLead.middleName, populatedLead.lastName].filter(Boolean).join(' ');
+        const statusLabels: Record<string, string> = {
+          SCHEDULED: 'Scheduled',
+          COMPLETED: 'Completed',
+          NO_SHOW: 'No Show',
+          RESCHEDULED: 'Rescheduled',
+          CANCELLED: 'Cancelled',
+          INTERESTED: 'Interested',
+          NOT_INTERESTED: 'Not Interested',
+          CONVERTED_TO_STUDENT: 'Converted to Student',
+          CONVERTED: 'Converted',
+        };
+        const statusLabel = statusLabels[status] || status;
+        const detailLine = followUp.notes
+          ? `Follow-up #${followUp.followUpNumber} - Status: ${statusLabel}. ${followUp.notes}`
+          : `Follow-up #${followUp.followUpNumber} - Status: ${statusLabel}`;
+        sendWhatsAppGeneralNotification(
+          populatedLead.mobileNumber,
+          leadFullNameForWA,
+          'There is an update on your follow-up session.',
+          detailLine
+        ).catch((err) => console.error('Failed to send B2B follow-up status WhatsApp:', err));
+      }
+    }
 
     return res.status(200).json({
       success: true,

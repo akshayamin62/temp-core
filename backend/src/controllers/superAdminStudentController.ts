@@ -1100,7 +1100,7 @@ export const sendMessageToStudent = async (req: AuthRequest, res: Response): Pro
 
     // Send WhatsApp — Template 6: staff_message_to_student (always; fire-and-forget)
     if (mobile) {
-      const senderWithRole = `${senderName} - ${senderRole}`;
+      const senderWithRole = `${senderName} (${senderRole})`;
       sendWhatsAppStaffMessage(
         mobile,
         studentName,

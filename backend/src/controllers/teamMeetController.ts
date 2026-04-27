@@ -19,7 +19,59 @@ import { USER_ROLE } from "../types/roles";
 import { createZohoMeeting, deleteZohoMeeting } from "../utils/zohoMeeting";
 import { sendMeetingPendingEmail, sendMeetingScheduledEmail, sendMeetingConfirmedEmail } from "../utils/email";
 import { sendMeetingRequestSms } from "../utils/sms";
+import { sendWhatsAppGeneralNotification } from "../utils/whatsapp";
 import { getUploadBaseDir, ensureDir, validateFilePath } from "../utils/uploadDir";
+
+/**
+ * Helper: Look up a user's mobile number from the appropriate profile model by role.
+ * Returns null if not found or on error (non-fatal — WhatsApp is best-effort).
+ */
+const getUserMobileNumber = async (userId: string, role: string): Promise<string | null> => {
+  try {
+    switch (role as USER_ROLE) {
+      case USER_ROLE.COUNSELOR: {
+        const p = await Counselor.findOne({ userId }).select('mobileNumber');
+        return p?.mobileNumber || null;
+      }
+      case USER_ROLE.ADMIN: {
+        const p = await Admin.findOne({ userId }).select('mobileNumber');
+        return p?.mobileNumber || null;
+      }
+      case USER_ROLE.SUPER_ADMIN: {
+        const u = await User.findById(userId).select('mobileNumber');
+        return u?.mobileNumber || null;
+      }
+      case USER_ROLE.OPS: {
+        const p = await Ops.findOne({ userId }).select('mobileNumber');
+        return p?.mobileNumber || null;
+      }
+      case USER_ROLE.STUDENT: {
+        const p = await Student.findOne({ userId }).select('mobileNumber');
+        return p?.mobileNumber || null;
+      }
+      case USER_ROLE.EDUPLAN_COACH: {
+        const p = await EduplanCoach.findOne({ userId }).select('mobileNumber');
+        return p?.mobileNumber || null;
+      }
+      case USER_ROLE.IVY_EXPERT: {
+        const p = await IvyExpert.findOne({ userId }).select('mobileNumber');
+        return p?.mobileNumber || null;
+      }
+      case USER_ROLE.ADVISOR: {
+        const p = await Advisor.findOne({ userId }).select('mobileNumber');
+        return p?.mobileNumber || null;
+      }
+      case USER_ROLE.PARENT: {
+        const p = await Parent.findOne({ userId }).select('mobileNumber');
+        return p?.mobileNumber || null;
+      }
+      default:
+        return null;
+    }
+  } catch {
+    return null;
+  }
+};
 
 /**
  * Helper: Get start and end of a day
@@ -396,6 +448,18 @@ export const createTeamMeet = async (
       console.error('SMS lookup error (non-fatal):', smsLookupErr);
     }
 
+    // WhatsApp notification to recipient (non-blocking)
+    const recipientMobileWA = await getUserMobileNumber(recipient._id.toString(), recipient.role);
+    if (recipientMobileWA) {
+      const meetingTypeLabel = effectiveMeetingType === TEAMMEET_TYPE.ONLINE ? 'Online' : 'In-Person';
+      sendWhatsAppGeneralNotification(
+        recipientMobileWA,
+        recipientFullName,
+        `You have a new meeting request from ${senderFullName}.`,
+        `"${subject}" on ${formattedDate} at ${scheduledTime} (${parsedDuration} mins; ${meetingTypeLabel}). Kindly log in to confirm or decline`
+      ).catch((err) => console.error('Failed to send team meet request WhatsApp:', err));
+    }
+
     return res.status(201).json({
       success: true,
       message: "Meeting request sent successfully",
@@ -630,8 +694,8 @@ export const acceptTeamMeet = async (
       .populate("requestedTo", "firstName middleName lastName email role");
 
     // Send confirmation emails with meeting link to both parties
-    const senderUser = await User.findById(teamMeet.requestedBy).select("firstName middleName lastName email");
-    const recipientUser = await User.findById(teamMeet.requestedTo).select("firstName middleName lastName email");
+    const senderUser = await User.findById(teamMeet.requestedBy).select("firstName middleName lastName email role");
+    const recipientUser = await User.findById(teamMeet.requestedTo).select("firstName middleName lastName email role");
     const senderFullName = senderUser
       ? [senderUser.firstName, senderUser.middleName, senderUser.lastName].filter(Boolean).join(" ")
       : "A team member";
@@ -669,6 +733,29 @@ export const acceptTeamMeet = async (
         ...confirmedEmailBase,
         otherPartyName: senderFullName,
       }).catch((err) => console.error("Failed to send confirmed email to recipient:", err));
+    }
+
+    // WhatsApp confirmation to both parties (non-blocking)
+    const meetingDetails = teamMeet.meetingType === TEAMMEET_TYPE.ONLINE
+      ? `"${teamMeet.subject}" on ${formattedDate} at ${teamMeet.scheduledTime} (${teamMeet.duration} mins). Meeting ID: ${teamMeet.zohoMeetingId} | Password: ${teamMeet.zohoMeetingPassword} | Join at: ${teamMeet.zohoMeetingUrl}`
+      : `"${teamMeet.subject}" on ${formattedDate} at ${teamMeet.scheduledTime} (${teamMeet.duration} mins). In-Person meeting. Please be on time.`;
+    const senderMobileWA = await getUserMobileNumber(teamMeet.requestedBy.toString(), (senderUser as any)?.role);
+    const recipientMobileWA = await getUserMobileNumber(teamMeet.requestedTo.toString(), (recipientUser as any)?.role);
+    if (senderMobileWA) {
+      sendWhatsAppGeneralNotification(
+        senderMobileWA,
+        senderFullName,
+        `Your meeting with ${recipientFullName} has been confirmed.`,
+        meetingDetails
+      ).catch((err) => console.error('Failed to send team meet confirmed WhatsApp to sender:', err));
+    }
+    if (recipientMobileWA) {
+      sendWhatsAppGeneralNotification(
+        recipientMobileWA,
+        recipientFullName,
+        `Your meeting with ${senderFullName} has been confirmed.`,
+        meetingDetails
+      ).catch((err) => console.error('Failed to send team meet confirmed WhatsApp to recipient:', err));
     }
 
     return res.status(200).json({
@@ -736,6 +823,24 @@ export const rejectTeamMeet = async (
     const populatedMeet = await TeamMeet.findById(teamMeetId)
       .populate("requestedBy", "firstName middleName lastName email role")
       .populate("requestedTo", "firstName middleName lastName email role");
+
+    // WhatsApp rejection notification to meeting creator (non-blocking)
+    const senderData = populatedMeet?.requestedBy as any;
+    const recipientData = populatedMeet?.requestedTo as any;
+    if (senderData && recipientData) {
+      const senderFullNameR = [senderData.firstName, senderData.middleName, senderData.lastName].filter(Boolean).join(' ');
+      const recipientFullNameR = [recipientData.firstName, recipientData.middleName, recipientData.lastName].filter(Boolean).join(' ');
+      const formattedDateR = teamMeet.scheduledDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const senderMobileR = await getUserMobileNumber(senderData._id.toString(), senderData.role);
+      if (senderMobileR) {
+        sendWhatsAppGeneralNotification(
+          senderMobileR,
+          senderFullNameR,
+          `Your meeting request was declined by ${recipientFullNameR}.`,
+          `"${teamMeet.subject}" on ${formattedDateR} at ${teamMeet.scheduledTime}. Reason: ${teamMeet.rejectionMessage}. You can reschedule from your dashboard`
+        ).catch((err) => console.error('Failed to send team meet rejected WhatsApp to sender:', err));
+      }
+    }
 
     return res.status(200).json({
       success: true,
@@ -805,6 +910,24 @@ export const cancelTeamMeet = async (
     const populatedMeet = await TeamMeet.findById(teamMeetId)
       .populate("requestedBy", "firstName middleName lastName email role")
       .populate("requestedTo", "firstName middleName lastName email role");
+
+    // WhatsApp cancellation notification to meeting recipient (non-blocking)
+    const senderDataC = populatedMeet?.requestedBy as any;
+    const recipientDataC = populatedMeet?.requestedTo as any;
+    if (senderDataC && recipientDataC) {
+      const senderFullNameC = [senderDataC.firstName, senderDataC.middleName, senderDataC.lastName].filter(Boolean).join(' ');
+      const recipientFullNameC = [recipientDataC.firstName, recipientDataC.middleName, recipientDataC.lastName].filter(Boolean).join(' ');
+      const formattedDateC = teamMeet.scheduledDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const recipientMobileC = await getUserMobileNumber(recipientDataC._id.toString(), recipientDataC.role);
+      if (recipientMobileC) {
+        sendWhatsAppGeneralNotification(
+          recipientMobileC,
+          recipientFullNameC,
+          'A meeting has been cancelled.',
+          `"${teamMeet.subject}" with ${senderFullNameC} that was scheduled on ${formattedDateC} at ${teamMeet.scheduledTime} has been cancelled`
+        ).catch((err) => console.error('Failed to send team meet cancelled WhatsApp to recipient:', err));
+      }
+    }
 
     return res.status(200).json({
       success: true,

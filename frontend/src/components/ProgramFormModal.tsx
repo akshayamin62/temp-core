@@ -34,6 +34,7 @@ export default function ProgramFormModal({
   onSubmit,
   submitting,
 }: ProgramFormModalProps) {
+  const [currency, setCurrency] = useState('');
   const [formData, setFormData] = useState<ProgramFormData>({
     university: '',
     universityRanking: {
@@ -71,11 +72,23 @@ export default function ProgramFormModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    // Prefix fees with currency code if currency is selected
+    const prefixFee = (fee: string) => {
+      if (!fee) return fee;
+      if (currency) return `${currency} ${fee}`;
+      return fee;
+    };
+    const submissionData = {
+      ...formData,
+      applicationFee: prefixFee(formData.applicationFee),
+      yearlyTuitionFees: prefixFee(formData.yearlyTuitionFees),
+    };
+    await onSubmit(submissionData);
     resetForm();
   };
 
   const resetForm = () => {
+    setCurrency('');
     setFormData({
       university: '',
       universityRanking: {
@@ -205,6 +218,33 @@ export default function ProgramFormModal({
                 max="9"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+              <select
+                name="currency"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              >
+                <option value="">Select Currency</option>
+                <option value="USD">USD – US Dollar ($)</option>
+                <option value="GBP">GBP – British Pound (£)</option>
+                <option value="EUR">EUR – Euro (€)</option>
+                <option value="AUD">AUD – Australian Dollar (A$)</option>
+                <option value="CAD">CAD – Canadian Dollar (C$)</option>
+                <option value="NZD">NZD – New Zealand Dollar (NZ$)</option>
+                <option value="SGD">SGD – Singapore Dollar (S$)</option>
+                <option value="CHF">CHF – Swiss Franc (CHF)</option>
+                <option value="INR">INR – Indian Rupee (₹)</option>
+                <option value="AED">AED – UAE Dirham (AED)</option>
+                <option value="MYR">MYR – Malaysian Ringgit (MYR)</option>
+                <option value="JPY">JPY – Japanese Yen (¥)</option>
+                <option value="SEK">SEK – Swedish Krona (SEK)</option>
+                <option value="DKK">DKK – Danish Krone (DKK)</option>
+                <option value="NOK">NOK – Norwegian Krone (NOK)</option>
+                <option value="HKD">HKD – Hong Kong Dollar (HK$)</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Application Fee</label>

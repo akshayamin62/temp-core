@@ -7,6 +7,7 @@ export interface IUser extends Document {
   lastName: string;
   email: string;
   role: USER_ROLE;
+  mobileNumber?: string;
   profilePicture?: string;
   isVerified: boolean;
   isActive: boolean;
@@ -33,6 +34,12 @@ const userSchema = new Schema<IUser>(
       type: String,
       enum: Object.values(USER_ROLE),
       required: true,
+    },
+
+    mobileNumber: {
+      type: String,
+      default: undefined,
+      trim: true,
     },
 
     profilePicture: {
