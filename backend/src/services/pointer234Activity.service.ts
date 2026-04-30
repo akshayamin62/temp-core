@@ -6,6 +6,7 @@ import AgentSuggestion from '../models/ivy/AgentSuggestion';
 import StudentServiceRegistration from '../models/StudentServiceRegistration';
 import IvyExpert from '../models/IvyExpert';
 import Student from '../models/Student';
+import User from '../models/User';
 import Service from '../models/Service';
 import { PointerNo } from '../types/PointerNo';
 import path from 'path';
@@ -13,6 +14,14 @@ import fs from 'fs';
 import { updateScoreAfterEvaluation } from './ivyScore.service';
 import { createNotification } from './notification.service';
 import { getUploadBaseDir, ensureDir } from '../utils/uploadDir';
+import { sendEmail } from '../utils/email';
+import { sendWhatsAppGeneralNotification } from '../utils/whatsapp';
+
+const POINTER_LABELS: Record<number, string> = {
+  2: 'Spike in One Area',
+  3: 'Leadership Initiative',
+  4: 'Global & Social Impact',
+};
 
 // File storage directory
 const UPLOAD_DIR = path.join(getUploadBaseDir(), 'pointer234');
@@ -135,14 +144,53 @@ export const selectActivities = async (
   );
 
   // Create notification to alert student about new activities
-  await createNotification({
-    studentIvyServiceId,
-    userId: service.studentId,
-    userRole: 'student',
-    pointerNumber: pointerNo,
-    notificationType: 'activities_assigned',
-    referenceId: selectedActivities[0]._id,
-  });
+  try {
+    await createNotification({
+      studentIvyServiceId,
+      userId: service.studentId,
+      userRole: 'student',
+      pointerNumber: pointerNo,
+      notificationType: 'activities_assigned',
+      referenceId: selectedActivities[0]._id,
+    });
+  } catch (notifCreateErr) {
+    console.error('[Pointer234] createNotification failed:', notifCreateErr);
+  }
+
+  // WhatsApp + email notification to student (Template 25)
+  try {
+    const studentDoc = await Student.findById(service.studentId).lean() as any;
+    const studentUserDoc = studentDoc?.userId
+      ? await User.findById(studentDoc.userId).select('firstName middleName lastName email').lean() as any
+      : null;
+    const studentName = studentUserDoc
+      ? [studentUserDoc.firstName, studentUserDoc.middleName, studentUserDoc.lastName].filter(Boolean).join(' ')
+      : 'Student';
+    const studentMobile = studentDoc?.mobileNumber || studentUserDoc?.mobileNumber;
+    const studentEmail = studentDoc?.email || studentUserDoc?.email;
+
+    const pointerLabel = POINTER_LABELS[pointerNo] || `Pointer ${pointerNo}`;
+    const activityCount = agentSuggestions.length;
+    const activityTitles = agentSuggestions.map((a: any) => a.title).join(', ');
+    const line2 = `Your Ivy Expert has suggested ${activityCount} activit${activityCount === 1 ? 'y' : 'ies'} for Pointer ${pointerNo} — ${pointerLabel}.`;
+    const line3 = `${activityTitles}. Log in to your dashboard to review and get started.`;
+
+    if (studentMobile) {
+      await sendWhatsAppGeneralNotification(studentMobile, studentName, line2, line3);
+    }
+    if (studentEmail) {
+      const activityListHtml = agentSuggestions
+        .map((a: any, i: number) => `<li>${i + 1}. ${a.title}</li>`)
+        .join('');
+      await sendEmail({
+        to: studentEmail,
+        subject: `New Activities Suggested — Pointer ${pointerNo}: ${pointerLabel}`,
+        html: `<p>Hi ${studentName},</p><p>Your Ivy Expert has suggested <strong>${activityCount} activit${activityCount === 1 ? 'y' : 'ies'}</strong> for you under:</p><p>📌 <strong>Pointer ${pointerNo}: ${pointerLabel}</strong></p><ul>${activityListHtml}</ul><p>Log in to your dashboard to review them and start working:</p><p><a href="https://core.admitra.io/dashboard">https://core.admitra.io/dashboard</a></p><p>Best regards,<br/>Admitra Team</p>`,
+      });
+    }
+  } catch (notifErr) {
+    console.error('[Pointer234 Notif] Failed to send activity suggestion notification:', notifErr);
+  }
 
   return selectedActivities;
 };
