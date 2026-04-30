@@ -6,6 +6,8 @@ import { ActivityFeedback } from '../models/ActivityFeedback';
 import Student from '../models/Student';
 import StudentServiceRegistration from '../models/StudentServiceRegistration';
 import User from '../models/User';
+import { sendEmail } from '../utils/email';
+import { sendWhatsAppGeneralNotification } from '../utils/whatsapp';
 
 /* ─────────── helpers ─────────── */
 
@@ -426,6 +428,56 @@ export const upsertFeedback = async (req: AuthRequest, res: Response) => {
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
+
+    // Notify student: Template 23 (monthly) / Template 24 (weekly)
+    try {
+      const studentDoc = await Student.findById(studentId).lean() as any;
+      const studentUserDoc = studentDoc?.userId
+        ? await User.findById(studentDoc.userId).select('firstName middleName lastName email').lean() as any
+        : null;
+      const studentName = studentUserDoc
+        ? [studentUserDoc.firstName, studentUserDoc.middleName, studentUserDoc.lastName].filter(Boolean).join(' ')
+        : 'Student';
+      const studentMobile = studentDoc?.mobileNumber;
+      const studentEmail = studentDoc?.email || studentUserDoc?.email;
+
+      const senderLabel = userRole === 'SUPER_ADMIN' ? 'Super Admin' : 'EduPlan Coach';
+
+      let line2: string, line3: string, emailSubject: string, emailPeriodLabel: string;
+
+      if (type === 'monthly') {
+        const [yr, mo] = period.split('-').map(Number);
+        const monthName = new Date(yr, mo - 1, 1).toLocaleString('en-US', { month: 'long' });
+        const periodLabel = `${monthName} ${yr}`;
+        line2 = `Your ${senderLabel} has submitted your monthly progress feedback.`;
+        line3 = `Month: ${periodLabel}. ${feedback.trim()}`;
+        emailSubject = `Monthly Progress Feedback — ${periodLabel}`;
+        emailPeriodLabel = `📅 <strong>Month:</strong> ${periodLabel}`;
+      } else {
+        const startFmt = new Date(period).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+        const endFmt = periodEnd
+          ? new Date(periodEnd).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+          : period;
+        const weekLabel = `${startFmt} – ${endFmt}`;
+        line2 = `Your ${senderLabel} has submitted your weekly progress feedback.`;
+        line3 = `Week: ${weekLabel}. ${feedback.trim()}`;
+        emailSubject = `Weekly Progress Feedback — ${weekLabel}`;
+        emailPeriodLabel = `📅 <strong>Week:</strong> ${weekLabel}`;
+      }
+
+      if (studentMobile) {
+        await sendWhatsAppGeneralNotification(studentMobile, studentName, line2, line3);
+      }
+      if (studentEmail) {
+        await sendEmail({
+          to: studentEmail,
+          subject: emailSubject,
+          html: `<p>Hi ${studentName},</p><p>Your ${senderLabel} has submitted your ${type} progress feedback:</p><p>${emailPeriodLabel}<br/>👤 <strong>${senderLabel}:</strong> ${givenByName}</p><p>📝 <strong>Feedback:</strong><br/>${feedback.trim()}</p><p>Log in to view your full progress report:<br/><a href="https://core.admitra.io/dashboard">https://core.admitra.io/dashboard</a></p><p>Best regards,<br/>Admitra Team</p>`,
+        });
+      }
+    } catch (notifErr) {
+      console.error('Failed to send feedback notification:', notifErr);
+    }
 
     return res.json({ success: true, data: result });
   } catch (err: any) {

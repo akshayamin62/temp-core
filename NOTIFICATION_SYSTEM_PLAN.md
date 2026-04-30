@@ -1150,3 +1150,365 @@ Categories:
 | **P0 — Must have** | #11 Program suggested, #12 Student selects, #13-14 Status updates + Offer, #20-21 Doc approved/rejected, #22 Message from OPS | These are the core actions students and OPS wait on daily |
 | **P1 — Important** | #18 New doc required, #25-27 Meetings, #5 Account created, #8 OPS assigned, #9 Profile completed | Important touchpoints but less frequent |
 | **P2 — Nice to have** | #1-4 Lead/enquiry events, #6 Conversion rejected, #19 Student uploads doc, #29-31 OPS task reminders | Internal team events, lower urgency for notifications |
+
+---
+
+## PHASE 11: Service Registration & Staff Assignment Notifications
+
+> Status: **APPROVED** — Templates and implementation plan defined below.
+
+---
+
+### Notification Events Table
+
+| # | Event | Trigger Point | Notify Who | WhatsApp | Email |
+|---|-------|---------------|------------|----------|-------|
+| 42 | Student registers for any service | `serviceController.registerForService` / `servicePlanController.registerServicePlan` / `paymentController.verifyPayment` | Student | ✅ (Template 20) | ✅ (existing super-admin email already sent; add student welcome email) |
+| 43 | OPS / Ivy Expert / EduPlan Coach assigned to student | `superAdminStudentController.assignOps` | Student + Assigned Staff | ✅ (Templates 21 & 22) | ✅ |
+
+---
+
+### WhatsApp Template 20: Service Registration Confirmation (to Student)
+
+**Reuses:** `general 3 line notification`
+**Trigger:** Any service registration (free, plan-based, or post-payment)
+**Recipient:** Student who just registered
+
+| Variable | Value |
+|----------|-------|
+| `{{1}}` | Student full name |
+| `{{2}}` | `Your registration has been completed successfully.` |
+| `{{3}}` | `You are now registered for {serviceName}. Our team will be in touch with you shortly to get started.` |
+
+**Sample:**
+```
+Hello, Akshay Amin
+Your registration has been completed successfully.
+Please find the details below for your reference.
+You are now registered for Study Abroad. Our team will be in touch with you shortly to get started.
+
+Thank you for keeping us in business.
+```
+
+**How to use:**
+```
+WHATSAPP_WEBHOOK_URL?number=91{mobile}&message=general 3 line notification,Akshay Amin,Your registration has been completed successfully.,You are now registered for Study Abroad. Our team will be in touch with you shortly to get started.
+```
+
+---
+
+### WhatsApp Template 21: Staff Assigned — Notify Student
+
+**Reuses:** `general 3 line notification`
+**Trigger:** `superAdminStudentController.assignOps` (primary staff assigned)
+**Recipient:** Student
+
+| Variable | Value |
+|----------|-------|
+| `{{1}}` | Student full name |
+| `{{2}}` | `A {staffRoleLabel} has been assigned to guide you through your {serviceName}.` |
+| `{{3}}` | `{staffName} \| {staffMobile} \| {staffEmail}` |
+
+**Staff Role Label Map:**
+| Service | Staff Type | `staffRoleLabel` |
+|---------|-----------|-----------------|
+| Study Abroad | OPS | OPS Executive |
+| Ivy League Preparation | Ivy Expert | Ivy Expert |
+| Education Planning | EduPlan Coach | EduPlan Coach |
+
+**Sample (Study Abroad):**
+```
+Hello, Akshay Amin
+A OPS has been assigned to guide you through your Study Abroad.
+Please find the details below for your reference.
+Priya Sharma | 9876543210 | priya.sharma@admitra.io.
+
+Thank you for keeping us in business.
+```
+
+**How to use:**
+```
+WHATSAPP_WEBHOOK_URL?number=91{studentMobile}&message=general 3 line notification,Akshay Amin,A OPS has been assigned to guide you through your Study Abroad.,Priya Sharma | 9876543210 | priya.sharma@admitra.io
+```
+
+---
+
+### WhatsApp Template 22: Staff Assigned — Notify Staff Member
+
+**Reuses:** `general 3 line notification`
+**Trigger:** `superAdminStudentController.switchActiveOps` (when super admin sets or changes the active staff)
+**Recipient:** The OPS / Ivy Expert / EduPlan Coach who is now active
+
+| Variable | Value |
+|----------|-------|
+| `{{1}}` | Staff full name |
+| `{{2}}` | `You have been assigned to a new student for {serviceName}.` |
+| `{{3}}` | `{studentName} \| {studentMobile} \| {studentEmail}` |
+
+**Sample (OPS):**
+```
+Hello, Priya Sharma
+You have been assigned to a new student for Study Abroad.
+Please find the details below for your reference.
+Akshay Amin | 9601373545 | akshay.amin@gmail.com.
+
+Thank you for keeping us in business.
+```
+
+**How to use:**
+```
+WHATSAPP_WEBHOOK_URL?number=91{staffMobile}&message=general 3 line notification,Priya Sharma,You have been assigned to a new student for Study Abroad.,Akshay Amin | 9601373545 | akshay.amin@gmail.com
+```
+
+---
+
+### Email Template 20: Service Registration Confirmation (to Student)
+
+**Subject:** `Registration Confirmed — {serviceName}`
+**Trigger:** Any of the three registration trigger points
+
+```
+Hi {studentName},
+
+Your registration has been completed successfully! 🎉
+
+📌 Service: {serviceName}
+
+Our team will review your details and be in touch with you shortly to guide you through the next steps.
+
+In the meantime, log in to your dashboard to get started:
+https://core.admitra.io/dashboard
+
+Best regards,
+Admitra Team
+```
+
+---
+
+### Email Template 21: Staff Assigned (to Student)
+
+**Subject:** `{staffRoleLabel} Assigned — {staffName} will guide you`
+**Trigger:** `superAdminStudentController.assignOps` (primary staff assigned)
+
+```
+Hi {studentName},
+
+A {staffRoleLabel} has been assigned to guide you through your {serviceName}:
+
+👤 Name: {staffName}
+📱 Mobile: {staffMobile}
+📧 Email: {staffEmail}
+
+Feel free to reach out to them directly or use the messaging feature on your dashboard:
+https://core.admitra.io/dashboard
+
+Best regards,
+Admitra Team
+```
+
+---
+
+### Email Template 22: Student Assigned (to Staff)
+
+**Subject:** `New Student Assigned — {studentName} ({serviceName})`
+**Trigger:** `superAdminStudentController.assignOps` (primary staff assigned)
+
+```
+Hi {staffName},
+
+A new student has been assigned to you for {serviceName}:
+
+👤 Student Name: {studentName}
+📱 Mobile: {studentMobile}
+📧 Email: {studentEmail}
+
+Please log in to your dashboard to view their profile and get started:
+https://core.admitra.io/ops/dashboard
+
+Best regards,
+Admitra Team
+```
+
+---
+
+### Implementation Plan
+
+#### Event 42 — Service Registration (WhatsApp + Email to Student)
+
+> Currently: Only a super-admin email is sent. **No WhatsApp. No student email.**
+
+Three files need changes. All use `sendWhatsAppGeneralNotification()` and `sendEmail()`:
+
+**File 1: `backend/src/controllers/serviceController.ts` → `registerForService()`**
+- Location: After `sendServiceRegistrationEmailToSuperAdmin(...)` succeeds (line ~230)
+- Data available: `studentUser` (User), `service.name`
+- Add: WhatsApp to `studentUser.mobileNumber` + email to `studentUser.email`
+
+**File 2: `backend/src/controllers/servicePlanController.ts` → `registerServicePlan()`**
+- Location: After `registration` is created (plan-based free registrations)
+- Data available: `student.userId` (need `User.findById(student.userId)`)  , `service.name`
+- Add: Fetch user, then WhatsApp + email to student
+
+**File 3: `backend/src/controllers/paymentController.ts` → `verifyPayment()` / payment webhook**
+- Location: After `StudentServiceRegistration.create({...})` on payment success
+- Data available: `student.userId`, `service.name`
+- Add: Fetch user, then WhatsApp + email to student
+
+---
+
+#### Event 43 — Staff Assignment (WhatsApp + Email to Student AND Staff)
+
+> Currently: **No notification at all** after staff assignment.
+
+**File: `backend/src/controllers/superAdminStudentController.ts` → `assignOps()`**
+- Location: After `await registration.save()` (before the `updatedRegistration` populate query)
+- Service type is known from `serviceName` variable (Study Abroad / Ivy League Preparation / Education Planning)
+
+**Data needed:**
+```
+Student → via registration.studentId → populate userId for { firstName, middleName, lastName, mobileNumber, email }
+
+For OPS (Study Abroad):
+  → Ops.findById(primaryOpsId).populate('userId', 'firstName middleName lastName email')
+  → ops.mobileNumber (direct field on Ops model)
+
+For Ivy Expert (Ivy League Preparation):
+  → IvyExpert.findById(primaryIvyExpertId).populate('userId', 'firstName middleName lastName email')
+  → ivyExpert.mobileNumber (direct field on IvyExpert model)
+
+For EduPlan Coach (Education Planning):
+  → EduplanCoach.findById(primaryEduplanCoachId).populate('userId', 'firstName middleName lastName email')
+  → eduplanCoach.mobileNumber (direct field on EduplanCoach model)
+```
+
+**Send:**
+1. WhatsApp (Template 21) → student mobile → "A {staffRoleLabel} has been assigned…" + staff details
+2. WhatsApp (Template 22) → staff mobile → "You have been assigned to a new student…" + student details
+3. Email (Template 21) → student email
+4. Email (Template 22) → staff email
+
+> Note: Fires in `switchActiveOps()` whenever the active staff is set or changed. Does NOT fire on secondary assignment — only when the active (working) staff changes.
+
+---
+
+## PHASE 12: Education Planning — Feedback Notifications
+
+> Status: **PENDING APPROVAL** — Template proposals below.
+
+---
+
+### Notification Events Table
+
+| # | Event | Trigger Point | Notify Who | WhatsApp | Email |
+|---|-------|---------------|------------|----------|-------|
+| 44 | Monthly feedback written | `eduplanController.saveMonthlyFeedback` | Student | ✅ (Template 23) | ✅ |
+| 45 | Weekly feedback written | `eduplanController.saveWeeklyFeedback` | Student | ✅ (Template 24) | ✅ |
+
+---
+
+### WhatsApp Template 23: Monthly Feedback (to Student)
+
+**Reuses:** `general 3 line notification`
+**Trigger:** Super Admin or EduPlan Coach submits/updates a monthly feedback entry
+**Recipient:** Student
+
+| Variable | Value |
+|----------|-------|
+| `{{1}}` | Student full name |
+| `{{2}}` | `Your EduPlan Coach has submitted your monthly progress feedback.` |
+| `{{3}}` | `Month: {monthName} {year}. {feedbackSummary}` |
+
+**Sample:**
+```
+Hello, Akshay Amin
+Your EduPlan Coach has submitted your monthly progress feedback.
+Please find the details below for your reference.
+Month: April 2026. You have made excellent progress this month. Keep it up!
+
+Thank you for keeping us in business.
+```
+
+**How to use:**
+```
+WHATSAPP_WEBHOOK_URL?number=91{studentMobile}&message=general 3 line notification,Akshay Amin,Your EduPlan Coach has submitted your monthly progress feedback.,Month: April 2026. You have made excellent progress this month. Keep it up!
+```
+
+---
+
+### WhatsApp Template 24: Weekly Feedback (to Student)
+
+**Reuses:** `general 3 line notification`
+**Trigger:** Super Admin or EduPlan Coach submits/updates a weekly feedback entry
+**Recipient:** Student
+
+| Variable | Value |
+|----------|-------|
+| `{{1}}` | Student full name |
+| `{{2}}` | `Your EduPlan Coach has submitted your weekly progress feedback.` |
+| `{{3}}` | `Week: {startDate} – {endDate}. {feedbackSummary}` |
+
+**Sample:**
+```
+Hello, Akshay Amin
+Your EduPlan Coach has submitted your weekly progress feedback.
+Please find the details below for your reference.
+Week: 21 Apr – 27 Apr 2026. Great effort this week. Focus on completing the pending assignments.
+
+Thank you for keeping us in business.
+```
+
+**How to use:**
+```
+WHATSAPP_WEBHOOK_URL?number=91{studentMobile}&message=general 3 line notification,Akshay Amin,Your EduPlan Coach has submitted your weekly progress feedback.,Week: 21 Apr – 27 Apr 2026. Great effort this week. Focus on the pending assignments.
+```
+
+---
+
+### Email Template 23: Monthly Feedback (to Student)
+
+**Subject:** `Monthly Progress Feedback — {monthName} {year}`
+**Trigger:** Monthly feedback saved
+
+```
+Hi {studentName},
+
+Your EduPlan Coach has submitted your monthly progress feedback:
+
+📅 Month: {monthName} {year}
+👤 Coach: {coachName}
+
+📝 Feedback:
+{feedbackText}
+
+Log in to view your full progress report:
+https://core.admitra.io/dashboard
+
+Best regards,
+Admitra Team
+```
+
+---
+
+### Email Template 24: Weekly Feedback (to Student)
+
+**Subject:** `Weekly Progress Feedback — {startDate} to {endDate}`
+**Trigger:** Weekly feedback saved
+
+```
+Hi {studentName},
+
+Your EduPlan Coach has submitted your weekly progress feedback:
+
+📅 Week: {startDate} – {endDate}
+👤 Coach: {coachName}
+
+📝 Feedback:
+{feedbackText}
+
+Log in to view your full progress report:
+https://core.admitra.io/dashboard
+
+Best regards,
+Admitra Team
+```
+

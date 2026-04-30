@@ -17,7 +17,8 @@ import Parent from '../models/Parent';
 import Referrer from '../models/Referrer';
 import EduplanCoach from '../models/EduplanCoach';
 import { USER_ROLE } from '../types/roles';
-import { sendServiceRegistrationEmailToSuperAdmin } from '../utils/email';
+import { sendServiceRegistrationEmailToSuperAdmin, sendEmail } from '../utils/email';
+import { sendWhatsAppGeneralNotification } from '../utils/whatsapp';
 import {
   createTaxInvoice,
   createProformaInvoice,
@@ -1099,14 +1100,34 @@ export const verifyRegistrationPayment = async (req: AuthRequest, res: Response)
     // Notify super admin
     try {
       const superAdmin = await User.findOne({ role: USER_ROLE.SUPER_ADMIN });
-      if (superAdmin) {
-        const studentUser = await User.findById(student.userId);
+      const studentUser = await User.findById(student.userId);
+      if (superAdmin && studentUser) {
         await sendServiceRegistrationEmailToSuperAdmin(
           superAdmin.email,
-          [studentUser?.firstName, studentUser?.middleName, studentUser?.lastName].filter(Boolean).join(' ') || 'Unknown Student',
-          studentUser?.email || 'Unknown Email',
+          [studentUser.firstName, studentUser.middleName, studentUser.lastName].filter(Boolean).join(' ') || 'Unknown Student',
+          studentUser.email || 'Unknown Email',
           `${service.name} (${planTier})`
         );
+      }
+      // Notify the student
+      if (studentUser) {
+        const studentName = [studentUser.firstName, studentUser.middleName, studentUser.lastName].filter(Boolean).join(' ') || 'Student';
+        const studentMobile = student.mobileNumber || studentUser.mobileNumber;
+        if (studentMobile) {
+          await sendWhatsAppGeneralNotification(
+            studentMobile,
+            studentName,
+            'Your registration has been completed successfully.',
+            `You are now registered for ${service.name}. Our team will be in touch with you shortly to get started`
+          );
+        }
+        if (studentUser.email) {
+          await sendEmail({
+            to: studentUser.email,
+            subject: `Registration Confirmed — ${service.name}`,
+            html: `<p>Hi ${studentName},</p><p>Your registration has been completed successfully! 🎉</p><p>📌 <strong>Service:</strong> ${service.name}</p><p>Our team will review your details and be in touch with you shortly to guide you through the next steps.</p><p>Log in to your dashboard to get started:<br/><a href="https://core.admitra.io/dashboard">https://core.admitra.io/dashboard</a></p><p>Best regards,<br/>Admitra Team</p>`,
+          });
+        }
       }
     } catch (emailError) {
       console.error('Failed to send notification email:', emailError);
