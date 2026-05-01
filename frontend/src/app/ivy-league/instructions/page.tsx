@@ -2,14 +2,69 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { authAPI } from '@/lib/api';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+interface StudentMeeting {
+  _id: string;
+  subject: string;
+  scheduledDate: string;
+  scheduledTime: string;
+  duration: number;
+  meetingType: string;
+  status: string;
+  zohoMeetingUrl?: string;
+  zohoMeetingId?: string;
+  zohoMeetingPassword?: string;
+}
+
+interface ParentMeeting {
+  _id: string;
+  subject: string;
+  scheduledDate: string;
+  scheduledTime: string;
+  duration: number;
+  meetingMode: string;
+  status: string;
+  meetLink?: string;
+  zohoMeetingUrl?: string;
+  zohoMeetingId?: string;
+  zohoMeetingPassword?: string;
+}
 
 export default function IvyLeagueInstructionsPage() {
   const router = useRouter();
   const [showBanner, setShowBanner] = useState(true);
+  const [studentMeetings, setStudentMeetings] = useState<StudentMeeting[]>([]);
+  const [parentMeetings, setParentMeetings] = useState<ParentMeeting[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => setShowBanner(false), 5000);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const fetchMeetings = async () => {
+      try {
+        const profileRes = await authAPI.getProfile();
+        if (!profileRes.data.success) return;
+        const u = profileRes.data.data.user;
+        const userId = u?.id || u?._id;
+        if (!userId) return;
+        const token = localStorage.getItem('token');
+        const headers = { Authorization: `Bearer ${token}` };
+        const [stuRes, parRes] = await Promise.all([
+          fetch(`${API_URL}/team-meets/ivy-candidate/${userId}`, { headers }).then((r) => r.json()),
+          fetch(`${API_URL}/ivy/parent-interview-schedule?candidateUserId=${userId}`, { headers }).then((r) => r.json()),
+        ]);
+        if (stuRes.success) setStudentMeetings(stuRes.data?.teamMeets || []);
+        if (parRes.success) setParentMeetings(parRes.data?.schedules || []);
+      } catch {
+        // non-critical
+      }
+    };
+    fetchMeetings();
   }, []);
 
   const steps = [
@@ -123,6 +178,92 @@ export default function IvyLeagueInstructionsPage() {
                         </svg>
                         Start Test
                       </button>
+                    </div>
+                  )}
+
+                  {step.number === 2 && studentMeetings.length > 0 && (
+                    <div className="mt-5 space-y-3">
+                      <p className="text-sm font-semibold text-gray-700">Your Scheduled Meetings:</p>
+                      {studentMeetings.map((m) => (
+                        <div key={m._id} className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-blue-900">{m.subject}</p>
+                              <p className="text-xs text-blue-600 mt-0.5">
+                                {new Date(m.scheduledDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} at {m.scheduledTime} &bull; {m.duration} min &bull; {m.meetingType === 'ONLINE' ? 'Online' : 'In Person'}
+                              </p>
+                              {m.meetingType === 'ONLINE' && m.status === 'CONFIRMED' && (m.zohoMeetingId || m.zohoMeetingPassword) && (
+                                <div className="flex flex-wrap gap-4 mt-1.5">
+                                  {m.zohoMeetingId && (
+                                    <span className="text-xs text-blue-700"><span className="font-semibold">Meeting ID:</span> {m.zohoMeetingId}</span>
+                                  )}
+                                  {m.zohoMeetingPassword && (
+                                    <span className="text-xs text-blue-700"><span className="font-semibold">Password:</span> {m.zohoMeetingPassword}</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                m.status === 'CONFIRMED' ? 'bg-green-100 text-green-700' :
+                                m.status === 'COMPLETED' ? 'bg-blue-100 text-blue-700' :
+                                'bg-amber-100 text-amber-700'
+                              }`}>
+                                {m.status}
+                              </span>
+                              {m.meetingType === 'ONLINE' && m.status === 'CONFIRMED' && m.zohoMeetingUrl && (
+                                <a href={m.zohoMeetingUrl} target="_blank" rel="noopener noreferrer"
+                                  className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700">
+                                  Join
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {step.number === 3 && parentMeetings.length > 0 && (
+                    <div className="mt-5 space-y-3">
+                      <p className="text-sm font-semibold text-gray-700">Scheduled Parent Meetings:</p>
+                      {parentMeetings.map((m) => (
+                        <div key={m._id} className="bg-purple-50 border border-purple-200 rounded-xl px-4 py-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-purple-900">{m.subject}</p>
+                              <p className="text-xs text-purple-600 mt-0.5">
+                                {new Date(m.scheduledDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} at {m.scheduledTime} &bull; {m.duration} min &bull; {m.meetingMode === 'online' ? 'Online' : 'In Person'}
+                              </p>
+                              {m.meetingMode === 'online' && (m.zohoMeetingId || m.zohoMeetingPassword) && (
+                                <div className="flex flex-wrap gap-4 mt-1.5">
+                                  {m.zohoMeetingId && (
+                                    <span className="text-xs text-purple-700"><span className="font-semibold">Meeting ID:</span> {m.zohoMeetingId}</span>
+                                  )}
+                                  {m.zohoMeetingPassword && (
+                                    <span className="text-xs text-purple-700"><span className="font-semibold">Password:</span> {m.zohoMeetingPassword}</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                m.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                                m.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                'bg-amber-100 text-amber-700'
+                              }`}>
+                                {m.status}
+                              </span>
+                              {m.meetingMode === 'online' && (m.zohoMeetingUrl || m.meetLink) && (
+                                <a href={(m.zohoMeetingUrl || m.meetLink)!} target="_blank" rel="noopener noreferrer"
+                                  className="px-3 py-1 bg-purple-600 text-white rounded-lg text-xs font-semibold hover:bg-purple-700">
+                                  Join
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

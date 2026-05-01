@@ -8,6 +8,7 @@ import {
   getTestResultForExpert,
   saveInterviewForExpert,
   getInterviewForExpert,
+  getRegistrationForCandidate,
 } from '../controllers/ivyExpertCandidate.controller';
 
 const router = express.Router();
@@ -23,6 +24,9 @@ router.post('/convert-to-student', authorize(USER_ROLE.IVY_EXPERT), ivyExpertCon
 
 // GET /api/ivy/ivy-expert-candidates/test-result/:userId — Get test result
 router.get('/test-result/:userId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), getTestResultForExpert);
+
+// GET /api/ivy/ivy-expert-candidates/registration/:userId — Get IvyLeagueRegistration (parent data)
+router.get('/registration/:userId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN, USER_ROLE.STUDENT]), getRegistrationForCandidate);
 
 // GET /api/ivy/ivy-expert-candidates/interview/:userId — Get interview data
 router.get('/interview/:userId', authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), getInterviewForExpert);

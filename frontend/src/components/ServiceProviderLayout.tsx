@@ -108,20 +108,13 @@ export default function ServiceProviderLayout({ children, user: userProp }: Serv
         <div className="h-16 border-b border-gray-200 flex items-center justify-between px-4">
           {sidebarOpen && (
             <div className="flex items-center gap-2">
-              <AuthImage
-                path={spProfile?.companyLogo}
-                alt="Company Logo"
-                className="w-8 h-8 rounded-lg object-cover"
-                fallback={
-                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">
-                      {spProfile?.companyName?.charAt(0) || 'S'}
-                    </span>
-                  </div>
-                }
-              />
-              <span className="font-semibold text-gray-900 truncate">
-                {spProfile?.companyName || 'Service Provider'}
+              <div className={`w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center`}>
+                <span className="text-white font-bold text-sm">
+                  SP
+                </span>
+              </div>
+              <span className="font-semibold text-gray-900">
+                Service Provider
               </span>
             </div>
           )}

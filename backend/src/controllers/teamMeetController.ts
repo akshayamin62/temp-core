@@ -249,6 +249,7 @@ export const createTeamMeet = async (
       meetingType,
       description,
       requestedTo,
+      interviewType,
     } = req.body;
 
     // Validate required fields
@@ -391,11 +392,35 @@ export const createTeamMeet = async (
       requestedBy: userId,
       requestedTo,
       adminId,
-      status: TEAMMEET_STATUS.PENDING_CONFIRMATION,
+      status: interviewType === 'student_interview' ? TEAMMEET_STATUS.CONFIRMED : TEAMMEET_STATUS.PENDING_CONFIRMATION,
+      ...(interviewType === 'student_interview' ? { interviewType: 'student_interview' } : {}),
     });
 
-    // If meeting type is Online, Zoho Meeting will be created when status changes to CONFIRMED
-    // (see acceptTeamMeet handler)
+    // For student_interview: create Zoho meeting immediately (auto-confirmed)
+    if (interviewType === 'student_interview' && (meetingType || TEAMMEET_TYPE.ONLINE) === TEAMMEET_TYPE.ONLINE) {
+      try {
+        const [hours, mins] = scheduledTime.split(':').map(Number);
+        const meetingStartTime = new Date(scheduleDate);
+        meetingStartTime.setHours(hours, mins, 0, 0);
+        const senderUserEmail = await User.findById(userId).select('email');
+        const participantEmails: string[] = [];
+        if (senderUserEmail?.email) participantEmails.push(senderUserEmail.email);
+        if (recipient.email) participantEmails.push(recipient.email);
+        const zohoResult = await createZohoMeeting({
+          topic: subject,
+          startTime: meetingStartTime,
+          duration: parsedDuration,
+          agenda: description || subject,
+          participantEmails,
+        });
+        teamMeet.zohoMeetingKey = zohoResult.meetingKey;
+        teamMeet.zohoMeetingUrl = zohoResult.meetingUrl;
+        teamMeet.zohoMeetingId = zohoResult.meetingNumber || zohoResult.meetingKey;
+        teamMeet.zohoMeetingPassword = zohoResult.meetingPassword || '';
+      } catch (zohoErr) {
+        console.error('⚠️  Zoho Meeting creation failed for student interview (saved without link):', zohoErr);
+      }
+    }
 
     await teamMeet.save();
 
@@ -404,7 +429,7 @@ export const createTeamMeet = async (
       .populate("requestedBy", "firstName middleName lastName email role")
       .populate("requestedTo", "firstName middleName lastName email role");
 
-    // Send email notification (non-blocking) — only to the receiver (pending confirmation)
+    // Send email notification (non-blocking)
     const formattedDate = scheduleDate.toLocaleDateString("en-US", {
       weekday: "long", year: "numeric", month: "long", day: "numeric",
     });
@@ -417,47 +442,85 @@ export const createTeamMeet = async (
 
     const effectiveMeetingType = meetingType || TEAMMEET_TYPE.ONLINE;
 
-    // Email to recipient only (the person who needs to confirm)
-    if (recipient.email) {
-      sendMeetingPendingEmail(recipient.email, recipientFullName, {
+    if (interviewType === 'student_interview') {
+      // Auto-confirmed: send confirmed email to both parties with join link
+      const confirmedEmailBase = {
         subject,
         date: formattedDate,
         time: scheduledTime,
         duration: parsedDuration,
-        meetingType: effectiveMeetingType === TEAMMEET_TYPE.ONLINE ? "Online" : "Face to Face",
-        otherPartyName: senderFullName,
+        meetingType: effectiveMeetingType === TEAMMEET_TYPE.ONLINE ? 'Online' : 'Face to Face',
+        meetingUrl: teamMeet.zohoMeetingUrl || undefined,
+        meetingId: teamMeet.zohoMeetingId || undefined,
+        meetingPassword: teamMeet.zohoMeetingPassword || undefined,
         agenda: description || undefined,
-      }).catch((err) => console.error("Failed to send pending meeting email to recipient:", err));
-    }
-
-    // SMS to recipient (non-blocking) — look up mobile from Admin or Counselor profile
-    try {
-      let recipientMobile: string | undefined;
-      if (recipient.role === USER_ROLE.ADMIN) {
-        const adminProfile = await Admin.findOne({ userId: recipient._id }).select('mobileNumber');
-        recipientMobile = adminProfile?.mobileNumber;
-      } else if (recipient.role === USER_ROLE.COUNSELOR) {
-        const counselorProfile = await Counselor.findOne({ userId: recipient._id }).select('mobileNumber');
-        recipientMobile = counselorProfile?.mobileNumber;
+      };
+      if (senderUser?.email) {
+        sendMeetingConfirmedEmail(senderUser.email, senderFullName, { ...confirmedEmailBase, otherPartyName: recipientFullName })
+          .catch((err) => console.error('Failed to send confirmed interview email to sender:', err));
       }
-      if (recipientMobile) {
-        sendMeetingRequestSms({ mobile: recipientMobile, senderName: senderFullName })
-          .catch((err) => console.error('Failed to send meeting request SMS:', err));
+      if (recipient.email) {
+        sendMeetingConfirmedEmail(recipient.email, recipientFullName, { ...confirmedEmailBase, otherPartyName: senderFullName })
+          .catch((err) => console.error('Failed to send confirmed interview email to recipient:', err));
       }
-    } catch (smsLookupErr) {
-      console.error('SMS lookup error (non-fatal):', smsLookupErr);
-    }
+      // WhatsApp to recipient (student)
+      const recipientMobileWA = await getUserMobileNumber(recipient._id.toString(), recipient.role);
+      if (recipientMobileWA) {
+        const meetingTypeLabel = effectiveMeetingType === TEAMMEET_TYPE.ONLINE ? 'Online' : 'In-Person';
+        const meetDetails = teamMeet.zohoMeetingUrl
+          ? `"${subject}" on ${formattedDate} at ${scheduledTime} (${parsedDuration} mins). Meeting ID: ${teamMeet.zohoMeetingId} | Password: ${teamMeet.zohoMeetingPassword} | Join: ${teamMeet.zohoMeetingUrl}`
+          : `"${subject}" on ${formattedDate} at ${scheduledTime} (${parsedDuration} mins; ${meetingTypeLabel}). Please be on time.`;
+        sendWhatsAppGeneralNotification(
+          recipientMobileWA,
+          recipientFullName,
+          `Your IVY League Student Interview has been scheduled by ${senderFullName}.`,
+          meetDetails
+        ).catch((err) => console.error('Failed to send student interview WhatsApp:', err));
+      }
+    } else {
+      // Normal pending flow
+      // Email to recipient only (the person who needs to confirm)
+      if (recipient.email) {
+        sendMeetingPendingEmail(recipient.email, recipientFullName, {
+          subject,
+          date: formattedDate,
+          time: scheduledTime,
+          duration: parsedDuration,
+          meetingType: effectiveMeetingType === TEAMMEET_TYPE.ONLINE ? "Online" : "Face to Face",
+          otherPartyName: senderFullName,
+          agenda: description || undefined,
+        }).catch((err) => console.error("Failed to send pending meeting email to recipient:", err));
+      }
 
-    // WhatsApp notification to recipient (non-blocking)
-    const recipientMobileWA = await getUserMobileNumber(recipient._id.toString(), recipient.role);
-    if (recipientMobileWA) {
-      const meetingTypeLabel = effectiveMeetingType === TEAMMEET_TYPE.ONLINE ? 'Online' : 'In-Person';
-      sendWhatsAppGeneralNotification(
-        recipientMobileWA,
-        recipientFullName,
-        `You have a new meeting request from ${senderFullName}.`,
-        `"${subject}" on ${formattedDate} at ${scheduledTime} (${parsedDuration} mins; ${meetingTypeLabel}). Kindly log in to confirm or decline`
-      ).catch((err) => console.error('Failed to send team meet request WhatsApp:', err));
+      // SMS to recipient (non-blocking)
+      try {
+        let recipientMobile: string | undefined;
+        if (recipient.role === USER_ROLE.ADMIN) {
+          const adminProfile = await Admin.findOne({ userId: recipient._id }).select('mobileNumber');
+          recipientMobile = adminProfile?.mobileNumber;
+        } else if (recipient.role === USER_ROLE.COUNSELOR) {
+          const counselorProfile = await Counselor.findOne({ userId: recipient._id }).select('mobileNumber');
+          recipientMobile = counselorProfile?.mobileNumber;
+        }
+        if (recipientMobile) {
+          sendMeetingRequestSms({ mobile: recipientMobile, senderName: senderFullName })
+            .catch((err) => console.error('Failed to send meeting request SMS:', err));
+        }
+      } catch (smsLookupErr) {
+        console.error('SMS lookup error (non-fatal):', smsLookupErr);
+      }
+
+      // WhatsApp notification to recipient (non-blocking)
+      const recipientMobileWA = await getUserMobileNumber(recipient._id.toString(), recipient.role);
+      if (recipientMobileWA) {
+        const meetingTypeLabel = effectiveMeetingType === TEAMMEET_TYPE.ONLINE ? 'Online' : 'In-Person';
+        sendWhatsAppGeneralNotification(
+          recipientMobileWA,
+          recipientFullName,
+          `You have a new meeting request from ${senderFullName}.`,
+          `"${subject}" on ${formattedDate} at ${scheduledTime} (${parsedDuration} mins; ${meetingTypeLabel}). Kindly log in to confirm or decline`
+        ).catch((err) => console.error('Failed to send team meet request WhatsApp:', err));
+      }
     }
 
     return res.status(201).json({
@@ -1882,6 +1945,81 @@ export const getTeamMeetsForStudent = async (
       success: false,
       message: "Failed to fetch student team meets",
     });
+  }
+};
+
+/**
+ * Get student interview TeamMeets for a specific IVY candidate (by userId)
+ * GET /api/team-meets/ivy-candidate/:candidateUserId
+ */
+export const getTeamMeetsForIvyCandidate = async (
+  req: AuthRequest,
+  res: Response
+): Promise<Response> => {
+  try {
+    const { candidateUserId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(candidateUserId)) {
+      return res.status(400).json({ success: false, message: 'Invalid candidateUserId' });
+    }
+
+    const teamMeets = await TeamMeet.find({
+      requestedTo: candidateUserId,
+      interviewType: 'student_interview',
+    })
+      .populate('requestedBy', 'firstName middleName lastName email role')
+      .populate('requestedTo', 'firstName middleName lastName email role')
+      .sort({ scheduledDate: 1, scheduledTime: 1 });
+
+    return res.status(200).json({ success: true, data: { teamMeets } });
+  } catch (error) {
+    console.error('Error fetching ivy candidate team meets:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch meetings' });
+  }
+};
+
+/**
+ * IVY expert / super-admin: update status and/or notes on a student interview TeamMeet
+ * PATCH /api/team-meets/:teamMeetId/ivy-update
+ * Body: { status?: 'CONFIRMED' | 'COMPLETED' | 'CANCELLED', notes?: string }
+ */
+export const updateIvyStudentMeet = async (
+  req: AuthRequest,
+  res: Response
+): Promise<Response> => {
+  try {
+    const { teamMeetId } = req.params;
+    const { status, notes } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(teamMeetId)) {
+      return res.status(400).json({ success: false, message: 'Invalid meeting ID' });
+    }
+
+    const allowedStatuses = [TEAMMEET_STATUS.CONFIRMED, TEAMMEET_STATUS.COMPLETED, TEAMMEET_STATUS.CANCELLED];
+    if (status && !allowedStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: 'Status must be CONFIRMED, COMPLETED, or CANCELLED' });
+    }
+
+    const teamMeet = await TeamMeet.findOne({ _id: teamMeetId, interviewType: 'student_interview' });
+    if (!teamMeet) {
+      return res.status(404).json({ success: false, message: 'Student interview meeting not found' });
+    }
+
+    if (status) teamMeet.status = status;
+    if (notes !== undefined) teamMeet.notes = notes;
+    if (status === TEAMMEET_STATUS.COMPLETED && !teamMeet.completedAt) {
+      teamMeet.completedAt = new Date();
+    }
+    await teamMeet.save();
+
+    const populatedMeet = await TeamMeet.findById(teamMeetId)
+      .populate('requestedBy', 'firstName middleName lastName email role')
+      .populate('requestedTo', 'firstName middleName lastName email role');
+
+    return res.status(200).json({ success: true, message: 'Meeting updated', data: { teamMeet: populatedMeet } });
+  } catch (error) {
+    console.error('Error updating ivy student meet:', error);
+    return res.status(500).json({ success: false, message: 'Failed to update meeting' });
   }
 };
 

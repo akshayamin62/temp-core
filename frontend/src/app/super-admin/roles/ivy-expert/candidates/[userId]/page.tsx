@@ -70,6 +70,38 @@ interface CandidateInfo {
   parentMobile: string;
 }
 
+interface StudentMeeting {
+  _id: string;
+  subject: string;
+  scheduledDate: string;
+  scheduledTime: string;
+  duration: number;
+  meetingType: string;
+  status: string;
+  zohoMeetingUrl?: string;
+  zohoMeetingId?: string;
+  zohoMeetingPassword?: string;
+  requestedBy: { firstName: string; middleName?: string; lastName: string; email: string };
+  requestedTo: { firstName: string; middleName?: string; lastName: string; email: string };
+}
+
+interface ParentMeeting {
+  _id: string;
+  subject: string;
+  scheduledDate: string;
+  scheduledTime: string;
+  duration: number;
+  meetingMode: string;
+  status: string;
+  meetLink?: string;
+  zohoMeetingUrl?: string;
+  zohoMeetingId?: string;
+  zohoMeetingPassword?: string;
+  toName: string;
+  toEmail: string;
+  toMobile: string;
+}
+
 const STUDENT_INTERVIEW_SECTIONS = [
   {
     title: 'Psychological Readiness',
@@ -198,6 +230,31 @@ export default function CandidateDetailPage() {
   const [saving, setSaving] = useState(false);
   const hasFetchedRef = useRef(false);
 
+  // --- Meeting scheduling state ---
+  const [studentMeetings, setStudentMeetings] = useState<StudentMeeting[]>([]);
+  const [parentMeetings, setParentMeetings] = useState<ParentMeeting[]>([]);
+  const [showStudentScheduleForm, setShowStudentScheduleForm] = useState(false);
+  const [showParentScheduleForm, setShowParentScheduleForm] = useState(false);
+  const [studentMeetForm, setStudentMeetForm] = useState({
+    subject: '',
+    scheduledDate: '',
+    scheduledTime: '',
+    duration: 30,
+    meetingType: 'ONLINE',
+  });
+  const [parentMeetForm, setParentMeetForm] = useState({
+    subject: '',
+    scheduledDate: '',
+    scheduledTime: '',
+    duration: 30,
+    meetingMode: 'online',
+  });
+  const [schedulingStudent, setSchedulingStudent] = useState(false);
+  const [schedulingParent, setSchedulingParent] = useState(false);
+  // Per-meeting edit state
+  const [meetEditState, setMeetEditState] = useState<Record<string, { status: string; notes: string }>>({});
+  const [savingMeet, setSavingMeet] = useState<Record<string, boolean>>({});
+
   useEffect(() => {
     if (hasFetchedRef.current) return;
     hasFetchedRef.current = true;
@@ -278,10 +335,124 @@ export default function CandidateDetailPage() {
       } catch {
         // Interview data may not exist yet
       }
+
+      // Fetch scheduled meetings
+      await fetchMeetings();
     } catch {
       toast.error('Failed to fetch data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMeetings = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      const [stuRes, parRes] = await Promise.all([
+        axios.get(`${API_URL}/team-meets/ivy-candidate/${userId}`, { headers }),
+        axios.get(`${API_URL}/ivy/parent-interview-schedule?candidateUserId=${userId}`, { headers }),
+      ]);
+      if (stuRes.data.success) setStudentMeetings(stuRes.data.data.teamMeets || []);
+      if (parRes.data.success) setParentMeetings(parRes.data.data.schedules || []);
+    } catch {
+      // non-critical
+    }
+  };
+
+  const handleScheduleStudentMeeting = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!studentMeetForm.subject || !studentMeetForm.scheduledDate || !studentMeetForm.scheduledTime) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    setSchedulingStudent(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_URL}/team-meets`, {
+        requestedTo: userId,
+        subject: studentMeetForm.subject,
+        scheduledDate: studentMeetForm.scheduledDate,
+        scheduledTime: studentMeetForm.scheduledTime,
+        duration: studentMeetForm.duration,
+        meetingType: studentMeetForm.meetingType,
+        interviewType: 'student_interview',
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success('Student interview meeting scheduled!');
+      setShowStudentScheduleForm(false);
+      setStudentMeetForm({ subject: '', scheduledDate: '', scheduledTime: '', duration: 30, meetingType: 'ONLINE' });
+      await fetchMeetings();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to schedule meeting');
+    } finally {
+      setSchedulingStudent(false);
+    }
+  };
+
+  const handleScheduleParentMeeting = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!parentMeetForm.subject || !parentMeetForm.scheduledDate || !parentMeetForm.scheduledTime) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    setSchedulingParent(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_URL}/ivy/parent-interview-schedule`, {
+        candidateUserId: userId,
+        subject: parentMeetForm.subject,
+        scheduledDate: parentMeetForm.scheduledDate,
+        scheduledTime: parentMeetForm.scheduledTime,
+        duration: parentMeetForm.duration,
+        meetingMode: parentMeetForm.meetingMode,
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success('Parent interview meeting scheduled!');
+      setShowParentScheduleForm(false);
+      setParentMeetForm({ subject: '', scheduledDate: '', scheduledTime: '', duration: 30, meetingMode: 'online' });
+      await fetchMeetings();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to schedule meeting');
+    } finally {
+      setSchedulingParent(false);
+    }
+  };
+
+  const getMeetEdit = (id: string, currentStatus: string, currentNotes?: string) =>
+    meetEditState[id] ?? { status: currentStatus, notes: currentNotes ?? '' };
+
+  const handleSaveStudentMeet = async (meetId: string) => {
+    const edit = meetEditState[meetId];
+    if (!edit) return;
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    setSavingMeet((s) => ({ ...s, [meetId]: true }));
+    try {
+      await axios.patch(`${API_URL}/team-meets/${meetId}/ivy-update`, { status: edit.status, notes: edit.notes }, { headers });
+      toast.success('Meeting updated!');
+      await fetchMeetings();
+      setMeetEditState((s) => { const n = { ...s }; delete n[meetId]; return n; });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update meeting');
+    } finally {
+      setSavingMeet((s) => ({ ...s, [meetId]: false }));
+    }
+  };
+
+  const handleSaveParentMeet = async (meetId: string) => {
+    const edit = meetEditState[meetId];
+    if (!edit) return;
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    setSavingMeet((s) => ({ ...s, [meetId]: true }));
+    try {
+      await axios.patch(`${API_URL}/ivy/parent-interview-schedule/${meetId}/status`, { status: edit.status, notes: edit.notes }, { headers });
+      toast.success('Meeting updated!');
+      await fetchMeetings();
+      setMeetEditState((s) => { const n = { ...s }; delete n[meetId]; return n; });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update meeting');
+    } finally {
+      setSavingMeet((s) => ({ ...s, [meetId]: false }));
     }
   };
 
@@ -791,6 +962,181 @@ export default function CandidateDetailPage() {
 
                 return (
                   <div className="space-y-5">
+                    {/* Schedule Student Interview Meeting */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                      <button
+                        onClick={() => {
+                          if (!showStudentScheduleForm && candidate) {
+                            setStudentMeetForm((f) => ({
+                              ...f,
+                              subject: f.subject || `Student Interview — ${[candidate.firstName, candidate.middleName, candidate.lastName].filter(Boolean).join(' ')}`,
+                            }));
+                          }
+                          setShowStudentScheduleForm((v) => !v);
+                        }}
+                        className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                          <span className="font-semibold text-gray-900">Schedule Student Interview Meeting</span>
+                        </div>
+                        <svg className={`w-5 h-5 text-gray-400 transition-transform ${showStudentScheduleForm ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {showStudentScheduleForm && (
+                        <form onSubmit={handleScheduleStudentMeeting} className="px-6 pb-6 border-t border-gray-100">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div className="md:col-span-2">
+                              <label className="block text-xs font-semibold text-gray-600 mb-1">Subject *</label>
+                              <input
+                                type="text"
+                                value={studentMeetForm.subject}
+                                onChange={(e) => setStudentMeetForm((f) => ({ ...f, subject: e.target.value }))}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                                placeholder="e.g. Student Interview — John Doe"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-600 mb-1">Date *</label>
+                              <input
+                                type="date"
+                                value={studentMeetForm.scheduledDate}
+                                onChange={(e) => setStudentMeetForm((f) => ({ ...f, scheduledDate: e.target.value }))}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-600 mb-1">Time *</label>
+                              <input
+                                type="time"
+                                value={studentMeetForm.scheduledTime}
+                                onChange={(e) => setStudentMeetForm((f) => ({ ...f, scheduledTime: e.target.value }))}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-600 mb-1">Duration</label>
+                              <select
+                                value={studentMeetForm.duration}
+                                onChange={(e) => setStudentMeetForm((f) => ({ ...f, duration: Number(e.target.value) }))}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                              >
+                                <option value={15}>15 minutes</option>
+                                <option value={30}>30 minutes</option>
+                                <option value={45}>45 minutes</option>
+                                <option value={60}>60 minutes</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-600 mb-1">Mode</label>
+                              <select
+                                value={studentMeetForm.meetingType}
+                                onChange={(e) => setStudentMeetForm((f) => ({ ...f, meetingType: e.target.value }))}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                              >
+                                <option value="ONLINE">Online</option>
+                                <option value="FACE_TO_FACE">In Person</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="flex gap-3 mt-4">
+                            <button
+                              type="submit"
+                              disabled={schedulingStudent}
+                              className="px-5 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 disabled:opacity-50"
+                            >
+                              {schedulingStudent ? 'Scheduling...' : 'Schedule Meeting'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setShowStudentScheduleForm(false)}
+                              className="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      )}
+                    </div>
+
+                    {/* Student Interview Meetings List */}
+                    {studentMeetings.length > 0 && (
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-4">Scheduled Meetings</h4>
+                        <div className="space-y-3">
+                          {studentMeetings.map((m) => {
+                            const edit = getMeetEdit(m._id, m.status, (m as any).notes);
+                            const dirty = !!meetEditState[m._id];
+                            return (
+                            <div key={m._id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-gray-900 text-sm">{m.subject}</p>
+                                  <p className="text-xs text-gray-500 mt-0.5">
+                                    {new Date(m.scheduledDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} at {m.scheduledTime} &bull; {m.duration} min &bull; {m.meetingType === 'ONLINE' ? 'Online' : 'In Person'}
+                                  </p>
+                                  {m.meetingType === 'ONLINE' && (m.zohoMeetingId || m.zohoMeetingPassword) && (
+                                    <div className="flex flex-wrap gap-4 mt-1.5">
+                                      {m.zohoMeetingId && (
+                                        <span className="text-xs text-gray-600"><span className="font-semibold">Meeting ID:</span> {m.zohoMeetingId}</span>
+                                      )}
+                                      {m.zohoMeetingPassword && (
+                                        <span className="text-xs text-gray-600"><span className="font-semibold">Password:</span> {m.zohoMeetingPassword}</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3 shrink-0">
+                                  <select
+                                    value={edit.status}
+                                    onChange={(e) => setMeetEditState((s) => ({ ...s, [m._id]: { ...getMeetEdit(m._id, m.status, (m as any).notes), status: e.target.value } }))}
+                                    className="border border-gray-300 rounded-lg px-2 py-1 text-xs font-semibold focus:ring-green-500 focus:border-green-500"
+                                  >
+                                    <option value="CONFIRMED">CONFIRMED</option>
+                                    <option value="COMPLETED">COMPLETED</option>
+                                    <option value="CANCELLED">CANCELLED</option>
+                                  </select>
+                                  {m.meetingType === 'ONLINE' && m.zohoMeetingUrl && (
+                                    <a href={m.zohoMeetingUrl} target="_blank" rel="noopener noreferrer"
+                                      className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700">
+                                      Join
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="mt-2">
+                                <textarea
+                                  rows={2}
+                                  placeholder="Add notes about this meeting..."
+                                  value={edit.notes}
+                                  onChange={(e) => setMeetEditState((s) => ({ ...s, [m._id]: { ...getMeetEdit(m._id, m.status, (m as any).notes), notes: e.target.value } }))}
+                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-700 focus:ring-green-500 focus:border-green-500 resize-none"
+                                />
+                                {dirty && (
+                                  <button
+                                    onClick={() => handleSaveStudentMeet(m._id)}
+                                    disabled={!!savingMeet[m._id]}
+                                    className="mt-1.5 px-4 py-1.5 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700 disabled:opacity-50"
+                                  >
+                                    {savingMeet[m._id] ? 'Saving...' : 'Save'}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Overall header */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -933,8 +1279,196 @@ export default function CandidateDetailPage() {
                     ? sectionAverages.reduce((a, b) => a + b, 0).toFixed(2)
                     : null;
 
+                const parentName = candidate ? [candidate.parentFirstName, candidate.parentMiddleName, candidate.parentLastName].filter(Boolean).join(' ') : '';
+
                 return (
                   <div className="space-y-5">
+                    {/* Parent info strip */}
+                    {/* {candidate && (
+                      <div className="bg-purple-50 border border-purple-200 rounded-xl px-5 py-3 flex flex-wrap items-center gap-4 text-sm">
+                        <span className="font-semibold text-purple-800">👨‍👩‍👧 Parent:</span>
+                        <span className="text-purple-900 font-medium">{parentName}</span>
+                        <span className="text-purple-700">{candidate.parentEmail}</span>
+                        <span className="text-purple-700">{candidate.parentMobile}</span>
+                      </div>
+                    )} */}
+
+                    {/* Schedule Parent Interview Meeting */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                      <button
+                        onClick={() => {
+                          if (!showParentScheduleForm && candidate) {
+                            setParentMeetForm((f) => ({
+                              ...f,
+                              subject: f.subject || `Parent Interview — ${parentName}`,
+                            }));
+                          }
+                          setShowParentScheduleForm((v) => !v);
+                        }}
+                        className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                          <span className="font-semibold text-gray-900">Schedule Parent Interview Meeting</span>
+                        </div>
+                        <svg className={`w-5 h-5 text-gray-400 transition-transform ${showParentScheduleForm ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {showParentScheduleForm && (
+                        <form onSubmit={handleScheduleParentMeeting} className="px-6 pb-6 border-t border-gray-100">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div className="md:col-span-2">
+                              <label className="block text-xs font-semibold text-gray-600 mb-1">Subject *</label>
+                              <input
+                                type="text"
+                                value={parentMeetForm.subject}
+                                onChange={(e) => setParentMeetForm((f) => ({ ...f, subject: e.target.value }))}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-purple-500 focus:border-purple-500"
+                                placeholder="e.g. Parent Interview — Parent Name"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-600 mb-1">Date *</label>
+                              <input
+                                type="date"
+                                value={parentMeetForm.scheduledDate}
+                                onChange={(e) => setParentMeetForm((f) => ({ ...f, scheduledDate: e.target.value }))}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-purple-500 focus:border-purple-500"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-600 mb-1">Time *</label>
+                              <input
+                                type="time"
+                                value={parentMeetForm.scheduledTime}
+                                onChange={(e) => setParentMeetForm((f) => ({ ...f, scheduledTime: e.target.value }))}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-purple-500 focus:border-purple-500"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-600 mb-1">Duration</label>
+                              <select
+                                value={parentMeetForm.duration}
+                                onChange={(e) => setParentMeetForm((f) => ({ ...f, duration: Number(e.target.value) }))}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-purple-500 focus:border-purple-500"
+                              >
+                                <option value={15}>15 minutes</option>
+                                <option value={30}>30 minutes</option>
+                                <option value={45}>45 minutes</option>
+                                <option value={60}>60 minutes</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-600 mb-1">Mode</label>
+                              <select
+                                value={parentMeetForm.meetingMode}
+                                onChange={(e) => setParentMeetForm((f) => ({ ...f, meetingMode: e.target.value }))}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-purple-500 focus:border-purple-500"
+                              >
+                                <option value="online">Online</option>
+                                <option value="offline">In Person</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="flex gap-3 mt-4">
+                            <button
+                              type="submit"
+                              disabled={schedulingParent}
+                              className="px-5 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 disabled:opacity-50"
+                            >
+                              {schedulingParent ? 'Scheduling...' : 'Schedule Meeting'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setShowParentScheduleForm(false)}
+                              className="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      )}
+                    </div>
+
+                    {/* Parent Interview Meetings List */}
+                    {parentMeetings.length > 0 && (
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-4">Scheduled Meetings</h4>
+                        <div className="space-y-3">
+                          {parentMeetings.map((m) => {
+                            const edit = getMeetEdit(m._id, m.status, (m as any).notes);
+                            const dirty = !!meetEditState[m._id];
+                            return (
+                            <div key={m._id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-gray-900 text-sm">{m.subject}</p>
+                                  <p className="text-xs text-gray-500 mt-0.5">
+                                    {new Date(m.scheduledDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} at {m.scheduledTime} &bull; {m.duration} min &bull; {m.meetingMode === 'online' ? 'Online' : 'In Person'}
+                                  </p>
+                                  <p className="text-xs text-gray-400 mt-0.5">To: {m.toName} &bull; {m.toEmail}</p>
+                                  {m.meetingMode === 'online' && (m.zohoMeetingId || m.zohoMeetingPassword) && (
+                                    <div className="flex flex-wrap gap-4 mt-1.5">
+                                      {m.zohoMeetingId && (
+                                        <span className="text-xs text-gray-600"><span className="font-semibold">Meeting ID:</span> {m.zohoMeetingId}</span>
+                                      )}
+                                      {m.zohoMeetingPassword && (
+                                        <span className="text-xs text-gray-600"><span className="font-semibold">Password:</span> {m.zohoMeetingPassword}</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3 shrink-0">
+                                  <select
+                                    value={edit.status}
+                                    onChange={(e) => setMeetEditState((s) => ({ ...s, [m._id]: { ...getMeetEdit(m._id, m.status, (m as any).notes), status: e.target.value } }))}
+                                    className="border border-gray-300 rounded-lg px-2 py-1 text-xs font-semibold focus:ring-purple-500 focus:border-purple-500"
+                                  >
+                                    <option value="scheduled">scheduled</option>
+                                    <option value="completed">completed</option>
+                                    <option value="cancelled">cancelled</option>
+                                  </select>
+                                  {m.meetingMode === 'online' && (m.zohoMeetingUrl || m.meetLink) && (
+                                    <a href={(m.zohoMeetingUrl || m.meetLink)!} target="_blank" rel="noopener noreferrer"
+                                      className="px-3 py-1 bg-purple-600 text-white rounded-lg text-xs font-semibold hover:bg-purple-700">
+                                      Join
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="mt-2">
+                                <textarea
+                                  rows={2}
+                                  placeholder="Add notes about this meeting..."
+                                  value={edit.notes}
+                                  onChange={(e) => setMeetEditState((s) => ({ ...s, [m._id]: { ...getMeetEdit(m._id, m.status, (m as any).notes), notes: e.target.value } }))}
+                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-700 focus:ring-purple-500 focus:border-purple-500 resize-none"
+                                />
+                                {dirty && (
+                                  <button
+                                    onClick={() => handleSaveParentMeet(m._id)}
+                                    disabled={!!savingMeet[m._id]}
+                                    className="mt-1.5 px-4 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-semibold hover:bg-purple-700 disabled:opacity-50"
+                                  >
+                                    {savingMeet[m._id] ? 'Saving...' : 'Save'}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Overall header */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">

@@ -66,6 +66,7 @@ import ivyUserRoutes from "./routes/user.routes";
 import ivyTestQuestionRoutes from "./routes/ivyTestQuestion.routes";
 import ivyTestSessionRoutes from "./routes/ivyTestSession.routes";
 import ivyExpertCandidateRoutes from "./routes/ivyExpertCandidate.routes";
+import ivyParentInterviewScheduleRoutes from "./routes/ivyParentInterviewSchedule.routes";
 
 import { authenticate } from "./middleware/auth";
 
@@ -142,6 +143,7 @@ import "./models/ivy/StudentPointerScore";
 import "./models/ivy/TaskConversation";
 import "./models/ivy/IvyTestQuestion";
 import "./models/ivy/IvyTestSession";
+import "./models/ivy/IvyParentInterviewSchedule";
 
 dotenv.config(); // already called at top — this line is now redundant, kept for safety
 
@@ -280,6 +282,7 @@ app.use("/api/ivy/users", authenticate, ivyUserRoutes);
 app.use("/api/ivy/test-questions", authenticate, ivyTestQuestionRoutes);
 app.use("/api/ivy/test-session", authenticate, ivyTestSessionRoutes);
 app.use("/api/ivy/ivy-expert-candidates", authenticate, ivyExpertCandidateRoutes);
+app.use("/api/ivy/parent-interview-schedule", authenticate, ivyParentInterviewScheduleRoutes);
 
 // Basic test route
 app.get('/', (_req, res) => {

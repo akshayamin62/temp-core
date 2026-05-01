@@ -406,3 +406,23 @@ export const getInterviewForExpert = async (req: AuthRequest, res: Response): Pr
     res.status(500).json({ success: false, message: err.message || 'Failed to get interview data' });
   }
 };
+
+/* ══════════════════════════════════════════════════════════════════════
+   Get IvyLeagueRegistration for a candidate (parent info etc.)
+   GET /api/ivy/ivy-expert-candidates/registration/:userId
+   ══════════════════════════════════════════════════════════════════════ */
+export const getRegistrationForCandidate = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+
+    const registration = await IvyLeagueRegistration.findOne({ userId }).lean();
+    if (!registration) {
+      res.status(404).json({ success: false, message: 'Registration not found' });
+      return;
+    }
+
+    res.json({ success: true, data: registration });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || 'Failed to get registration' });
+  }
+};

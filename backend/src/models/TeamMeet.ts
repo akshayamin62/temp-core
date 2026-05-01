@@ -37,6 +37,7 @@ export interface ITeamMeet extends Document {
   invitedUsers: mongoose.Types.ObjectId[]; // Users invited to the meeting
   notes?: string; // Creator's notes (saved on mark complete)
   completedAt?: Date;
+  interviewType?: 'student_interview'; // optional: tags this as an IVY student interview
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -139,6 +140,11 @@ const teamMeetSchema = new Schema<ITeamMeet>(
     },
     completedAt: {
       type: Date,
+    },
+    interviewType: {
+      type: String,
+      enum: ['student_interview'],
+      default: null,
     },
   },
   { timestamps: true }

@@ -14,8 +14,10 @@ import {
   getTeamMeetsForCounselor,
   downloadTeamMeetAttachment,
   getTeamMeetsForStudent,
+  getTeamMeetsForIvyCandidate,
   inviteToTeamMeet,
   removeInviteFromTeamMeet,
+  updateIvyStudentMeet,
 } from "../controllers/teamMeetController";
 import { authenticate } from "../middleware/auth";
 import { authorize } from "../middleware/authorize";
@@ -77,6 +79,20 @@ router.get("/participants", getParticipants);
  * @access  Admin, Counselor, Super Admin, OPS
  */
 router.get("/student/:studentId", authorize([USER_ROLE.ADMIN, USER_ROLE.COUNSELOR, USER_ROLE.SUPER_ADMIN, USER_ROLE.OPS, USER_ROLE.EDUPLAN_COACH, USER_ROLE.IVY_EXPERT, USER_ROLE.PARENT, USER_ROLE.REFERRER, USER_ROLE.ADVISOR]), checkAdvisorStudentAccess, getTeamMeetsForStudent);
+
+/**
+ * @route   GET /api/team-meets/ivy-candidate/:candidateUserId
+ * @desc    Get student interview TeamMeets for a specific IVY candidate
+ * @access  IVY_EXPERT, SUPER_ADMIN, STUDENT
+ */
+router.get("/ivy-candidate/:candidateUserId", authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN, USER_ROLE.STUDENT]), getTeamMeetsForIvyCandidate);
+
+/**
+ * @route   PATCH /api/team-meets/:teamMeetId/ivy-update
+ * @desc    IVY expert / super-admin update status and notes on a student interview meeting
+ * @access  IVY_EXPERT, SUPER_ADMIN
+ */
+router.patch("/:teamMeetId/ivy-update", authorize([USER_ROLE.IVY_EXPERT, USER_ROLE.SUPER_ADMIN]), updateIvyStudentMeet);
 
 /**
  * @route   GET /api/team-meets/counselor/:counselorId
