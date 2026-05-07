@@ -9,6 +9,7 @@ import { USER_ROLE } from "../types/roles";
 import { Request } from "express";
 import mongoose from "mongoose";
 import { sendWhatsAppEnquiryWelcome, sendWhatsAppGeneralNotification } from "../utils/whatsapp";
+import { sendLeadEnquiryConfirmationEmail } from "../utils/email";
 
 /**
  * Generate a unique slug from a name
@@ -132,6 +133,27 @@ export const submitEnquiry = async (req: Request, res: Response): Promise<Respon
       name.trim(),
       `your request for ${serviceTypesList}`
     ).catch((err) => console.error('Failed to send WhatsApp enquiry welcome to lead:', err));
+
+    // Email confirmation to lead — branded per admin/advisor (non-blocking)
+    (async () => {
+      try {
+        const ownerUserId = admin ? admin.userId : advisor!.userId;
+        const ownerUser = await User.findById(ownerUserId).select('firstName middleName lastName');
+        const ownerName = ownerUser
+          ? [ownerUser.firstName, ownerUser.middleName, ownerUser.lastName].filter(Boolean).join(' ')
+          : admin ? 'Admin' : 'Advisor';
+        const companyName = admin?.companyName || advisor?.companyName;
+        await sendLeadEnquiryConfirmationEmail(
+          email.toLowerCase().trim(),
+          name.trim(),
+          serviceTypes,
+          ownerName,
+          companyName || undefined
+        );
+      } catch (err) {
+        console.error('Failed to send lead enquiry confirmation email:', err);
+      }
+    })();
 
     // WhatsApp notification to admin/advisor about new enquiry (fire-and-forget)
     (async () => {

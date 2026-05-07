@@ -910,7 +910,7 @@ export const assignOps = async (req: AuthRequest, res: Response): Promise<Respon
         if (studentMobile) {
           await sendWhatsAppGeneralNotification(
             studentMobile, studentName,
-            `A ${staffRoleLabel} has been assigned to guide you through your ${serviceName}.`,
+            `An *${staffRoleLabel}* has been assigned to guide you through your *${serviceName}*.`,
             `${staffName} | ${staffMobile} | ${staffEmail}`
           );
         }
@@ -918,13 +918,13 @@ export const assignOps = async (req: AuthRequest, res: Response): Promise<Respon
           await sendEmail({
             to: studentUser.email,
             subject: `${staffRoleLabel} Assigned — ${staffName} will guide you`,
-            html: `<p>Hi ${studentName},</p><p>A ${staffRoleLabel} has been assigned to guide you through your ${serviceName}:</p><p>👤 <strong>Name:</strong> ${staffName}<br/>📱 <strong>Mobile:</strong> ${staffMobile}<br/>📧 <strong>Email:</strong> ${staffEmail}</p><p><a href="https://core.admitra.io/dashboard">Log in to your dashboard</a></p><p>Best regards,<br/>Admitra Team</p>`,
+            html: `<p>Hi ${studentName},</p><p>An ${staffRoleLabel} has been assigned to guide you through your ${serviceName}:</p><p>👤 <strong>Name:</strong> ${staffName}<br/>📱 <strong>Mobile:</strong> ${staffMobile}<br/>📧 <strong>Email:</strong> ${staffEmail}</p><p><a href="https://core.admitra.io/dashboard">Log in to your dashboard</a></p><p>Best regards,<br/>ADMITra Team</p>`,
           });
         }
         if (staffMobile) {
           await sendWhatsAppGeneralNotification(
             staffMobile, staffName,
-            `You have been assigned to a new student for ${serviceName}.`,
+            `You have been assigned a new student for *${serviceName}*.`,
             `${studentName} | ${studentDoc?.mobileNumber || studentUser?.mobileNumber || 'N/A'} | ${studentUser?.email || 'N/A'}`
           );
         }
@@ -1103,7 +1103,7 @@ export const switchActiveOps = async (req: AuthRequest, res: Response): Promise<
           await sendWhatsAppGeneralNotification(
             studentMobile,
             studentName,
-            `A ${staffRoleLabel} has been assigned to guide you through your ${serviceName}.`,
+            `An *${staffRoleLabel}* has been assigned to guide you through your *${serviceName}*.`,
             `${staffName} | ${staffMobile} | ${staffEmail}`
           );
         }
@@ -1111,7 +1111,7 @@ export const switchActiveOps = async (req: AuthRequest, res: Response): Promise<
           await sendEmail({
             to: studentUser.email,
             subject: `${staffRoleLabel} Assigned — ${staffName} will guide you`,
-            html: `<p>Hi ${studentName},</p><p>A ${staffRoleLabel} has been assigned to guide you through your ${serviceName}:</p><p>👤 <strong>Name:</strong> ${staffName}<br/>📱 <strong>Mobile:</strong> ${staffMobile}<br/>📧 <strong>Email:</strong> ${staffEmail}</p><p><a href="https://core.admitra.io/dashboard">Log in to your dashboard</a></p><p>Best regards,<br/>Admitra Team</p>`,
+            html: `<p>Hi ${studentName},</p><p>An *${staffRoleLabel}* has been assigned to guide you through your *${serviceName}*:</p><p>👤 <strong>Name:</strong> ${staffName}<br/>📱 <strong>Mobile:</strong> ${staffMobile}<br/>📧 <strong>Email:</strong> ${staffEmail}</p><p><a href="https://core.admitra.io/dashboard">Log in to your dashboard</a></p><p>Best regards,<br/>ADMITra Team</p>`,
           });
         }
         // Notify the staff member
@@ -1119,7 +1119,7 @@ export const switchActiveOps = async (req: AuthRequest, res: Response): Promise<
           await sendWhatsAppGeneralNotification(
             staffMobile,
             staffName,
-            `You have been assigned to a new student for ${serviceName}.`,
+            `You have been assigned a new student for *${serviceName}*.`,
             `${studentName} | ${studentDoc?.mobileNumber || studentUser?.mobileNumber || 'N/A'} | ${studentUser?.email || 'N/A'}`
           );
         }

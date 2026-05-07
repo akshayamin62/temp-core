@@ -1230,7 +1230,7 @@ export const registerAsReferrer = async (req: Request, res: Response): Promise<R
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
               <h2 style="color: #1e3a5f;">New Referrer Registration</h2>
               <p>Hi ${adminDisplayName},</p>
-              <p>A new person has registered to become a referrer on your platform. Their account is currently <strong>pending your approval</strong>.</p>
+              <p>A new person has registered to become a  <strong>Referrer</strong> on your platform. Their account is currently <strong>pending your approval</strong>.</p>
               <table style="width:100%; border-collapse: collapse; margin: 16px 0;">
                 <tr><td style="padding: 8px; border: 1px solid #e0e0e0; font-weight: bold; background: #f5f5f5;">Name</td><td style="padding: 8px; border: 1px solid #e0e0e0;">${referrerName}</td></tr>
                 <tr><td style="padding: 8px; border: 1px solid #e0e0e0; font-weight: bold; background: #f5f5f5;">Email</td><td style="padding: 8px; border: 1px solid #e0e0e0;">${email.toLowerCase().trim()}</td></tr>
@@ -1254,8 +1254,8 @@ export const registerAsReferrer = async (req: Request, res: Response): Promise<R
         sendWhatsAppGeneralNotification(
           mobileNumber.trim(),
           referrerName,
-          `Your referrer registration has been submitted successfully.`,
-          `Your account is pending approval. You will be notified once approved`
+          `Your *Referrer* registration has been submitted successfully.`,
+          `Your account is pending for approval. You will be notified once it's approved.`
         ).catch((err) => console.error('Failed to send WhatsApp welcome to new referrer:', err));
       }
       sendEmail({
@@ -1265,9 +1265,10 @@ export const registerAsReferrer = async (req: Request, res: Response): Promise<R
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <h2 style="color: #1e3a5f;">Registration Submitted Successfully</h2>
             <p>Hi ${referrerName},</p>
-            <p>Thank you for registering as a referrer. Your application has been submitted and is currently <strong>pending approval</strong> by the admin.</p>
-            <p>Once your account is approved, you will receive your unique referral link that you can share to earn commissions.</p>
-            <p>If you have any questions, please contact the admin directly.</p>
+            <p>Thank you for registering as a <strong>Referrer</strong>. Your application has been submitted and is currently <strong>pending for approval</strong> by the team.</p>
+            <p>If you have any questions, please feel free to contact us.</p>
+            Regards,<br/>
+            Team - ${admin.companyName || 'Kareer Studio'}
             <p style="color: #666; font-size: 12px;">This is an automated notification.</p>
           </div>
         `,

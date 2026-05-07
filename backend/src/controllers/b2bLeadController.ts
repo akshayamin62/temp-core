@@ -80,7 +80,7 @@ export const submitB2BEnquiry = async (req: Request, res: Response): Promise<Res
           subject: `New B2B Enquiry: ${firstName} ${lastName} (${type})`,
           html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
             <h2 style="color:#2563eb;">New B2B Partnership Enquiry</h2>
-            <p>A new B2B enquiry has been submitted:</p>
+            <p>A new B2B enquiry has been received from;</p>
             <table style="width:100%;border-collapse:collapse;margin:15px 0;">
               <tr><td style="padding:6px 0;font-weight:bold;">Name:</td><td>${firstName} ${middleName || ''} ${lastName}</td></tr>
               <tr><td style="padding:6px 0;font-weight:bold;">Email:</td><td>${email}</td></tr>

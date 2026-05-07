@@ -651,7 +651,7 @@ export const sendCustomMessageToStudent = async (
           <p style="margin: 0; white-space: pre-wrap;">${message}</p>
         </div>
 
-        <p>If you have any questions, please reach out to your ${senderRole.toLowerCase()} directly.</p>
+        <p>If you have any questions, please reach out to ${senderName} directly.</p>
 
         <p style="font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px;">
           This is an automated notification from CORE-Community Platform.
@@ -700,7 +700,7 @@ export const sendProgramSuggestedEmail = async (
       <div style="max-width: 600px; margin: 20px auto; background-color: white; padding: 30px; border: 1px solid #ddd; border-radius: 8px;">
         <h2 style="color: #2563eb; margin-bottom: 20px;">New Program Suggestion</h2>
         <p style="font-size: 16px;">Hi ${studentName},</p>
-        <p style="font-size: 16px;">Your team has suggested a new program for you:</p>
+        <p style="font-size: 16px;">Your team has suggested new programs for you:</p>
         
         <div style="background-color: #f0f9ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
           <p style="margin: 5px 0;"><strong>Program:</strong> ${programName}</p>
@@ -709,7 +709,7 @@ export const sendProgramSuggestedEmail = async (
           ${intake ? `<p style="margin: 5px 0;"><strong>Intake:</strong> ${intake}${year ? ` ${year}` : ''}</p>` : ''}
         </div>
 
-        <p style="font-size: 16px;">Log in to review and select this program:</p>
+        <p style="font-size: 16px;">Log in to review and shortlist the programs:</p>
         
         <div style="text-align: center; margin: 30px 0;">
           <a href="${dashboardUrl}" style="display: inline-block; background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">View Program</a>
@@ -919,6 +919,83 @@ export const sendOfferReceivedEmail = async (
 };
 
 /**
+ * Send enquiry confirmation email to a normal (non-B2B) lead
+ */
+export const sendLeadEnquiryConfirmationEmail = async (
+  email: string,
+  name: string,
+  serviceTypes: string[],
+  ownerName: string,
+  companyName?: string
+): Promise<void> => {
+  const serviceList = serviceTypes.join(', ');
+  const brandName = companyName || ownerName;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Your Enquiry Confirmation</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.8; color: #333; background-color: #f9f9f9; margin: 0; padding: 0;">
+      <div style="max-width: 620px; margin: 30px auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+        <!-- Header -->
+        <div style="background-color: #1e3a5f; padding: 28px 36px;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${brandName}</h1>
+          <p style="color: #a8c4e0; margin: 4px 0 0; font-size: 13px;">Your Enquiry Confirmation</p>
+        </div>
+
+        <!-- Body -->
+        <div style="padding: 36px;">
+          <p style="margin-top: 0;">Hi ${name},</p>
+
+          <p>Thank you for reaching out to <strong>${brandName}</strong>! We have received your enquiry and will get in touch with you very soon.</p>
+
+          <p style="margin-bottom: 8px;">Here's a summary of your enquiry:</p>
+          <table style="width:100%;border-collapse:collapse;margin:12px 0 20px;">
+            <tr><td style="padding:6px 0;font-weight:bold;width:130px;">Services:</td><td style="color:#444;">${serviceList}</td></tr>
+          </table>
+
+          <div style="background-color: #f0f4ff; border-left: 4px solid #3b82f6; border-radius: 4px; padding: 14px 18px; margin: 24px 0;">
+            <p style="margin: 0; color: #1e40af; font-size: 14px;">Our team will review your enquiry and reach out to you shortly to understand your requirements and guide you on the next steps.</p>
+          </div>
+
+          <p>Looking forward to helping you achieve your goals!</p>
+
+          <p style="margin-bottom: 6px;">Regards,</p>
+          <p style="margin: 0; font-weight: 600; color: #1e3a5f;">${ownerName}</p>
+          ${companyName ? `<p style="margin: 0; color: #555; font-size: 14px;">${companyName}</p>` : ''}
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #f5f7fa; padding: 18px 36px; border-top: 1px solid #e0e0e0;">
+          <p style="margin: 0; font-size: 12px; color: #999;">This is an automated confirmation. Please do not reply to this email.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `Hi ${name},
+
+Thank you for reaching out to ${brandName}! We have received your enquiry for: ${serviceList}.
+
+Our team will review your enquiry and reach out to you shortly.
+
+Regards,
+${ownerName}${companyName ? `\n${companyName}` : ''}`;
+
+  await sendEmail({
+    to: email,
+    subject: `Your Enquiry Confirmation - ${brandName}`,
+    html,
+    text,
+  });
+};
+
+/**
  * Send B2B enquiry confirmation email to the enquirer
  */
 export const sendB2BEnquiryConfirmationEmail = async (
@@ -931,6 +1008,8 @@ export const sendB2BEnquiryConfirmationEmail = async (
     : type === 'Advisor' ? 'Advisor'
     : type === 'Referrer' ? 'Referrer'
     : type;
+
+  const article = /^[AEIOUaeiou]/.test(typeLabel) ? 'an' : 'a';
 
   const html = `
     <!DOCTYPE html>
@@ -954,9 +1033,9 @@ export const sendB2BEnquiryConfirmationEmail = async (
 
           <p>Thank you for reaching out and showing interest in exploring a business opportunity with <strong>ADMITra</strong>.</p>
 
-          <p>We've received your enquiry for business collaboration as a <strong>${typeLabel}</strong>, and it's great to see your interest in building something meaningful in the education and study abroad space.</p>
+          <p>We've received your enquiry for business collaboration as ${article} <strong>${typeLabel}</strong>, and it's great to see your interest in building something meaningful in the education and study abroad space.</p>
 
-          <p>Before we move ahead, it's important you understand how we operate.</p>
+          <p>Before we move ahead, it's important you to understand how we operate.</p>
 
           <p><strong>ADMITra is not built like a typical commission-driven model.</strong><br>
           We focus on structured consulting, long-term client relationships, and a system-driven approach that allows our partners to build credible and sustainable income streams.</p>
@@ -968,7 +1047,7 @@ export const sendB2BEnquiryConfirmationEmail = async (
             <li style="margin-bottom: 6px;">As a <strong>Franchise Partner</strong>, you build and scale your own consulting setup using the ADMITra ecosystem</li>
           </ul>
 
-          <p>Each model has a different level of involvement, earning potential, and commitment — so the next step is to understand what fits you best.</p>
+          <p>Each model has a different level of involvement, earning potential, and commitment - so the next step is to understand what fits you best.</p>
 
           <p style="margin-bottom: 8px;">I'd suggest we connect for a short discussion to:</p>
           <ul style="margin: 0 0 16px; padding-left: 20px; color: #444;">
@@ -984,10 +1063,9 @@ export const sendB2BEnquiryConfirmationEmail = async (
 
           <p>Looking forward to connecting for mutual benefits.</p>
 
-          <p style="margin-bottom: 4px;">Regards,</p>
+          <p style="margin-bottom: 6px;">Regards,</p>
           <p style="margin: 0; font-weight: 600; color: #1e3a5f;">Makrand Bhatt</p>
-          <p style="margin: 2px 0; color: #555; font-size: 14px;">Founder</p>
-          <p style="margin: 0; color: #555; font-size: 14px; font-weight: 600;">ADMITra</p>
+          <p style="margin: 0; color: #555; font-size: 14px;">Founder - <b> ADMITra </b></p>
         </div>
 
         <!-- Footer -->
@@ -1003,7 +1081,7 @@ export const sendB2BEnquiryConfirmationEmail = async (
 
 Thank you for reaching out and showing interest in exploring a business opportunity with ADMITra.
 
-We've received your enquiry for business collaboration as a ${typeLabel}.
+We've received your enquiry for business collaboration as ${article} ${typeLabel}.
 
 ADMITra is not built like a typical commission-driven model. We focus on structured consulting, long-term client relationships, and a system-driven approach that allows our partners to build credible and sustainable income streams.
 
