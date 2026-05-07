@@ -149,7 +149,7 @@ export const createParentInterviewSchedule = async (
 <p><strong>Mode:</strong> ${modeLabel}</p>
 ${meetLinkHtml}
 <p>This interview has been scheduled by <strong>${schedulerName}</strong>. Please ensure you are available at the scheduled time.</p>
-<p>Best regards,<br/>Admitra Team</p>`,
+<p>Best regards,<br/>ADMITra Team</p>`,
       }).catch((err) => console.error('Failed to send parent interview email:', err));
     }
 

@@ -8,6 +8,8 @@ import User from '../models/ivy/User';
 import IvyExpert from '../models/IvyExpert';
 import Student from '../models/Student';
 import { resolveIvyExpertId } from '../utils/resolveRole';
+import { sendEmail } from '../utils/email';
+import { sendWhatsAppGeneralNotification } from '../utils/whatsapp';
 
 /* ── Helper: get Ivy League service ID ─────────────────────────────── */
 let _ivyServiceId: any = null;
@@ -46,6 +48,54 @@ export const assignExpertToCandidate = async (req: AuthRequest, res: Response): 
 
     registration.assignedIvyExpertId = ivyExpertId;
     await registration.save();
+
+    // Notify candidate + ivy expert about the assignment
+    try {
+      const candidateName = [registration.firstName, registration.middleName, registration.lastName].filter(Boolean).join(' ');
+      const expertUser = await User.findById(expert.userId).select('firstName middleName lastName email mobileNumber').lean() as any;
+      const expertName = expertUser ? [expertUser.firstName, expertUser.middleName, expertUser.lastName].filter(Boolean).join(' ') : 'Ivy Expert';
+      const expertEmail = expertUser?.email || expert.email || '';
+      const expertMobile = (expert as any).mobileNumber || expertUser?.mobileNumber || '';
+
+      // Look up candidate's own user record for email/mobile
+      const candidateUser = await User.findById(registration.userId).select('email mobileNumber').lean() as any;
+      const candidateEmail = candidateUser?.email || '';
+      const candidateMobile = candidateUser?.mobileNumber || registration.parentMobile || '';
+
+      // Notify candidate
+      if (candidateMobile) {
+        sendWhatsAppGeneralNotification(
+          candidateMobile, candidateName,
+          `An *Ivy Expert* has been assigned to guide you through your *Ivy League Preparation*.`,
+          `${expertName} | ${expertMobile} | ${expertEmail}`
+        ).catch((err: any) => console.error('Failed to send WhatsApp to candidate:', err));
+      }
+      if (candidateEmail) {
+        sendEmail({
+          to: candidateEmail,
+          subject: `Ivy Expert Assigned — ${expertName} will guide you`,
+          html: `<p>Hi ${candidateName},</p><p>An Ivy Expert has been assigned to guide you through your Ivy League Preparation:</p><p>👤 <strong>Name:</strong> ${expertName}<br/>📱 <strong>Mobile:</strong> ${expertMobile}<br/>📧 <strong>Email:</strong> ${expertEmail}</p><p><a href="https://core.admitra.io/dashboard">Log in to your dashboard</a></p><p>Best regards,<br/>ADMITra Team</p>`,
+        }).catch((err: any) => console.error('Failed to send email to candidate:', err));
+      }
+
+      // Notify ivy expert
+      if (expertMobile) {
+        sendWhatsAppGeneralNotification(
+          expertMobile, expertName,
+          `You have been assigned a new candidate for *Ivy League Preparation*.`,
+          `${candidateName} | ${candidateMobile} | ${candidateEmail}`
+        ).catch((err: any) => console.error('Failed to send WhatsApp to ivy expert:', err));
+      }
+      if (expertEmail) {
+        sendEmail({
+          to: expertEmail,
+          subject: `New Candidate Assigned — ${candidateName} (Ivy League Preparation)`,
+          html: `<p>Hi ${expertName},</p><p>A new candidate has been assigned to you for Ivy League Preparation:</p><p>👤 <strong>Candidate Name:</strong> ${candidateName}<br/>📱 <strong>Mobile:</strong> ${candidateMobile}<br/>📧 <strong>Email:</strong> ${candidateEmail}</p><p><a href="https://core.admitra.io/ivy-league/ivy-expert/candidates">Log in to your dashboard</a></p><p>Best regards,<br/>ADMITra Team</p>`,
+        }).catch((err: any) => console.error('Failed to send email to ivy expert:', err));
+      }
+    } catch (notifErr) {
+      console.error('Failed to send ivy expert assignment notification:', notifErr);
+    }
 
     res.json({ success: true, message: 'Ivy Expert assigned to candidate successfully' });
   } catch (err: any) {

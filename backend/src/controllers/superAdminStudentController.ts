@@ -880,7 +880,7 @@ export const assignOps = async (req: AuthRequest, res: Response): Promise<Respon
       let staffName = '', staffMobile = '', staffEmail = '', staffRoleLabel = '';
 
       if (serviceName === 'Study Abroad' && activeAutoSetId) {
-        staffRoleLabel = 'OPS';
+        staffRoleLabel = 'OPS Executive';
         const ops = await Ops.findById(activeAutoSetId).populate('userId', 'firstName middleName lastName email') as any;
         if (ops) {
           staffName = [ops.userId?.firstName, ops.userId?.middleName, ops.userId?.lastName].filter(Boolean).join(' ');
@@ -932,7 +932,7 @@ export const assignOps = async (req: AuthRequest, res: Response): Promise<Respon
           await sendEmail({
             to: staffEmail,
             subject: `New Student Assigned — ${studentName} (${serviceName})`,
-            html: `<p>Hi ${staffName},</p><p>A new student has been assigned to you for ${serviceName}:</p><p>👤 <strong>Student Name:</strong> ${studentName}<br/>📱 <strong>Mobile:</strong> ${studentDoc?.mobileNumber || studentUser?.mobileNumber || 'N/A'}<br/>📧 <strong>Email:</strong> ${studentUser?.email || 'N/A'}</p><p><a href="https://core.admitra.io/ops/dashboard">Log in to your dashboard</a></p><p>Best regards,<br/>Admitra Team</p>`,
+            html: `<p>Hi ${staffName},</p><p>A new student has been assigned to you for ${serviceName}:</p><p>👤 <strong>Student Name:</strong> ${studentName}<br/>📱 <strong>Mobile:</strong> ${studentDoc?.mobileNumber || studentUser?.mobileNumber || 'N/A'}<br/>📧 <strong>Email:</strong> ${studentUser?.email || 'N/A'}</p><p><a href="https://core.admitra.io/ops/dashboard">Log in to your dashboard</a></p><p>Best regards,<br/>ADMITra Team</p>`,
           });
         }
       }
@@ -1071,7 +1071,7 @@ export const switchActiveOps = async (req: AuthRequest, res: Response): Promise<
       let staffName = '', staffMobile = '', staffEmail = '', staffRoleLabel = '';
 
       if (serviceName === 'Study Abroad' && activeOpsId) {
-        staffRoleLabel = 'OPS';
+        staffRoleLabel = 'OPS Executive';
         const ops = await Ops.findById(activeOpsId).populate('userId', 'firstName middleName lastName email') as any;
         if (ops) {
           staffName = [ops.userId?.firstName, ops.userId?.middleName, ops.userId?.lastName].filter(Boolean).join(' ');
@@ -1111,7 +1111,7 @@ export const switchActiveOps = async (req: AuthRequest, res: Response): Promise<
           await sendEmail({
             to: studentUser.email,
             subject: `${staffRoleLabel} Assigned — ${staffName} will guide you`,
-            html: `<p>Hi ${studentName},</p><p>An *${staffRoleLabel}* has been assigned to guide you through your *${serviceName}*:</p><p>👤 <strong>Name:</strong> ${staffName}<br/>📱 <strong>Mobile:</strong> ${staffMobile}<br/>📧 <strong>Email:</strong> ${staffEmail}</p><p><a href="https://core.admitra.io/dashboard">Log in to your dashboard</a></p><p>Best regards,<br/>ADMITra Team</p>`,
+            html: `<p>Hi ${studentName},</p><p>An ${staffRoleLabel} has been assigned to guide you through your ${serviceName}:</p><p>👤 <strong>Name:</strong> ${staffName}<br/>📱 <strong>Mobile:</strong> ${staffMobile}<br/>📧 <strong>Email:</strong> ${staffEmail}</p><p><a href="https://core.admitra.io/dashboard">Log in to your dashboard</a></p><p>Best regards,<br/>ADMITra Team</p>`,
           });
         }
         // Notify the staff member
@@ -1127,7 +1127,7 @@ export const switchActiveOps = async (req: AuthRequest, res: Response): Promise<
           await sendEmail({
             to: staffEmail,
             subject: `New Student Assigned — ${studentName} (${serviceName})`,
-            html: `<p>Hi ${staffName},</p><p>A new student has been assigned to you for ${serviceName}:</p><p>👤 <strong>Student Name:</strong> ${studentName}<br/>📱 <strong>Mobile:</strong> ${studentDoc?.mobileNumber || studentUser?.mobileNumber || 'N/A'}<br/>📧 <strong>Email:</strong> ${studentUser?.email || 'N/A'}</p><p><a href="https://core.admitra.io/ops/dashboard">Log in to your dashboard</a></p><p>Best regards,<br/>Admitra Team</p>`,
+            html: `<p>Hi ${staffName},</p><p>A new student has been assigned to you for ${serviceName}:</p><p>👤 <strong>Student Name:</strong> ${studentName}<br/>📱 <strong>Mobile:</strong> ${studentDoc?.mobileNumber || studentUser?.mobileNumber || 'N/A'}<br/>📧 <strong>Email:</strong> ${studentUser?.email || 'N/A'}</p><p><a href="https://core.admitra.io/ops/dashboard">Log in to your dashboard</a></p><p>Best regards,<br/>ADMITra Team</p>`,
           });
         }
       }

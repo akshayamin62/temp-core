@@ -327,7 +327,7 @@ export const selectActivities = async (
       await sendEmail({
         to: studentEmail,
         subject: `New Activities Suggested — Pointer ${pointerNo}: ${pointerLabel}`,
-        html: `<p>Hi ${studentName},</p><p>Your Ivy Expert has suggested <strong>${activityCount} activit${activityCount === 1 ? 'y' : 'ies'}</strong> for you under:</p><p>📌 <strong>Pointer ${pointerNo}: ${pointerLabel}</strong></p><ul>${activityListHtml}</ul><p>Log in to your dashboard to review them and start working:</p><p><a href="https://core.admitra.io/dashboard">https://core.admitra.io/dashboard</a></p><p>Best regards,<br/>Admitra Team</p>`,
+        html: `<p>Hi ${studentName},</p><p>Your Ivy Expert has suggested <strong>${activityCount} activit${activityCount === 1 ? 'y' : 'ies'}</strong> for you under:</p><p>📌 <strong>Pointer ${pointerNo}: ${pointerLabel}</strong></p><ul>${activityListHtml}</ul><p>Log in to your dashboard to review them and start working:</p><p><a href="https://core.admitra.io/dashboard">https://core.admitra.io/dashboard</a></p><p>Best regards,<br/>ADMITra Team</p>`,
       });
     }
   } catch (notifErr) {

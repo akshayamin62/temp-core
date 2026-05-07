@@ -723,7 +723,7 @@ export const sendProgramSuggestedEmail = async (
     </html>
   `;
 
-  const text = `New Program Suggestion\n\nHi ${studentName},\n\nYour team has suggested a new program for you:\n\nProgram: ${programName}\nUniversity: ${university}\nCountry: ${country}${intake ? `\nIntake: ${intake}${year ? ` ${year}` : ''}` : ''}\n\nLog in to review and select this program:\n${dashboardUrl}\n\nBest regards,\nAdmitra Team`;
+  const text = `New Program Suggestion\n\nHi ${studentName},\n\nYour team has suggested a new program for you:\n\nProgram: ${programName}\nUniversity: ${university}\nCountry: ${country}${intake ? `\nIntake: ${intake}${year ? ` ${year}` : ''}` : ''}\n\nLog in to review and select this program:\n${dashboardUrl}\n\nBest regards,\nADMITra Team`;
 
   await sendEmail({
     to: studentEmail,
@@ -783,7 +783,7 @@ export const sendStudentSelectedProgramEmail = async (
     </html>
   `;
 
-  const text = `Student Selected a Program\n\nHi ${opsName},\n\n${studentName} has selected a program for application:\n\nProgram: ${programName}\nUniversity: ${university}${priority ? `\nPriority: ${priority}` : ''}\n\nPlease review and proceed with the application process.\n${dashboardUrl}\n\nBest regards,\nAdmitra Team`;
+  const text = `Student Selected a Program\n\nHi ${opsName},\n\n${studentName} has selected a program for application:\n\nProgram: ${programName}\nUniversity: ${university}${priority ? `\nPriority: ${priority}` : ''}\n\nPlease review and proceed with the application process.\n${dashboardUrl}\n\nBest regards,\nADMITra Team`;
 
   await sendEmail({
     to: opsEmail,
@@ -844,7 +844,7 @@ export const sendProgramStatusUpdateEmail = async (
     </html>
   `;
 
-  const text = `Application Status Update\n\nHi ${studentName},\n\nThere is an update on your application:\n\nProgram: ${programName}\nUniversity: ${university}\nCountry: ${country}\nNew Status: ${newStatus}\n\nLog in for more details:\n${dashboardUrl}\n\nBest regards,\nAdmitra Team`;
+  const text = `Application Status Update\n\nHi ${studentName},\n\nThere is an update on your application:\n\nProgram: ${programName}\nUniversity: ${university}\nCountry: ${country}\nNew Status: ${newStatus}\n\nLog in for more details:\n${dashboardUrl}\n\nBest regards,\nADMITra Team`;
 
   await sendEmail({
     to: studentEmail,
@@ -898,7 +898,7 @@ export const sendOfferReceivedEmail = async (
           <a href="${dashboardUrl}" style="display: inline-block; background-color: #16a34a; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Review Offer</a>
         </div>
 
-        <p style="text-align: center; font-size: 14px; color: #666;">Congratulations from the Admitra Team!</p>
+        <p style="text-align: center; font-size: 14px; color: #666;">Congratulations from the ADMITra Team!</p>
 
         <p style="color: #999; font-size: 12px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
           This is an automated notification from Admitra.
@@ -908,7 +908,7 @@ export const sendOfferReceivedEmail = async (
     </html>
   `;
 
-  const text = `Congratulations! Offer Received\n\nHi ${studentName},\n\nGreat news! You have received an admission offer:\n\nProgram: ${programName}\nUniversity: ${university}\nCountry: ${country}\n\nPlease log in to review the offer and take the next steps:\n${dashboardUrl}\n\nCongratulations!\nAdmitra Team`;
+  const text = `Congratulations! Offer Received\n\nHi ${studentName},\n\nGreat news! You have received an admission offer:\n\nProgram: ${programName}\nUniversity: ${university}\nCountry: ${country}\n\nPlease log in to review the offer and take the next steps:\n${dashboardUrl}\n\nCongratulations!\nADMITra Team`;
 
   await sendEmail({
     to: studentEmail,

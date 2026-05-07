@@ -472,7 +472,7 @@ export const upsertFeedback = async (req: AuthRequest, res: Response) => {
         await sendEmail({
           to: studentEmail,
           subject: emailSubject,
-          html: `<p>Hi ${studentName},</p><p>Your ${senderLabel} has submitted your ${type} progress feedback:</p><p>${emailPeriodLabel}<br/>👤 <strong>${senderLabel}:</strong> ${givenByName}</p><p>📝 <strong>Feedback:</strong><br/>${feedback.trim()}</p><p>Log in to view your full progress report:<br/><a href="https://core.admitra.io/dashboard">https://core.admitra.io/dashboard</a></p><p>Best regards,<br/>Admitra Team</p>`,
+          html: `<p>Hi ${studentName},</p><p>Your ${senderLabel} has submitted your ${type} progress feedback:</p><p>${emailPeriodLabel}<br/>👤 <strong>${senderLabel}:</strong> ${givenByName}</p><p>📝 <strong>Feedback:</strong><br/>${feedback.trim()}</p><p>Log in to view your full progress report:<br/><a href="https://core.admitra.io/dashboard">https://core.admitra.io/dashboard</a></p><p>Best regards,<br/>ADMITra Team</p>`,
         });
       }
     } catch (notifErr) {

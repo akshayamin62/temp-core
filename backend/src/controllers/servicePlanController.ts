@@ -250,7 +250,7 @@ export const registerServicePlan = async (req: AuthRequest, res: Response): Prom
           await sendEmail({
             to: studentUser.email,
             subject: `Registration Confirmed — ${service.name}`,
-            html: `<p>Hi ${studentName},</p><p>Your registration has been completed successfully! 🎉</p><p>📌 <strong>Service:</strong> ${service.name}</p><p>Our team will review your details and be in touch with you shortly to guide you through the next steps.</p><p>Log in to your dashboard to get started:<br/><a href="https://core.admitra.io/dashboard">https://core.admitra.io/dashboard</a></p><p>Best regards,<br/>Admitra Team</p>`,
+            html: `<p>Hi ${studentName},</p><p>Your registration has been completed successfully! 🎉</p><p>📌 <strong>Service:</strong> ${service.name}</p><p>Our team will review your details and be in touch with you shortly to guide you through the next steps.</p><p>Log in to your dashboard to get started:<br/><a href="https://core.admitra.io/dashboard">https://core.admitra.io/dashboard</a></p><p>Best regards,<br/>ADMITra Team</p>`,
           });
         }
       }
