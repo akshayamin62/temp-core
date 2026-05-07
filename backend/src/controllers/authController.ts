@@ -316,6 +316,8 @@ export const verifySignupOTP = async (req: VerifyOTPRequest, res: Response): Pro
         console.log("Student entry creation error (might already exist):", error);
       }
     } else if (user.role === USER_ROLE.ALUMNI) {
+      // Store mobile on User record
+      if (mobileNumber) user.mobileNumber = mobileNumber.trim();
       // Create Alumni entry with email and mobile number
       try {
         await Alumni.create({
@@ -327,6 +329,8 @@ export const verifySignupOTP = async (req: VerifyOTPRequest, res: Response): Pro
         console.log("Alumni entry creation error (might already exist):", error);
       }
     } else if (user.role === USER_ROLE.SERVICE_PROVIDER) {
+      // Store mobile on User record
+      if (mobileNumber) user.mobileNumber = mobileNumber.trim();
       // Create ServiceProvider entry with all fields
       try {
         // Prepare servicesOffered array - include coaching tests if applicable

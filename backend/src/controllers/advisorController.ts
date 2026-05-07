@@ -588,6 +588,7 @@ export const convertAdvisorLead = async (req: AuthRequest, res: Response): Promi
         isActive: true,
         otp,
         otpExpires: otpExpiry,
+        mobileNumber: lead.mobileNumber || undefined,
       });
 
       await newUser.save();
@@ -677,6 +678,7 @@ export const convertAdvisorLead = async (req: AuthRequest, res: Response): Promi
             isActive: true,
             otp: generateOTP(),
             otpExpires: new Date(Date.now() + 10 * 60 * 1000),
+            mobileNumber: lead.parentDetail.mobileNumber || undefined,
           });
           await parentUser.save();
         }

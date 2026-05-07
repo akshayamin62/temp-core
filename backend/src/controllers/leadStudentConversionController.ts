@@ -289,7 +289,8 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
         isVerified: true,
         isActive: true,
         otp,
-        otpExpiry
+        otpExpiry,
+        mobileNumber: lead.mobileNumber || undefined,
       });
 
       await newUser.save();
@@ -411,6 +412,7 @@ export const approveConversion = async (req: AuthRequest, res: Response): Promis
             isActive: true,
             otp: parentOtp,
             otpExpires: new Date(Date.now() + 10 * 60 * 1000),
+            mobileNumber: lead.parentDetail.mobileNumber || undefined,
           });
           await parentUser.save();
           console.log('✅ Parent user created:', parentUser._id);

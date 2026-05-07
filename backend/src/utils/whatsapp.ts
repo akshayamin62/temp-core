@@ -165,11 +165,15 @@ export const sendWhatsAppStaffMessage = async (
   studentName: string,
   serviceName: string,
   message: string,
-  senderWithRole: string
+  senderWithRole: string,
+  senderMobile?: string,
+  senderEmail?: string
 ): Promise<void> => {
   // Replace commas in the message body to avoid breaking the webhook's CSV-style param parsing
   const safeMessage = message.replace(/,/g, ';');
-  const whatsappMessage = `staff message to student,${studentName},${serviceName},${safeMessage},${senderWithRole}`;
+  const boldService = `*${serviceName}*`;
+  const senderDetail = [senderWithRole, senderMobile, senderEmail].filter(Boolean).join(' | ');
+  const whatsappMessage = `staff message to student,${studentName},${boldService},${safeMessage},${senderDetail}`;
   console.log(whatsappMessage)
   const url = buildWhatsAppUrl(mobileNumber, whatsappMessage);
   console.log(url)

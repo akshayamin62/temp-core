@@ -1,6 +1,7 @@
 import { Response } from "express";
 import StudentFormAnswer from "../models/StudentFormAnswer";
 import Student from "../models/Student";
+import User from "../models/User";
 import StudentServiceRegistration, {
   ServiceRegistrationStatus,
 } from "../models/StudentServiceRegistration";
@@ -90,6 +91,7 @@ export const saveFormAnswers = async (req: AuthRequest, res: Response) => {
       if (phone) {
         student.mobileNumber = phone;
         await student.save();
+        await User.findByIdAndUpdate(student.userId, { mobileNumber: phone });
       }
     }
 
@@ -378,6 +380,7 @@ export const saveStudentProfileData = async (req: AuthRequest, res: Response) =>
       if (phone) {
         student.mobileNumber = phone;
         await student.save();
+        await User.findByIdAndUpdate(student.userId, { mobileNumber: phone });
       }
     }
 
@@ -486,6 +489,7 @@ export const saveStudentProfileDataById = async (req: AuthRequest, res: Response
       if (phone) {
         student.mobileNumber = phone;
         await student.save();
+        await User.findByIdAndUpdate(student.userId, { mobileNumber: phone });
       }
     }
 

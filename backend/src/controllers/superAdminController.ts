@@ -793,6 +793,7 @@ export const createAdmin = async (req: Request, res: Response): Promise<Response
       role: USER_ROLE.ADMIN,
       isVerified: true, // Auto-verify admins created by super admin
       isActive: true,
+      mobileNumber: phoneNumber?.trim() || undefined,
     });
 
     await newUser.save();
@@ -1049,6 +1050,7 @@ export const createUserByRole = async (req: Request, res: Response): Promise<Res
       role: role,
       isVerified: true, // Auto-verify users created by super admin
       isActive: true,
+      mobileNumber: phoneNumber?.trim() || undefined,
     });
 
     await newUser.save();
@@ -2205,6 +2207,7 @@ export const editUserByRole = async (req: Request, res: Response): Promise<Respo
     if (middleName !== undefined) userUpdate.middleName = middleName.trim(); // empty string is valid (clears middle name)
     if (lastName !== undefined) userUpdate.lastName = lastName.trim();
     if (email !== undefined) userUpdate.email = email.toLowerCase().trim();
+    if (mobileNumber !== undefined) userUpdate.mobileNumber = mobileNumber.trim();
 
     // Update User document
     if (Object.keys(userUpdate).length > 0) {

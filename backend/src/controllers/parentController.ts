@@ -224,6 +224,11 @@ export const updateParentInfo = async (req: AuthRequest, res: Response): Promise
     if (occupation !== undefined) parentDoc.occupation = occupation.trim();
     await parentDoc.save();
 
+    // Sync mobileNumber to User table
+    if (mobileNumber !== undefined) {
+      await User.findByIdAndUpdate(parentDoc.userId, { mobileNumber: mobileNumber.trim() });
+    }
+
     // Update Lead if present
     if (parentDoc.convertedFromLeadId) {
       const leadUpdate: any = {};
@@ -354,6 +359,7 @@ export const addParentForStudent = async (req: AuthRequest, res: Response): Prom
         isActive: true,
         otp,
         otpExpires: new Date(Date.now() + 10 * 60 * 1000),
+        mobileNumber: mobileNumber?.trim() || undefined,
       });
       await parentUser.save();
     }

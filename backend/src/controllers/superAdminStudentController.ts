@@ -649,6 +649,7 @@ export const updateStudentFormAnswers = async (req: AuthRequest, res: Response):
           if (student) {
             student.mobileNumber = String(phone).trim();
             await student.save();
+            await User.findByIdAndUpdate(student.userId, { mobileNumber: String(phone).trim() });
           }
         }
       }
@@ -1180,7 +1181,7 @@ export const sendMessageToStudent = async (req: AuthRequest, res: Response): Pro
     }
 
     // Get sender info
-    const sender = await User.findById(userId).select('firstName middleName lastName role');
+    const sender = await User.findById(userId).select('firstName middleName lastName role email mobileNumber');
     if (!sender) {
       return res.status(404).json({
         success: false,
@@ -1229,7 +1230,9 @@ export const sendMessageToStudent = async (req: AuthRequest, res: Response): Pro
       senderName,
       senderRole,
       message.trim(),
-      serviceName
+      serviceName,
+      (sender as any).mobileNumber || '',
+      (sender as any).email || ''
     );
     results.push('Email sent');
 
@@ -1255,7 +1258,9 @@ export const sendMessageToStudent = async (req: AuthRequest, res: Response): Pro
         studentName,
         serviceName || 'CORE Platform',
         message.trim(),
-        senderWithRole
+        senderWithRole,
+        (sender as any).mobileNumber || '',
+        (sender as any).email || ''
       ).catch((err: any) =>
         console.error('WhatsApp staff message notification failed:', err.message)
       );

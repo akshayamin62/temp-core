@@ -111,6 +111,11 @@ export const updateOnboardingProfile = async (req: AuthRequest, res: Response): 
 
     await profile.save();
 
+    // Sync mobileNumber to User table
+    if (mobileNumber !== undefined) {
+      await User.findByIdAndUpdate(userId, { mobileNumber: mobileNumber.trim() });
+    }
+
     return res.status(200).json({
       success: true,
       message: "Onboarding profile updated",

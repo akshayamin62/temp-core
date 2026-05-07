@@ -630,7 +630,9 @@ export const sendCustomMessageToStudent = async (
   senderName: string,
   senderRole: string,
   message: string,
-  serviceName?: string
+  serviceName?: string,
+  senderMobile?: string,
+  senderEmail?: string
 ): Promise<void> => {
   const html = `
     <!DOCTYPE html>
@@ -644,14 +646,19 @@ export const sendCustomMessageToStudent = async (
       <div style="max-width: 600px; margin: 20px auto; background-color: white; padding: 30px; border: 1px solid #ddd; border-radius: 8px;">
         <h2 style="margin-bottom: 20px;">Message from Your ${senderRole}</h2>
         <p>Hi ${studentName},</p>
-        ${serviceName ? `<p style="color: #555; font-size: 14px;">Service: <strong>${serviceName}</strong></p>` : ''}
+        ${serviceName ? `<p>Service: <strong>${serviceName}</strong></p>` : ''}
         <p>You have received a message from <strong>${senderName}</strong> (${senderRole}):</p>
         
         <div style="margin: 20px 0; padding: 16px; background-color: #f5f5f5; border-radius: 8px; border-left: 4px solid #333;">
           <p style="margin: 0; white-space: pre-wrap;">${message}</p>
         </div>
 
-        <p>If you have any questions, please reach out to ${senderName} directly.</p>
+        <p>If you have any questions, please reach out to ${senderName} directly:</p>
+        <p style="margin: 4px 0; line-height: 1.8;">
+          👤 <strong>${senderName}</strong> (${senderRole})<br/>
+          ${senderMobile ? `📱 ${senderMobile}<br/>` : ''}
+          ${senderEmail ? `📧 ${senderEmail}` : ''}
+        </p>
 
         <p style="font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px;">
           This is an automated notification from CORE-Community Platform.
@@ -661,7 +668,7 @@ export const sendCustomMessageToStudent = async (
     </html>
   `;
 
-  const text = `Message from Your ${senderRole}\n\nHi ${studentName},${serviceName ? `\nService: ${serviceName}` : ''}\n\nYou have received a message from ${senderName} (${senderRole}):\n\n${message}\n\nIf you have any questions, please reach out to your ${senderRole.toLowerCase()} directly.`;
+  const text = `Message from Your ${senderRole}\n\nHi ${studentName},${serviceName ? `\nService: ${serviceName}` : ''}\n\nYou have received a message from ${senderName} (${senderRole}):\n\n${message}\n\nContact: ${senderName} (${senderRole})${senderMobile ? ` | 📱 ${senderMobile}` : ''}${senderEmail ? ` | 📧 ${senderEmail}` : ''}`;
 
   await sendEmail({
     to: studentEmail,

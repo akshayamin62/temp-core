@@ -65,6 +65,7 @@ export const createCounselor = async (req: AuthRequest, res: Response): Promise<
       role: USER_ROLE.COUNSELOR,
       isVerified: true, // Auto-verify counselors created by admin
       isActive: true,
+      mobileNumber: mobileNumber?.trim() || undefined,
     });
 
     await newUser.save();

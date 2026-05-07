@@ -81,6 +81,7 @@ export const createReferrer = async (req: AuthRequest, res: Response): Promise<R
       role: USER_ROLE.REFERRER,
       isVerified: true,
       isActive: true,
+      mobileNumber: mobileNumber?.trim() || undefined,
     });
     await newUser.save();
 
@@ -345,6 +346,7 @@ export const createReferrerForSuperAdmin = async (req: AuthRequest, res: Respons
       role: USER_ROLE.REFERRER,
       isVerified: true,
       isActive: true,
+      mobileNumber: mobileNumber?.trim() || undefined,
     });
     await newUser.save();
 
@@ -1187,6 +1189,7 @@ export const registerAsReferrer = async (req: Request, res: Response): Promise<R
       role: USER_ROLE.REFERRER,
       isVerified: false,
       isActive: false,
+      mobileNumber: mobileNumber?.trim() || undefined,
     });
     await newUser.save();
 
@@ -1267,6 +1270,14 @@ export const registerAsReferrer = async (req: Request, res: Response): Promise<R
             <p>Hi ${referrerName},</p>
             <p>Thank you for registering as a <strong>Referrer</strong>. Your application has been submitted and is currently <strong>pending for approval</strong> by the team.</p>
             <p>If you have any questions, please feel free to contact us.</p>
+            ${(admin.email || admin.mobileNumber) ? `
+            <p style="margin: 16px 0 4px 0;"><strong>Contact Us:</strong></p>
+            <p style="margin: 0; line-height: 1.8;">
+              ${admin.companyName ? `<strong>${admin.companyName}</strong><br/>` : ''}
+              ${admin.email ? `${admin.email}<br/>` : ''}
+              ${admin.mobileNumber ? `${admin.mobileNumber}` : ''}
+            </p>
+            ` : ''}
             Regards,<br/>
             Team - ${admin.companyName || 'Kareer Studio'}
             <p style="color: #666; font-size: 12px;">This is an automated notification.</p>

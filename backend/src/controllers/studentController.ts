@@ -1,5 +1,6 @@
 import { Response } from "express";
 import Student from "../models/Student";
+import User from "../models/User";
 import { AuthRequest } from "../types/auth";
 
 // Get student profile
@@ -61,6 +62,11 @@ export const updateStudentProfile = async (req: AuthRequest, res: Response) => {
       // Update existing profile
       Object.assign(student, updateData);
       await student.save();
+    }
+
+    // Sync mobileNumber to User table if provided
+    if (updateData.mobileNumber) {
+      await User.findByIdAndUpdate(userId, { mobileNumber: updateData.mobileNumber });
     }
 
     return res.status(200).json({

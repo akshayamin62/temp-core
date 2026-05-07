@@ -227,6 +227,7 @@ export const approveInProcessConversion = async (req: AuthRequest, res: Response
         role: targetUserRole,
         isVerified: false,
         isActive: true,
+        mobileNumber: (conversion as any).mobileNumber || lead.mobileNumber || undefined,
       });
       await newUser.save();
       console.log("✅ User created for B2B conversion:", newUser._id);
