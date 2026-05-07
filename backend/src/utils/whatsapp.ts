@@ -274,3 +274,34 @@ export const sendWhatsAppGeneralNotification = async (
     console.error(`⚠️ Failed to send WhatsApp general notification:`, error.message);
   }
 };
+
+/**
+ * Template: general 4 line notification
+ * Hello, {{1}}
+ * {{2}}
+ * Please find the details below for your reference.
+ * {{3}}
+ * {{4}}
+ * Thank you for keeping us in business.
+ */
+export const sendWhatsAppGeneral4LineNotification = async (
+  mobileNumber: string,
+  name: string,
+  line2: string,
+  line3: string,
+  line4: string
+): Promise<void> => {
+  const safeLine2 = line2.replace(/,/g, ';');
+  const safeLine3 = line3.replace(/,/g, ';');
+  const safeLine4 = line4.replace(/,/g, ';');
+  const message = `general 4 line notification,${name},${safeLine2},${safeLine3},${safeLine4}`;
+  const url = buildWhatsAppUrl(mobileNumber, message);
+  if (!url) return;
+
+  try {
+    const response = await axios.get(url, { timeout: 15000 });
+    console.log(`✅ WhatsApp 4-line notification sent:`, response.status);
+  } catch (error: any) {
+    console.error(`⚠️ Failed to send WhatsApp 4-line notification:`, error.message);
+  }
+};

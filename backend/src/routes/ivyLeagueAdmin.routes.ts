@@ -8,6 +8,7 @@ import {
   convertCandidateToStudent,
   saveInterviewData,
   getInterviewData,
+  clearIvyStage,
 } from '../controllers/ivyLeagueAdmin.controller';
 import { assignExpertToCandidate } from '../controllers/ivyExpertCandidate.controller';
 import { authorize } from '../middleware/authorize';
@@ -56,5 +57,8 @@ router.post('/convert-to-student', superAdminOnly, convertCandidateToStudent);
 
 // POST /api/super-admin/ivy-league/assign-expert — SUPER_ADMIN only
 router.post('/assign-expert', superAdminOnly, assignExpertToCandidate);
+
+// POST /api/super-admin/ivy-league/clear-stage/:userId — SUPER_ADMIN + IVY_EXPERT
+router.post('/clear-stage/:userId', superAdminOrExpert, clearIvyStage);
 
 export default router;

@@ -33,6 +33,9 @@ interface IvyCandidate {
   profilePicture?: string;
   assignedIvyExpertId?: string | null;
   assignedExpertName?: string | null;
+  testCleared?: boolean;
+  studentInterviewCleared?: boolean;
+  parentInterviewCleared?: boolean;
 }
 
 interface IvyExpertOption {
@@ -349,6 +352,7 @@ export default function IvyCandidatesPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Grade</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Test Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Score</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Stages</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Assigned Expert</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Joined</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
@@ -388,6 +392,19 @@ export default function IvyCandidatesPage() {
                             ? `${c.totalScore} / ${c.maxScore}`
                             : '—'}
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex flex-col gap-0.5">
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${c.testCleared ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                              {c.testCleared ? '✓ Test' : '○ Test'}
+                            </span>
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${c.studentInterviewCleared ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                              {c.studentInterviewCleared ? '✓ S.Interview' : '○ S.Interview'}
+                            </span>
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${c.parentInterviewCleared ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                              {c.parentInterviewCleared ? '✓ P.Interview' : '○ P.Interview'}
+                            </span>
+                          </div>
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {c.assignedExpertName ? (
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
@@ -416,7 +433,9 @@ export default function IvyCandidatesPage() {
                             </button>
                             <button
                               onClick={() => handleOpenConvert(c)}
-                              className="px-3 py-1.5 rounded-lg transition-colors text-xs bg-green-600 text-white hover:bg-green-700"
+                              disabled={!c.testCleared || !c.studentInterviewCleared || !c.parentInterviewCleared}
+                              title={(!c.testCleared || !c.studentInterviewCleared || !c.parentInterviewCleared) ? 'All 3 stages (Test, Student Interview, Parent Interview) must be cleared before conversion' : 'Convert to IVY Student'}
+                              className={`px-3 py-1.5 rounded-lg transition-colors text-xs ${(!c.testCleared || !c.studentInterviewCleared || !c.parentInterviewCleared) ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`}
                             >
                               Convert to Student
                             </button>

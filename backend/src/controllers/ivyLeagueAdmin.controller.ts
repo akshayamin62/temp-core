@@ -8,6 +8,8 @@ import User from '../models/ivy/User';
 import IvyExpert from '../models/IvyExpert';
 import Student from '../models/Student';
 import { USER_ROLE } from '../types/roles';
+import { sendEmail } from '../utils/email';
+import { sendWhatsAppGeneralNotification, sendWhatsAppGeneral4LineNotification } from '../utils/whatsapp';
 
 /* ── Helper: get Ivy League service ID ─────────────────────────────── */
 let _ivyServiceId: any = null;
@@ -99,7 +101,7 @@ export const getIvyCandidates = async (req: AuthRequest, res: Response): Promise
     const candidatesWithStatus = await Promise.all(
       candidates.map(async (reg: any) => {
         const testSession = await IvyTestSession.findOne({ studentId: reg.userId }).lean();
-        const user = await User.findById(reg.userId).select('email').lean();
+        const user = await User.findById(reg.userId).select('email mobileNumber').lean();
 
         // Resolve assigned expert name if present
         let assignedExpertName: string | null = null;
@@ -117,6 +119,7 @@ export const getIvyCandidates = async (req: AuthRequest, res: Response): Promise
         return {
           ...reg,
           email: (user as any)?.email || '',
+          mobileNumber: (user as any)?.mobileNumber || '',
           assignedIvyExpertId: reg.assignedIvyExpertId || null,
           assignedExpertName,
           testStatus: testSession ? testSession.status : 'not-started',
@@ -125,6 +128,9 @@ export const getIvyCandidates = async (req: AuthRequest, res: Response): Promise
           completedSections: testSession
             ? testSession.sections.filter((s: any) => s.status === 'submitted').length
             : 0,
+          testCleared: testSession?.testCleared ?? false,
+          studentInterviewCleared: testSession?.studentInterviewCleared ?? false,
+          parentInterviewCleared: testSession?.parentInterviewCleared ?? false,
         };
       })
     );
@@ -283,6 +289,9 @@ export const getStudentTestResult = async (req: AuthRequest, res: Response): Pro
         totalScore: session.totalScore,
         maxScore: session.maxScore,
         violations: session.violations,
+        testCleared: session.testCleared ?? false,
+        studentInterviewCleared: session.studentInterviewCleared ?? false,
+        parentInterviewCleared: session.parentInterviewCleared ?? false,
         sections,
       },
     });
@@ -344,6 +353,16 @@ export const convertCandidateToStudent = async (req: AuthRequest, res: Response)
       return;
     }
 
+    // Enforce: all 3 stages must be cleared before conversion
+    const session = await IvyTestSession.findOne({ studentId: userId });
+    if (!session || !session.testCleared || !session.studentInterviewCleared || !session.parentInterviewCleared) {
+      res.status(400).json({
+        success: false,
+        message: 'All 3 stages (Test, Student Interview, Parent Interview) must be cleared before converting to student',
+      });
+      return;
+    }
+
     // Get ivy league service
     const serviceId = await getIvyServiceId();
     if (!serviceId) {
@@ -381,6 +400,56 @@ export const convertCandidateToStudent = async (req: AuthRequest, res: Response)
         ...(student.adminId ? { registeredViaAdminId: student.adminId } : {}),
         ...(student.advisorId && !student.adminId ? { registeredViaAdvisorId: student.advisorId } : {}),
       });
+    }
+
+    // Send congratulation notifications to student and parent
+    try {
+      const studentName = [registration.firstName, registration.middleName, registration.lastName].filter(Boolean).join(' ');
+      const parentName = [registration.parentFirstName, registration.parentLastName].filter(Boolean).join(' ');
+      const candidateUser = await User.findById(registration.userId).select('email mobileNumber').lean() as any;
+      const studentEmail = candidateUser?.email || '';
+      const studentMobile = (candidateUser as any)?.mobileNumber || '';
+      const parentEmail = (registration as any).parentEmail || '';
+      const parentMobile = (registration as any).parentMobile || '';
+
+      // Fetch assigned expert info (ivyExpert is already fetched above)
+      const expertUser = await User.findById(ivyExpert.userId).select('firstName middleName lastName email mobileNumber').lean() as any;
+      const expertName = expertUser ? [expertUser.firstName, expertUser.middleName, expertUser.lastName].filter(Boolean).join(' ') : 'Ivy Expert';
+      const expertEmail = expertUser?.email || ivyExpert.email || '';
+      const expertMobile = (ivyExpert as any).mobileNumber || expertUser?.mobileNumber || '';
+
+      // ── Student email ──
+      if (studentEmail) sendEmail({
+        to: studentEmail,
+        subject: `Heartiest Congratulations! You are an IVY League Aspirant 🎓`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px;border:1px solid #e5e7eb;border-radius:12px"><h2 style="color:#7c3aed">🎉 Heartiest Congratulations, ${studentName}! 🎉</h2><p style="font-size:15px;color:#374151">You have been selected as an <strong>IVY League Aspirant</strong>. We wish you great success in your onward journey.</p><div style="background:#f5f3ff;border-radius:8px;padding:16px;margin:20px 0"><p style="margin:0 0 8px;font-size:14px;color:#5b21b6"><strong>Your IVY League Expert</strong></p><p style="margin:0;font-size:14px;color:#374151">👤 <strong>Name:</strong> ${expertName}<br/>📱 <strong>Mobile:</strong> ${expertMobile}<br/>📧 <strong>Email:</strong> ${expertEmail}</p></div><p style="font-size:13px;color:#6b7280">Best regards,<br/><strong>ADMITra Team</strong></p></div>`,
+      }).catch((err: any) => console.error('Failed to send IVY selection email to student:', err));
+
+      // ── Student WhatsApp ──
+      if (studentMobile) sendWhatsAppGeneral4LineNotification(
+        studentMobile, studentName,
+        `🎉 Heartiest Congratulations! You have been selected as an *IVY League Aspirant*!`,
+        `Your IVY League Expert: *${expertName}* | ${expertMobile} | ${expertEmail}`,
+        `Welcome to the IVY League family! Your IVY League Expert will be in touch shortly. 🎓`
+      ).catch((err: any) => console.error('Failed to send IVY selection WhatsApp to student:', err));
+
+      // ── Parent email ──
+      if (parentEmail) sendEmail({
+        to: parentEmail,
+        subject: `${studentName} is now an IVY League Aspirant 🎓`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px;border:1px solid #e5e7eb;border-radius:12px"><h2 style="color:#7c3aed">🎉 Great News, ${parentName}!</h2><p style="font-size:15px;color:#374151"><strong>${studentName}</strong> has been selected as an <strong>IVY League Aspirant</strong>. We wish them great success in the journey ahead.</p><div style="background:#f5f3ff;border-radius:8px;padding:16px;margin:20px 0"><p style="margin:0 0 8px;font-size:14px;color:#5b21b6"><strong>Assigned IVY League Coach</strong></p><p style="margin:0;font-size:14px;color:#374151">👤 <strong>Name:</strong> ${expertName}<br/>📱 <strong>Mobile:</strong> ${expertMobile}<br/>📧 <strong>Email:</strong> ${expertEmail}</p></div><p style="font-size:13px;color:#6b7280">Best regards,<br/><strong>ADMITra Team</strong></p></div>`,
+      }).catch((err: any) => console.error('Failed to send IVY selection email to parent:', err));
+
+      // ── Parent WhatsApp ──
+      if (parentMobile) sendWhatsAppGeneral4LineNotification(
+        parentMobile, parentName,
+        `🎉 *${studentName}* has been selected as an *IVY League Aspirant*!`,
+        `Assigned IVY League Expert: *${expertName}* | ${expertMobile} | ${expertEmail}`,
+        `We wish ${studentName} great success in the journey ahead. 🎓`
+      ).catch((err: any) => console.error('Failed to send IVY selection WhatsApp to parent:', err));
+
+    } catch (notifErr) {
+      console.error('Failed to send IVY selection notification:', notifErr);
     }
 
     res.json({
@@ -470,5 +539,149 @@ export const getInterviewData = async (req: AuthRequest, res: Response): Promise
     });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message || 'Failed to get interview data' });
+  }
+};
+
+/* ══════════════════════════════════════════════════════════════════════
+   POST /api/super-admin/ivy-league/clear-stage/:userId
+   Mark one of the 3 screening stages as cleared and notify student.
+   Body: { stage: 'test' | 'student-interview' | 'parent-interview' }
+   Accessible by SUPER_ADMIN and IVY_EXPERT
+   ══════════════════════════════════════════════════════════════════════ */
+export const clearIvyStage = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const { stage } = req.body;
+
+    if (!stage || !['test', 'student-interview', 'parent-interview'].includes(stage)) {
+      res.status(400).json({ success: false, message: 'stage must be one of: test, student-interview, parent-interview' });
+      return;
+    }
+
+    // Find or create session for this student
+    let session = await IvyTestSession.findOne({ studentId: userId });
+    if (!session) {
+      session = await IvyTestSession.create({ studentId: userId, sections: [], status: 'not-started' });
+    }
+
+    // Enforce series order: test → student-interview → parent-interview
+    if (stage === 'student-interview' && !session.testCleared) {
+      res.status(400).json({ success: false, message: 'The Test must be cleared before the Student Interview can be cleared.' });
+      return;
+    }
+    if (stage === 'parent-interview' && !session.studentInterviewCleared) {
+      res.status(400).json({ success: false, message: 'The Student Interview must be cleared before the Parent Interview can be cleared.' });
+      return;
+    }
+
+    // Set the relevant flag
+    if (stage === 'test') session.testCleared = true;
+    else if (stage === 'student-interview') session.studentInterviewCleared = true;
+    else if (stage === 'parent-interview') session.parentInterviewCleared = true;
+
+    await session.save();
+
+    // Lookup registration and student user for notifications
+    const registration = await IvyLeagueRegistration.findOne({ userId }).lean() as any;
+    const studentUser = await User.findById(userId).select('email mobileNumber').lean() as any;
+
+    const studentName = registration
+      ? [registration.firstName, registration.middleName, registration.lastName].filter(Boolean).join(' ')
+      : 'Student';
+    const parentName = registration
+      ? [registration.parentFirstName, registration.parentLastName].filter(Boolean).join(' ')
+      : 'Parent';
+    const studentEmail = studentUser?.email || '';
+    const studentMobile = studentUser?.mobileNumber || '';
+    const parentEmail = registration?.parentEmail || '';
+    const parentMobile = registration?.parentMobile || '';
+
+    if (stage === 'test') {
+      // ── Student notification ──
+      if (studentEmail) sendEmail({
+        to: studentEmail,
+        subject: `🎉 Congratulations! You Have Cleared the IVY League Aptitude Test`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px;border:1px solid #e5e7eb;border-radius:12px"><h2 style="color:#059669">🎉 Congratulations, ${studentName}!</h2><p style="font-size:15px;color:#374151">You have cleared the <strong>IVY League Aptitude Test</strong>!</p><div style="background:#f0fdf4;border-radius:8px;padding:16px;margin:20px 0"><p style="margin:0;font-size:14px;color:#166534"><strong>Next Step: Student Interview</strong><br/>Our IVY Expert will contact you soon to schedule your interview. Please be prepared and keep yourself available.</p></div><p style="font-size:13px;color:#6b7280">Best regards,<br/><strong>ADMITra Team</strong></p></div>`,
+      }).catch(console.error);
+      if (studentMobile) sendWhatsAppGeneral4LineNotification(
+        studentMobile, studentName,
+        `🎉 Congratulations! You have cleared the *IVY League Aptitude Test*!`,
+        `Your next step is the *Student Interview*. Our IVY Expert will contact you soon to schedule your interview.`,
+        `Please be prepared and keep yourself available. All the best! 🎉`
+      ).catch(console.error);
+      // ── Parent notification ──
+      if (parentEmail) sendEmail({
+        to: parentEmail,
+        subject: `${studentName} Has Cleared the IVY League Aptitude Test 🎉`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px;border:1px solid #e5e7eb;border-radius:12px"><h2 style="color:#059669">🎉 Great News, ${parentName}!</h2><p style="font-size:15px;color:#374151"><strong>${studentName}</strong> has cleared the <strong>IVY League Aptitude Test</strong>!</p><div style="background:#f0fdf4;border-radius:8px;padding:16px;margin:20px 0"><p style="margin:0;font-size:14px;color:#166534"><strong>Next Step: Student Interview</strong><br/>Our IVY Expert will contact ${studentName} soon to schedule the interview. Please encourage your child and help them prepare.</p></div><p style="font-size:13px;color:#6b7280">Best regards,<br/><strong>ADMITra Team</strong></p></div>`,
+      }).catch(console.error);
+      if (parentMobile) sendWhatsAppGeneral4LineNotification(
+        parentMobile, parentName,
+        `🎉 *${studentName}* has cleared the IVY League Aptitude Test!`,
+        `The next step is the *Student Interview*. Our IVY Expert will contact ${studentName} soon to schedule the interview.`,
+        `Please encourage your child and help them prepare. All the best! 🎉`
+      ).catch(console.error);
+    } else if (stage === 'student-interview') {
+      // ── Student notification ──
+      if (studentEmail) sendEmail({
+        to: studentEmail,
+        subject: `🎉 Congratulations! You Have Cleared the IVY League Student Interview`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px;border:1px solid #e5e7eb;border-radius:12px"><h2 style="color:#2563eb">🎉 Congratulations, ${studentName}!</h2><p style="font-size:15px;color:#374151">You have cleared the <strong>IVY League Student Interview</strong>!</p><div style="background:#eff6ff;border-radius:8px;padding:16px;margin:20px 0"><p style="margin:0;font-size:14px;color:#1e40af"><strong>Next Step: Parent Interview</strong><br/>Our IVY Expert will contact your parents soon to schedule the interview. Please ensure your parents are informed and available.</p></div><p style="font-size:13px;color:#6b7280">Best regards,<br/><strong>ADMITra Team</strong></p></div>`,
+      }).catch(console.error);
+      if (studentMobile) sendWhatsAppGeneral4LineNotification(
+        studentMobile, studentName,
+        `🎉 Congratulations! You have cleared the *IVY League Student Interview*!`,
+        `Your next step is the *Parent Interview*. Our IVY Expert will contact your parents soon to schedule the interview.`,
+        `Please ensure your parents are informed and available. All the best! 🎉`
+      ).catch(console.error);
+      // ── Parent notification ──
+      if (parentEmail) sendEmail({
+        to: parentEmail,
+        subject: `${studentName} Has Cleared the Student Interview — Your Turn is Next! 🎉`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px;border:1px solid #e5e7eb;border-radius:12px"><h2 style="color:#2563eb">🎉 Great News, ${parentName}!</h2><p style="font-size:15px;color:#374151"><strong>${studentName}</strong> has cleared the <strong>IVY League Student Interview</strong>!</p><div style="background:#eff6ff;border-radius:8px;padding:16px;margin:20px 0"><p style="margin:0;font-size:14px;color:#1e40af"><strong>Your Turn is Next: Parent Interview</strong><br/>Our IVY Expert will contact you soon to schedule the Parent Interview. Please be prepared and available.</p></div><p style="font-size:13px;color:#6b7280">Best regards,<br/><strong>ADMITra Team</strong></p></div>`,
+      }).catch(console.error);
+      if (parentMobile) sendWhatsAppGeneral4LineNotification(
+        parentMobile, parentName,
+        `🎉 *${studentName}* has cleared the IVY League Student Interview!`,
+        `Your turn is next — the *Parent Interview*. Our IVY Expert will contact you soon to schedule the interview.`,
+        `Please be prepared and available. We look forward to meeting you! 🎉`
+      ).catch(console.error);
+    } else {
+      // parent-interview cleared
+      // ── Parent notification ──
+      if (parentEmail) sendEmail({
+        to: parentEmail,
+        subject: `🎉 Congratulations! You Have Cleared the IVY League Parent Interview`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px;border:1px solid #e5e7eb;border-radius:12px"><h2 style="color:#7c3aed">🎉 Congratulations, ${parentName}!</h2><p style="font-size:15px;color:#374151">You have cleared the <strong>IVY League Parent Interview</strong>!</p><div style="background:#f5f3ff;border-radius:8px;padding:16px;margin:20px 0"><p style="margin:0;font-size:14px;color:#5b21b6"><strong>${studentName}</strong> has now completed all 3 stages of the IVY League screening process. Our team will review the profile and be in touch shortly.</p></div><p style="font-size:13px;color:#6b7280">Best regards,<br/><strong>ADMITra Team</strong></p></div>`,
+      }).catch(console.error);
+      if (parentMobile) sendWhatsAppGeneral4LineNotification(
+        parentMobile, parentName,
+        `🎉 Congratulations! You have cleared the *IVY League Parent Interview*!`,
+        `*${studentName}* has now completed all 3 stages of the IVY League screening process.`,
+        `Our team will review the profile and be in touch shortly. Thank you! 🎉`
+      ).catch(console.error);
+      // ── Student notification ──
+      if (studentEmail) sendEmail({
+        to: studentEmail,
+        subject: `🎉 Your Parent Has Cleared the IVY League Parent Interview`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px;border:1px solid #e5e7eb;border-radius:12px"><h2 style="color:#7c3aed">🎉 Great News, ${studentName}!</h2><p style="font-size:15px;color:#374151">Your parent has cleared the <strong>IVY League Parent Interview</strong>!</p><div style="background:#f5f3ff;border-radius:8px;padding:16px;margin:20px 0"><p style="margin:0;font-size:14px;color:#5b21b6">You have now completed all 3 stages of the IVY League screening process. Our team will review your profile and be in touch with you shortly.</p></div><p style="font-size:13px;color:#6b7280">Best regards,<br/><strong>ADMITra Team</strong></p></div>`,
+      }).catch(console.error);
+      if (studentMobile) sendWhatsAppGeneral4LineNotification(
+        studentMobile, studentName,
+        `🎉 Your parent has cleared the *IVY League Parent Interview*!`,
+        `You have now completed all 3 stages of the IVY League screening process.`,
+        `Our team will review your profile and be in touch shortly. Well done! 🎉`
+      ).catch(console.error);
+    }
+
+    res.json({
+      success: true,
+      message: `${stage} cleared successfully`,
+      testCleared: session.testCleared,
+      studentInterviewCleared: session.studentInterviewCleared,
+      parentInterviewCleared: session.parentInterviewCleared,
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || 'Failed to clear stage' });
   }
 };

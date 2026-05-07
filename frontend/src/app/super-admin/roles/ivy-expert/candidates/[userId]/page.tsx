@@ -60,6 +60,7 @@ interface CandidateInfo {
   middleName?: string;
   lastName: string;
   email: string;
+  mobileNumber?: string;
   schoolName: string;
   curriculum: string;
   currentGrade: string;
@@ -228,6 +229,8 @@ export default function CandidateDetailPage() {
     PARENT_INTERVIEW_SECTIONS.map((s) => new Array(s.questions.length).fill(''))
   );
   const [saving, setSaving] = useState(false);
+  const [clearances, setClearances] = useState({ testCleared: false, studentInterviewCleared: false, parentInterviewCleared: false });
+  const [clearingStage, setClearingStage] = useState<string | null>(null);
   const hasFetchedRef = useRef(false);
 
   // --- Meeting scheduling state ---
@@ -301,6 +304,11 @@ export default function CandidateDetailPage() {
       const testRes = await axios.get(`${API_URL}/super-admin/ivy-league/test-result/${userId}`, { headers });
       if (testRes.data.success && testRes.data.session) {
         setTestResult(testRes.data.session);
+        setClearances({
+          testCleared: testRes.data.session.testCleared ?? false,
+          studentInterviewCleared: testRes.data.session.studentInterviewCleared ?? false,
+          parentInterviewCleared: testRes.data.session.parentInterviewCleared ?? false,
+        });
       }
 
       // Fetch existing interview data
@@ -357,6 +365,30 @@ export default function CandidateDetailPage() {
       if (parRes.data.success) setParentMeetings(parRes.data.data.schedules || []);
     } catch {
       // non-critical
+    }
+  };
+
+  const handleClearStage = async (stage: 'test' | 'student-interview' | 'parent-interview') => {
+    setClearingStage(stage);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(
+        `${API_URL}/super-admin/ivy-league/clear-stage/${userId}`,
+        { stage },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        toast.success(`Stage cleared successfully! Congratulations sent to candidate.`);
+        setClearances({
+          testCleared: res.data.testCleared,
+          studentInterviewCleared: res.data.studentInterviewCleared,
+          parentInterviewCleared: res.data.parentInterviewCleared,
+        });
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to clear stage');
+    } finally {
+      setClearingStage(null);
     }
   };
 
@@ -541,8 +573,9 @@ export default function CandidateDetailPage() {
                       <p className="text-sm font-semibold text-gray-900 mt-1">{getFullName(candidate)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 font-semibold uppercase">Email</p>
+                      <p className="text-xs text-gray-500 font-semibold uppercase">Student Contact</p>
                       <p className="text-sm text-gray-900 mt-1">{candidate.email}</p>
+                      {candidate.mobileNumber && <p className="text-sm text-gray-600">{candidate.mobileNumber}</p>}
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 font-semibold uppercase">Parent Name</p>
@@ -596,7 +629,22 @@ export default function CandidateDetailPage() {
                     <>
                       {/* Score Summary */}
                       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">Score Summary</h3>
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-bold text-gray-900">Score Summary</h3>
+                          {clearances.testCleared ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-green-100 text-green-700">
+                              ✓ Test Cleared
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleClearStage('test')}
+                              disabled={clearingStage === 'test'}
+                              className="px-4 py-1.5 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {clearingStage === 'test' ? 'Clearing...' : '✓ Clear Test'}
+                            </button>
+                          )}
+                        </div>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                           <div className="bg-blue-50 rounded-lg p-4 text-center">
                             <p className="text-2xl font-extrabold text-blue-700">{testResult.totalScore}</p>
@@ -1165,6 +1213,20 @@ export default function CandidateDetailPage() {
                         >
                           {saving ? 'Saving...' : 'Save'}
                         </button>
+                        {clearances.studentInterviewCleared ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold bg-green-100 text-green-700">
+                            ✓ Student Interview Cleared
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleClearStage('student-interview')}
+                            disabled={clearingStage === 'student-interview' || !clearances.testCleared}
+                            title={!clearances.testCleared ? 'Test must be cleared first' : undefined}
+                            className="px-4 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {clearingStage === 'student-interview' ? 'Clearing...' : '✓ Clear Student Interview'}
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -1498,6 +1560,20 @@ export default function CandidateDetailPage() {
                         >
                           {saving ? 'Saving...' : 'Save'}
                         </button>
+                        {clearances.parentInterviewCleared ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold bg-green-100 text-green-700">
+                            ✓ Parent Interview Cleared
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleClearStage('parent-interview')}
+                            disabled={clearingStage === 'parent-interview' || !clearances.studentInterviewCleared}
+                            title={!clearances.studentInterviewCleared ? 'Student Interview must be cleared first' : undefined}
+                            className="px-4 py-2 rounded-lg text-sm font-semibold bg-purple-700 text-white hover:bg-purple-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {clearingStage === 'parent-interview' ? 'Clearing...' : '✓ Clear Parent Interview'}
+                          </button>
+                        )}
                       </div>
                     </div>
 

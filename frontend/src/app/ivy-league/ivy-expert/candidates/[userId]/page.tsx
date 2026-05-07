@@ -226,6 +226,8 @@ export default function IvyExpertCandidateDetailPage() {
   );
   const [converting, setConverting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [clearances, setClearances] = useState({ testCleared: false, studentInterviewCleared: false, parentInterviewCleared: false });
+  const [clearingStage, setClearingStage] = useState<string | null>(null);
   const hasFetchedRef = useRef(false);
 
   // --- Meeting scheduling state ---
@@ -274,6 +276,11 @@ export default function IvyExpertCandidateDetailPage() {
       const testRes = await axios.get(`${IVY_API_URL}/ivy-expert-candidates/test-result/${userId}`);
       if (testRes.data.success && testRes.data.session) {
         setTestResult(testRes.data.session);
+        setClearances({
+          testCleared: testRes.data.session.testCleared ?? false,
+          studentInterviewCleared: testRes.data.session.studentInterviewCleared ?? false,
+          parentInterviewCleared: testRes.data.session.parentInterviewCleared ?? false,
+        });
       }
 
       // Fetch existing interview data
@@ -324,6 +331,28 @@ export default function IvyExpertCandidateDetailPage() {
       if (parRes.data.success) setParentMeetings(parRes.data.data.schedules || []);
     } catch {
       // non-critical, ignore
+    }
+  };
+
+  const handleClearStage = async (stage: 'test' | 'student-interview' | 'parent-interview') => {
+    setClearingStage(stage);
+    try {
+      const res = await axios.post(
+        `${IVY_API_URL}/ivy-expert-candidates/clear-stage/${userId}`,
+        { stage }
+      );
+      if (res.data.success) {
+        toast.success(`Stage cleared! Congratulations sent to candidate.`);
+        setClearances({
+          testCleared: res.data.testCleared,
+          studentInterviewCleared: res.data.studentInterviewCleared,
+          parentInterviewCleared: res.data.parentInterviewCleared,
+        });
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to clear stage');
+    } finally {
+      setClearingStage(null);
     }
   };
 
@@ -499,8 +528,9 @@ export default function IvyExpertCandidateDetailPage() {
             </div>
             <button
               onClick={handleConvertToStudent}
-              disabled={converting}
-              className="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              disabled={converting || !clearances.testCleared || !clearances.studentInterviewCleared || !clearances.parentInterviewCleared}
+              title={(!clearances.testCleared || !clearances.studentInterviewCleared || !clearances.parentInterviewCleared) ? 'All 3 stages (Test, Student Interview, Parent Interview) must be cleared before conversion' : 'Convert to IVY Student'}
+              className={`px-5 py-2.5 rounded-lg transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${(!clearances.testCleared || !clearances.studentInterviewCleared || !clearances.parentInterviewCleared) ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`}
             >
               {converting ? (
                 <>
@@ -588,7 +618,22 @@ export default function IvyExpertCandidateDetailPage() {
                     <>
                       {/* Score Summary */}
                       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">Score Summary</h3>
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-bold text-gray-900">Score Summary</h3>
+                          {clearances.testCleared ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-green-100 text-green-700">
+                              ✓ Test Cleared
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleClearStage('test')}
+                              disabled={clearingStage === 'test'}
+                              className="px-4 py-1.5 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {clearingStage === 'test' ? 'Clearing...' : '✓ Clear Test'}
+                            </button>
+                          )}
+                        </div>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                           <div className="bg-blue-50 rounded-lg p-4 text-center">
                             <p className="text-2xl font-extrabold text-blue-700">{testResult.totalScore}</p>
@@ -1062,6 +1107,20 @@ export default function IvyExpertCandidateDetailPage() {
                         >
                           {saving ? 'Saving...' : 'Save'}
                         </button>
+                        {clearances.studentInterviewCleared ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold bg-green-100 text-green-700">
+                            ✓ Student Interview Cleared
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleClearStage('student-interview')}
+                            disabled={clearingStage === 'student-interview' || !clearances.testCleared}
+                            title={!clearances.testCleared ? 'Test must be cleared first' : undefined}
+                            className="px-4 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {clearingStage === 'student-interview' ? 'Clearing...' : '✓ Clear Student Interview'}
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -1371,6 +1430,20 @@ export default function IvyExpertCandidateDetailPage() {
                         >
                           {saving ? 'Saving...' : 'Save'}
                         </button>
+                        {clearances.parentInterviewCleared ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold bg-green-100 text-green-700">
+                            ✓ Parent Interview Cleared
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleClearStage('parent-interview')}
+                            disabled={clearingStage === 'parent-interview' || !clearances.studentInterviewCleared}
+                            title={!clearances.studentInterviewCleared ? 'Student Interview must be cleared first' : undefined}
+                            className="px-4 py-2 rounded-lg text-sm font-semibold bg-purple-700 text-white hover:bg-purple-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {clearingStage === 'parent-interview' ? 'Clearing...' : '✓ Clear Parent Interview'}
+                          </button>
+                        )}
                       </div>
                     </div>
 

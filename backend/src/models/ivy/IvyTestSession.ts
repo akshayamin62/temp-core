@@ -45,6 +45,10 @@ export interface IIvyTestSession extends Document {
   violations: number;
   studentInterview?: IInterviewData;
   parentInterview?: IInterviewData;
+  /** Stage clearance flags — set by IvyExpert or SuperAdmin */
+  testCleared: boolean;
+  studentInterviewCleared: boolean;
+  parentInterviewCleared: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -104,6 +108,9 @@ const IvyTestSessionSchema = new Schema<IIvyTestSession>(
     violations: { type: Number, default: 0 },
     studentInterview: { type: InterviewDataSchema, default: undefined },
     parentInterview: { type: InterviewDataSchema, default: undefined },
+    testCleared: { type: Boolean, default: false },
+    studentInterviewCleared: { type: Boolean, default: false },
+    parentInterviewCleared: { type: Boolean, default: false },
   },
   { timestamps: true },
 );
