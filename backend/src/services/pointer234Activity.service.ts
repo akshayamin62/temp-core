@@ -15,7 +15,7 @@ import { updateScoreAfterEvaluation } from './ivyScore.service';
 import { createNotification } from './notification.service';
 import { getUploadBaseDir, ensureDir } from '../utils/uploadDir';
 import { sendEmail } from '../utils/email';
-import { sendWhatsAppGeneralNotification } from '../utils/whatsapp';
+import { sendWhatsAppGeneral4LineNotification } from '../utils/whatsapp';
 
 const POINTER_LABELS: Record<number, string> = {
   2: 'Spike in One Area',
@@ -172,11 +172,10 @@ export const selectActivities = async (
     const pointerLabel = POINTER_LABELS[pointerNo] || `Pointer ${pointerNo}`;
     const activityCount = agentSuggestions.length;
     const activityTitles = agentSuggestions.map((a: any) => a.title).join(', ');
-    const line2 = `Your Ivy Expert has suggested ${activityCount} activit${activityCount === 1 ? 'y' : 'ies'} for Pointer ${pointerNo} — ${pointerLabel}.`;
-    const line3 = `${activityTitles}. Log in to your dashboard to review and get started.`;
+    const line2 = `Your IVY League Expert has suggested ${activityCount} activit${activityCount === 1 ? 'y' : 'ies'} for Pointer *${pointerNo} - ${pointerLabel}*.`;
 
     if (studentMobile) {
-      await sendWhatsAppGeneralNotification(studentMobile, studentName, line2, line3);
+      await sendWhatsAppGeneral4LineNotification(studentMobile, studentName, line2, activityTitles, 'Log in to your dashboard to review and get started.');
     }
     if (studentEmail) {
       const activityListHtml = agentSuggestions
@@ -185,7 +184,7 @@ export const selectActivities = async (
       await sendEmail({
         to: studentEmail,
         subject: `New Activities Suggested — Pointer ${pointerNo}: ${pointerLabel}`,
-        html: `<p>Hi ${studentName},</p><p>Your Ivy Expert has suggested <strong>${activityCount} activit${activityCount === 1 ? 'y' : 'ies'}</strong> for you under:</p><p>📌 <strong>Pointer ${pointerNo}: ${pointerLabel}</strong></p><ul>${activityListHtml}</ul><p>Log in to your dashboard to review them and start working:</p><p><a href="https://core.admitra.io/dashboard">https://core.admitra.io/dashboard</a></p><p>Best regards,<br/>ADMITra Team</p>`,
+        html: `<p>Hi ${studentName},</p><p>Your IVY League Expert has suggested <strong>${activityCount} activit${activityCount === 1 ? 'y' : 'ies'}</strong> for you under:</p><p>📌 <strong>Pointer ${pointerNo}: ${pointerLabel}</strong></p><ul>${activityListHtml}</ul><p>Log in to your dashboard to review them and start working:</p><p><a href="https://core.admitra.io/dashboard">https://core.admitra.io/dashboard</a></p><p>Best regards,<br/>ADMITra Team</p>`,
       });
     }
   } catch (notifErr) {

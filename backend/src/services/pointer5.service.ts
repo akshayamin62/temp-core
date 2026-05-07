@@ -8,6 +8,10 @@ import StudentServiceRegistration from '../models/StudentServiceRegistration';
 import { PointerNo } from '../types/PointerNo';
 import mongoose from 'mongoose';
 import { createNotification } from './notification.service';
+import Student from '../models/Student';
+import User from '../models/User';
+import { sendEmail } from '../utils/email';
+import { sendWhatsAppGeneral4LineNotification } from '../utils/whatsapp';
 
 // Create a new task
 export const createTask = async (data: {
@@ -37,6 +41,39 @@ export const createTask = async (data: {
             notificationType: 'essay_task_assigned',
             referenceId: task._id,
         });
+
+        // WhatsApp + email notification to student
+        try {
+            const studentDoc = await Student.findById(service.studentId).lean() as any;
+            const studentUserDoc = studentDoc?.userId
+                ? await User.findById(studentDoc.userId).select('firstName middleName lastName email mobileNumber').lean() as any
+                : null;
+            const studentName = studentUserDoc
+                ? [studentUserDoc.firstName, studentUserDoc.middleName, studentUserDoc.lastName].filter(Boolean).join(' ')
+                : 'Student';
+            const studentMobile = studentDoc?.mobileNumber || studentUserDoc?.mobileNumber;
+            const studentEmail = studentDoc?.email || studentUserDoc?.email;
+
+            const wordLimitText = task.wordLimit ? `Word limit: ${task.wordLimit} words.` : '';
+
+            if (studentMobile) {
+                await sendWhatsAppGeneral4LineNotification(
+                    studentMobile, studentName,
+                    `Your IVY League Expert has assigned a new task for *Pointer 5: Authentic & Reflective Storytelling*.`,
+                    `${data.taskDescription.substring(0, 120)}${data.taskDescription.length > 120 ? '...' : ''}. ${wordLimitText}`,
+                    `Log in to your dashboard to view and submit.`
+                ).catch((e: any) => console.error('[Pointer5 Notif] WhatsApp failed:', e));
+            }
+            if (studentEmail) {
+                await sendEmail({
+                    to: studentEmail,
+                    subject: `New Task Assigned — Pointer 5: Authentic & Reflective Storytelling`,
+                    html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px;border:1px solid #e5e7eb;border-radius:12px"><h2 style="color:#0369a1">📝 New Task Assigned</h2><p style="font-size:15px;color:#374151">Hi ${studentName},</p><p style="font-size:15px;color:#374151">Your IVY League Expert has assigned a new task for:</p><p style="font-size:15px;color:#374151">📌 <strong>Pointer 5: Authentic &amp; Reflective Storytelling</strong></p><div style="background:#f0f9ff;border-radius:8px;padding:16px;margin:20px 0"><p style="margin:0 0 8px;font-size:14px;color:#0c4a6e"><strong>Task Description</strong></p><p style="margin:0;font-size:14px;color:#374151">${data.taskDescription.split('\n').join('<br/>')}</p>${task.wordLimit ? `<p style="margin:8px 0 0;font-size:13px;color:#0369a1"><strong>Word Limit:</strong> ${task.wordLimit} words</p>` : ''}</div><p><a href="https://core.admitra.io/dashboard" style="color:#0369a1">Log in to your dashboard</a> to view the task and submit your essay.</p><p style="font-size:13px;color:#6b7280">Best regards,<br/><strong>ADMITra Team</strong></p></div>`,
+                }).catch((e: any) => console.error('[Pointer5 Notif] Email failed:', e));
+            }
+        } catch (notifErr) {
+            console.error('[Pointer5 Notif] Failed to send task notification:', notifErr);
+        }
     }
 
     return task;

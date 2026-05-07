@@ -123,7 +123,7 @@ export default function IvyLeagueInstructionsPage() {
           <div>
             <h2 className="text-lg font-semibold text-green-800">Registration Successful!</h2>
             <p className="text-green-700 mt-1">
-              Your Ivy League registration has been submitted. Please review the procedure below to understand the next steps.
+              Your IVY League registration has been submitted. Please review the procedure below to understand the next steps.
             </p>
           </div>
         </div>

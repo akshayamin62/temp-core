@@ -241,7 +241,7 @@ function StudentPointer5Content() {
                     <div className="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-200">
                         <div className="text-6xl mb-6">📝</div>
                         <h2 className="text-2xl font-bold text-gray-900 mb-4">No Tasks Assigned Yet</h2>
-                        <p className="text-gray-600">Your Ivy Expert will assign writing tasks here.</p>
+                        <p className="text-gray-600">Your IVY League Expert will assign writing tasks here.</p>
                     </div>
                 ) : (
                     <div className="space-y-6">

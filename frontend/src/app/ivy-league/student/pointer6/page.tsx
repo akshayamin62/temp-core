@@ -340,7 +340,7 @@ function Pointer6Content() {
               </svg>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">No Courses Yet</h2>
               <p className="text-gray-600">
-                Your Ivy Expert will upload recommended courses soon. Stay tuned!
+                Your IVY League Expert will upload recommended courses soon. Stay tuned!
               </p>
             </div>
           ) : (
