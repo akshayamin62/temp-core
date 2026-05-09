@@ -12,7 +12,7 @@ import {
   updateDocumentTaskStatus,
   setActivityDeadline,
 } from '../services/pointerActivity.service';
-import { updateWeightages } from '../services/pointer234Activity.service';
+import { updateWeightages } from '../services/pointerActivity.service';
 import StudentPointerScore from '../models/ivy/StudentPointerScore';
 
 const storage = multer.memoryStorage();

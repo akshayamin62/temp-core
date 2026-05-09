@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import path from 'path';
 import fs from 'fs';
 import AgentSuggestion from '../models/ivy/AgentSuggestion';
-import IvyExpertSelectedSuggestion from '../models/ivy/IvyExpertSelectedSuggestion';
+import IvyExpertSelectedSuggestion, { IIvyExpertSelectedSuggestion } from '../models/ivy/IvyExpertSelectedSuggestion';
 import StudentSubmission from '../models/ivy/StudentSubmission';
 import IvyExpertEvaluation from '../models/ivy/IvyExpertEvaluation';
 import StudentServiceRegistration from '../models/StudentServiceRegistration';
@@ -769,4 +769,80 @@ export const setActivityDeadline = async (
   await selection.save();
 
   return selection;
+};
+
+/**
+ * Update weightages for selected activities (Ivy Expert only)
+ * Input: studentIvyServiceId, ivyExpertId, weightages map { agentSuggestionId: weightage }, pointerNo
+ */
+export const updateWeightages = async (
+  studentIvyServiceId: string,
+  ivyExpertId: string,
+  weightages: { [agentSuggestionId: string]: number },
+  pointerNo?: number,
+): Promise<IIvyExpertSelectedSuggestion[]> => {
+  if (!mongoose.Types.ObjectId.isValid(studentIvyServiceId)) {
+    throw new Error('Invalid studentIvyServiceId');
+  }
+  if (!mongoose.Types.ObjectId.isValid(ivyExpertId)) {
+    throw new Error('Invalid ivyExpertId');
+  }
+
+  const service = await StudentServiceRegistration.findById(studentIvyServiceId);
+  if (!service) {
+    throw new Error('Student Service Registration not found');
+  }
+  if (!service.activeIvyExpertId || service.activeIvyExpertId.toString() !== ivyExpertId) {
+    throw new Error('Unauthorized: Ivy Expert does not match this service');
+  }
+
+  const ivyExpert = await IvyExpert.findById(ivyExpertId);
+  if (!ivyExpert) {
+    throw new Error('Unauthorized: IvyExpert not found');
+  }
+
+  const query: any = { studentIvyServiceId };
+  if (pointerNo && [2, 3, 4].includes(pointerNo)) {
+    query.pointerNo = pointerNo;
+  } else {
+    query.pointerNo = { $in: [PointerNo.SpikeInOneArea, PointerNo.LeadershipInitiative, PointerNo.GlobalSocialImpact] };
+  }
+
+  const selectedActivities = await IvyExpertSelectedSuggestion.find(query);
+  if (selectedActivities.length === 0) {
+    throw new Error('No activities selected');
+  }
+
+  const activitiesToUpdate = selectedActivities.filter(
+    (act) => weightages[act.agentSuggestionId.toString()] !== undefined,
+  );
+  if (activitiesToUpdate.length === 0) {
+    throw new Error('No matching activities found for provided weightages');
+  }
+
+  const weightageValues = activitiesToUpdate.map((act) => weightages[act.agentSuggestionId.toString()]);
+  if (activitiesToUpdate.length === 1) {
+    if (weightageValues[0] !== 100) {
+      throw new Error('Single activity must have weightage of 100');
+    }
+  } else {
+    const sum = weightageValues.reduce((acc, w) => acc + w, 0);
+    if (Math.abs(sum - 100) > 0.01) {
+      throw new Error(`Total weightage must equal 100, got ${sum.toFixed(2)}`);
+    }
+    for (const w of weightageValues) {
+      if (typeof w !== 'number' || w <= 0 || w > 100) {
+        throw new Error('Each weightage must be a number between 0 and 100');
+      }
+    }
+  }
+
+  const updatedActivities: IIvyExpertSelectedSuggestion[] = [];
+  for (const activity of activitiesToUpdate) {
+    activity.weightage = weightages[activity.agentSuggestionId.toString()];
+    await activity.save();
+    updatedActivities.push(activity);
+  }
+
+  return updatedActivities;
 };
