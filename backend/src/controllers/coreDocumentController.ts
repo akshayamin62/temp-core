@@ -2,7 +2,11 @@ import { Response } from "express";
 import { AuthRequest } from "../types/auth";
 import COREDocumentField, { COREDocumentType } from "../models/COREDocumentField";
 import StudentServiceRegistration from "../models/StudentServiceRegistration";
+import Student from "../models/Student";
+import User from "../models/User";
 import mongoose from "mongoose";
+import { sendWhatsAppGeneralNotification } from "../utils/whatsapp";
+import { sendEmail } from "../utils/email";
 
 // Get CORE document fields for a specific student
 export const getCOREDocumentFields = async (req: AuthRequest, res: Response) => {
@@ -107,6 +111,60 @@ export const addCOREDocumentField = async (req: AuthRequest, res: Response) => {
       createdBy: new mongoose.Types.ObjectId(req.user!.userId),
       createdByRole: req.user!.role as "SUPER_ADMIN" | "OPS",
     });
+
+    // Send WhatsApp + email notification to student
+    try {
+      const studentDoc = await Student.findById(registration.studentId).lean() as any;
+      const studentUserDoc = studentDoc?.userId
+        ? await User.findById(studentDoc.userId).select('firstName middleName lastName email mobileNumber').lean() as any
+        : null;
+      const studentName = studentUserDoc
+        ? [studentUserDoc.firstName, studentUserDoc.middleName, studentUserDoc.lastName].filter(Boolean).join(' ')
+        : 'Student';
+      const studentMobile = studentDoc?.mobileNumber || studentUserDoc?.mobileNumber;
+      const studentEmail = studentDoc?.email || studentUserDoc?.email;
+
+      // Fetch the acting user's (OPS/Super Admin) name
+      const actingUserDoc = await User.findById(req.user!.userId).select('firstName middleName lastName').lean() as any;
+      const actingUserName = actingUserDoc
+        ? [actingUserDoc.firstName, actingUserDoc.middleName, actingUserDoc.lastName].filter(Boolean).join(' ')
+        : req.user!.role;
+
+      const isUploadRequest = validDocType === COREDocumentType.EXTRA;
+
+      const line2 = isUploadRequest
+        ? `${actingUserName} has requested a new document upload: *${documentName}*.`
+        : `${actingUserName} has shared a new document with you: *${documentName}*.`;
+      const line3 = isUploadRequest
+        ? 'Please log in to your dashboard and upload it at the earliest'
+        : 'Log in to your dashboard to view and download the document';
+
+      if (studentMobile) {
+        await sendWhatsAppGeneralNotification(studentMobile, studentName, line2, line3);
+      }
+
+      if (studentEmail) {
+        const emailSubject = isUploadRequest
+          ? `Document Upload Requested: ${documentName}`
+          : `New Document Shared: ${documentName}`;
+        const emailBody = isUploadRequest
+          ? `<p>Hi ${studentName},</p>
+<p><strong>${actingUserName}</strong> has requested you to upload a new document:</p>
+<p>📄 <strong>${documentName}</strong></p>
+<p>Please log in to your dashboard and upload it at the earliest:</p>
+<p><a href="https://core.admitra.io/dashboard">https://core.admitra.io/dashboard</a></p>
+<p>Best regards,<br/>ADMITra Team</p>`
+          : `<p>Hi ${studentName},</p>
+<p><strong>${actingUserName}</strong> has shared a new document with you:</p>
+<p>📄 <strong>${documentName}</strong></p>
+<p>Log in to your dashboard to view and download the document:</p>
+<p><a href="https://core.admitra.io/dashboard">https://core.admitra.io/dashboard</a></p>
+<p>Best regards,<br/>ADMITra Team</p>`;
+        await sendEmail({ to: studentEmail, subject: emailSubject, html: emailBody });
+      }
+    } catch (notifErr) {
+      console.error('[COREDocument Notif] Failed to send notification:', notifErr);
+    }
 
     return res.status(201).json({
       success: true,

@@ -851,7 +851,8 @@ export const updateProgramStatus = async (req: AuthRequest, res: Response): Prom
           } else {
             // Template 3: General program status update
             if (student.mobileNumber) {
-              sendWhatsAppProgramStatusUpdate(student.mobileNumber, studentName, programAtUniversity, status).catch(err =>
+              const boldStatus = `*${status}*`;
+              sendWhatsAppProgramStatusUpdate(student.mobileNumber, studentName, programAtUniversity, boldStatus).catch(err =>
                 console.error('WhatsApp program status update notification failed:', err.message)
               );
             }
