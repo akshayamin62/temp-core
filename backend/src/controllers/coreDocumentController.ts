@@ -129,12 +129,14 @@ export const addCOREDocumentField = async (req: AuthRequest, res: Response) => {
       const actingUserName = actingUserDoc
         ? [actingUserDoc.firstName, actingUserDoc.middleName, actingUserDoc.lastName].filter(Boolean).join(' ')
         : req.user!.role;
+      const actingRoleLabel = req.user!.role === 'SUPER_ADMIN' ? 'Super Admin' : 'OPS';
+      const actingUserBold = `*${actingUserName} (${actingRoleLabel})*`;
 
       const isUploadRequest = validDocType === COREDocumentType.EXTRA;
 
       const line2 = isUploadRequest
-        ? `${actingUserName} has requested a new document upload: *${documentName}*.`
-        : `${actingUserName} has shared a new document with you: *${documentName}*.`;
+        ? `${actingUserBold} has requested a new document upload: *${documentName}*.`
+        : `${actingUserBold} has shared a new document with you: *${documentName}*.`;
       const line3 = isUploadRequest
         ? 'Please log in to your dashboard and upload it at the earliest'
         : 'Log in to your dashboard to view and download the document';
@@ -149,13 +151,13 @@ export const addCOREDocumentField = async (req: AuthRequest, res: Response) => {
           : `New Document Shared: ${documentName}`;
         const emailBody = isUploadRequest
           ? `<p>Hi ${studentName},</p>
-<p><strong>${actingUserName}</strong> has requested you to upload a new document:</p>
+<p><strong>${actingUserName} (${actingRoleLabel})</strong> has requested you to upload a new document:</p>
 <p>📄 <strong>${documentName}</strong></p>
 <p>Please log in to your dashboard and upload it at the earliest:</p>
 <p><a href="https://core.admitra.io/dashboard">https://core.admitra.io/dashboard</a></p>
 <p>Best regards,<br/>ADMITra Team</p>`
           : `<p>Hi ${studentName},</p>
-<p><strong>${actingUserName}</strong> has shared a new document with you:</p>
+<p><strong>${actingUserName} (${actingRoleLabel})</strong> has shared a new document with you:</p>
 <p>📄 <strong>${documentName}</strong></p>
 <p>Log in to your dashboard to view and download the document:</p>
 <p><a href="https://core.admitra.io/dashboard">https://core.admitra.io/dashboard</a></p>

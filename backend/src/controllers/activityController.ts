@@ -7,7 +7,7 @@ import Student from '../models/Student';
 import StudentServiceRegistration from '../models/StudentServiceRegistration';
 import User from '../models/User';
 import { sendEmail } from '../utils/email';
-import { sendWhatsAppGeneralNotification } from '../utils/whatsapp';
+import { sendWhatsAppGeneral4LineNotification } from '../utils/whatsapp';
 
 /* ─────────── helpers ─────────── */
 
@@ -442,15 +442,17 @@ export const upsertFeedback = async (req: AuthRequest, res: Response) => {
       const studentEmail = studentDoc?.email || studentUserDoc?.email;
 
       const senderLabel = userRole === 'SUPER_ADMIN' ? 'Super Admin' : 'EduPlan Coach';
+      const senderBold = `*${givenByName} (${senderLabel})*`;
 
-      let line2: string, line3: string, emailSubject: string, emailPeriodLabel: string;
+      let line2: string, line3: string, line4: string, emailSubject: string, emailPeriodLabel: string;
 
       if (type === 'monthly') {
         const [yr, mo] = period.split('-').map(Number);
         const monthName = new Date(yr, mo - 1, 1).toLocaleString('en-US', { month: 'long' });
         const periodLabel = `${monthName} ${yr}`;
-        line2 = `Your ${senderLabel} has submitted your monthly progress feedback.`;
-        line3 = `Month: ${periodLabel}. ${feedback.trim()}`;
+        line2 = `${senderBold} has submitted your monthly progress feedback`;
+        line3 = `Month: ${periodLabel}`;
+        line4 = feedback.trim();
         emailSubject = `Monthly Progress Feedback — ${periodLabel}`;
         emailPeriodLabel = `📅 <strong>Month:</strong> ${periodLabel}`;
       } else {
@@ -459,20 +461,21 @@ export const upsertFeedback = async (req: AuthRequest, res: Response) => {
           ? new Date(periodEnd).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
           : period;
         const weekLabel = `${startFmt} – ${endFmt}`;
-        line2 = `Your ${senderLabel} has submitted your weekly progress feedback.`;
-        line3 = `Week: ${weekLabel}. ${feedback.trim()}`;
+        line2 = `${senderBold} has submitted your weekly progress feedback`;
+        line3 = `Week: ${weekLabel}`;
+        line4 = feedback.trim();
         emailSubject = `Weekly Progress Feedback — ${weekLabel}`;
         emailPeriodLabel = `📅 <strong>Week:</strong> ${weekLabel}`;
       }
 
       if (studentMobile) {
-        await sendWhatsAppGeneralNotification(studentMobile, studentName, line2, line3);
+        await sendWhatsAppGeneral4LineNotification(studentMobile, studentName, line2, line3, line4);
       }
       if (studentEmail) {
         await sendEmail({
           to: studentEmail,
           subject: emailSubject,
-          html: `<p>Hi ${studentName},</p><p>Your ${senderLabel} has submitted your ${type} progress feedback:</p><p>${emailPeriodLabel}<br/>👤 <strong>${senderLabel}:</strong> ${givenByName}</p><p>📝 <strong>Feedback:</strong><br/>${feedback.trim()}</p><p>Log in to view your full progress report:<br/><a href="https://core.admitra.io/dashboard">https://core.admitra.io/dashboard</a></p><p>Best regards,<br/>ADMITra Team</p>`,
+          html: `<p>Hi ${studentName},</p><p><strong>${givenByName} (${senderLabel})</strong> has submitted your ${type} progress feedback:</p><p>${emailPeriodLabel}</p><p>📝 <strong>Feedback:</strong><br/>${feedback.trim()}</p><p>Log in to view your full progress report:<br/><a href="https://core.admitra.io/dashboard">https://core.admitra.io/dashboard</a></p><p>Best regards,<br/>ADMITra Team</p>`,
         });
       }
     } catch (notifErr) {
