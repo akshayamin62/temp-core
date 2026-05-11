@@ -22,6 +22,7 @@ export interface IB2BLead extends Document {
   lastName: string;
   email: string;
   mobileNumber: string;
+  city?: string;
   type: B2B_LEAD_TYPE;
   stage: B2B_LEAD_STAGE;
   source: string;
@@ -42,6 +43,7 @@ const b2bLeadSchema = new Schema<IB2BLead>(
     lastName: { type: String, required: true, trim: true },
     email: { type: String, required: true, lowercase: true, trim: true },
     mobileNumber: { type: String, required: true, trim: true },
+    city: { type: String, trim: true },
     type: {
       type: String,
       enum: Object.values(B2B_LEAD_TYPE),

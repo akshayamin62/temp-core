@@ -1116,6 +1116,7 @@ export const b2bAPI = {
     lastName: string;
     email: string;
     mobileNumber: string;
+    city: string;
     type: string;
   }) => api.post('/b2b/public/enquiry', data),
 

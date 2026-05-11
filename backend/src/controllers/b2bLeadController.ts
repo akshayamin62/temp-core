@@ -14,7 +14,7 @@ import { sendWhatsAppEnquiryWelcome, sendWhatsAppGeneralNotification } from "../
  */
 export const submitB2BEnquiry = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { firstName, middleName, lastName, email, mobileNumber, type } = req.body;
+    const { firstName, middleName, lastName, email, mobileNumber, city, type } = req.body;
 
     // Validation
     if (!firstName || !lastName || !email || !mobileNumber || !type) {
@@ -51,6 +51,7 @@ export const submitB2BEnquiry = async (req: Request, res: Response): Promise<Res
       lastName: lastName.trim(),
       email: email.toLowerCase().trim(),
       mobileNumber: mobileNumber.trim(),
+      city: city?.trim() || undefined,
       type: type as B2B_LEAD_TYPE,
       stage: B2B_LEAD_STAGE.NEW,
       source: "B2B Enquiry Form",
@@ -85,6 +86,7 @@ export const submitB2BEnquiry = async (req: Request, res: Response): Promise<Res
               <tr><td style="padding:6px 0;font-weight:bold;">Name:</td><td>${firstName} ${middleName || ''} ${lastName}</td></tr>
               <tr><td style="padding:6px 0;font-weight:bold;">Email:</td><td>${email}</td></tr>
               <tr><td style="padding:6px 0;font-weight:bold;">Phone:</td><td>${mobileNumber}</td></tr>
+              <tr><td style="padding:6px 0;font-weight:bold;">City:</td><td>${city?.trim() || 'N/A'}</td></tr>
               <tr><td style="padding:6px 0;font-weight:bold;">Type:</td><td>${type}</td></tr>
             </table>
             <p>Please log in to assign a B2B Sales person to this lead.</p>
